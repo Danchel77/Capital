@@ -152,6 +152,26 @@ nav button:active {
   background: var(--surface-2) !important;
 }
 
+/* Выделение выбранной карточки при открытом меню действий или модальном окне */
+.card.context-active,
+#transactions-list .card.context-active,
+#deposits-list .card.context-active,
+#goals-list .card.context-active,
+#budget-category-limits-list .card.context-active,
+[data-budget-cat].context-active {
+  background: rgba(108, 93, 211, 0.18) !important;
+  box-shadow: inset 0 0 0 1.5px rgba(114, 124, 255, 0.75), 0 2px 14px rgba(108, 93, 211, 0.22) !important;
+  border-radius: 14px !important;
+  position: relative !important;
+  z-index: 15 !important;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+.card.context-active .text-gray-200,
+[data-budget-cat].context-active .text-gray-200 {
+  color: #ffffff !important;
+}
+
 /* Карточки транзакций подсвечиваются мягко без деформации масштаба при обычном тапе */
 .card {
   transition: background-color 0.2s ease;
@@ -169,8 +189,68 @@ nav button:active {
   }
 }
 
+.tx-item {
+  scroll-margin-bottom: 108px;
+  scroll-margin-top: 24px;
+}
+
+.tx-date,
+.tx-category-btn {
+  height: 36px !important;
+  box-sizing: border-box !important;
+}
+
+#add-tx-row-btn,
+#add-tx-row-btn:focus,
+#add-tx-row-btn:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: rgba(75, 85, 99, 0.6) !important;
+  color: #9CA3AF !important;
+}
+
+#add-tx-row-btn:active {
+  border-color: rgba(156, 163, 175, 0.8) !important;
+  color: #E5E7EB !important;
+}
+
+#tx-submit-btn {
+  scroll-margin-bottom: 110px;
+}
+
 .tx-enter-animated {
-  animation: tx-item-in 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: tx-item-in 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
+/* Эстетичное смахивание и плавное растворение удаляемой карточки транзакции (iOS-стиль) */
+.tx-item-removing {
+  overflow: hidden !important;
+  pointer-events: none !important;
+  box-sizing: border-box !important;
+  opacity: 0 !important;
+  transform: translate3d(24px, 0, 0) scale(0.96) !important;
+  max-height: 0px !important;
+  margin-top: 0px !important;
+  margin-bottom: 0px !important;
+  padding-top: 0px !important;
+  padding-bottom: 0px !important;
+  border-width: 0px !important;
+  border-color: transparent !important;
+  will-change: transform, opacity, max-height, padding, margin;
+  transition: 
+    opacity 0.16s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    max-height 0.28s cubic-bezier(0.25, 1, 0.5, 1) 0.04s,
+    margin-top 0.28s cubic-bezier(0.25, 1, 0.5, 1) 0.04s,
+    margin-bottom 0.28s cubic-bezier(0.25, 1, 0.5, 1) 0.04s,
+    padding-top 0.28s cubic-bezier(0.25, 1, 0.5, 1) 0.04s,
+    padding-bottom 0.28s cubic-bezier(0.25, 1, 0.5, 1) 0.04s,
+    border-color 0.12s ease !important;
+}
+
+.tx-item-removing * {
+  pointer-events: none !important;
 }
 
 /* Плавное появление и мягкая подсветка только что созданной транзакции в общем списке (1.2 сек) */
@@ -220,11 +300,11 @@ nav button:active {
   will-change: transform, opacity;
 }
 
-/* Стандартная чистая анимация масштабирования окна для всех вкладок (без выезда снизу и мелькания) */
+/* Стандартная красивая анимация масштабирования окна при переходе по табам */
 @keyframes tab-window-scale {
   from {
-    opacity: 0.88;
-    transform: scale(0.985);
+    opacity: 0.85;
+    transform: scale(0.96);
   }
   to {
     opacity: 1;
@@ -233,12 +313,14 @@ nav button:active {
 }
 
 .tab-pane {
+  width: 100%;
+  box-sizing: border-box;
   transform-origin: top center;
   will-change: transform, opacity;
 }
 
 .tab-pane.tab-enter-active {
-  animation: tab-window-scale 0.14s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: tab-window-scale 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 /* Плавное всплытие кастомных меню и календаря */
@@ -427,12 +509,20 @@ body.selection-mode .deposit-goal-tag {
 #transactions-tab > .grid p:first-child { color:var(--muted) !important; }
 #transactions-tab > .grid p:last-child { font-size:19px !important; margin-top:4px; }
 #transactions-tab > button { min-height:54px; background:var(--accent-soft) !important; border:1px solid rgba(123,131,255,.30) !important; color:#aeb4ff !important; border-radius:18px !important; font-size:15px !important; box-shadow:none !important; }
-.view-switcher { display:grid !important; grid-template-columns:1fr 1fr; padding:4px; background:var(--surface) !important; border:1px solid var(--line) !important; border-radius:17px !important; margin:2px 0 4px; }
-.view-switcher__btn { border:0 !important; background:transparent !important; color:var(--muted) !important; border-radius:13px !important; min-height:42px; font-weight:650 !important; }
-.view-switcher__btn.is-active { background:linear-gradient(135deg,#727cff,#6269ef) !important; color:#fff !important; box-shadow:0 5px 16px rgba(102,111,255,.22); }
+.view-switcher { display:grid !important; grid-template-columns:1fr 1fr; padding:3px; background:var(--surface) !important; border:1px solid var(--line) !important; border-radius:14px !important; margin:2px 0 4px; }
+.view-switcher__btn { border:0 !important; background:transparent !important; color:var(--muted) !important; border-radius:11px !important; min-height:34px; font-size:13px !important; font-weight:650 !important; cursor:pointer; }
+.view-switcher__btn.is-active { background:linear-gradient(135deg,#727cff,#6269ef) !important; color:#fff !important; box-shadow:0 4px 14px rgba(102,111,255,.24); }
 
 /* ---------- charts ---------- */
 .chart-screen { padding:2px 0 22px; }
+.chart-screen:not(.hidden) {
+  animation: chart-pane-in 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes chart-pane-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 .chart-filter { display:flex; align-items:center; justify-content:space-between; gap:14px; padding:13px 15px; margin:2px 0 12px; background:var(--surface); border:1px solid var(--line); border-radius:18px; }
 .chart-filter__eyebrow,.chart-card__eyebrow { margin:0 0 2px; text-transform:uppercase; letter-spacing:.10em; font-size:9px; font-weight:750; color:var(--muted-2); }
 .chart-filter__label { font-size:14px; font-weight:650; color:var(--text); }
@@ -442,14 +532,27 @@ body.selection-mode .deposit-goal-tag {
 .chart-card__header h3 { margin:0; font-size:18px; line-height:1.25; letter-spacing:-.02em; }
 .chart-card__hint { color:var(--muted-2); font-size:11px; padding-top:3px; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:right; }
 .chart-canvas { position:relative; width:100%; }
-.chart-canvas--trend { height:270px; }
-.category-chart-wrap { display:grid; grid-template-columns:minmax(0,1fr); gap:13px; }
-.chart-canvas--donut { height:230px; max-width:300px; margin:0 auto; }
-.donut-center { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; pointer-events:none; transform:translateY(-2px); }
-.donut-center span { color:var(--muted-2); font-size:10px; text-transform:uppercase; letter-spacing:.08em; }
-.donut-center strong { color:var(--text); font-size:19px; margin-top:3px; }
+.chart-canvas--trend { height:260px; }
+.category-chart-wrap { display:grid; grid-template-columns:minmax(0,1fr); gap:12px; }
+.chart-canvas--donut { height:236px; max-width:280px; margin:0 auto; position:relative; }
+.donut-center { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; pointer-events:none; transform:translateY(-2px); transition:opacity 0.15s ease; }
+.donut-center__clickable { width:125px; height:125px; border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center; pointer-events:auto; cursor:pointer; user-select:none; transition:transform 0.15s ease; }
+.donut-center__clickable:active { transform:scale(0.96); }
+.donut-center span { color:var(--muted-2); font-size:11px; text-transform:uppercase; letter-spacing:.06em; font-weight:600; max-width:145px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; transition:color 0.15s ease; }
+.donut-center strong { color:var(--text); font-size:19px; font-weight:700; margin-top:3px; transition:color 0.15s ease; }
+
+/* Интегрированная полоса месяца внутри карточки структуры */
+.analytics-month-strip {
+  background: rgba(255, 255, 255, 0.028);
+  border: 1px solid rgba(255, 255, 255, 0.055);
+  border-radius: 14px;
+  padding: 8px 10px;
+}
+
 .category-legend { display:grid; grid-template-columns:1fr; gap:6px; padding:2px 2px 0; }
-.category-legend__item { display:grid; grid-template-columns:9px minmax(0,1fr) auto auto; align-items:center; gap:8px; min-width:0; padding:9px 10px; border:1px solid rgba(255,255,255,.035); border-radius:11px; background:rgba(255,255,255,.022); }
+.category-legend__item { display:grid; grid-template-columns:9px minmax(0,1fr) auto auto; align-items:center; gap:8px; min-width:0; padding:9px 11px; border:1px solid rgba(255,255,255,.04); border-radius:12px; background:rgba(255,255,255,.022); cursor:pointer; transition:all 0.15s ease; }
+.category-legend__item:hover, .category-legend__item.is-selected { background:rgba(108, 93, 211, 0.16); border-color:rgba(108, 93, 211, 0.45); }
+.category-legend__item.is-selected { box-shadow:0 0 10px rgba(108,93,211,0.22); transform:scale(1.01); }
 .category-legend__dot { width:9px; height:9px; flex:0 0 9px; border-radius:50%; }
 .category-legend__name { min-width:0; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#c6ccd4; font-size:12px; }
 .category-legend__value { color:#eef0f3; font-size:12px; font-weight:650; white-space:nowrap; }

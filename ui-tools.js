@@ -223,12 +223,18 @@ function openCardContextMenu(e, title, onEdit, onDelete, extraAction = null) {
   const card = e ? (e.currentTarget || (e.target && e.target.closest('.card'))) : null;
   if (!card) return;
 
+  // Снимаем подсветку с предыдущей активной карточки, если была
+  if (activeContextCard && activeContextCard !== card) {
+    activeContextCard.classList.remove('context-active');
+  }
+
   // Тоггл: повторный клик по той же карточке закрывает меню
   if (activeContextCard === card && !menu.classList.contains('hidden')) {
     closeCardContextMenu();
     return;
   }
   activeContextCard = card;
+  activeContextCard.classList.add('context-active');
 
   function triggerPopoverAction(btn, action) {
     if (!btn) {
@@ -262,26 +268,54 @@ function openCardContextMenu(e, title, onEdit, onDelete, extraAction = null) {
     }
   }
 
-  const rect = card.getBoundingClientRect();
   menu.classList.remove('hidden');
+  if (typeof lucide !== 'undefined') lucide.createIcons({ root: menu });
 
+  const rect = card.getBoundingClientRect();
   const hasExtra = (extraAction && typeof extraAction.handler === 'function');
-  const menuHeight = hasExtra ? 150 : 110;
-  const menuWidth = 200;
-  const spaceBelow = window.innerHeight - rect.bottom;
+  const menuHeight = menu.offsetHeight || (hasExtra ? 175 : 125);
+  const menuWidth = menu.offsetWidth || 200;
 
-  let top = (spaceBelow < menuHeight + 20) ? (rect.top - menuHeight - 4) : (rect.bottom + 4);
-  let left = Math.min(window.innerWidth - menuWidth - 16, Math.max(16, rect.right - menuWidth));
+  // Учитываем нижнюю панель навигации (nav) и границы вьюпорта
+  const nav = document.querySelector('nav');
+  const navHeight = (nav && nav.offsetHeight > 0) ? nav.offsetHeight : 64;
+  const bottomLimit = window.innerHeight - navHeight - 8;
+  const topLimit = 10;
+
+  const spaceBelow = bottomLimit - rect.bottom;
+  const spaceAbove = rect.top - topLimit;
+
+  let top;
+  if (spaceBelow >= menuHeight + 6) {
+    // Достаточно места под карточкой
+    top = rect.bottom + 6;
+  } else if (spaceAbove >= menuHeight + 6) {
+    // Места снизу нет, открываем аккуратно СВЕРХУ карточки без перекрытия
+    top = rect.top - menuHeight - 6;
+  } else {
+    // В редком случае нехватки места с обеих сторон выбираем сторону с большим запасом
+    if (spaceAbove >= spaceBelow) {
+      top = Math.max(topLimit, rect.top - menuHeight - 6);
+    } else {
+      top = Math.min(bottomLimit - menuHeight, rect.bottom + 6);
+    }
+  }
+
+  // Горизонтальное позиционирование (прижимаем к правому краю карточки, но в пределах экрана)
+  let left = Math.min(window.innerWidth - menuWidth - 12, Math.max(12, rect.right - menuWidth));
 
   menu.style.top = `${top}px`;
   menu.style.left = `${left}px`;
-  if (typeof lucide !== 'undefined') lucide.createIcons({ root: menu });
 }
 
 function closeCardContextMenu() {
   const menu = document.getElementById('card-context-menu');
   if (menu) menu.classList.add('hidden');
-  activeContextCard = null;
+  if (activeContextCard) {
+    activeContextCard.classList.remove('context-active');
+    activeContextCard = null;
+  }
+  document.querySelectorAll('.card.context-active').forEach(el => el.classList.remove('context-active'));
 }
 
 // Скрытие тултипов графиков при клике в пустое место страницы или скролле
@@ -299,17 +333,27 @@ function hideAllChartTooltips(e) {
   }
 
   // 2. Столбчатый график динамики трат
-  if (monthlyChartObj && !isTargetInside('#monthlyExpensesChart') && monthlyChartObj.getActiveElements().length > 0) {
-    monthlyChartObj.setActiveElements([]);
-    monthlyChartObj.tooltip.setActiveElements([], { x: 0, y: 0 });
-    monthlyChartObj.update();
+  if (monthlyChartObj && !isTargetInside('#monthlyExpensesChart')) {
+    if (monthlyChartObj.getActiveElements().length > 0 || monthlyChartObj._activeElementKey) {
+      monthlyChartObj._activeElementKey = null;
+      monthlyChartObj._activeMonthIndex = -1;
+      monthlyChartObj.setActiveElements([]);
+      monthlyChartObj.tooltip.setActiveElements([], { x: 0, y: 0 });
+      monthlyChartObj.update();
+    }
   }
 
   // 3. Круговая диаграмма структуры категорий
-  if (categoryChartObj && !isTargetInside('#categoryExpensesChart') && categoryChartObj.getActiveElements().length > 0) {
-    categoryChartObj.setActiveElements([]);
-    categoryChartObj.tooltip.setActiveElements([], { x: 0, y: 0 });
-    categoryChartObj.update();
+  if (categoryChartObj && !isTargetInside('#categoryExpensesChart') && !isTargetInside('#category-legend') && !isTargetInside('.donut-center')) {
+    if (categoryChartObj.getActiveElements().length > 0 || categoryChartObj._activeSliceIdx >= 0) {
+      if (typeof window.resetCategoryDonutCenter === 'function') {
+        window.resetCategoryDonutCenter();
+      } else {
+        categoryChartObj._activeSliceIdx = -1;
+        categoryChartObj.setActiveElements([]);
+        categoryChartObj.update();
+      }
+    }
   }
 }
 

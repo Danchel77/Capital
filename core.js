@@ -243,55 +243,114 @@ async function applySnapshotsToUI([txS, depS, brS, goalS, catS, rulesS, planS, b
   }, 1400);
 }
 
-/* Универсальная функция добавления/обновления */
+// Управление флагами обновления табов (кэширование DOM)
+function markTabsDirty() {
+  window._budgetTabDirty = true;
+  window._transactionsTabDirty = true;
+  window._depositsTabDirty = true;
+  window._brokerTabDirty = true;
+}
+window.markTabsDirty = markTabsDirty;
+
+/* Универсальная оптимистичная функция добавления/обновления (0мс отклик) */
 async function submitAction(btnId, table, data) {
-
   const btn = document.getElementById(btnId);
-  btn.disabled = true;
+  if (btn) btn.disabled = true;
 
+  const isEdit = !!(currentEditId && currentEditTable === table);
+  const targetId = currentEditId;
+
+  // 1. Мгновенно закрываем форму в 0мс
+  if (btn) {
+    const formContainer = btn.closest('form')?.parentElement;
+    if (formContainer) formContainer.classList.add('hidden');
+    btn.disabled = false;
+    btn.innerText = isEdit ? 'Сохранить изменения' : btn.innerText;
+  }
+
+  currentEditId = null;
+  currentEditTable = null;
+
+  // 2. Оптимистично обновляем данные в памяти Cache и вызываем моментальный перерендер
+  if (table === 'Transactions') {
+    const items = Array.isArray(data) ? data : [data];
+    const newIds = items.map((item, idx) => isEdit ? targetId : `opt_tx_${Date.now()}_${idx}`);
+    window.lastAddedTxIds = newIds;
+    window.lastAddedTxTime = Date.now();
+
+    const allFlat = typeof getAllCachedTransactionsFlat === 'function' ? getAllCachedTransactionsFlat() : [];
+    items.forEach((item, idx) => {
+      const id = newIds[idx];
+      const parsedDate = (typeof parseAnyDate === 'function' ? parseAnyDate(item.date) : new Date(item.date)) || new Date();
+      const txObj = {
+        id,
+        type: item.type || 'Расход',
+        amount: parseAmount(item.amount),
+        date: formatDateStr(parsedDate, 'yyyy-MM-dd'),
+        rawDate: formatDateStr(parsedDate, 'yyyy-MM-dd'),
+        formattedDate: formatDateStr(parsedDate, 'dd.MM.yyyy'),
+        category: item.category,
+        comment: item.comment || '',
+        excludeFromBudget: !!item.excludeFromBudget,
+        spreadMonths: parseInt(item.spreadMonths, 10) || 1,
+        isBillPayment: !!item.isBillPayment,
+        billId: item.billId || null,
+        billName: item.billName || '',
+        billType: item.billType || (item.spreadMonths > 1 ? 'onetime' : (item.isBillPayment ? 'recurring' : '')),
+        timestamp: parsedDate.getTime()
+      };
+      if (isEdit) {
+        const foundIdx = allFlat.findIndex(t => t.id === targetId);
+        if (foundIdx !== -1) allFlat[foundIdx] = { ...allFlat[foundIdx], ...txObj };
+        else allFlat.unshift(txObj);
+      } else {
+        allFlat.unshift(txObj);
+      }
+    });
+
+    if (typeof processTransactions === 'function') {
+      Cache.transactions = processTransactions(allFlat);
+    }
+    markTabsDirty();
+    if (typeof renderTransactions === 'function') renderTransactions();
+    if (typeof renderBudgetTab === 'function') renderBudgetTab();
+  } else if (table === 'Deposits') {
+    markTabsDirty();
+    if (typeof renderDeposits === 'function') renderDeposits();
+    if (typeof renderBudgetTab === 'function') renderBudgetTab();
+  }
+
+  // 3. Асинхронное фоновое сохранение в Firestore
   try {
-    if (currentEditId && currentEditTable === table) {
-      await getUserCol(table).doc(currentEditId).update(data);
+    if (isEdit) {
+      await getUserCol(table).doc(targetId).update(data);
     } else if (Array.isArray(data)) {
       const batch = db.batch();
-      const addedIds = [];
+      const realAddedIds = [];
       data.forEach(item => {
         const docRef = getUserCol(table).doc();
         batch.set(docRef, item);
-        addedIds.push(docRef.id);
+        realAddedIds.push(docRef.id);
       });
       await batch.commit();
-      if (table === 'Transactions') {
-        window.lastAddedTxIds = addedIds;
-        window.lastAddedTxTime = Date.now();
-      }
+      window.lastAddedTxIds = realAddedIds;
     } else {
       const docRef = await getUserCol(table).add(data);
       if (table === 'Transactions') {
         window.lastAddedTxIds = [docRef.id];
-        window.lastAddedTxTime = Date.now();
       }
     }
 
-    btn.disabled = false;
-    btn.innerText = currentEditId ? 'Сохранить изменения' : btn.innerText;
-
-    // Скрываем форму
-    btn.closest('form').parentElement.classList.add('hidden');
-
-    currentEditId = null;
-    currentEditTable = null;
-
-    // Оптимизированное обновление: только нужная коллекция
+    // Фоновая тихая синхронизация коллекции
     if (table === 'Transactions') {
-      await fetchCollection('Transactions');
-      document.getElementById('toast-container').classList.add('hidden');
+      fetchCollection('Transactions').catch(() => {});
     } else {
-      fetchAllData();
+      fetchAllData().catch(() => {});
     }
   } catch (e) {
-    btn.disabled = false;
-    showToast(e.message, true);
+    console.error('Ошибка сохранения:', e);
+    showToast('Ошибка сохранения: ' + (e.message || ''), true);
+    fetchAllData();
   }
 }
 
@@ -302,38 +361,52 @@ function deleteRecord(table, id) {
       const targetEl = document.querySelector(`.card[data-id="${id}"]`) || document.querySelector(`[data-id="${id}"]`);
       if (targetEl) {
         targetEl.classList.add('tx-row-deleting');
-        await new Promise(res => setTimeout(res, 600));
-        targetEl.remove();
+        setTimeout(() => targetEl.remove(), 250);
       }
 
-      if (table === 'Transactions' && typeof handleTransactionsDeleted === 'function') {
+      // Мгновенно удаляем из локального кэша Cache в 0мс
+      if (table === 'Transactions') {
         const allTxs = typeof getAllCachedTransactionsFlat === 'function' ? getAllCachedTransactionsFlat() : [];
         const deletedTx = allTxs.find(t => t.id === id);
-
-        // Оптимистично удаляем из локального кэша
-        if (Array.isArray(Cache?.transactions)) {
-          for (const month of Cache.transactions) {
-            if (Array.isArray(month.items)) {
-              month.items = month.items.filter(t => t.id !== id);
-            }
-          }
+        const filtered = allTxs.filter(t => t.id !== id);
+        if (typeof processTransactions === 'function') {
+          Cache.transactions = processTransactions(filtered);
         }
+        markTabsDirty();
+        if (typeof renderTransactions === 'function') renderTransactions();
+        if (typeof renderBudgetTab === 'function') renderBudgetTab();
 
-        await handleTransactionsDeleted([id], deletedTx ? [deletedTx] : []);
+        if (typeof handleTransactionsDeleted === 'function') {
+          handleTransactionsDeleted([id], deletedTx ? [deletedTx] : []).catch(() => {});
+        }
+      } else if (table === 'Deposits') {
+        if (Array.isArray(Cache?.deposits)) {
+          Cache.deposits = Cache.deposits.filter(d => d.id !== id);
+        }
+        markTabsDirty();
+        if (typeof renderDeposits === 'function') renderDeposits();
+        if (typeof renderBudgetTab === 'function') renderBudgetTab();
+      } else if (table === 'Goals') {
+        if (Array.isArray(Cache?.goals)) {
+          Cache.goals = Cache.goals.filter(g => g.id !== id);
+        }
+        markTabsDirty();
+        if (typeof renderBudgetTab === 'function') renderBudgetTab();
+        if (typeof updateGoalDropdowns === 'function') updateGoalDropdowns();
       }
 
+      // Фоновое удаление из Firestore
       await getUserCol(table).doc(id).delete();
 
-      // Оптимизированное обновление
       if (table === 'Transactions') {
-        await fetchCollection('Transactions');
-        document.getElementById('toast-container')?.classList.add('hidden');
+        fetchCollection('Transactions').catch(() => {});
       } else {
-        fetchAllData();
+        fetchAllData().catch(() => {});
       }
     } catch (e) {
       console.error(e);
-      showToast("Ошибка", true);
+      showToast("Ошибка удаления", true);
+      fetchAllData();
     }
   });
 }

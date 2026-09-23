@@ -33,9 +33,16 @@ const availableIcons = [
 function processTransactions(txs) {
   const grouped = {};
   const months = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
-  txs.forEach(tx => {
-    const txDate = (typeof parseAnyDate === 'function' ? parseAnyDate(tx.date) : (tx.date ? new Date(tx.date) : new Date())) || new Date();
-    const key = formatDateStr(txDate, 'yyyy-MM');
+  (txs || []).forEach(tx => {
+    const rawDateVal = tx.date || tx.rawDate || tx.formattedDate;
+    let txDate = null;
+    if (rawDateVal) {
+      txDate = (typeof parseAnyDate === 'function') ? parseAnyDate(rawDateVal) : new Date(rawDateVal);
+    }
+    if (!txDate || isNaN(txDate.getTime())) {
+      txDate = (tx.timestamp && !isNaN(new Date(tx.timestamp).getTime())) ? new Date(tx.timestamp) : new Date();
+    }
+    const key = (typeof formatDateStr === 'function') ? formatDateStr(txDate, 'yyyy-MM') : `${txDate.getFullYear()}-${String(txDate.getMonth() + 1).padStart(2, '0')}`;
     if (!grouped[key]) {
       grouped[key] = {
         id: key,
@@ -50,7 +57,12 @@ function processTransactions(txs) {
     const isIncome = tx.type === 'Доход' || String(tx.type || '').trim().toLowerCase() === 'доход';
     if (isExpense) grouped[key].expense += amount;
     else if (isIncome) grouped[key].income += amount;
+
+    const isoDateStr = (typeof formatDateStr === 'function') ? formatDateStr(txDate, 'yyyy-MM-dd') : (tx.date || tx.rawDate);
+    const ruDateStr = (typeof formatDateStr === 'function') ? formatDateStr(txDate, 'dd.MM.yyyy') : (tx.formattedDate || isoDateStr);
+
     grouped[key].items.push({
+      ...tx,
       id: tx.id,
       type: isIncome ? 'Доход' : 'Расход',
       category: tx.category,
@@ -60,10 +72,12 @@ function processTransactions(txs) {
       isBillPayment: !!tx.isBillPayment,
       billId: tx.billId || null,
       billName: tx.billName || '',
+      billType: tx.billType || (tx.spreadMonths > 1 ? 'onetime' : (tx.isBillPayment ? 'recurring' : '')),
       spreadMonths: parseInt(tx.spreadMonths, 10) || 1,
-      formattedDate: formatDateStr(txDate, 'dd.MM.yyyy'),
-      rawDate: tx.date || formatDateStr(txDate, 'yyyy-MM-dd'),
-      timestamp: txDate.getTime()
+      date: tx.date || isoDateStr,
+      rawDate: tx.rawDate || tx.date || isoDateStr,
+      formattedDate: ruDateStr,
+      timestamp: tx.timestamp || txDate.getTime()
     });
   });
   return Object.values(grouped)
@@ -266,7 +280,7 @@ function updateCategorySelect(containerOrRow, type) {
     document.querySelectorAll('.tx-item').forEach(r => r.style.zIndex = '');
 
     if (isClosed) {
-      row.style.zIndex = '30';
+      row.style.zIndex = '50';
       smartPositionDropdown(menu, btn);
       menu.classList.remove('hidden');
       if (typeof lucide !== 'undefined') lucide.createIcons();
@@ -281,10 +295,10 @@ function updateCategorySelect(containerOrRow, type) {
       const catName = itemBtn.dataset.cat;
       const catIcon = itemBtn.dataset.icon;
       input.value = catName;
-      label.innerHTML = `<i data-lucide="${catIcon}" class="w-4 h-4 mr-1.5 inline-block align-text-bottom"></i> ${escapeHtml(catName)}`;
+      label.innerHTML = `<span class="inline-flex items-center gap-1.5 text-xs text-gray-200 font-normal truncate min-w-0"><i data-lucide="${catIcon}" class="w-3.5 h-3.5 text-[#848D99] flex-shrink-0"></i><span class="truncate">${escapeHtml(catName)}</span></span>`;
       if (typeof lucide !== 'undefined') lucide.createIcons();
-      label.classList.remove('text-gray-400');
-      label.classList.add('text-white');
+      label.classList.remove('text-gray-400', 'text-white');
+      label.classList.add('text-gray-200');
       menu.classList.add('hidden');
       row.style.zIndex = '';
     };
@@ -318,6 +332,82 @@ function smartPositionDropdown(menu, triggerBtn) {
 // ==========================================
 // 3. Transactions Form (Создание и редактирование)
 // ==========================================
+function updateTxSubmitBtnText() {
+  const submitBtn = document.getElementById('tx-submit-btn');
+  if (!submitBtn) return;
+  const rows = document.querySelectorAll('#tx-items-list .tx-item');
+  if (rows.length <= 1) {
+    submitBtn.textContent = 'Сохранить';
+  } else {
+    submitBtn.textContent = 'Сохранить все';
+  }
+}
+
+function updateTxRowRemoveButtons() {
+  const rows = document.querySelectorAll('#tx-items-list .tx-item');
+  rows.forEach((r, idx) => {
+    const btn = r.querySelector('.tx-remove-row-btn');
+    if (btn) {
+      if (idx === 0) {
+        btn.classList.add('hidden');
+      } else {
+        btn.classList.remove('hidden');
+      }
+    }
+  });
+}
+
+function removeTxRow(btn) {
+  const row = btn.closest('.tx-item');
+  if (!row) return;
+  const list = document.getElementById('tx-items-list');
+  if (!list) return;
+  const allRows = Array.from(list.querySelectorAll('.tx-item'));
+  if (allRows.length <= 1) return;
+
+  // Блокируем кнопку от повторных нажатий во время анимации
+  btn.disabled = true;
+
+  // Считываем точную величину скролла, добавленную при создании именно этой карточки
+  const recordedDiff = parseFloat(row.dataset.scrollDiff) || 0;
+  const scrollAmount = Math.min(window.scrollY, Math.max(0, recordedDiff));
+
+  // Фиксируем исходную высоту перед стартом CSS-перехода, чтобы исключить задержки и рывки
+  row.style.maxHeight = row.offsetHeight + 'px';
+  row.style.boxSizing = 'border-box';
+  row.style.overflow = 'hidden';
+
+  // В следующем кадре запускаем эстетичный iOS-слайд и схлопывание
+  requestAnimationFrame(() => {
+    row.classList.add('tx-item-removing');
+
+    // Плавный синхронизированный обратный скролл ровно на добавленную дистанцию
+    if (scrollAmount > 4) {
+      setTimeout(() => {
+        window.scrollBy({ top: -scrollAmount, behavior: 'smooth' });
+      }, 40);
+    }
+  });
+
+  // Очистка DOM строго по завершению анимации
+  let cleaned = false;
+  const cleanup = () => {
+    if (cleaned) return;
+    cleaned = true;
+    row.remove();
+    updateTxSubmitBtnText();
+    updateTxRowRemoveButtons();
+  };
+
+  row.addEventListener('transitionend', (e) => {
+    if (e.propertyName === 'max-height') {
+      cleanup();
+    }
+  }, { once: true });
+
+  setTimeout(cleanup, 360);
+}
+
 function addTxRow() {
   const clone = document.getElementById('tx-row-template').content.cloneNode(true);
   const uid = 'type_' + Math.random().toString(36).substr(2, 9);
@@ -351,11 +441,54 @@ function addTxRow() {
 
   if (prevRow && prevType === currentType) {
     const prevCat = prevRow.querySelector('.tx-category').value;
-    if (prevCat) select.value = prevCat;
+    if (prevCat) {
+      select.value = prevCat;
+      const catList = currentType === 'Доход' ? (Cache.categories?.income || []) : (Cache.categories?.expense || []);
+      const foundCat = catList.find(c => c.name === prevCat);
+      const icon = foundCat && foundCat.icon && foundCat.icon !== '📦' ? foundCat.icon : 'tag';
+      const rowLabel = row.querySelector('.tx-category-label');
+      if (rowLabel) {
+        rowLabel.innerHTML = `<span class="inline-flex items-center gap-1.5 text-xs text-gray-200 font-normal truncate min-w-0"><i data-lucide="${icon}" class="w-3.5 h-3.5 text-[#848D99] flex-shrink-0"></i><span class="truncate">${escapeHtml(prevCat)}</span></span>`;
+        rowLabel.classList.remove('text-gray-400', 'text-white');
+        rowLabel.classList.add('text-gray-200');
+      }
+    }
   }
 
   row.classList.add('tx-enter-animated');
   document.getElementById('tx-items-list').appendChild(row);
+
+  if (typeof lucide !== 'undefined' && typeof lucide.createIcons === 'function') {
+    lucide.createIcons();
+  }
+
+  updateTxSubmitBtnText();
+  updateTxRowRemoveButtons();
+
+  // Если операция добавлена кнопкой "+ Добавить еще транзакцию", плавно скроллим к новой транзакции (сбалансированное расстояние)
+  if (existingRows.length > 0) {
+    setTimeout(() => {
+      const addBtn = document.getElementById('add-tx-row-btn');
+      if (addBtn && typeof addBtn.blur === 'function') {
+        addBtn.blur();
+      }
+
+      // Баланс скролла: плавно прокручиваем окно так, чтобы новая строка и кнопка добавления были идеально видны
+      const rect = row.getBoundingClientRect();
+      const targetOffset = 130; // оптимальный отступ от нижнего края экрана
+      const currentBottom = rect.bottom;
+      const desiredBottom = window.innerHeight - targetOffset;
+      const diff = currentBottom - desiredBottom;
+
+      if (diff > 0) {
+        row.dataset.scrollDiff = String(Math.round(diff));
+        window.scrollBy({ top: diff, behavior: 'smooth' });
+      } else {
+        row.dataset.scrollDiff = '0';
+        row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }, 70);
+  }
 }
 
 function submitTransactions(e) {
@@ -740,6 +873,75 @@ async function submitEditTxModal(e) {
   const excludeFromBudget = (type === 'Расход') && (isBillPayment || isOneTimeBill || !!document.getElementById('edit-tx-exclude-budget')?.checked);
   const spreadMonths = (excludeFromBudget && (isOneTimeBill || !isBillPayment)) ? (parseInt(document.getElementById('edit-tx-spread-months')?.value, 10) || (bill ? parseInt(bill.spreadMonths, 10) : 1) || 3) : 1;
 
+  const tempTxId = id || `opt_tx_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+  const isNew = !id;
+
+  // 1. Получаем плоский список и сохраняем временную метку дня при редактировании
+  const allFlat = typeof getAllCachedTransactionsFlat === 'function' ? getAllCachedTransactionsFlat() : [];
+  let itemTimestamp = parsedDate.getTime();
+  if (id) {
+    const existing = allFlat.find(t => t.id === id);
+    if (existing && existing.timestamp && (existing.formattedDate === formatDateStr(parsedDate, 'dd.MM.yyyy') || existing.date === date)) {
+      itemTimestamp = existing.timestamp;
+    }
+  }
+
+  // 2. Формируем локальный объект транзакции
+  const txObj = {
+    id: tempTxId,
+    type,
+    amount,
+    category,
+    date,
+    formattedDate: (typeof formatDateStr === 'function') ? formatDateStr(parsedDate, 'dd.MM.yyyy') : date,
+    rawDate: date,
+    comment: comment || billName || '',
+    excludeFromBudget: !!excludeFromBudget,
+    spreadMonths,
+    isBillPayment: !!effectiveIsBillPayment,
+    billId: billId || null,
+    billName: billName || '',
+    billType: isOneTimeBill ? 'onetime' : (effectiveIsBillPayment ? 'recurring' : ''),
+    timestamp: itemTimestamp
+  };
+
+  // 3. Мгновенно обновляем локальный кэш Cache в 0мс
+  if (id) {
+    const idx = allFlat.findIndex(t => t.id === id);
+    if (idx !== -1) allFlat[idx] = { ...allFlat[idx], ...txObj };
+    else allFlat.unshift(txObj);
+  } else {
+    allFlat.unshift(txObj);
+    window.lastAddedTxIds = [tempTxId];
+    window.lastAddedTxTime = Date.now();
+  }
+
+  if (typeof processTransactions === 'function') {
+    Cache.transactions = processTransactions(allFlat);
+  }
+
+  if (billId) {
+    const bill = (Cache?.calendarBills || []).find(b => b.id === billId);
+    if (bill) {
+      const monthKey = (typeof formatDateStr === 'function') ? formatDateStr(parsedDate, 'yyyy-MM') : '2026-09';
+      const paidMonths = { ...(bill.paidMonths || {}) };
+      paidMonths[monthKey] = { paid: true, txId: tempTxId, amount: parseFloat(amount) || 0 };
+      bill.isPaid = true;
+      bill.linkedTxId = tempTxId;
+      bill.paidMonths = paidMonths;
+    }
+  }
+
+  // 3. Мгновенно закрываем модалку и перерисовываем интерфейс (0мс)
+  closeEditTxModal();
+  if (typeof markTabsDirty === 'function') markTabsDirty();
+  if (typeof renderBudgetTab === 'function') renderBudgetTab();
+  if (typeof renderTransactions === 'function') renderTransactions();
+
+  document.getElementById('toast-container')?.classList.add('hidden');
+  showToast(id ? 'Операция сохранена' : (isBillPayment ? `Оплата «${billName || 'Счет'}» создана` : 'Операция создана'));
+
+  // 4. Фоновая отправка в Firestore
   try {
     if (id) {
       // 1. Обновление существующей транзакции
@@ -758,7 +960,7 @@ async function submitEditTxModal(e) {
         updatedAt: Date.now()
       });
 
-      // Синхронизация с CalendarBills при исключении/распределении (если это не регулярный счет)
+      // Синхронизация с CalendarBills при исключении/распределении
       if (!isBillPayment) {
         const billCol = getUserCol('CalendarBills');
         const existingBill = (Cache.calendarBills || []).find(b => b.linkedTxId === id);
@@ -793,7 +995,7 @@ async function submitEditTxModal(e) {
         }
       }
     } else {
-      // 2. Создание новой транзакции
+      // 2. Создание новой транзакции в Firestore
       const newTxData = {
         type,
         amount,
@@ -812,9 +1014,15 @@ async function submitEditTxModal(e) {
       const txDocRef = await getUserCol('Transactions').add(newTxData);
       const newTxId = txDocRef.id;
       window.lastAddedTxIds = [newTxId];
-      window.lastAddedTxTime = Date.now();
 
-      // Если транзакция создана для оплаты счета из календаря:
+      // Бесшовно заменяем временный ID в памяти
+      const flatList = typeof getAllCachedTransactionsFlat === 'function' ? getAllCachedTransactionsFlat() : [];
+      const tempItem = flatList.find(t => t.id === tempTxId);
+      if (tempItem) tempItem.id = newTxId;
+      if (typeof processTransactions === 'function') {
+        Cache.transactions = processTransactions(flatList);
+      }
+
       if (billId) {
         const bill = (Cache?.calendarBills || []).find(b => b.id === billId);
         if (bill) {
@@ -832,29 +1040,19 @@ async function submitEditTxModal(e) {
             paidMonths: paidMonths,
             updatedAt: Date.now()
           });
-
-          bill.isPaid = true;
           bill.linkedTxId = newTxId;
-          bill.paidMonths = paidMonths;
         }
       }
     }
 
-    closeEditTxModal();
-
     if (typeof fetchCollection === 'function') {
-      fetchCollection('Transactions');
-      if (billId) fetchCollection('CalendarBills');
+      fetchCollection('Transactions').catch(() => {});
+      if (billId) fetchCollection('CalendarBills').catch(() => {});
     }
-
-    if (typeof renderBudgetTab === 'function') renderBudgetTab();
-    if (typeof renderTransactions === 'function') renderTransactions();
-
-    document.getElementById('toast-container')?.classList.add('hidden');
-    showToast(id ? 'Операция сохранена' : (isBillPayment ? `Оплата «${billName || 'Счет'}» создана` : 'Операция создана'));
   } catch (err) {
     console.error('Ошибка при сохранении операции:', err);
     showToast('Ошибка при сохранении: ' + (err.message || ''), true);
+    if (typeof fetchAllData === 'function') fetchAllData();
   }
 }
 
@@ -1168,6 +1366,148 @@ function getLargeExpenseThreshold() {
   return Math.round((weeklyBaseLimit * 2) / 3);
 }
 
+let _txInfiniteObserver = null;
+let _txPendingDayGroups = [];
+let _txRenderedDayCount = 0;
+const TX_DAYS_PER_CHUNK = 12;
+
+function renderTxRowHtml(tx, largeThreshold, hasDynamicThreshold) {
+  const isExp = tx.type === 'Расход';
+  const isOneTime = (tx.billType === 'onetime') || (tx.spreadMonths && parseInt(tx.spreadMonths, 10) > 1) || (!tx.isBillPayment && !!tx.excludeFromBudget);
+  const isBill = !isOneTime && (!!tx.isBillPayment || (!!tx.billId && tx.billType !== 'onetime'));
+  const isAmortized = isOneTime && !!tx.excludeFromBudget;
+  const isLarge = isExp && !isAmortized && !isBill && hasDynamicThreshold && (parseFloat(tx.amount) >= largeThreshold);
+
+  const isTxTabVisible = !document.getElementById('transactions-tab')?.classList.contains('hidden');
+  const isFresh = (Date.now() - (window.lastAddedTxTime || 0)) < 1800;
+  const isJustAdded = isTxTabVisible && isFresh && window.lastAddedTxIds && window.lastAddedTxIds.includes(tx.id);
+
+  const catArr = isExp ? (Cache.categories?.expense || []) : (Cache.categories?.income || []);
+  const catInfo = catArr.find(c => c.name === tx.category);
+  const iconStr = catInfo && catInfo.icon ? catInfo.icon : 'tag';
+  const iconBg = isExp 
+    ? 'bg-[#212430] text-[#9EA7B3] border border-[rgba(255,255,255,0.04)]' 
+    : 'bg-[#30D158]/10 text-[#30D158] border border-[#30D158]/20';
+
+  return `
+    <div class="card cursor-pointer w-full py-[13px] px-4 flex items-center justify-between ${isJustAdded ? 'tx-row-new' : ''}"
+         data-id="${tx.id}"
+         data-table="Transactions"
+         onclick="openTxContextMenu(event, '${tx.id}')">
+      
+      <input type="checkbox" class="select-checkbox hidden" data-id="${tx.id}">
+
+      <div class="flex items-center gap-3.5 min-w-0">
+         <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${iconBg}">
+            <i data-lucide="${iconStr}" class="w-[22px] h-[22px] stroke-[1.75px]"></i>
+         </div>
+         <div class="min-w-0 flex flex-col justify-center">
+           <div class="flex items-center gap-1.5">
+             <span class="text-[15px] font-semibold text-gray-200 truncate leading-snug">${escapeHtml(tx.category)}</span>
+             ${isBill ? `
+               <span class="px-1.5 py-0.5 rounded bg-[#6C5DD3]/15 text-[#a594fd] border border-[#6C5DD3]/25 text-[10px] font-medium flex items-center gap-1 flex-shrink-0 leading-none" title="Ежемесячный счет: ${escapeHtml(tx.billName || 'Счет')}">
+                 <i data-lucide="calendar" class="w-2.5 h-2.5"></i>Счет
+               </span>
+             ` : (isAmortized ? `
+               <span class="px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/25 text-[10px] font-medium flex items-center gap-1 flex-shrink-0 leading-none" title="Исключена из месячного лимита и распределена на ${tx.spreadMonths || 1} мес.">
+                 <i data-lucide="split" class="w-2.5 h-2.5"></i>${tx.spreadMonths || 1} мес
+               </span>
+             ` : (isLarge ? `
+               <span class="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center justify-center flex-shrink-0 leading-none" title="Крупная трата (от ${formatMoney(largeThreshold)})">
+                 <i data-lucide="flame" class="w-3 h-3 stroke-[2]"></i>
+               </span>
+             ` : ''))}
+           </div>
+           ${tx.comment ? `<span class="text-[12px] text-gray-500 truncate leading-tight">${escapeHtml(typeof cleanMerchantTitle === 'function' ? cleanMerchantTitle(tx.comment) : tx.comment)}</span>` : ''}
+         </div>
+      </div>
+
+     <div class="tx-amount flex-shrink-0 text-right font-medium ml-2 ${isExp ? 'text-gray-200' : 'text-[#30D158]'} text-[16px]">
+        ${isExp ? '-' : '+'}${formatMoney(tx.amount)}
+     </div>
+    </div>
+  `;
+}
+
+function appendTxChunk() {
+  const listEl = document.getElementById('transactions-list');
+  if (!listEl || !_txPendingDayGroups || _txPendingDayGroups.length === 0) {
+    const sentinel = document.getElementById('tx-infinite-sentinel');
+    if (sentinel) sentinel.remove();
+    return;
+  }
+
+  const nextGroups = _txPendingDayGroups.slice(_txRenderedDayCount, _txRenderedDayCount + TX_DAYS_PER_CHUNK);
+  if (nextGroups.length === 0) {
+    const sentinel = document.getElementById('tx-infinite-sentinel');
+    if (sentinel) sentinel.remove();
+    return;
+  }
+
+  _txRenderedDayCount += nextGroups.length;
+
+  const largeThreshold = getLargeExpenseThreshold();
+  const hasDynamicThreshold = isFinite(largeThreshold) && largeThreshold > 0;
+
+  const getRelativeDayName = (dateStr) => {
+    const d = new Date(dateStr.split('.').reverse().join('-'));
+    const tday = new Date(); tday.setHours(0, 0, 0, 0);
+    const yday = new Date(tday); yday.setDate(tday.getDate() - 1);
+    
+    if (d.getTime() === tday.getTime()) return 'Сегодня';
+    if (d.getTime() === yday.getTime()) return 'Вчера';
+    return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
+  };
+
+  const chunkHtml = nextGroups.map(group => `
+    <div class="mb-5">
+      <h3 class="font-semibold text-[#848D99] text-[13px] mb-2 px-1 tracking-wide">${getRelativeDayName(group.day)}</h3>
+      <div class="bg-[#181B24] border border-[rgba(255,255,255,0.06)] rounded-2xl overflow-hidden divide-y divide-[rgba(255,255,255,0.03)] shadow-sm">
+        ${group.items.map(tx => renderTxRowHtml(tx, largeThreshold, hasDynamicThreshold)).join('')}
+      </div>
+    </div>
+  `).join('');
+
+  // Удаляем старый sentinel перед добавлением новых элементов
+  const oldSentinel = document.getElementById('tx-infinite-sentinel');
+  if (oldSentinel) oldSentinel.remove();
+
+  const tempWrapper = document.createElement('div');
+  tempWrapper.innerHTML = chunkHtml;
+
+  const insertedNodes = [];
+  while (tempWrapper.firstChild) {
+    const child = tempWrapper.firstChild;
+    listEl.appendChild(child);
+    if (child.nodeType === 1) insertedNodes.push(child);
+  }
+
+  // Создаем иконки строго внутри вновь добавленного блока, не трогая весь документ!
+  if (typeof lucide !== 'undefined') {
+    insertedNodes.forEach(node => {
+      lucide.createIcons({ root: node });
+    });
+  }
+
+  // Если остались еще группы, вешаем сторож (sentinel) для плавной догрузки при скролле
+  if (_txRenderedDayCount < _txPendingDayGroups.length) {
+    const sentinel = document.createElement('div');
+    sentinel.id = 'tx-infinite-sentinel';
+    sentinel.className = 'py-4 flex items-center justify-center text-xs text-gray-500 min-h-[36px]';
+    listEl.appendChild(sentinel);
+
+    if (!_txInfiniteObserver) {
+      _txInfiniteObserver = new IntersectionObserver((entries) => {
+        if (entries[0] && entries[0].isIntersecting) {
+          appendTxChunk();
+        }
+      }, { rootMargin: '400px 0px' });
+    }
+    _txInfiniteObserver.disconnect();
+    _txInfiniteObserver.observe(sentinel);
+  }
+}
+
 function renderTransactions() {
   const data = Cache.transactions || [];
 
@@ -1213,6 +1553,9 @@ function renderTransactions() {
       `;
     });
     catMenu.innerHTML = cHtml;
+    if (typeof lucide !== 'undefined') {
+      lucide.createIcons({ root: catMenu });
+    }
   }
 
   let filteredMonths = data.map(m => {
@@ -1260,97 +1603,40 @@ function renderTransactions() {
     else incEl.innerText = formatMoney(totalInc);
   }
 
+  const listEl = document.getElementById('transactions-list');
+  if (!listEl) return;
+
+  if (_txInfiniteObserver) {
+    _txInfiniteObserver.disconnect();
+  }
+
   if (filteredMonths.length === 0) {
-    document.getElementById('transactions-list').innerHTML = '<div class="text-center text-gray-500 py-10 text-[13px]">Операции не найдены</div>';
-    if (typeof lucide !== 'undefined') lucide.createIcons();
+    listEl.innerHTML = '<div class="text-center text-gray-500 py-10 text-[13px]">Операции не найдены</div>';
     return;
   }
 
-  const getRelativeDayName = (dateStr) => {
-    const d = new Date(dateStr.split('.').reverse().join('-'));
-    const tday = new Date(); tday.setHours(0, 0, 0, 0);
-    const yday = new Date(tday); yday.setDate(tday.getDate() - 1);
-    
-    if (d.getTime() === tday.getTime()) return 'Сегодня';
-    if (d.getTime() === yday.getTime()) return 'Вчера';
-    return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
-  };
+  // Формируем плоский массив групп по дням для мгновенной постраничной отрисовки
+  _txPendingDayGroups = [];
+  _txRenderedDayCount = 0;
 
-  const largeThreshold = getLargeExpenseThreshold();
-  const hasDynamicThreshold = isFinite(largeThreshold) && largeThreshold > 0;
-
-  document.getElementById('transactions-list').innerHTML = filteredMonths.map(month => {
+  filteredMonths.forEach(month => {
     const daysObj = {};
     month.items.forEach(tx => { 
-       if (!daysObj[tx.formattedDate]) daysObj[tx.formattedDate] = [];
-       daysObj[tx.formattedDate].push(tx);
+      if (!daysObj[tx.formattedDate]) daysObj[tx.formattedDate] = [];
+      daysObj[tx.formattedDate].push(tx);
     });
 
-    return Object.keys(daysObj).map(day => `
-      <div class="mb-5">
-        <h3 class="font-semibold text-[#848D99] text-[13px] mb-2 px-1 tracking-wide">${getRelativeDayName(day)}</h3>
-        <div class="bg-[#181B24] border border-[rgba(255,255,255,0.06)] rounded-2xl overflow-hidden divide-y divide-[rgba(255,255,255,0.03)] shadow-sm">
-          ${daysObj[day].map(tx => {
-            const isExp = tx.type === 'Расход';
-            const isOneTime = (tx.billType === 'onetime') || (tx.spreadMonths && parseInt(tx.spreadMonths, 10) > 1) || (!tx.isBillPayment && !!tx.excludeFromBudget);
-            const isBill = !isOneTime && (!!tx.isBillPayment || (!!tx.billId && tx.billType !== 'onetime'));
-            const isAmortized = isOneTime && !!tx.excludeFromBudget;
-            const isLarge = isExp && !isAmortized && !isBill && hasDynamicThreshold && (parseFloat(tx.amount) >= largeThreshold);
+    Object.keys(daysObj).forEach(day => {
+      _txPendingDayGroups.push({
+        day,
+        monthId: month.id,
+        items: daysObj[day]
+      });
+    });
+  });
 
-            const isTxTabVisible = !document.getElementById('transactions-tab')?.classList.contains('hidden');
-            const isFresh = (Date.now() - (window.lastAddedTxTime || 0)) < 1800;
-            const isJustAdded = isTxTabVisible && isFresh && window.lastAddedTxIds && window.lastAddedTxIds.includes(tx.id);
-
-            const catArr = isExp ? Cache.categories.expense : Cache.categories.income;
-            const catInfo = catArr.find(c => c.name === tx.category);
-            const iconStr = catInfo && catInfo.icon ? catInfo.icon : 'tag';
-            const iconBg = isExp 
-              ? 'bg-[#212430] text-[#9EA7B3] border border-[rgba(255,255,255,0.04)]' 
-              : 'bg-[#30D158]/10 text-[#30D158] border border-[#30D158]/20';
-
-            return `
-              <div class="card cursor-pointer w-full py-[13px] px-4 flex items-center justify-between ${isJustAdded ? 'tx-row-new' : ''}"
-                   data-id="${tx.id}"
-                   data-table="Transactions"
-                   onclick="openTxContextMenu(event, '${tx.id}')">
-                
-                <input type="checkbox" class="select-checkbox hidden" data-id="${tx.id}">
-
-                <div class="flex items-center gap-3.5 min-w-0">
-                   <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${iconBg}">
-                      <i data-lucide="${iconStr}" class="w-[22px] h-[22px] stroke-[1.75px]"></i>
-                   </div>
-                   <div class="min-w-0 flex flex-col justify-center">
-                     <div class="flex items-center gap-1.5">
-                       <span class="text-[15px] font-semibold text-gray-200 truncate leading-snug">${escapeHtml(tx.category)}</span>
-                       ${isBill ? `
-                         <span class="px-1.5 py-0.5 rounded bg-[#6C5DD3]/15 text-[#a594fd] border border-[#6C5DD3]/25 text-[10px] font-medium flex items-center gap-1 flex-shrink-0 leading-none" title="Ежемесячный счет: ${escapeHtml(tx.billName || 'Счет')}">
-                           <i data-lucide="calendar" class="w-2.5 h-2.5"></i>Счет
-                         </span>
-                       ` : (isAmortized ? `
-                         <span class="px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/25 text-[10px] font-medium flex items-center gap-1 flex-shrink-0 leading-none" title="Исключена из месячного лимита и распределена на ${tx.spreadMonths || 1} мес.">
-                           <i data-lucide="split" class="w-2.5 h-2.5"></i>${tx.spreadMonths || 1} мес
-                         </span>
-                       ` : (isLarge ? `
-                         <span class="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center justify-center flex-shrink-0 leading-none" title="Крупная трата (от ${formatMoney(largeThreshold)})">
-                           <i data-lucide="flame" class="w-3 h-3 stroke-[2]"></i>
-                         </span>
-                       ` : ''))}
-                     </div>
-                     ${tx.comment ? `<span class="text-[12px] text-gray-500 truncate leading-tight">${escapeHtml(typeof cleanMerchantTitle === 'function' ? cleanMerchantTitle(tx.comment) : tx.comment)}</span>` : ''}
-                   </div>
-                </div>
-
-               <div class="tx-amount flex-shrink-0 text-right font-medium ml-2 ${isExp ? 'text-gray-200' : 'text-[#30D158]'} text-[16px]">
-                  ${isExp ? '-' : '+'}${formatMoney(tx.amount)}
-               </div>
-              </div>
-            `;
-          }).join('')}
-        </div>
-      </div>
-    `).join('');
-  }).join('');
+  listEl.innerHTML = '';
+  appendTxChunk();
 
   if (window.lastAddedTxIds) {
     setTimeout(() => {
@@ -1358,8 +1644,6 @@ function renderTransactions() {
       window.lastAddedTxIds = null;
     }, 1250);
   }
-
-  if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
 // ==========================================
@@ -1413,9 +1697,9 @@ function buildCharts() {
           label: 'Доходы',
           data: incomes,
           backgroundColor: 'rgba(48, 209, 88, 0.78)',
-          hoverBackgroundColor: '#30D158',
+          hoverBackgroundColor: '#34D35B',
           borderColor: '#30D158',
-          hoverBorderColor: '#ffffff',
+          hoverBorderColor: 'rgba(94, 235, 135, 0.95)',
           borderWidth: 0,
           hoverBorderWidth: 1.5,
           borderRadius: 7,
@@ -1427,9 +1711,9 @@ function buildCharts() {
           label: 'Расходы',
           data: expenses,
           backgroundColor: 'rgba(255, 69, 58, 0.78)',
-          hoverBackgroundColor: '#FF453A',
+          hoverBackgroundColor: '#FF4A3F',
           borderColor: '#FF453A',
-          hoverBorderColor: '#ffffff',
+          hoverBorderColor: 'rgba(255, 120, 110, 0.95)',
           borderWidth: 0,
           hoverBorderWidth: 1.5,
           borderRadius: 7,
@@ -1442,16 +1726,12 @@ function buildCharts() {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      animation: { duration: 450, easing: 'easeOutQuart' },
-      interaction: { mode: 'nearest', intersect: false },
+      animation: { duration: 650, easing: 'easeOutQuart' },
+      interaction: { mode: 'point', intersect: true },
       onClick: (e, elements, chart) => {
-        const items = chart.getElementsAtEventForMode(e.native || e, 'nearest', { intersect: false }, false);
-        const y = e.y !== undefined ? e.y : (e.native ? e.native.offsetY : 0);
-
-        const el = items[0]?.element;
-        const isNearBar = el && y >= (Math.min(el.y, el.base) - 25) && y <= (Math.max(el.y, el.base) + 15);
-
-        if (!items.length || !isNearBar) {
+        // Если кликнули мимо столбцов (в пустую область графика) — закрываем тултип и снимаем подсветку
+        if (!elements || elements.length === 0) {
+          chart._activeElementKey = null;
           chart._activeMonthIndex = -1;
           chart.setActiveElements([]);
           chart.tooltip.setActiveElements([], { x: 0, y: 0 });
@@ -1459,23 +1739,33 @@ function buildCharts() {
           return;
         }
 
-        const clickedIdx = items[0].index;
+        const clickedEl = elements[0];
+        const datasetIdx = clickedEl.datasetIndex; // 0 — Доходы, 1 — Расходы
+        const monthIdx = clickedEl.index;
+        const elementKey = `${datasetIdx}_${monthIdx}`;
 
-        if (chart._activeMonthIndex === clickedIdx) {
+        // Повторный клик по тому же столбцу — снимаем выделение
+        if (chart._activeElementKey === elementKey) {
+          chart._activeElementKey = null;
           chart._activeMonthIndex = -1;
           chart.setActiveElements([]);
           chart.tooltip.setActiveElements([], { x: 0, y: 0 });
           chart.update();
-        } else {
-          chart._activeMonthIndex = clickedIdx;
-          const activeItems = [
-            { datasetIndex: 0, index: clickedIdx },
-            { datasetIndex: 1, index: clickedIdx }
-          ];
-          chart.setActiveElements(activeItems);
-          chart.tooltip.setActiveElements(activeItems, { x: el.x, y: el.y });
-          chart.update();
+          return;
         }
+
+        // Выделяем именно нажатый столбец (только его!)
+        chart._activeElementKey = elementKey;
+        chart._activeMonthIndex = monthIdx;
+        const activeItems = [{ datasetIndex: datasetIdx, index: monthIdx }];
+        chart.setActiveElements(activeItems);
+
+        const targetEl = chart.getDatasetMeta(datasetIdx)?.data?.[monthIdx] || clickedEl.element;
+        chart.tooltip.setActiveElements(activeItems, {
+          x: targetEl.x,
+          y: Math.max(12, targetEl.y)
+        });
+        chart.update();
       },
       scales: {
         x: {
@@ -1519,12 +1809,27 @@ function updateAnalyticsMonthView() {
 
   const labelEl = document.getElementById('analytics-month-label');
   if (labelEl) labelEl.textContent = cur.label;
+
   const prevBtn = document.getElementById('prev-month-btn');
-  if (prevBtn) prevBtn.disabled = (currentAnalyticsMonthIndex >= months.length - 1);
   const nextBtn = document.getElementById('next-month-btn');
-  if (nextBtn) nextBtn.disabled = (currentAnalyticsMonthIndex <= 0);
+
+  const hasPrev = currentAnalyticsMonthIndex < months.length - 1;
+  const hasNext = currentAnalyticsMonthIndex > 0;
+
+  if (prevBtn) {
+    prevBtn.classList.toggle('invisible', !hasPrev);
+    prevBtn.disabled = !hasPrev;
+  }
+  if (nextBtn) {
+    nextBtn.classList.toggle('invisible', !hasNext);
+    nextBtn.disabled = !hasNext;
+  }
 
   updateAnalyticsForMonth(cur.id);
+
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
+  }
 }
 
 function changeAnalyticsMonth(direction) {
@@ -1567,6 +1872,64 @@ function switchStructureType(type) {
   }
 }
 
+let currentDonutEntries = [];
+let currentDonutTotal = 0;
+let currentDonutColors = [];
+
+// Функция сброса выбора сектора круговой диаграммы
+function resetCategoryDonutCenter() {
+  const centerLabelEl = document.getElementById('donut-center-label');
+  const totalEl = document.getElementById('category-total');
+  const defaultLabel = currentStructureType === 'Расход' ? 'Расходы' : 'Доходы';
+
+  if (centerLabelEl) {
+    centerLabelEl.textContent = defaultLabel;
+    centerLabelEl.style.color = '';
+  }
+  if (totalEl) {
+    totalEl.textContent = formatMoney(currentDonutTotal);
+  }
+  document.querySelectorAll('.category-legend__item').forEach(el => el.classList.remove('is-selected'));
+  if (categoryChartObj) {
+    categoryChartObj._activeSliceIdx = -1;
+    categoryChartObj.setActiveElements([]);
+    categoryChartObj.update();
+  }
+}
+
+// Функция интерактивного выбора сектора круговой диаграммы
+function selectCategorySlice(idx) {
+  if (!categoryChartObj || !currentDonutEntries[idx]) return;
+
+  if (categoryChartObj._activeSliceIdx === idx) {
+    resetCategoryDonutCenter();
+    return;
+  }
+
+  categoryChartObj._activeSliceIdx = idx;
+  categoryChartObj.setActiveElements([{ datasetIndex: 0, index: idx }]);
+  categoryChartObj.update();
+
+  const [catLabel, catVal] = currentDonutEntries[idx];
+  const pct = currentDonutTotal ? Math.round(catVal / currentDonutTotal * 100) : 0;
+  const col = currentDonutColors[idx % currentDonutColors.length];
+
+  const centerLabelEl = document.getElementById('donut-center-label');
+  const totalEl = document.getElementById('category-total');
+
+  if (centerLabelEl) {
+    centerLabelEl.textContent = `${catLabel} (${pct}%)`;
+    centerLabelEl.style.color = col;
+  }
+  if (totalEl) {
+    totalEl.textContent = formatMoney(catVal);
+  }
+
+  document.querySelectorAll('.category-legend__item').forEach((item, i) => {
+    item.classList.toggle('is-selected', i === idx);
+  });
+}
+
 function updateAnalyticsForMonth(monthId) {
   const month = Cache.transactions?.find(m => m.id === monthId);
   if (!month) return;
@@ -1601,16 +1964,24 @@ function updateAnalyticsForMonth(monthId) {
     : ['#30D158', '#32ADE6', '#FF9F0A', '#64D2FF'];
   const total = data.reduce((sum, value) => sum + value, 0);
 
+  currentDonutEntries = entries;
+  currentDonutTotal = total;
+  currentDonutColors = colors;
+
   const totalEl = document.getElementById('category-total');
   const centerLabelEl = document.getElementById('donut-center-label');
   const legendEl = document.getElementById('category-legend');
-  
+
+  const defaultLabel = currentStructureType === 'Расход' ? 'Расходы' : 'Доходы';
   if (totalEl) totalEl.textContent = formatMoney(total);
-  if (centerLabelEl) centerLabelEl.textContent = currentStructureType === 'Расход' ? 'Расходы' : 'Доходы';
+  if (centerLabelEl) {
+    centerLabelEl.textContent = defaultLabel;
+    centerLabelEl.style.color = '';
+  }
 
   if (legendEl) {
     legendEl.innerHTML = entries.length ? entries.map(([label, value], i) => `
-      <div class="category-legend__item">
+      <div class="category-legend__item" onclick="selectCategorySlice(${i})">
         <span class="category-legend__dot" style="background:${colors[i % colors.length]}"></span>
         <span class="category-legend__name">${escapeHtml(label)}</span>
         <span class="category-legend__value">${formatMoney(value)}</span>
@@ -1620,63 +1991,96 @@ function updateAnalyticsForMonth(monthId) {
 
   const canvas = document.getElementById('categoryExpensesChart');
   if (!canvas) return;
+
   const ctx = canvas.getContext('2d');
-  if (categoryChartObj) categoryChartObj.destroy();
-  
-  categoryChartObj = new Chart(ctx, {
-    type: 'doughnut',
-    data: {
-      labels: data.length ? labels : ['Нет данных'],
-      datasets: [{
-        data: data.length ? data : [1],
-        backgroundColor: data.length ? colors.slice(0, data.length) : ['#303740'],
-        borderColor: '#171d24',
-        borderWidth: 3,
-        hoverOffset: 8,
-        hoverBorderColor: '#ffffff',
-        hoverBorderWidth: 2
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      cutout: '72%',
-      animation: { duration: 350 },
-      onClick: (e, elements, chart) => {
-        if (!elements || elements.length === 0) {
-          chart.setActiveElements([]);
-          chart.tooltip.setActiveElements([], { x: 0, y: 0 });
-          chart.update();
-          return;
-        }
 
-        const clickedIdx = elements[0].index;
-        const currentActive = chart.getActiveElements();
+  if (categoryChartObj && categoryChartObj.ctx && categoryChartObj.ctx.canvas === canvas) {
+    categoryChartObj._activeSliceIdx = -1;
+    categoryChartObj.setActiveElements([]);
+    categoryChartObj.data.labels = data.length ? labels : ['Нет данных'];
+    categoryChartObj.data.datasets[0].data = data.length ? data : [1];
+    categoryChartObj.data.datasets[0].backgroundColor = data.length ? colors.slice(0, data.length) : ['#303740'];
+    
+    // Мгновенно обнуляем дугу без анимации
+    categoryChartObj.options.circumference = 0;
+    categoryChartObj.update('none');
 
-        if (currentActive.length > 0 && currentActive[0].index === clickedIdx) {
-          chart.setActiveElements([]);
-          chart.tooltip.setActiveElements([], { x: 0, y: 0 });
-          chart.update();
-        } else {
-          chart.setActiveElements([{ datasetIndex: 0, index: clickedIdx }]);
-          chart.tooltip.setActiveElements([{ datasetIndex: 0, index: clickedIdx }], {
-            x: elements[0].element.x,
-            y: elements[0].element.y
-          });
-          chart.update();
-        }
+    // Запускаем плавное красивое круговое заполнение на 360 градусов
+    requestAnimationFrame(() => {
+      if (categoryChartObj) {
+        categoryChartObj.options.circumference = 360;
+        categoryChartObj.update();
+      }
+    });
+  } else {
+    if (categoryChartObj) categoryChartObj.destroy();
+
+    categoryChartObj = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: data.length ? labels : ['Нет данных'],
+        datasets: [{
+          data: data.length ? data : [1],
+          backgroundColor: data.length ? colors.slice(0, data.length) : ['#303740'],
+          borderColor: '#171d24',
+          borderWidth: 3,
+          hoverOffset: 8,
+          hoverBorderColor: 'rgba(255,255,255,0.92)',
+          hoverBorderWidth: 2
+        }]
       },
-      plugins: {
-        legend: { display: false },
-        datalabels: { display: false },
-        tooltip: {
-          backgroundColor: '#1b222a', borderColor: 'rgba(255,255,255,.10)', borderWidth: 1,
-          titleColor: '#fff', bodyColor: '#c9ced5', padding: 10, cornerRadius: 11,
-          callbacks: { label: context => `${context.label}: ${formatMoney(context.raw)}` }
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: {
+          padding: 14 // Защитный отступ от краев canvas, чтобы выделенный верхний/боковые сегменты не обрезались
+        },
+        cutout: '72%',
+        rotation: -90,
+        circumference: 0,
+        animation: {
+          duration: 750,
+          easing: 'easeOutQuart'
+        },
+        interaction: {
+          mode: 'nearest',
+          intersect: true
+        },
+        onClick: (e, elements, chart) => {
+          let clickedElements = elements;
+          if (!clickedElements || !clickedElements.length) {
+            clickedElements = chart.getElementsAtEventForMode(
+              e.native || e,
+              'nearest',
+              { intersect: true },
+              false
+            );
+          }
+          if (!clickedElements || !clickedElements.length) {
+            window.resetCategoryDonutCenter();
+            return;
+          }
+          const clickedIdx = clickedElements[0].index;
+          window.selectCategorySlice(clickedIdx);
+        },
+        plugins: {
+          legend: { display: false },
+          datalabels: { display: false },
+          tooltip: {
+            enabled: false
+          }
         }
       }
-    }
-  });
+    });
+
+    // Запускаем первичное круговое заполнение на 360 градусов
+    requestAnimationFrame(() => {
+      if (categoryChartObj) {
+        categoryChartObj.options.circumference = 360;
+        categoryChartObj.update();
+      }
+    });
+  }
 
   window.categoryChartObj = categoryChartObj;
 }
@@ -1750,6 +2154,9 @@ window.updateCategorySelect = updateCategorySelect;
 window.smartPositionDropdown = smartPositionDropdown;
 
 window.addTxRow = addTxRow;
+window.removeTxRow = removeTxRow;
+window.updateTxSubmitBtnText = updateTxSubmitBtnText;
+window.updateTxRowRemoveButtons = updateTxRowRemoveButtons;
 window.submitTransactions = submitTransactions;
 window.editTx = editTx;
 window.openTxContextMenu = openTxContextMenu;
@@ -1775,6 +2182,7 @@ window.selectEditTxCategory = selectEditTxCategory;
 window.toggleCustomFilterMenu = toggleCustomFilterMenu;
 window.selectFilterValue = selectFilterValue;
 window.renderTransactions = renderTransactions;
+window.appendTxChunk = appendTxChunk;
 window.getLargeExpenseThreshold = getLargeExpenseThreshold;
 
 window.switchTransactionView = switchTransactionView;
@@ -1783,3 +2191,5 @@ window.updateAnalyticsMonthView = updateAnalyticsMonthView;
 window.changeAnalyticsMonth = changeAnalyticsMonth;
 window.switchStructureType = switchStructureType;
 window.updateAnalyticsForMonth = updateAnalyticsForMonth;
+window.resetCategoryDonutCenter = resetCategoryDonutCenter;
+window.selectCategorySlice = selectCategorySlice;

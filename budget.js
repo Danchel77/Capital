@@ -28,9 +28,20 @@ function getAllCachedTransactionsFlat() {
   const list = [];
   (Cache?.transactions || []).forEach(m => {
     if (m && Array.isArray(m.items)) {
-      m.items.forEach(tx => list.push(tx));
+      m.items.forEach(tx => {
+        const item = { ...tx };
+        if (!item.date && (item.rawDate || item.formattedDate)) {
+          const parsed = typeof parseAnyDate === 'function' ? parseAnyDate(item.rawDate || item.formattedDate) : null;
+          if (parsed && !isNaN(parsed.getTime()) && typeof formatDateStr === 'function') {
+            item.date = formatDateStr(parsed, 'yyyy-MM-dd');
+          } else {
+            item.date = item.rawDate || item.formattedDate;
+          }
+        }
+        list.push(item);
+      });
     } else if (m && (m.type || m.amount !== undefined)) {
-      list.push(m);
+      list.push({ ...m });
     }
   });
   return list;
@@ -711,7 +722,7 @@ function renderBudgetGoals(goals, plan, bills, targetDate = getSelectedBudgetDat
                     title="Детализация темпа">
               ${badgeText}
             </button>
-            <div id="goal-pace-tooltip-${g.id}" class="goal-pace-tooltip hidden absolute right-0 bottom-full mb-2 z-50 w-56 bg-[#1E222D] border border-[rgba(255,255,255,0.15)] p-2.5 rounded-2xl shadow-2xl space-y-1.5 text-left pointer-events-auto" onclick="event.stopPropagation();" onmousedown="event.stopPropagation();" ontouchstart="event.stopPropagation();">
+            <div id="goal-pace-tooltip-${g.id}" class="goal-pace-tooltip hidden absolute right-0 z-50 w-56 bg-[#1E222D] border border-[rgba(255,255,255,0.15)] p-2.5 rounded-2xl shadow-2xl space-y-1.5 text-left pointer-events-auto" onclick="event.stopPropagation();" onmousedown="event.stopPropagation();" ontouchstart="event.stopPropagation();">
               <div class="flex items-center justify-between border-b border-[rgba(255,255,255,0.06)] pb-1.5">
                 <span class="text-[10px] font-bold text-white">Темп накоплений</span>
                 <span class="text-[10px] font-mono font-bold ${tooltipHeaderClass}">${badgeText}</span>
@@ -818,7 +829,8 @@ function renderBudgetCategoryLimits(monthItems = [], categoryLimits = {}) {
     else if (pct >= 80) barColor = 'bg-[#FF9F0A]';
 
     return `
-      <div class="py-3 flex items-center justify-between gap-3 cursor-pointer group hover:opacity-90 transition-opacity"
+      <div class="card cursor-pointer py-3 px-3 rounded-2xl flex items-center justify-between gap-3 group hover:opacity-90 transition-all"
+           data-budget-cat="${escapeHtml(catName)}"
            onclick="openCategoryLimitModal('${escapeHtml(catName)}', ${limit})">
         <div class="flex items-center gap-3 min-w-0 flex-1">
           <div class="w-8 h-8 rounded-xl bg-[#212430] text-gray-300 flex items-center justify-center flex-shrink-0">
@@ -1483,13 +1495,17 @@ function selectGoalIcon(iconName) {
   if (input) input.value = iconName;
 
   const display = document.getElementById('goal-modal-icon-display');
+  const btn = document.getElementById('goal-modal-icon-btn');
   const label = document.getElementById('goal-modal-icon-label');
   const iconsList = (typeof WIZARD_GOAL_ICONS !== 'undefined') ? WIZARD_GOAL_ICONS : [];
   const found = iconsList.find(i => i.name === iconName);
 
   if (display) {
     display.className = 'text-[#727cff] flex items-center justify-center transition-colors';
-    display.innerHTML = `<i data-lucide="${iconName}" class="w-5 h-5"></i>`;
+    display.innerHTML = `<i data-lucide="${iconName}" class="w-6 h-6"></i>`;
+  }
+  if (btn) {
+    btn.className = 'w-14 h-14 rounded-2xl bg-[#6C5DD3]/15 border border-[#6C5DD3]/40 flex items-center justify-center transition-all cursor-pointer shadow-inner active:scale-95 group flex-shrink-0';
   }
   if (label) {
     label.innerText = found ? found.label : 'Выбрать иконку';
@@ -1535,6 +1551,10 @@ function openGoalModal() {
 
   closeBudgetGoalIconPicker();
   selectGoalIcon('target');
+  const addGoalBtn = document.getElementById('goal-modal-icon-btn');
+  if (addGoalBtn) {
+    addGoalBtn.className = 'w-14 h-14 rounded-2xl bg-[#12151C] hover:bg-[#212430] border border-dashed border-[#727cff]/40 hover:border-[#727cff] flex items-center justify-center transition-all cursor-pointer shadow-inner active:scale-95 group flex-shrink-0';
+  }
 
   const dlg = document.getElementById('budget-goal-dialog');
   if (dlg) dlg.classList.remove('hidden');
@@ -1544,6 +1564,7 @@ function closeGoalModal() {
   const dlg = document.getElementById('budget-goal-dialog');
   if (dlg) dlg.classList.add('hidden');
   closeBudgetGoalIconPicker();
+  document.querySelectorAll('.card[data-table="Goals"].context-active').forEach(el => el.classList.remove('context-active'));
 }
 
 function openEditGoalModal(goalId) {
@@ -1551,6 +1572,10 @@ function openEditGoalModal(goalId) {
   if (window.isSelectionMode && window.isSelectionMode()) return;
   const goal = Cache?.goals?.find(g => g.id === goalId);
   if (!goal) return;
+
+  document.querySelectorAll('.card[data-table="Goals"].context-active').forEach(el => el.classList.remove('context-active'));
+  const goalCard = document.querySelector(`.card[data-table="Goals"][data-id="${goalId}"]`);
+  if (goalCard) goalCard.classList.add('context-active');
 
   document.getElementById('goal-edit-id').value = goal.id;
   document.getElementById('goal-name-input').value = goal.name;
@@ -1630,6 +1655,10 @@ function deleteBudgetGoal(goalId, goalName) {
 }
 
 function openGoalTopupModal(goalId, goalName) {
+  document.querySelectorAll('.card[data-table="Goals"].context-active').forEach(el => el.classList.remove('context-active'));
+  const goalCard = document.querySelector(`.card[data-table="Goals"][data-id="${goalId}"]`);
+  if (goalCard) goalCard.classList.add('context-active');
+
   activeTopupGoalId = goalId;
   const dlg = document.getElementById('goal-topup-dialog');
   const title = document.getElementById('goal-topup-title');
@@ -1642,6 +1671,7 @@ function openGoalTopupModal(goalId, goalName) {
 function closeGoalTopupModal() {
   const dlg = document.getElementById('goal-topup-dialog');
   if (dlg) dlg.classList.add('hidden');
+  document.querySelectorAll('.card[data-table="Goals"].context-active').forEach(el => el.classList.remove('context-active'));
   activeTopupGoalId = null;
 }
 
@@ -1736,10 +1766,10 @@ function resetWizGoalIconDisplay() {
 
   if (display) {
     display.className = 'text-gray-400 group-hover:text-[#727cff] flex items-center justify-center transition-colors';
-    display.innerHTML = '<i data-lucide="image-plus" class="w-5 h-5"></i>';
+    display.innerHTML = '<i data-lucide="image-plus" class="w-6 h-6"></i>';
   }
   if (btn) {
-    btn.className = 'w-12 h-12 rounded-2xl bg-[#212430] hover:bg-[#2A2D3C] border border-dashed border-[#727cff]/40 hover:border-[#727cff] flex items-center justify-center transition-all cursor-pointer shadow-inner active:scale-95 group';
+    btn.className = 'w-14 h-14 rounded-2xl bg-[#212430] hover:bg-[#2A2D3C] border border-dashed border-[#727cff]/40 hover:border-[#727cff] flex items-center justify-center transition-all cursor-pointer shadow-inner active:scale-95 group flex-shrink-0';
   }
   if (label) {
     label.innerText = 'Выбрать иконку';
@@ -1873,7 +1903,7 @@ function selectWizardGoalIcon(icon) {
     display.innerHTML = `<i data-lucide="${icon}" class="w-6 h-6"></i>`;
   }
   if (btn) {
-    btn.className = 'w-12 h-12 rounded-2xl bg-[#6C5DD3]/15 border border-[#6C5DD3]/40 flex items-center justify-center transition-all cursor-pointer shadow-inner active:scale-95 group';
+    btn.className = 'w-14 h-14 rounded-2xl bg-[#6C5DD3]/15 border border-[#6C5DD3]/40 flex items-center justify-center transition-all cursor-pointer shadow-inner active:scale-95 group flex-shrink-0';
   }
   if (label) {
     label.innerText = 'Изменить иконку';
@@ -2725,12 +2755,27 @@ function getCategoryCurrentMonthTransactions(categoryName, targetDate = getSelec
   const startOfMonth = new Date(d.getFullYear(), d.getMonth(), 1, 0, 0, 0, 0);
   const endOfMonth = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999);
   
+  const isOtherCategory = (categoryName === 'Прочие расходы' || categoryName === 'Прочие траты');
+  const plan = Cache?.budgetPlan || {};
+  const safeLimits = (plan && typeof plan.categoryLimits === 'object') ? plan.categoryLimits : {};
+  const specificLimitKeys = Object.keys(safeLimits).filter(k => {
+    const lim = parseFloat(safeLimits[k]);
+    return !isNaN(lim) && lim > 0 && k !== 'Прочие расходы' && k !== 'Прочие траты';
+  });
+
   const txList = [];
   (Cache.transactions || []).forEach(m => {
     (m.items || []).forEach(tx => {
       const isExpense = tx.type === 'Расход' || tx.type === 'expense' || String(tx.type || '').trim().toLowerCase() === 'расход';
       if (!isExpense) return;
-      if (tx.category !== categoryName) return;
+      if (tx.isBillPayment) return;
+
+      const txCat = (tx.category || 'Другое').trim() || 'Другое';
+      if (isOtherCategory) {
+        if (specificLimitKeys.includes(txCat) && txCat !== categoryName) return;
+      } else {
+        if (txCat !== categoryName) return;
+      }
 
       let txDate = null;
       if (tx.timestamp && typeof tx.timestamp === 'number') {
@@ -2756,14 +2801,20 @@ function getCategoryCurrentMonthTransactions(categoryName, targetDate = getSelec
 }
 
 function openCategoryLimitModal(catName, currentLimit) {
+  document.querySelectorAll('[data-budget-cat].context-active').forEach(el => el.classList.remove('context-active'));
+  const catCard = document.querySelector(`[data-budget-cat="${catName}"]`);
+  if (catCard) catCard.classList.add('context-active');
+
   activeEditCategory = catName;
   const dlg = document.getElementById('category-limit-dialog');
   const title = document.getElementById('category-limit-title');
   const inp = document.getElementById('category-limit-amount');
   const iconWrap = document.getElementById('category-limit-icon-wrap');
 
-  const catObj = Cache?.categories?.expense?.find(c => c.name === catName);
-  const iconName = catObj?.icon && catObj.icon !== '📦' ? catObj.icon : 'tag';
+  const catObj = Cache?.categories?.expense?.find(c => (typeof c === 'string' ? c : c?.name) === catName);
+  const iconName = (catObj && typeof catObj === 'object' && catObj.icon && catObj.icon !== '📦')
+    ? catObj.icon
+    : (typeof getCategoryIcon === 'function' ? getCategoryIcon(catName) : 'tag');
 
   if (title) title.innerText = catName;
   if (iconWrap) {
@@ -2787,6 +2838,7 @@ function closeCategoryLimitModal() {
     dlg.classList.add('hidden');
     if (typeof unlockBodyScroll === 'function') unlockBodyScroll();
   }
+  document.querySelectorAll('[data-budget-cat].context-active').forEach(el => el.classList.remove('context-active'));
   activeEditCategory = null;
 }
 
@@ -2861,11 +2913,14 @@ function renderCategoryLimitTransactions() {
     return;
   }
 
+  const isOther = (activeEditCategory === 'Прочие расходы' || activeEditCategory === 'Прочие траты');
+
   listEl.innerHTML = txList.map(tx => {
     const isExcluded = !!(tx.excludeFromBudget || tx.isExcludedFromBudget);
     const amountVal = typeof tx.amount === 'number' ? tx.amount : (parseFloat(String(tx.amount || 0).replace(/\s/g, '').replace(/,/g, '.')) || 0);
     const dateStr = tx.dateObj ? `${tx.dateObj.getDate()} ${['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'][tx.dateObj.getMonth()]}` : (tx.date || '');
     const comment = tx.comment ? escapeHtml(tx.comment) : 'Без комментария';
+    const catSubtitle = isOther && tx.category ? `${escapeHtml(tx.category)} · ` : '';
 
     return `
       <div class="p-2.5 rounded-xl bg-[#12151C] border border-[rgba(255,255,255,0.04)] flex items-center justify-between gap-2.5 transition-all ${isExcluded ? 'opacity-50' : 'hover:border-[rgba(255,255,255,0.1)]'}">
@@ -2878,7 +2933,7 @@ function renderCategoryLimitTransactions() {
             <div class="flex items-center gap-1.5">
               <span class="text-xs font-semibold text-gray-200 truncate ${isExcluded ? 'line-through text-gray-500' : ''}">${comment}</span>
             </div>
-            <span class="text-[10px] text-[#848D99] block">${dateStr}</span>
+            <span class="text-[10px] text-[#848D99] block">${catSubtitle}${dateStr}</span>
           </div>
         </label>
 
@@ -3156,9 +3211,40 @@ function toggleGoalPaceTooltip(goalId, event) {
   }
   const current = document.getElementById(`goal-pace-tooltip-${goalId}`);
   const isHidden = current ? current.classList.contains('hidden') : true;
-  document.querySelectorAll('.goal-pace-tooltip').forEach(el => el.classList.add('hidden'));
+  document.querySelectorAll('.goal-pace-tooltip').forEach(el => {
+    el.classList.add('hidden');
+    const card = el.closest('.card');
+    if (card) card.style.zIndex = '';
+  });
   if (current && isHidden) {
     current.classList.remove('hidden');
+    const card = current.closest('.card');
+    if (card) card.style.zIndex = '50';
+
+    // Проверка свободного места сверху (если сверху места мало, открываем снизу чипа)
+    const trigger = (event && (event.currentTarget || event.target?.closest('.goal-pace-badge'))) || current.parentElement?.querySelector('.goal-pace-badge');
+    const rect = trigger ? trigger.getBoundingClientRect() : null;
+    const tooltipHeight = current.offsetHeight || 135;
+
+    if (rect && rect.top < tooltipHeight + 16) {
+      current.classList.remove('bottom-full', 'mb-2');
+      current.classList.add('top-full', 'mt-2');
+    } else {
+      current.classList.remove('top-full', 'mt-2');
+      current.classList.add('bottom-full', 'mb-2');
+    }
+  }
+}
+
+// Функция скрытия всех тултипов темпа целей
+function hideGoalPaceTooltips() {
+  const visibleTooltips = document.querySelectorAll('.goal-pace-tooltip:not(.hidden)');
+  if (visibleTooltips.length > 0) {
+    visibleTooltips.forEach(el => {
+      el.classList.add('hidden');
+      const card = el.closest('.card');
+      if (card) card.style.zIndex = '';
+    });
   }
 }
 
@@ -3166,9 +3252,14 @@ function toggleGoalPaceTooltip(goalId, event) {
 if (typeof document !== 'undefined') {
   document.addEventListener('click', (e) => {
     if (!e.target.closest('.goal-pace-tooltip') && !e.target.closest('.goal-pace-badge')) {
-      document.querySelectorAll('.goal-pace-tooltip').forEach(el => el.classList.add('hidden'));
+      hideGoalPaceTooltips();
     }
   });
+}
+
+// Скрытие тултипов при скролле страницы или любого контейнера
+if (typeof window !== 'undefined') {
+  window.addEventListener('scroll', hideGoalPaceTooltips, { passive: true, capture: true });
 }
 
 function applyWizCategoryAvg(catName, avg) {
@@ -3536,6 +3627,7 @@ function openWizAvgDetailsModal(type, categoryName, isInitialOpen = true) {
     categoryName, 
     items, 
     monthFactor, 
+    effectivePeriodText,
     sortOrder: wizAvgCurrentContext?.sortOrder || 'date-desc',
     detectedCats: detectedCatsList
   };
@@ -3899,19 +3991,34 @@ function recalculateWizAvgModal() {
   const countEl = document.getElementById('wiz-avg-count-label');
   const sumEl = document.getElementById('wiz-avg-total-sum');
   const btnEl = document.getElementById('wiz-avg-apply-btn');
+  const periodEl = document.getElementById('wiz-avg-period-badge');
+  const typeLabelEl = document.getElementById('wiz-avg-type-label');
 
   if (resultEl) {
-    resultEl.innerText = `~${formatMoney(avg)}/мес`;
-    resultEl.className = ctx.type === 'income' ? 'text-lg font-bold font-mono text-[#30D158]' : 'text-lg font-bold font-mono text-[#727cff]';
+    resultEl.innerText = `~${formatMoney(avg)}`;
+    resultEl.className = ctx.type === 'income' 
+      ? 'text-base sm:text-lg font-bold font-mono text-[#30D158] whitespace-nowrap' 
+      : 'text-base sm:text-lg font-bold font-mono text-[#727cff] whitespace-nowrap';
   }
-  if (countEl) countEl.innerText = `(${wizAvgSelectedIds.size} из ${ctx.items.length} операций)`;
-  if (sumEl) sumEl.innerText = formatMoney(selectedSum);
+  if (typeLabelEl) {
+    typeLabelEl.innerText = ctx.type === 'income' ? 'Средний доход' : 'Среднее в месяц';
+  }
+  if (countEl) {
+    countEl.innerText = `${wizAvgSelectedIds.size} из ${ctx.items.length} оп.`;
+  }
+  if (sumEl) {
+    sumEl.innerText = formatMoney(selectedSum);
+  }
+  if (periodEl) {
+    periodEl.innerText = ctx.effectivePeriodText || (ctx.type === 'income' ? 'за 3 мес.' : 'за 90 дн.');
+  }
 
   if (btnEl) {
     btnEl.innerHTML = `<span>Применить среднее</span>`;
   }
 
   updateWizAvgToggleAllButton();
+  if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
 function toggleWizAvgIncomeCategory(catName, e) {

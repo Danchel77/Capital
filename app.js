@@ -187,17 +187,41 @@ document.addEventListener('mousedown', (e) => {
 });
 
 // Переключение основных экранов (Табов)
+const APP_MAIN_TABS = ['budget', 'transactions', 'deposits', 'broker'];
+
+function getCurrentActiveTab() {
+  return APP_MAIN_TABS.find(t => {
+    const el = document.getElementById(t + '-tab');
+    return el && !el.classList.contains('hidden');
+  }) || 'budget';
+}
+
 function switchTab(tab) {
+  if (typeof closeCardContextMenu === 'function') closeCardContextMenu();
   if (typeof disableSelectionMode === 'function') disableSelectionMode();
 
   // Удаляем любые остаточные классы анимации подсветки транзакций и сбрасываем ID
   document.querySelectorAll('.tx-row-new').forEach(el => el.classList.remove('tx-row-new'));
   window.lastAddedTxIds = null;
 
-  ['budget', 'transactions', 'deposits', 'broker'].forEach(t => {
+  APP_MAIN_TABS.forEach(t => {
     const el = document.getElementById(t + '-tab');
     const navBtn = document.getElementById('nav-' + t);
-    if (el) el.classList.add('hidden');
+    if (el) {
+      el.classList.add('hidden');
+      el.classList.remove('tab-enter-active');
+      el.style.transform = '';
+      el.style.transition = '';
+      el.style.position = '';
+      el.style.top = '';
+      el.style.left = '';
+      el.style.width = '';
+      el.style.backgroundColor = '';
+      el.style.zIndex = '';
+      el.style.minHeight = '';
+      el.style.opacity = '';
+      el.style.transformOrigin = '';
+    }
     if (navBtn) navBtn.classList.replace('text-blue-400', 'text-gray-500');
   });
 
@@ -205,8 +229,6 @@ function switchTab(tab) {
   const activeNavBtn = document.getElementById('nav-' + tab);
   if (activeTabEl) {
     activeTabEl.classList.remove('hidden');
-    activeTabEl.classList.remove('tab-enter-active');
-    // Делаем добавление анимации через requestAnimationFrame без принудительного reflow
     requestAnimationFrame(() => {
       activeTabEl.classList.add('tab-enter-active');
     });
@@ -218,122 +240,41 @@ function switchTab(tab) {
   if (document.documentElement) document.documentElement.scrollTop = 0;
   if (document.body) document.body.scrollTop = 0;
   const appContent = document.getElementById('app-content');
-  if (appContent) appContent.scrollTop = 0;
+  if (appContent) {
+    appContent.scrollTop = 0;
+    appContent.style.overflowX = '';
+    appContent.style.position = '';
+  }
   if (activeTabEl) activeTabEl.scrollTop = 0;
   
-  if (tab === 'budget' && typeof renderBudgetTab === 'function') {
-    renderBudgetTab();
-  }
-  if (tab === 'broker' && Cache && typeof drawBrokerChart === 'function') {
-    setTimeout(drawBrokerChart, 100);
-  }
-}
-
-// ==========================================
-// Навигация свайпами между экранами (Табами)
-// ==========================================
-// Позволяет быстро переключать экраны свайпом влево/вправо (Бюджет ⇄ Траты ⇄ Вклады ⇄ Брокер).
-// Защищена от конфликтов со скроллом списков, графиками, селектами и модальными окнами.
-
-const APP_MAIN_TABS = ['budget', 'transactions', 'deposits', 'broker'];
-let tabSwipeStartX = 0;
-let tabSwipeStartY = 0;
-let tabSwipeStartTime = 0;
-let tabSwipeCancelled = false;
-
-function canStartTabSwipe(target) {
-  if (!target) return false;
-  // 1. Если активен режим множественного выбора карточек
-  if (typeof isSelectionMode === 'function' && isSelectionMode()) return false;
-
-  // 2. Если открыто любое модальное окно, шторка или контекстный поповер
-  const openOverlay = document.querySelector('.fixed:not(.hidden):not(nav):not(#selection-panel)');
-  if (openOverlay) return false;
-  const cardMenu = document.getElementById('card-context-menu');
-  if (cardMenu && !cardMenu.classList.contains('hidden')) return false;
-  const brokerPopup = document.getElementById('broker-point-popup');
-  if (brokerPopup && !brokerPopup.classList.contains('hidden')) return false;
-
-  // 3. Исключаем касания внутри интерактивных элементов, графиков или зон горизонтального скролла
-  if (target.closest(`
-    canvas,
-    input,
-    textarea,
-    select,
-    button,
-    nav,
-    .custom-scrollbar,
-    .category-legend,
-    .view-switcher,
-    .card-context-menu,
-    #selection-panel
-  `)) {
-    return false;
-  }
-
-  return true;
-}
-
-document.addEventListener('touchstart', (e) => {
-  if (e.touches.length !== 1) {
-    tabSwipeCancelled = true;
-    return;
-  }
-  if (!canStartTabSwipe(e.target)) {
-    tabSwipeCancelled = true;
-    return;
-  }
-
-  tabSwipeCancelled = false;
-  tabSwipeStartX = e.touches[0].clientX;
-  tabSwipeStartY = e.touches[0].clientY;
-  tabSwipeStartTime = Date.now();
-}, { passive: true });
-
-document.addEventListener('touchmove', (e) => {
-  if (tabSwipeCancelled || e.touches.length !== 1) return;
-  const currentDy = Math.abs(e.touches[0].clientY - tabSwipeStartY);
-  // Если пользователь явно начал вертикальный скролл страницы (> 35px), отменяем свайп таба
-  if (currentDy > 35) {
-    tabSwipeCancelled = true;
-  }
-}, { passive: true });
-
-document.addEventListener('touchend', (e) => {
-  if (tabSwipeCancelled) return;
-  if (!e.changedTouches || e.changedTouches.length !== 1) return;
-
-  const swipeDuration = Date.now() - tabSwipeStartTime;
-  // Свайп должен быть относительно быстрым жестом (до 450мс)
-  if (swipeDuration > 450) return;
-
-  const dx = e.changedTouches[0].clientX - tabSwipeStartX;
-  const dy = e.changedTouches[0].clientY - tabSwipeStartY;
-  const absX = Math.abs(dx);
-  const absY = Math.abs(dy);
-
-  // Порог уверенного свайпа: минимум 55px по горизонтали,
-  // горизонтальная составляющая как минимум в 2 раза превышает вертикальную,
-  // а смещение по вертикали меньше 40px
-  if (absX >= 55 && absX > 2 * absY && absY < 40) {
-    // Находим текущий активный таб
-    const currentTab = APP_MAIN_TABS.find(t => {
-      const el = document.getElementById(t + '-tab');
-      return el && !el.classList.contains('hidden');
-    }) || 'budget';
-
-    const currentIndex = APP_MAIN_TABS.indexOf(currentTab);
-    if (currentIndex === -1) return;
-
-    if (dx < 0 && currentIndex < APP_MAIN_TABS.length - 1) {
-      // Свайп влево: переключаем на следующий экран
-      switchTab(APP_MAIN_TABS[currentIndex + 1]);
-    } else if (dx > 0 && currentIndex > 0) {
-      // Свайп вправо: переключаем на предыдущий экран
-      switchTab(APP_MAIN_TABS[currentIndex - 1]);
+  // Умный кэшированный рендер вкладок
+  if (tab === 'budget') {
+    if (window._budgetTabDirty !== false || !window._budgetTabRendered) {
+      if (typeof renderBudgetTab === 'function') renderBudgetTab();
+      window._budgetTabDirty = false;
+      window._budgetTabRendered = true;
+    }
+  } else if (tab === 'transactions') {
+    if (window._transactionsTabDirty !== false || !window._transactionsTabRendered) {
+      if (typeof renderTransactions === 'function') renderTransactions();
+      window._transactionsTabDirty = false;
+      window._transactionsTabRendered = true;
+    }
+  } else if (tab === 'deposits') {
+    if (window._depositsTabDirty !== false || !window._depositsTabRendered) {
+      if (typeof renderDeposits === 'function') renderDeposits();
+      window._depositsTabDirty = false;
+      window._depositsTabRendered = true;
+    }
+  } else if (tab === 'broker') {
+    if (window._brokerTabDirty !== false || !window._brokerTabRendered) {
+      if (typeof renderBroker === 'function') renderBroker();
+      if (Cache && typeof drawBrokerChart === 'function') setTimeout(drawBrokerChart, 80);
+      window._brokerTabDirty = false;
+      window._brokerTabRendered = true;
     }
   }
-}, { passive: true });
+}
 
 // Универсальные хелперы открытия/закрытия форм
 function toggleForm(containerId, btnId, btnText, formId, type) {
@@ -432,10 +373,19 @@ function isIOSDevice() {
   return /iphone|ipad|ipod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 }
 
-// Проверка условий показа баннера (ВРЕМЕННО ДЛЯ ТЕСТИРОВАНИЯ: показываем при каждом открытии)
+// Проверка условий показа баннера установки приложения
 function shouldShowPwaPrompt() {
+  // 1. Уже установлено и открыто как PWA (standalone)
   if (isPwaStandalone()) return false;
-  // Для тестирования временно отключены ограничения по дате и permanent dismiss
+
+  // 2. Пользователь отключил уведомление навсегда или приложение уже установлено
+  if (localStorage.getItem('pwa_prompt_dismissed_permanently') === 'true') return false;
+
+  // 3. Ограничение частоты: показываем не чаще одного раза в сутки
+  const lastShownDate = localStorage.getItem('pwa_prompt_last_shown_date');
+  const todayStr = new Date().toISOString().split('T')[0];
+  if (lastShownDate === todayStr) return false;
+
   return true;
 }
 
