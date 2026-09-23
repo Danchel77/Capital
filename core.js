@@ -1,5 +1,5 @@
 // ==========================================
-// PWA Service Worker Registration
+// PWA Service Worker & Offline Resilience
 // ==========================================
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -8,6 +8,42 @@ if ('serviceWorker' in navigator) {
     });
   });
 }
+
+function initOfflineResilience() {
+  const banner = document.getElementById('offline-status-banner');
+
+  function updateNetworkStatus() {
+    const isOnline = navigator.onLine;
+    if (banner) {
+      if (!isOnline) {
+        banner.classList.remove('hidden');
+      } else {
+        banner.classList.add('hidden');
+      }
+    }
+  }
+
+  window.addEventListener('online', () => {
+    updateNetworkStatus();
+    showToast('Связь восстановлена • Синхронизация данных...');
+    if (typeof auth !== 'undefined' && auth.currentUser) {
+      fetchAllData();
+    }
+  });
+
+  window.addEventListener('offline', () => {
+    updateNetworkStatus();
+    showToast('Офлайн-режим • Изменения сохраняются локально');
+  });
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', updateNetworkStatus);
+  } else {
+    updateNetworkStatus();
+  }
+}
+
+initOfflineResilience();
 
 // ==========================================
 // Firebase Configuration & Initialization
@@ -450,17 +486,91 @@ async function seedNewUserInitialData(user) {
 // Formatting & Utility Functions
 // ==========================================
 
-const formatMoney = (sum, isInputOrDetails = false) => new Intl.NumberFormat('ru-RU', {
-  style: 'currency',
-  currency: 'RUB',
-  minimumFractionDigits: isInputOrDetails ? 2 : 0, // Убираем копейки везде по умолчанию
-  maximumFractionDigits: isInputOrDetails ? 2 : 0
-}).format(sum).replace(',', '.'); // Использует неразрывные пробелы встроенно
+// Режим приватности (скрытие/показ сумм для защиты от посторонних глаз)
+window.isPrivacyModeEnabled = (function() {
+  try {
+    return localStorage.getItem('budget_privacy_mode') === '1';
+  } catch (e) {
+    return false;
+  }
+})();
+
+const EYE_SVG_OPEN = `<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0z"/><circle cx="12" cy="12" r="3"/></svg>`;
+const EYE_SVG_CLOSED = `<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-[#727cff]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><line x1="2" y1="2" x2="22" y2="22"/></svg>`;
+
+function updatePrivacyModeUI() {
+  const isPrivate = !!window.isPrivacyModeEnabled;
+  const iconContainer = document.getElementById('privacy-icon-container');
+  const toggleBtn = document.getElementById('privacy-toggle-btn');
+
+  if (document.body) {
+    document.body.classList.toggle('privacy-mode-active', isPrivate);
+  }
+
+  if (iconContainer) {
+    iconContainer.innerHTML = isPrivate ? EYE_SVG_CLOSED : EYE_SVG_OPEN;
+  }
+
+  if (toggleBtn) {
+    if (isPrivate) {
+      toggleBtn.classList.add('bg-[#6C5DD3]/20', 'border-[#6C5DD3]/50', 'text-[#727cff]');
+      toggleBtn.classList.remove('text-gray-300');
+      toggleBtn.title = 'Показать суммы';
+    } else {
+      toggleBtn.classList.remove('bg-[#6C5DD3]/20', 'border-[#6C5DD3]/50', 'text-[#727cff]');
+      toggleBtn.classList.add('text-gray-300');
+      toggleBtn.title = 'Скрыть суммы';
+    }
+  }
+}
+
+function togglePrivacyMode() {
+  window.isPrivacyModeEnabled = !window.isPrivacyModeEnabled;
+  try {
+    localStorage.setItem('budget_privacy_mode', window.isPrivacyModeEnabled ? '1' : '0');
+  } catch (e) {}
+
+  updatePrivacyModeUI();
+
+  if (typeof navigator !== 'undefined' && navigator.vibrate) {
+    try { navigator.vibrate(15); } catch (e) {}
+  }
+
+  showToast(window.isPrivacyModeEnabled ? 'Режим приватности включен' : 'Суммы снова отображаются');
+
+  if (typeof markTabsDirty === 'function') markTabsDirty();
+
+  const currentTab = typeof getCurrentActiveTab === 'function' ? getCurrentActiveTab() : 'budget';
+  if (currentTab === 'budget' && typeof renderBudgetTab === 'function') renderBudgetTab();
+  else if (currentTab === 'transactions' && typeof renderTransactions === 'function') renderTransactions();
+  else if (currentTab === 'deposits' && typeof renderDeposits === 'function') renderDeposits();
+  else if (currentTab === 'broker' && typeof renderBroker === 'function') renderBroker();
+}
+
+const formatMoney = (sum, isInputOrDetails = false) => {
+  if (window.isPrivacyModeEnabled && !isInputOrDetails) {
+    return '•••• ₽';
+  }
+  return new Intl.NumberFormat('ru-RU', {
+    style: 'currency',
+    currency: 'RUB',
+    minimumFractionDigits: isInputOrDetails ? 2 : 0, // Убираем копейки везде по умолчанию
+    maximumFractionDigits: isInputOrDetails ? 2 : 0
+  }).format(sum).replace(',', '.'); // Использует неразрывные пробелы встроенно
+};
 
 // Плавная выразительная анимация числовых счетчиков (Rolling Counter / Odometer)
 function animateNumber(el, targetNum, duration = 1200, isCurrency = true) {
   if (!el) return;
   const target = Math.round(Number(targetNum) || 0);
+
+  // В режиме приватности мгновенно отображаем маскированные точки
+  if (window.isPrivacyModeEnabled && isCurrency) {
+    if (el._animFrame) cancelAnimationFrame(el._animFrame);
+    el.innerText = '•••• ₽';
+    el.dataset.animVal = String(target);
+    return;
+  }
 
   // Если у элемента еще нет значения:
   // При ПЕРВОЙ инициализации приложения (window._initialAnimationDone еще false) стартуем с 0.
@@ -628,10 +738,128 @@ function formatDateStr(dateStr, format) {
 }
 
 // ==========================================
-// UI Notifications & Dialogs
+// UI Notifications & Dialogs (с поддержкой свайпа влево/вправо)
 // ==========================================
 
 let toastTimer = null;
+let isToastDragging = false;
+let toastStartX = 0;
+let toastStartY = 0;
+let toastDiffX = 0;
+let toastIsHorizontalSwipe = false;
+
+function initToastSwipe() {
+  const content = document.getElementById('toast-content');
+  const container = document.getElementById('toast-container');
+  if (!content || !container || content._swipeInited) return;
+  content._swipeInited = true;
+
+  function onTouchStart(e) {
+    if (container.classList.contains('hidden')) return;
+    const touch = e.touches ? e.touches[0] : e;
+    isToastDragging = true;
+    toastIsHorizontalSwipe = false;
+    toastStartX = touch.clientX;
+    toastStartY = touch.clientY;
+    toastDiffX = 0;
+
+    // Приостанавливаем автотаймер закрытия при удержании тоста пальцем
+    if (toastTimer) {
+      clearTimeout(toastTimer);
+      toastTimer = null;
+    }
+
+    content.classList.add('is-dragging');
+  }
+
+  function onTouchMove(e) {
+    if (!isToastDragging) return;
+    const touch = e.touches ? e.touches[0] : e;
+    const dx = touch.clientX - toastStartX;
+    const dy = touch.clientY - toastStartY;
+
+    if (!toastIsHorizontalSwipe) {
+      if (Math.abs(dx) > 6 && Math.abs(dx) > Math.abs(dy)) {
+        toastIsHorizontalSwipe = true;
+      } else if (Math.abs(dy) > 10) {
+        // Вертикальный скролл страницы — отменяем перехват
+        isToastDragging = false;
+        content.classList.remove('is-dragging');
+        return;
+      }
+    }
+
+    if (toastIsHorizontalSwipe) {
+      if (e.cancelable) e.preventDefault();
+      toastDiffX = dx;
+      const opacity = Math.max(0.2, 1 - Math.abs(dx) / 220);
+      content.style.transform = `translateX(${dx}px) scale(0.98)`;
+      content.style.opacity = String(opacity);
+    }
+  }
+
+  function onTouchEnd() {
+    if (!isToastDragging) return;
+    isToastDragging = false;
+    content.classList.remove('is-dragging');
+
+    if (toastIsHorizontalSwipe && Math.abs(toastDiffX) > 45) {
+      // Смахивание влево или вправо завершено
+      dismissToast(toastDiffX > 0 ? 1 : -1);
+    } else {
+      // Пружинящий возврат на центр
+      content.style.transform = '';
+      content.style.opacity = '';
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        dismissToast(0);
+      }, 2000);
+    }
+  }
+
+  content.addEventListener('touchstart', onTouchStart, { passive: true });
+  window.addEventListener('touchmove', onTouchMove, { passive: false });
+  window.addEventListener('touchend', onTouchEnd, { passive: true });
+  window.addEventListener('touchcancel', onTouchEnd, { passive: true });
+
+  // Поддержка свайпа мышью (десктоп)
+  content.addEventListener('mousedown', onTouchStart);
+  window.addEventListener('mousemove', onTouchMove);
+  window.addEventListener('mouseup', onTouchEnd);
+}
+
+function dismissToast(direction = 0) {
+  const container = document.getElementById('toast-container');
+  const content = document.getElementById('toast-content');
+  if (!container || !content) return;
+
+  if (toastTimer) {
+    clearTimeout(toastTimer);
+    toastTimer = null;
+  }
+
+  if (direction !== 0) {
+    // Тактильный виброотклик при смахивании тоста
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      try { navigator.vibrate(10); } catch (e) {}
+    }
+    content.classList.add('is-dismissing');
+    const exitX = direction > 0 ? window.innerWidth : -window.innerWidth;
+    content.style.transform = `translateX(${exitX}px) scale(0.9)`;
+    content.style.opacity = '0';
+
+    setTimeout(() => {
+      container.classList.add('hidden');
+      content.classList.remove('is-dismissing');
+      content.style.transform = '';
+      content.style.opacity = '';
+    }, 220);
+  } else {
+    container.classList.add('hidden');
+    content.style.transform = '';
+    content.style.opacity = '';
+  }
+}
 
 function showToast(text, isError = false, keep = false) {
   const container = document.getElementById('toast-container');
@@ -645,6 +873,12 @@ function showToast(text, isError = false, keep = false) {
 
   clearTimeout(toastTimer);
   textEl.innerText = text;
+
+  if (content) {
+    content.classList.remove('is-dragging', 'is-dismissing');
+    content.style.transform = '';
+    content.style.opacity = '';
+  }
 
   if (isError) {
     if (spinner) spinner.style.display = 'none';
@@ -667,12 +901,13 @@ function showToast(text, isError = false, keep = false) {
     lucide.createIcons();
   }
 
+  initToastSwipe();
   container.classList.remove('hidden');
 
   if (!keep) {
     toastTimer = setTimeout(() => {
-      container.classList.add('hidden');
-    }, 2400);
+      dismissToast(0);
+    }, 2600);
   }
 }
 
@@ -772,3 +1007,6 @@ window.unlockBodyScroll = unlockBodyScroll;
 window.resetGlobalCache = resetGlobalCache;
 window.initNewUserIfNeeded = initNewUserIfNeeded;
 window.processOrSeedRules = processOrSeedRules;
+window.togglePrivacyMode = togglePrivacyMode;
+window.updatePrivacyModeUI = updatePrivacyModeUI;
+window.initOfflineResilience = initOfflineResilience;

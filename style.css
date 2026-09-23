@@ -118,8 +118,10 @@ nav button:active,
 
 /* Навигационные табы в нижней панели */
 nav button.is-pressed,
-nav button:active {
-  transform: scale(0.93) !important;
+nav button:active,
+.nav-tab-btn:active,
+.nav-tab-btn.is-pressed {
+  transform: scale(0.92) !important;
   transition: transform 0.04s ease-out !important;
 }
 
@@ -587,6 +589,12 @@ input, select, textarea {
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
+.input-with-left-icon,
+#tx-search-input {
+  padding-left: 42px !important;
+  padding-right: 36px !important;
+}
+
 input:focus, select:focus, textarea:focus {
   border-color: rgba(108, 93, 211, 0.6) !important;
   box-shadow: 0 0 0 3px rgba(108, 93, 211, 0.12) !important;
@@ -726,6 +734,22 @@ nav button.text-blue-400::before, nav button.text-blue-500::before { content:"";
   max-width: 100% !important;
   min-width: 0 !important;
   box-sizing: border-box !important;
+  pointer-events: auto !important;
+  touch-action: pan-y !important;
+  cursor: grab;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  will-change: transform, opacity;
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.18s ease;
+}
+
+.toast-capsule.is-dragging {
+  cursor: grabbing !important;
+  transition: none !important;
+}
+
+.toast-capsule.is-dismissing {
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease !important;
 }
 
 @keyframes toast-in {
@@ -1402,6 +1426,22 @@ body.selection-mode .selection-panel {
   padding-top: 0px !important;
   margin-left: -5px !important;
   margin-right: 5px !important;
+}
+
+/* ==========================================
+   Privacy Mode Styling (Маскировка конфиденциальных данных)
+   ========================================== */
+body.privacy-mode-active canvas {
+  filter: blur(6px);
+  transition: filter 0.25s ease;
+  user-select: none;
+}
+body.privacy-mode-active canvas:hover {
+  filter: blur(0px);
+}
+
+.nav-tab-btn {
+  -webkit-tap-highlight-color: transparent !important;
 }
 
 

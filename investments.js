@@ -56,10 +56,29 @@ function processDeposits(deposits, goals) {
 function renderDeposits() {
   const data = Cache.deposits || [];
   const listEl = document.getElementById('deposits-list');
+  const topBtn = document.getElementById('dep-open-top-btn');
+  if (topBtn) {
+    if (data.length === 0) topBtn.classList.add('hidden');
+    else topBtn.classList.remove('hidden');
+  }
   if (!listEl) return;
 
   if (data.length === 0) {
-    listEl.innerHTML = '<div class="text-center text-[#848D99] py-10 text-[13px]">Открытых вкладов нет</div>';
+    listEl.innerHTML = `
+      <div class="card rounded-2xl p-6 text-center flex flex-col items-center justify-center gap-3 mt-4 border border-[rgba(255,255,255,0.06)] bg-[#181B24]">
+        <div class="w-12 h-12 rounded-2xl bg-[#6C5DD3]/15 text-[#727cff] flex items-center justify-center">
+          <i data-lucide="piggy-bank" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <p class="text-sm font-semibold text-gray-200">У вас пока нет открытых вкладов</p>
+          <p class="text-xs text-[#848D99] mt-1 max-w-[280px]">Добавьте банковский вклад или накопительный счет, чтобы отслеживать доходность и срок выплаты процентов</p>
+        </div>
+        <button type="button" onclick="toggleForm('deposit-form-container', 'deposit-submit-btn', 'Добавить вклад', 'deposit-form', 'deposit')" class="mt-1 px-4 py-2.5 rounded-xl bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white text-xs font-semibold transition-all active:scale-95 cursor-pointer flex items-center gap-2">
+          <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+          <span>Открыть первый вклад</span>
+        </button>
+      </div>
+    `;
     if (typeof lucide !== 'undefined') lucide.createIcons();
     return;
   }

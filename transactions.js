@@ -9,6 +9,7 @@ let currentStructureType = 'Расход'; // 'Расход' или 'Доход'
 // Фильтры списка транзакций
 let currentFilterMonth = 'all';
 let currentFilterCategory = 'all';
+let currentFilterSearch = '';
 
 // Состояние модалок категорий
 let currentCategoryType = 'Расход';
@@ -495,13 +496,99 @@ function submitTransactions(e) {
   e.preventDefault();
   const rows = document.querySelectorAll('.tx-item');
   if (rows.length === 0) return showDialog('Ошибка', 'Добавьте хотя бы одну операцию', false);
-  submitAction('tx-submit-btn', 'Transactions', Array.from(rows).map(row => ({
-    type: row.querySelector('.tx-type:checked').value,
-    amount: getUnformattedVal(row.querySelector('.tx-amount')),
-    date: row.querySelector('.tx-date').value,
-    category: row.querySelector('.tx-category').value,
-    comment: row.querySelector('.tx-comment').value
-  })));
+  const txData = Array.from(rows).map(row => {
+    const type = row.querySelector('.tx-type:checked').value;
+    const amount = getUnformattedVal(row.querySelector('.tx-amount'));
+    const date = row.querySelector('.tx-date').value;
+    const category = row.querySelector('.tx-category').value;
+    const comment = row.querySelector('.tx-comment').value;
+    if (comment && category) {
+      learnMerchantCategory(comment, category, type);
+    }
+    return { type, amount, date, category, comment };
+  });
+  submitAction('tx-submit-btn', 'Transactions', txData);
+}
+
+// ==========================================
+// 3.2. Умные правила автокатегоризации (Smart Rules)
+// ==========================================
+function handleTxRowCommentInput(inputEl) {
+  if (!inputEl) return;
+  const row = inputEl.closest('.tx-item');
+  if (!row) return;
+
+  const val = inputEl.value.trim();
+  if (val.length < 2) return;
+
+  const type = row.querySelector('.tx-type:checked')?.value || 'Расход';
+  const catInput = row.querySelector('.tx-category');
+  const catLabel = row.querySelector('.tx-category-label');
+  if (!catInput || !catLabel) return;
+
+  if (typeof window.StatementCategorizer !== 'undefined' && typeof window.StatementCategorizer.categorize === 'function') {
+    const guessed = window.StatementCategorizer.categorize(val, '', type);
+    if (guessed && guessed !== 'Другое' && (!catInput.value || catInput.value === 'Другое')) {
+      catInput.value = guessed;
+      const catArr = (type === 'Доход') ? (Cache?.categories?.income || []) : (Cache?.categories?.expense || []);
+      const match = catArr.find(c => (typeof c === 'string' ? c : c?.name) === guessed);
+      const icon = (match && typeof match === 'object' && match.icon && match.icon !== '📦') 
+        ? match.icon 
+        : (typeof getCategoryIcon === 'function' ? getCategoryIcon(guessed) : 'tag');
+      catLabel.innerHTML = `<span class="inline-flex items-center gap-1.5 text-xs text-gray-200 font-normal truncate min-w-0"><i data-lucide="${icon}" class="w-3.5 h-3.5 text-[#727cff] flex-shrink-0"></i><span class="truncate">${escapeHtml(guessed)}</span></span>`;
+      catLabel.classList.remove('text-gray-400', 'text-white');
+      catLabel.classList.add('text-gray-200');
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+  }
+}
+
+function handleEditTxCommentInput(inputEl) {
+  if (!inputEl) return;
+  const val = inputEl.value.trim();
+  if (val.length < 2) return;
+
+  const type = document.getElementById('edit-tx-type')?.value || 'Расход';
+  const currentCat = document.getElementById('edit-tx-category')?.value;
+
+  if (typeof window.StatementCategorizer !== 'undefined' && typeof window.StatementCategorizer.categorize === 'function') {
+    const guessed = window.StatementCategorizer.categorize(val, '', type);
+    if (guessed && guessed !== 'Другое' && (!currentCat || currentCat === 'Другое')) {
+      const catArr = (type === 'Доход') ? (Cache?.categories?.income || []) : (Cache?.categories?.expense || []);
+      const match = catArr.find(c => (typeof c === 'string' ? c : c?.name) === guessed);
+      const icon = (match && typeof match === 'object' && match.icon && match.icon !== '📦') 
+        ? match.icon 
+        : (typeof getCategoryIcon === 'function' ? getCategoryIcon(guessed) : 'tag');
+      selectEditTxCategory(guessed, icon);
+    }
+  }
+}
+
+function learnMerchantCategory(merchant, category, type) {
+  if (!merchant || !category || category === 'Другое' || category === 'Категория...' || !window.StatementCategorizer) return;
+  const clean = merchant.trim();
+  if (clean.length < 2) return;
+  
+  const norm = window.StatementCategorizer.normalize(clean);
+  if (!norm) return;
+
+  if (!window.Cache) window.Cache = {};
+  if (!window.Cache.categoryRules) window.Cache.categoryRules = [];
+  
+  const existingIdx = window.Cache.categoryRules.findIndex(r => window.StatementCategorizer.normalize(r.pattern) === norm);
+  if (existingIdx >= 0) {
+    window.Cache.categoryRules[existingIdx].category = category;
+  } else {
+    const newRule = { id: 'rule_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4), pattern: clean, category: category, isSystem: false };
+    window.Cache.categoryRules.push(newRule);
+    try {
+      if (typeof getUserCol === 'function' && typeof auth !== 'undefined' && auth.currentUser) {
+        getUserCol('CategoryRules').add({ pattern: clean, category: category, updatedAt: Date.now() });
+      }
+    } catch (e) {
+      console.warn('Could not persist category rule', e);
+    }
+  }
 }
 
 // ==========================================
@@ -875,6 +962,10 @@ async function submitEditTxModal(e) {
 
   const tempTxId = id || `opt_tx_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
   const isNew = !id;
+
+  if (comment && category) {
+    learnMerchantCategory(comment, category, type);
+  }
 
   // 1. Получаем плоский список и сохраняем временную метку дня при редактировании
   const allFlat = typeof getAllCachedTransactionsFlat === 'function' ? getAllCachedTransactionsFlat() : [];
@@ -1259,10 +1350,10 @@ async function submitQuickAmortize() {
     closeQuickAmortizeModal();
     renderTransactions();
     if (typeof renderBudgetCalendar === 'function') {
-      const today = new Date();
+      const today = (typeof getSelectedBudgetDate === 'function') ? getSelectedBudgetDate() : new Date();
       const currentMonthStr = (typeof formatDateStr === 'function') ? formatDateStr(today, 'yyyy-MM') : today.toISOString().slice(0, 7);
       const monthItems = (Cache.transactions || []).find(m => m.month === currentMonthStr)?.items || [];
-      renderBudgetCalendar(Cache.calendarBills || [], monthItems);
+      renderBudgetCalendar(Cache.calendarBills || [], today, monthItems);
       if (typeof updatePlanForecast === 'function') updatePlanForecast();
       if (typeof renderBudgetMonthProgress === 'function') renderBudgetMonthProgress(Cache.budgetPlan || {}, monthItems);
       if (typeof renderWeeklyPulse === 'function') renderWeeklyPulse(Cache.budgetPlan || {}, monthItems);
@@ -1305,10 +1396,10 @@ async function returnTxToBudget(id) {
 
     renderTransactions();
     if (typeof renderBudgetCalendar === 'function') {
-      const today = new Date();
+      const today = (typeof getSelectedBudgetDate === 'function') ? getSelectedBudgetDate() : new Date();
       const currentMonthStr = (typeof formatDateStr === 'function') ? formatDateStr(today, 'yyyy-MM') : today.toISOString().slice(0, 7);
       const monthItems = (Cache.transactions || []).find(m => m.month === currentMonthStr)?.items || [];
-      renderBudgetCalendar(Cache.calendarBills || [], monthItems);
+      renderBudgetCalendar(Cache.calendarBills || [], today, monthItems);
       if (typeof updatePlanForecast === 'function') updatePlanForecast();
       if (typeof renderBudgetMonthProgress === 'function') renderBudgetMonthProgress(Cache.budgetPlan || {}, monthItems);
       if (typeof renderWeeklyPulse === 'function') renderWeeklyPulse(Cache.budgetPlan || {}, monthItems);
@@ -1350,6 +1441,110 @@ function selectFilterValue(type, value, label) {
   renderTransactions();
 }
 
+function toggleTxSearchBar() {
+  const container = document.getElementById('tx-search-bar-container');
+  const btn = document.getElementById('tx-search-toggle-btn');
+  const input = document.getElementById('tx-search-input');
+  if (!container) return;
+
+  const isHidden = container.classList.contains('hidden');
+  if (isHidden) {
+    container.classList.remove('hidden');
+    if (btn) {
+      btn.classList.add('bg-[#6C5DD3]/25', 'text-[#727cff]', 'border-[#6C5DD3]/50');
+      btn.classList.remove('bg-gray-800', 'text-gray-400');
+    }
+    if (input) {
+      setTimeout(() => input.focus(), 60);
+    }
+  } else {
+    if (!currentFilterSearch) {
+      container.classList.add('hidden');
+      if (btn) {
+        btn.classList.remove('bg-[#6C5DD3]/25', 'text-[#727cff]', 'border-[#6C5DD3]/50');
+        btn.classList.add('bg-gray-800', 'text-gray-400');
+      }
+    } else {
+      clearTxSearch();
+      container.classList.add('hidden');
+      if (btn) {
+        btn.classList.remove('bg-[#6C5DD3]/25', 'text-[#727cff]', 'border-[#6C5DD3]/50');
+        btn.classList.add('bg-gray-800', 'text-gray-400');
+      }
+    }
+  }
+}
+
+function handleTxSearchInput(event) {
+  const query = (event.target.value || '').trim().toLowerCase();
+  currentFilterSearch = query;
+
+  const clearBtn = document.getElementById('tx-search-clear-btn');
+  if (clearBtn) {
+    if (query) clearBtn.classList.remove('hidden');
+    else clearBtn.classList.add('hidden');
+  }
+
+  const toggleBtn = document.getElementById('tx-search-toggle-btn');
+  if (toggleBtn) {
+    if (query) {
+      toggleBtn.classList.add('bg-[#6C5DD3]/25', 'text-[#727cff]', 'border-[#6C5DD3]/50');
+      toggleBtn.classList.remove('bg-gray-800', 'text-gray-400');
+    } else {
+      toggleBtn.classList.remove('bg-[#6C5DD3]/25', 'text-[#727cff]', 'border-[#6C5DD3]/50');
+      toggleBtn.classList.add('bg-gray-800', 'text-gray-400');
+    }
+  }
+
+  if (window._txSearchTimeout) clearTimeout(window._txSearchTimeout);
+  window._txSearchTimeout = setTimeout(() => {
+    renderTransactions();
+  }, 100);
+}
+
+function clearTxSearch() {
+  currentFilterSearch = '';
+  const searchInput = document.getElementById('tx-search-input');
+  if (searchInput) searchInput.value = '';
+  const clearBtn = document.getElementById('tx-search-clear-btn');
+  if (clearBtn) clearBtn.classList.add('hidden');
+  const toggleBtn = document.getElementById('tx-search-toggle-btn');
+  if (toggleBtn) {
+    toggleBtn.classList.remove('bg-[#6C5DD3]/25', 'text-[#727cff]', 'border-[#6C5DD3]/50');
+    toggleBtn.classList.add('bg-gray-800', 'text-gray-400');
+  }
+  renderTransactions();
+}
+
+function resetAllTxFilters() {
+  currentFilterSearch = '';
+  const searchInput = document.getElementById('tx-search-input');
+  if (searchInput) searchInput.value = '';
+  const clearBtn = document.getElementById('tx-search-clear-btn');
+  if (clearBtn) clearBtn.classList.add('hidden');
+  const searchContainer = document.getElementById('tx-search-bar-container');
+  if (searchContainer) searchContainer.classList.add('hidden');
+  const toggleBtn = document.getElementById('tx-search-toggle-btn');
+  if (toggleBtn) {
+    toggleBtn.classList.remove('bg-[#6C5DD3]/25', 'text-[#727cff]', 'border-[#6C5DD3]/50');
+    toggleBtn.classList.add('bg-gray-800', 'text-gray-400');
+  }
+
+  currentFilterMonth = 'all';
+  const monthLabel = document.getElementById('label-filter-month');
+  if (monthLabel) monthLabel.textContent = 'Все месяцы';
+  const monthMenu = document.getElementById('menu-filter-month');
+  if (monthMenu) monthMenu.classList.add('hidden');
+
+  currentFilterCategory = 'all';
+  const catLabel = document.getElementById('label-filter-cat');
+  if (catLabel) catLabel.textContent = 'Все категории';
+  const catMenu = document.getElementById('menu-filter-cat');
+  if (catMenu) catMenu.classList.add('hidden');
+
+  renderTransactions();
+}
+
 function getLargeExpenseThreshold() {
   const plan = Cache?.budgetPlan;
   if (!plan) return Infinity;
@@ -1369,7 +1564,7 @@ function getLargeExpenseThreshold() {
 let _txInfiniteObserver = null;
 let _txPendingDayGroups = [];
 let _txRenderedDayCount = 0;
-const TX_DAYS_PER_CHUNK = 12;
+const TX_DAYS_PER_CHUNK = 8;
 
 function renderTxRowHtml(tx, largeThreshold, hasDynamicThreshold) {
   const isExp = tx.type === 'Расход';
@@ -1389,6 +1584,13 @@ function renderTxRowHtml(tx, largeThreshold, hasDynamicThreshold) {
     ? 'bg-[#212430] text-[#9EA7B3] border border-[rgba(255,255,255,0.04)]' 
     : 'bg-[#30D158]/10 text-[#30D158] border border-[#30D158]/20';
 
+  const rawComment = (tx.comment || tx.merchant || tx.title || '').trim();
+  const hasComment = rawComment && rawComment !== 'undefined' && rawComment !== 'null';
+  const mainTitle = hasComment
+    ? (typeof cleanMerchantTitle === 'function' ? cleanMerchantTitle(rawComment) : rawComment)
+    : (tx.category || (isExp ? 'Расход' : 'Доход'));
+  const subCategory = hasComment ? tx.category : '';
+
   return `
     <div class="card cursor-pointer w-full py-[13px] px-4 flex items-center justify-between ${isJustAdded ? 'tx-row-new' : ''}"
          data-id="${tx.id}"
@@ -1402,8 +1604,8 @@ function renderTxRowHtml(tx, largeThreshold, hasDynamicThreshold) {
             <i data-lucide="${iconStr}" class="w-[22px] h-[22px] stroke-[1.75px]"></i>
          </div>
          <div class="min-w-0 flex flex-col justify-center">
-           <div class="flex items-center gap-1.5">
-             <span class="text-[15px] font-semibold text-gray-200 truncate leading-snug">${escapeHtml(tx.category)}</span>
+           <div class="flex items-center gap-1.5 min-w-0">
+             <span class="text-[15px] font-semibold text-gray-200 truncate leading-snug">${escapeHtml(mainTitle)}</span>
              ${isBill ? `
                <span class="px-1.5 py-0.5 rounded bg-[#6C5DD3]/15 text-[#a594fd] border border-[#6C5DD3]/25 text-[10px] font-medium flex items-center gap-1 flex-shrink-0 leading-none" title="Ежемесячный счет: ${escapeHtml(tx.billName || 'Счет')}">
                  <i data-lucide="calendar" class="w-2.5 h-2.5"></i>Счет
@@ -1418,12 +1620,12 @@ function renderTxRowHtml(tx, largeThreshold, hasDynamicThreshold) {
                </span>
              ` : ''))}
            </div>
-           ${tx.comment ? `<span class="text-[12px] text-gray-500 truncate leading-tight">${escapeHtml(typeof cleanMerchantTitle === 'function' ? cleanMerchantTitle(tx.comment) : tx.comment)}</span>` : ''}
+           ${subCategory ? `<span class="text-[12px] text-[#848D99] truncate leading-tight">${escapeHtml(subCategory)}</span>` : ''}
          </div>
       </div>
 
      <div class="tx-amount flex-shrink-0 text-right font-medium ml-2 ${isExp ? 'text-gray-200' : 'text-[#30D158]'} text-[16px]">
-        ${isExp ? '-' : '+'}${formatMoney(tx.amount)}
+        ${window.isPrivacyModeEnabled ? '•••• ₽' : (isExp ? '-' : '+') + formatMoney(tx.amount)}
      </div>
     </div>
   `;
@@ -1510,6 +1712,23 @@ function appendTxChunk() {
 
 function renderTransactions() {
   const data = Cache.transactions || [];
+  const isTotallyEmpty = (data.length === 0);
+
+  const topActionsEl = document.getElementById('tx-top-actions');
+  const filterBarEl = document.getElementById('tx-filter-bar');
+  const searchBarContainerEl = document.getElementById('tx-search-bar-container');
+
+  if (topActionsEl) {
+    if (isTotallyEmpty) topActionsEl.classList.add('hidden');
+    else topActionsEl.classList.remove('hidden');
+  }
+  if (filterBarEl) {
+    if (isTotallyEmpty) filterBarEl.classList.add('hidden');
+    else filterBarEl.classList.remove('hidden');
+  }
+  if (searchBarContainerEl && isTotallyEmpty) {
+    searchBarContainerEl.classList.add('hidden');
+  }
 
   const monthMenu = document.getElementById('menu-filter-month');
   if (monthMenu && data.length > 0) {
@@ -1565,6 +1784,18 @@ function renderTransactions() {
     if (currentFilterCategory !== 'all') {
       items = items.filter(tx => tx.category === currentFilterCategory);
     }
+    if (currentFilterSearch) {
+      items = items.filter(tx => {
+        const comment = (tx.comment || '').toLowerCase();
+        const cat = (tx.category || '').toLowerCase();
+        const amountStr = String(tx.amount || '');
+        const dateStr = (tx.date || '').toLowerCase();
+        return comment.includes(currentFilterSearch) ||
+               cat.includes(currentFilterSearch) ||
+               amountStr.includes(currentFilterSearch) ||
+               dateStr.includes(currentFilterSearch);
+      });
+    }
 
     if (items.length === 0) return null;
 
@@ -1583,6 +1814,9 @@ function renderTransactions() {
   }
   if (currentFilterCategory !== 'all') {
     periodText += ` • ${currentFilterCategory}`;
+  }
+  if (currentFilterSearch) {
+    periodText += ` • Поиск: «${currentFilterSearch}»`;
   }
 
   const expLabel = document.getElementById('month-expense-label');
@@ -1611,7 +1845,47 @@ function renderTransactions() {
   }
 
   if (filteredMonths.length === 0) {
-    listEl.innerHTML = '<div class="text-center text-gray-500 py-10 text-[13px]">Операции не найдены</div>';
+    const isTotallyEmpty = (data.length === 0);
+    if (isTotallyEmpty) {
+      listEl.innerHTML = `
+        <div class="card rounded-2xl p-6 text-center flex flex-col items-center justify-center gap-3 mt-4 border border-[rgba(255,255,255,0.06)] bg-[#181B24]">
+          <div class="w-12 h-12 rounded-2xl bg-[#6C5DD3]/15 text-[#727cff] flex items-center justify-center">
+            <i data-lucide="receipt" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <p class="text-sm font-semibold text-gray-200">Операций пока нет</p>
+            <p class="text-xs text-[#848D99] mt-1 max-w-[280px]">Внесите свои первые расходы или доходы вручную, либо загрузите банковскую выписку</p>
+          </div>
+          <div class="flex flex-col sm:flex-row gap-2 mt-2 w-full max-w-xs">
+            <button type="button" onclick="toggleForm('tx-form-container', 'tx-submit-btn', 'Сохранить', 'tx-form', 'tx')" class="flex-1 py-2.5 px-4 rounded-xl bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white text-xs font-semibold transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-1.5">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+              <span>Добавить операцию</span>
+            </button>
+            <button type="button" onclick="openPdfInfoModal()" class="py-2.5 px-4 rounded-xl bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 text-xs font-semibold transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-1.5 border border-[rgba(255,255,255,0.06)]">
+              <i data-lucide="file-up" class="w-3.5 h-3.5 text-[#727cff]"></i>
+              <span>Импорт PDF</span>
+            </button>
+          </div>
+        </div>
+      `;
+    } else {
+      listEl.innerHTML = `
+        <div class="card rounded-2xl p-6 text-center flex flex-col items-center justify-center gap-3 mt-4 border border-[rgba(255,255,255,0.06)] bg-[#181B24]">
+          <div class="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-400 flex items-center justify-center">
+            <i data-lucide="search-x" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <p class="text-sm font-semibold text-gray-200">Ничего не найдено</p>
+            <p class="text-xs text-[#848D99] mt-1 max-w-[280px]">По выбранным фильтрам и поисковому запросу нет подходящих операций</p>
+          </div>
+          <button type="button" onclick="resetAllTxFilters()" class="mt-1 px-4 py-2 rounded-xl bg-[#212430] hover:bg-[#2A2D3C] text-[#727cff] hover:text-white text-xs font-semibold transition-all active:scale-95 cursor-pointer border border-[rgba(255,255,255,0.08)] flex items-center gap-1.5">
+            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+            <span>Сбросить фильтры и поиск</span>
+          </button>
+        </div>
+      `;
+    }
+    if (typeof lucide !== 'undefined') lucide.createIcons();
     return;
   }
 
@@ -1673,9 +1947,20 @@ function switchTransactionView(view) {
 }
 
 function buildCharts() {
-  if (!Cache || !Cache.transactions) return;
-  const months = Cache.transactions;
-  if (!months.length) return;
+  const chartEmptyEl = document.getElementById('transactions-chart-empty');
+  const chartContentEl = document.getElementById('transactions-chart-content');
+
+  const months = (Cache && Cache.transactions) ? Cache.transactions : [];
+  if (months.length === 0) {
+    if (chartEmptyEl) chartEmptyEl.classList.remove('hidden');
+    if (chartContentEl) chartContentEl.classList.add('hidden');
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+    return;
+  }
+
+  if (chartEmptyEl) chartEmptyEl.classList.add('hidden');
+  if (chartContentEl) chartContentEl.classList.remove('hidden');
+  if (typeof lucide !== 'undefined') lucide.createIcons();
 
   const chronological = months.slice().reverse();
   const lastMonths = chronological.slice(-8);
@@ -2159,6 +2444,9 @@ window.updateTxSubmitBtnText = updateTxSubmitBtnText;
 window.updateTxRowRemoveButtons = updateTxRowRemoveButtons;
 window.submitTransactions = submitTransactions;
 window.editTx = editTx;
+window.handleTxRowCommentInput = handleTxRowCommentInput;
+window.handleEditTxCommentInput = handleEditTxCommentInput;
+window.learnMerchantCategory = learnMerchantCategory;
 window.openTxContextMenu = openTxContextMenu;
 window.openQuickAmortizeModal = openQuickAmortizeModal;
 window.closeQuickAmortizeModal = closeQuickAmortizeModal;
@@ -2181,6 +2469,10 @@ window.selectEditTxCategory = selectEditTxCategory;
 
 window.toggleCustomFilterMenu = toggleCustomFilterMenu;
 window.selectFilterValue = selectFilterValue;
+window.toggleTxSearchBar = toggleTxSearchBar;
+window.handleTxSearchInput = handleTxSearchInput;
+window.clearTxSearch = clearTxSearch;
+window.resetAllTxFilters = resetAllTxFilters;
 window.renderTransactions = renderTransactions;
 window.appendTxChunk = appendTxChunk;
 window.getLargeExpenseThreshold = getLargeExpenseThreshold;

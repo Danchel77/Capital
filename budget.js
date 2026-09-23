@@ -493,13 +493,24 @@ function renderBudgetCalendar(bills, today, monthItems) {
   const totalEl = document.getElementById('budget-bills-total');
   if (!container) return;
 
-  const validToday = today || ((typeof getSelectedBudgetDate === 'function') ? getSelectedBudgetDate() : new Date());
+  let validToday;
+  let itemsList;
+
+  if (Array.isArray(today)) {
+    itemsList = today;
+    validToday = (typeof getSelectedBudgetDate === 'function') ? getSelectedBudgetDate() : new Date();
+  } else {
+    validToday = (today instanceof Date && !isNaN(today.getTime()))
+      ? today
+      : ((typeof getSelectedBudgetDate === 'function') ? getSelectedBudgetDate() : new Date());
+    itemsList = monthItems || [];
+  }
+
   const monthShortNames = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
   const weekDayNames = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
   const currentMonthShort = monthShortNames[validToday.getMonth()];
 
   const billsList = bills || Cache?.calendarBills || [];
-  const itemsList = monthItems || [];
 
   // ФИЛЬТРАЦИЯ СЧЕТОВ ДЛЯ ТЕКУЩЕГО МЕСЯЦА:
   const activeBills = billsList.filter(b => {
@@ -538,10 +549,21 @@ function renderBudgetCalendar(bills, today, monthItems) {
 
   if (activeBills.length === 0) {
     container.innerHTML = `
-      <div class="col-span-full bg-[#181B24] border border-[rgba(255,255,255,0.06)] rounded-2xl p-6 text-center text-xs text-[#848D99]">
-        Нет запланированных платежей на этот месяц. Нажмите «+», чтобы добавить счет.
+      <div class="col-span-full card rounded-2xl p-5 text-center flex flex-col items-center justify-center gap-2.5 bg-[#181B24] border border-[rgba(255,255,255,0.06)]">
+        <div class="w-10 h-10 rounded-xl bg-[#6C5DD3]/15 text-[#727cff] flex items-center justify-center">
+          <i data-lucide="calendar" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <p class="text-xs font-semibold text-gray-200">Нет обязательных платежей</p>
+          <p class="text-[11px] text-[#848D99] mt-0.5">Запланируйте аренду, подписки или кредиты на этот месяц</p>
+        </div>
+        <button type="button" onclick="openBillModal()" class="px-3.5 py-1.5 rounded-xl bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white text-xs font-semibold transition-all active:scale-95 cursor-pointer flex items-center gap-1.5">
+          <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+          <span>Добавить платеж</span>
+        </button>
       </div>
     `;
+    if (typeof lucide !== 'undefined') lucide.createIcons();
     return;
   }
 
@@ -639,10 +661,21 @@ function renderBudgetGoals(goals, plan, bills, targetDate = getSelectedBudgetDat
 
   if (goals.length === 0) {
     container.innerHTML = `
-      <div class="bg-[#181B24] border border-[rgba(255,255,255,0.06)] rounded-2xl p-4 text-center text-xs text-[#848D99]">
-        Целей пока нет. Нажмите «+», чтобы создать цель.
+      <div class="card rounded-2xl p-5 text-center flex flex-col items-center justify-center gap-2.5 bg-[#181B24] border border-[rgba(255,255,255,0.06)]">
+        <div class="w-10 h-10 rounded-xl bg-[#6C5DD3]/15 text-[#727cff] flex items-center justify-center">
+          <i data-lucide="target" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <p class="text-xs font-semibold text-gray-200">Целей пока нет</p>
+          <p class="text-[11px] text-[#848D99] mt-0.5">Создайте финансовую цель для накопления средств</p>
+        </div>
+        <button type="button" onclick="openGoalModal()" class="px-3.5 py-1.5 rounded-xl bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white text-xs font-semibold transition-all active:scale-95 cursor-pointer flex items-center gap-1.5">
+          <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+          <span>Создать цель</span>
+        </button>
       </div>
     `;
+    if (typeof lucide !== 'undefined') lucide.createIcons();
     return;
   }
 

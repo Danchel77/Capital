@@ -1,16 +1,25 @@
 {
-  "name": "Бюджет",
+  "id": "/",
+  "name": "Семейный бюджет",
   "short_name": "Бюджет",
+  "description": "Учет личных финансов, планирование семейного бюджета, инвестиции и аналитика",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#121212",
-  "theme_color": "#111827",
+  "background_color": "#0F1117",
+  "theme_color": "#0F1117",
   "icons": [
     {
       "src": "icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
     }
   ]
 }

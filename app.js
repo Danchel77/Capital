@@ -222,7 +222,27 @@ function switchTab(tab) {
       el.style.opacity = '';
       el.style.transformOrigin = '';
     }
-    if (navBtn) navBtn.classList.replace('text-blue-400', 'text-gray-500');
+    if (navBtn) {
+      navBtn.classList.remove('text-[#727cff]');
+      navBtn.classList.add('text-[#848D99]');
+      const iconWrap = navBtn.querySelector('.nav-icon-wrap');
+      if (iconWrap) {
+        iconWrap.classList.remove('bg-[#6C5DD3]/15', 'text-[#727cff]');
+        iconWrap.classList.add('bg-transparent', 'text-inherit');
+        const icon = iconWrap.querySelector('i, svg');
+        if (icon) icon.classList.remove('scale-105', 'stroke-[2.2px]');
+      }
+      const label = navBtn.querySelector('.nav-label');
+      if (label) {
+        label.classList.remove('text-white', 'font-bold');
+        label.classList.add('text-[#848D99]', 'font-medium');
+      }
+      const ind = navBtn.querySelector('.nav-indicator');
+      if (ind) {
+        ind.classList.remove('opacity-100', 'scale-100');
+        ind.classList.add('opacity-0', 'scale-75');
+      }
+    }
   });
 
   const activeTabEl = document.getElementById(tab + '-tab');
@@ -233,7 +253,32 @@ function switchTab(tab) {
       activeTabEl.classList.add('tab-enter-active');
     });
   }
-  if (activeNavBtn) activeNavBtn.classList.replace('text-gray-500', 'text-blue-400');
+  if (activeNavBtn) {
+    activeNavBtn.classList.remove('text-[#848D99]');
+    activeNavBtn.classList.add('text-[#727cff]');
+    const iconWrap = activeNavBtn.querySelector('.nav-icon-wrap');
+    if (iconWrap) {
+      iconWrap.classList.remove('bg-transparent', 'text-inherit');
+      iconWrap.classList.add('bg-[#6C5DD3]/15', 'text-[#727cff]');
+      const icon = iconWrap.querySelector('i, svg');
+      if (icon) icon.classList.add('scale-105', 'stroke-[2.2px]');
+    }
+    const label = activeNavBtn.querySelector('.nav-label');
+    if (label) {
+      label.classList.remove('text-[#848D99]', 'font-medium');
+      label.classList.add('text-white', 'font-bold');
+    }
+    const ind = activeNavBtn.querySelector('.nav-indicator');
+    if (ind) {
+      ind.classList.remove('opacity-0', 'scale-75');
+      ind.classList.add('opacity-100', 'scale-100');
+    }
+  }
+
+  // Тактильный виброотклик на смартфонах при смене экранов
+  if (typeof navigator !== 'undefined' && navigator.vibrate) {
+    try { navigator.vibrate(12); } catch (e) {}
+  }
 
   // Всегда открываем вкладку с позицией прокрутки в самом верху
   window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
@@ -669,4 +714,12 @@ window.dismissPwaInstallBannerForToday = dismissPwaInstallBannerForToday;
 window.dismissPwaInstallBannerPermanently = dismissPwaInstallBannerPermanently;
 window.pausePwaTimer = pausePwaTimer;
 window.resumePwaTimer = resumePwaTimer;
+
+// Первичная синхронизация режима приватности и векторных иконок
+if (typeof window.updatePrivacyModeUI === 'function') {
+  window.updatePrivacyModeUI();
+}
+if (typeof lucide !== 'undefined') {
+  lucide.createIcons();
+}
 
