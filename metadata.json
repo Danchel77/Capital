@@ -1,0 +1,6 @@
+{
+  "name": "Семейный бюджет",
+  "description": "PWA веб-приложение для учета личных и семейных финансов, бюджета, инвестиций и целей.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
