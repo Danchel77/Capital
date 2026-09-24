@@ -4,17 +4,289 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>Бюджет</title>
-  <meta name="description" content="PWA веб-приложение для учета финансов, бюджета, инвестиций и целей.">
+  <meta name="description" content="PWA веб-приложение для учета личных финансов, бюджета, инвестиций и целей.">
   <meta property="og:title" content="Бюджет">
-  <meta property="og:description" content="PWA веб-приложение для учета финансов, бюджета, инвестиций и целей.">
+  <meta property="og:description" content="PWA веб-приложение для учета личных финансов, бюджета, инвестиций и целей.">
   
   <!-- Иконки и PWA настройки -->
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="alternate icon" type="image/svg+xml" href="icon.svg">
   <link rel="apple-touch-icon" href="icon.svg">
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#0b0e12">
+  <meta name="theme-color" content="#0B0F19">
   
+  <style>
+    /* ============================================================
+       GOOGLE MATERIAL DIAMOND & WAVE DOTS - SPLASH SCREEN
+       Цвета: Фирменная палитра (#0F1117, #181B24, #6C5DD3, #38BDF8)
+       ============================================================ */
+    html, body {
+      background-color: #0F1117;
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+    }
+    
+    .loading-screen {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      z-index: 99999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at 50% 45%, #181B24 0%, #0F1117 70%, #090B0F 100%);
+      color: #F2F4F7;
+      opacity: 1;
+      visibility: visible;
+      overflow: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+      padding-top: max(24px, env(safe-area-inset-top));
+      padding-bottom: max(28px, env(safe-area-inset-bottom));
+      padding-left: max(20px, env(safe-area-inset-left));
+      padding-right: max(20px, env(safe-area-inset-right));
+      box-sizing: border-box;
+      transition: opacity 0.38s cubic-bezier(0.2, 0, 0, 1), transform 0.38s cubic-bezier(0.2, 0, 0, 1), visibility 0.38s ease;
+      will-change: opacity, transform;
+    }
+
+    .loading-screen.loading-screen--exit {
+      opacity: 0 !important;
+      transform: scale(0.96) !important;
+      pointer-events: none !important;
+    }
+
+    .loading-screen.hidden {
+      display: none !important;
+      opacity: 0 !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+    }
+
+    /* Мягкий фирменный индиго-ореол (Accent glow) */
+    .loading-glow-halo {
+      position: absolute;
+      top: 42%;
+      left: 50%;
+      width: 260px;
+      height: 260px;
+      transform: translate3d(-50%, -50%, 0);
+      background: radial-gradient(circle, rgba(108, 93, 211, 0.28) 0%, rgba(56, 189, 248, 0.12) 42%, transparent 70%);
+      border-radius: 50%;
+      filter: blur(44px);
+      pointer-events: none;
+      animation: material-halo-breathe 3.6s ease-in-out infinite alternate;
+      will-change: transform, opacity;
+    }
+
+    /* Центральный контейнер */
+    .loading-container {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    /* Сцена лазерного ромба */
+    .laser-diamond-stage {
+      position: relative;
+      width: 112px;
+      height: 112px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 22px;
+    }
+
+    .laser-diamond-svg {
+      width: 88px;
+      height: 88px;
+      overflow: visible;
+    }
+
+    /* ЕДИНСТВЕННЫЙ ромб с острыми углами: вычерчивание лазером */
+    .laser-drawing-path {
+      stroke-dasharray: 215;
+      stroke-dashoffset: 215;
+      will-change: stroke-dashoffset, opacity, filter;
+      animation: laser-draw-diamond 2.8s cubic-bezier(0.2, 0, 0.2, 1) infinite;
+    }
+
+    @keyframes laser-draw-diamond {
+      0% {
+        stroke-dashoffset: 215;
+        opacity: 0;
+      }
+      3% {
+        opacity: 1;
+      }
+      45% {
+        stroke-dashoffset: 0;
+        opacity: 1;
+        filter: drop-shadow(0 0 5px #38BDF8) drop-shadow(0 0 10px #6C5DD3);
+      }
+      48% {
+        /* Вспышка в момент смыкания контура на вершине */
+        stroke-dashoffset: 0;
+        opacity: 1;
+        filter: drop-shadow(0 0 12px #FFFFFF) drop-shadow(0 0 22px #38BDF8) drop-shadow(0 0 32px #6C5DD3);
+      }
+      72% {
+        stroke-dashoffset: 0;
+        opacity: 0.9;
+        filter: drop-shadow(0 0 6px #38BDF8);
+      }
+      92%, 100% {
+        stroke-dashoffset: 0;
+        opacity: 0;
+        filter: none;
+      }
+    }
+
+    /* Резкие контурные волны («круги на воде» с абсолютно острыми углами) */
+    .laser-wave-group {
+      transform-origin: 50px 50px;
+      pointer-events: none;
+      will-change: transform, opacity;
+    }
+
+    .laser-wave-1 {
+      animation: laser-sharp-ripple-1 2.8s cubic-bezier(0.14, 0.7, 0.25, 1) infinite;
+    }
+
+    .laser-wave-2 {
+      animation: laser-sharp-ripple-2 2.8s cubic-bezier(0.14, 0.7, 0.25, 1) infinite;
+    }
+
+    @keyframes laser-sharp-ripple-1 {
+      0%, 46% {
+        transform: scale(1);
+        opacity: 0;
+      }
+      48% {
+        transform: scale(1);
+        opacity: 0.9;
+      }
+      60% {
+        opacity: 0.55;
+      }
+      88%, 100% {
+        transform: scale(2.2);
+        opacity: 0;
+      }
+    }
+
+    @keyframes laser-sharp-ripple-2 {
+      0%, 54% {
+        transform: scale(1);
+        opacity: 0;
+      }
+      56% {
+        transform: scale(1);
+        opacity: 0.75;
+      }
+      68% {
+        opacity: 0.4;
+      }
+      94%, 100% {
+        transform: scale(2.0);
+        opacity: 0;
+      }
+    }
+
+    /* Название бренда: чистое, минималистичное */
+    .loading-brand-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      margin: 0;
+    }
+
+    .loading-title-symbol {
+      color: #38BDF8;
+      font-size: 16px;
+      line-height: 1;
+      filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.7));
+      animation: kinetic-symbol-glow 2.8s ease-in-out infinite alternate;
+    }
+
+    .loading-title-text {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 21px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: #F2F4F7;
+    }
+
+    @keyframes kinetic-symbol-glow {
+      0% {
+        color: #38BDF8;
+        filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.6));
+      }
+      100% {
+        color: #818CF8;
+        filter: drop-shadow(0 0 10px rgba(129, 140, 248, 0.8));
+      }
+    }
+
+    /* Микроиндикатор загрузки: три минималистичные деликатные точки */
+    .kinetic-status-dots {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin-top: 22px;
+      height: 16px;
+    }
+
+    .kinetic-status-dot {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: #848D99;
+      opacity: 0.35;
+      will-change: transform, opacity, background-color, box-shadow;
+      animation: kinetic-dot-fade 1.8s ease-in-out infinite;
+    }
+
+    .kinetic-status-dot:nth-child(1) {
+      animation-delay: 0s;
+    }
+
+    .kinetic-status-dot:nth-child(2) {
+      animation-delay: 0.25s;
+    }
+
+    .kinetic-status-dot:nth-child(3) {
+      animation-delay: 0.5s;
+    }
+
+    @keyframes kinetic-dot-fade {
+      0%, 100% {
+        transform: scale(0.9);
+        opacity: 0.25;
+        background-color: #848D99;
+        box-shadow: none;
+      }
+      50% {
+        transform: scale(1.4);
+        opacity: 0.95;
+        background-color: #38BDF8;
+        box-shadow: 0 0 8px rgba(56, 189, 248, 0.8);
+      }
+    }
+  </style>
+
   <!-- Предварительный прогрев сетевых соединений (ускорение загрузки скриптов) -->
   <link rel="preconnect" href="https://cdn.tailwindcss.com" crossorigin>
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
@@ -53,25 +325,132 @@
   <script defer src="budget.js?v=20"></script>
   <script defer src="app.js?v=20"></script>
 </head>
-<body class="bg-[#121212] text-[#e5e7eb]" ontouchstart="">
+<body class="bg-[#0F1117] text-[#F2F4F7]" ontouchstart="">
 
- <div id="loading-screen" class="loading-screen">
-  <div class="loading-mark">
-    <div class="loading-mark__diamond"></div>
-    <div class="loading-mark__pulse"></div>
+  <!-- ============================================================
+       SPLASH / LOADING SCREEN: SHARP LASER DIAMOND & WATER RIPPLES
+       ============================================================ -->
+  <div id="loading-screen" class="loading-screen" role="status" aria-label="Загрузка приложения">
+    <!-- Мягкий рассеянный индиго-ореол (акцент бренда #6C5DD3) -->
+    <div class="loading-glow-halo"></div>
+
+    <!-- Основной центрированный контейнер -->
+    <div class="loading-container">
+      <!-- Сцена: ОДИН лазерный ромб с острыми углами и рождением волн («кругов на воде») -->
+      <div class="laser-diamond-stage">
+        <svg class="laser-diamond-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <!-- Градиент лазерного луча: ослепительный белый во фронте вычерчивания -> циан -> индиго -->
+            <linearGradient id="laser-line-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#FFFFFF"/>
+              <stop offset="25%" stop-color="#38BDF8"/>
+              <stop offset="70%" stop-color="#818CF8"/>
+              <stop offset="100%" stop-color="#6C5DD3"/>
+            </linearGradient>
+
+            <!-- Неоновое свечение лазера -->
+            <filter id="laser-line-glow" x="-40%" y="-40%" width="180%" height="180%">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="1.8" result="glow1"/>
+              <feGaussianBlur in="SourceGraphic" stdDeviation="4.5" result="glow2"/>
+              <feMerge>
+                <feMergeNode in="glow2"/>
+                <feMergeNode in="glow1"/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
+          </defs>
+
+          <!-- 1. Тонкий фоновый контур-направляющая (едва уловимый след с острыми углами) -->
+          <polygon points="50,12 88,50 50,88 12,50" 
+                   stroke="rgba(255, 255, 255, 0.08)" 
+                   stroke-width="1.2" 
+                   stroke-linejoin="miter" 
+                   stroke-miterlimit="10" 
+                   fill="none" />
+
+          <!-- 2. Расходящиеся контурные волны («круги на воде» с острыми углами) -->
+          <g class="laser-wave-group laser-wave-1">
+            <polygon points="50,12 88,50 50,88 12,50" 
+                     stroke="#38BDF8" 
+                     stroke-width="1.2" 
+                     stroke-linejoin="miter" 
+                     stroke-miterlimit="10" 
+                     fill="none" />
+          </g>
+          <g class="laser-wave-group laser-wave-2">
+            <polygon points="50,12 88,50 50,88 12,50" 
+                     stroke="#6C5DD3" 
+                     stroke-width="1" 
+                     stroke-linejoin="miter" 
+                     stroke-miterlimit="10" 
+                     fill="none" />
+          </g>
+
+          <!-- 3. ЕДИНСТВЕННЫЙ ромб с острыми углами, вычерчиваемый лазером -->
+          <path d="M 50,12 L 88,50 L 50,88 L 12,50 Z" 
+                stroke="url(#laser-line-grad)" 
+                stroke-width="2" 
+                stroke-linejoin="miter" 
+                stroke-miterlimit="10" 
+                fill="none" 
+                filter="url(#laser-line-glow)" 
+                class="laser-drawing-path" />
+        </svg>
+      </div>
+
+      <!-- Название бренда в точности в стиле приложения -->
+      <div class="loading-brand-row">
+        <span class="loading-title-symbol">◇</span>
+        <h1 class="loading-title-text">Бюджет</h1>
+      </div>
+
+      <!-- Микроиндикатор загрузки: три деликатные ритмичные точки -->
+      <div class="kinetic-status-dots" aria-label="Загрузка">
+        <span class="kinetic-status-dot"></span>
+        <span class="kinetic-status-dot"></span>
+        <span class="kinetic-status-dot"></span>
+      </div>
+    </div>
   </div>
 
-  <div class="loading-title">БЮДЖЕТ</div>
+  <script>
+    /* Мгновенная инициализация контроллера экрана загрузки */
+    (function() {
+      window.hideLoadingScreen = function() {
+        var ls = document.getElementById('loading-screen');
+        if (!ls || ls.dataset.hiding === 'true') return;
+        ls.dataset.hiding = 'true';
+        ls.classList.add('loading-screen--exit');
 
-  <div class="loading-status">
-    <span>Загрузка</span>
-    <span class="loading-dots">
-      <i></i>
-      <i></i>
-      <i></i>
-    </span>
-  </div>
-</div> 
+        var cleanedUp = false;
+        var cleanup = function() {
+          if (cleanedUp) return;
+          cleanedUp = true;
+          window._loadingScreenElement = ls;
+          if (ls.parentNode) {
+            ls.parentNode.removeChild(ls);
+          }
+        };
+
+        ls.addEventListener('transitionend', cleanup, { once: true });
+        setTimeout(cleanup, 360);
+      };
+
+      window.showLoadingScreen = function() {
+        var ls = document.getElementById('loading-screen');
+        if (!ls && window._loadingScreenElement) {
+          ls = window._loadingScreenElement;
+          document.body.prepend(ls);
+        }
+        if (!ls) return;
+        ls.dataset.hiding = 'false';
+        ls.classList.remove('loading-screen--exit', 'hidden');
+        ls.style.opacity = '1';
+        ls.style.transform = 'scale(1)';
+        ls.style.pointerEvents = 'auto';
+      };
+    })();
+  </script> 
 
 <div id="login-screen" class="fixed inset-0 bg-gray-900 z-[200] hidden flex flex-col justify-center items-center p-6 animate-fade-in">
     <div class="bg-gray-800 p-6 rounded-3xl border border-gray-700 w-full max-w-sm shadow-2xl">

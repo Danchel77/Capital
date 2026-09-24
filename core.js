@@ -142,7 +142,48 @@ function getUserCol(table) {
   return db.collection('users').doc(user.uid).collection(table);
 }
 
-async function fetchAllData() {
+function hideLoadingScreen() {
+  if (typeof window.hideLoadingScreen === 'function' && window.hideLoadingScreen !== hideLoadingScreen) {
+    window.hideLoadingScreen();
+    return;
+  }
+  const ls = document.getElementById('loading-screen');
+  if (!ls || ls.dataset.hiding === 'true') return;
+  ls.dataset.hiding = 'true';
+  ls.classList.add('loading-screen--exit');
+
+  let cleanedUp = false;
+  const cleanup = () => {
+    if (cleanedUp) return;
+    cleanedUp = true;
+    window._loadingScreenElement = ls;
+    if (ls.parentNode) {
+      ls.parentNode.removeChild(ls);
+    }
+  };
+  ls.addEventListener('transitionend', cleanup, { once: true });
+  setTimeout(cleanup, 450);
+}
+
+function showLoadingScreen() {
+  if (typeof window.showLoadingScreen === 'function' && window.showLoadingScreen !== showLoadingScreen) {
+    window.showLoadingScreen();
+    return;
+  }
+  let ls = document.getElementById('loading-screen');
+  if (!ls && window._loadingScreenElement) {
+    ls = window._loadingScreenElement;
+    document.body.prepend(ls);
+  }
+  if (!ls) return;
+  ls.dataset.hiding = 'false';
+  ls.classList.remove('loading-screen--exit', 'hidden');
+  ls.style.opacity = '1';
+  ls.style.transform = 'scale(1)';
+  ls.style.pointerEvents = 'auto';
+}
+
+async function fetchAllData(isSilent = false) {
   const tables = ['Transactions', 'Deposits', 'Broker', 'Goals', 'Categories', 'CategoryRules', 'BudgetPlan', 'CalendarBills'];
 
   // ЭТАП 1: Мгновенное чтение из локального кэша IndexedDB (15-40 мс)
@@ -152,31 +193,40 @@ async function fetchAllData() {
     );
     if (Array.isArray(cachedSnaps) && cachedSnaps.some(s => s && !s.empty)) {
       await applySnapshotsToUI(cachedSnaps, false);
-      document.getElementById('loading-screen')?.classList.add('hidden');
+      hideLoadingScreen();
     }
   } catch (e) {}
 
   // ЭТАП 2: Фоновая синхронизация со свежими данными сервера
   try {
-    showToast("Синхронизация...", false, true);
+    if (!isSilent) {
+      showToast("Синхронизация...", false, true);
+    }
     const serverSnaps = await Promise.all(
       tables.map(tbl => getUserCol(tbl).get())
     );
     await applySnapshotsToUI(serverSnaps, true);
-    document.getElementById('last-sync').innerText = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    document.getElementById('toast-container')?.classList.add('hidden');
-    document.getElementById('loading-screen')?.classList.add('hidden');
+    const syncTimeEl = document.getElementById('last-sync');
+    if (syncTimeEl) {
+      syncTimeEl.innerText = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+    if (!isSilent) {
+      document.getElementById('toast-container')?.classList.add('hidden');
+    }
+    hideLoadingScreen();
 
     if (typeof checkFamilyBudgetReviewPrompt === 'function') {
       checkFamilyBudgetReviewPrompt();
     }
   } catch (err) {
-    document.getElementById('toast-container')?.classList.add('hidden');
-    document.getElementById('loading-screen')?.classList.add('hidden');
+    if (!isSilent) {
+      document.getElementById('toast-container')?.classList.add('hidden');
+    }
+    hideLoadingScreen();
     if (Cache) {
       Cache.isServerSyncComplete = true;
       if (typeof renderBudgetTab === 'function') renderBudgetTab();
-    } else {
+    } else if (!isSilent) {
       showToast("Нет подключения к сети", true);
     }
   }
@@ -1073,4 +1123,6 @@ window.processOrSeedRules = processOrSeedRules;
 window.togglePrivacyMode = togglePrivacyMode;
 window.updatePrivacyModeUI = updatePrivacyModeUI;
 window.initOfflineResilience = initOfflineResilience;
+window.hideLoadingScreen = hideLoadingScreen;
+window.showLoadingScreen = showLoadingScreen;
 window.getCurrentUserProfile = getCurrentUserProfile;

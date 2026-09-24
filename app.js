@@ -2,13 +2,33 @@
 // Main Application Entry Point & Navigation
 // ==========================================
 
-// Показываем экран загрузки сразу при старте
-document.getElementById('loading-screen')?.classList.remove('hidden');
+// Флаги инициализации сессии пользователя
+let isAppInitialized = false;
+let currentAuthedUid = null;
+let lastVisibilitySyncTimestamp = Date.now();
+
+// Показываем экран загрузки сразу при первом старте
+if (typeof window.showLoadingScreen === 'function') {
+  window.showLoadingScreen();
+} else {
+  document.getElementById('loading-screen')?.classList.remove('hidden');
+}
 
 // Слушатель состояния авторизации пользователя (Запуск приложения)
 auth.onAuthStateChanged(async user => {
   if (user) {
     document.getElementById('login-screen')?.classList.add('hidden');
+
+    // Если приложение уже полностью инициализировано для этого же пользователя (например, при разворачивании PWA или реконнекте токена)
+    if (isAppInitialized && currentAuthedUid === user.uid) {
+      // Ни в коем случае не показываем загрузочный экран, не сбрасываем вкладку и не прерываем работу пользователя!
+      if (typeof window.fetchAllData === 'function') {
+        window.fetchAllData(true).catch(() => {});
+      }
+      return;
+    }
+
+    currentAuthedUid = user.uid;
 
     // Обновляем никнейм в шапке
     const nameEl = document.getElementById('header-user-name');
@@ -24,19 +44,34 @@ auth.onAuthStateChanged(async user => {
       await window.loadUserSettings(user);
     }
     if (typeof window.fetchAllData === 'function') {
-      await window.fetchAllData();
+      await window.fetchAllData(false);
     }
 
-    // Переключаемся на вкладку бюджета ТОЛЬКО после применения актуальных данных
-    switchTab('budget');
+    // Восстанавливаем сохраненную вкладку или открываем бюджет по умолчанию
+    const savedTab = localStorage.getItem('budget_active_tab') || 'budget';
+    switchTab(savedTab);
+
+    isAppInitialized = true;
+    lastVisibilitySyncTimestamp = Date.now();
 
     // Скрываем загрузочный экран, когда приложение полностью готово
-    document.getElementById('loading-screen')?.classList.add('hidden');
+    if (typeof window.hideLoadingScreen === 'function') {
+      window.hideLoadingScreen();
+    } else {
+      document.getElementById('loading-screen')?.classList.add('hidden');
+    }
 
     // Проверяем и предлагаем установку PWA (только 1 раз в день в обычном браузере)
     checkAndShowPwaInstallPrompt(2500);
   } else {
-    document.getElementById('loading-screen')?.classList.add('hidden');
+    isAppInitialized = false;
+    currentAuthedUid = null;
+
+    if (typeof window.hideLoadingScreen === 'function') {
+      window.hideLoadingScreen();
+    } else {
+      document.getElementById('loading-screen')?.classList.add('hidden');
+    }
     if (typeof window.closeProfileModal === 'function') window.closeProfileModal();
     if (typeof window.resetGlobalCache === 'function') window.resetGlobalCache();
     if (typeof window.resetAuthFormState === 'function') window.resetAuthFormState();
@@ -46,6 +81,20 @@ auth.onAuthStateChanged(async user => {
     document.querySelectorAll('[id$="-dialog"]').forEach(d => d.classList.add('hidden'));
 
     document.getElementById('login-screen')?.classList.remove('hidden');
+  }
+});
+
+// Слушатель возвращения пользователя в приложение (разворачивание из фона)
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && isAppInitialized && auth.currentUser) {
+    const now = Date.now();
+    // Фоновая тихая синхронизация, если прошло более 30 секунд с последнего обновления
+    if (now - lastVisibilitySyncTimestamp > 30000) {
+      lastVisibilitySyncTimestamp = now;
+      if (typeof window.fetchAllData === 'function') {
+        window.fetchAllData(true).catch(() => {});
+      }
+    }
   }
 });
 
@@ -252,6 +301,11 @@ function switchTab(tab) {
 
   const activeTabEl = document.getElementById(tab + '-tab');
   const activeNavBtn = document.getElementById('nav-' + tab);
+  
+  try {
+    localStorage.setItem('budget_active_tab', tab);
+  } catch (e) {}
+
   if (activeTabEl) {
     activeTabEl.classList.remove('hidden');
     requestAnimationFrame(() => {

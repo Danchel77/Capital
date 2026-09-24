@@ -9,7 +9,7 @@
 
     <!-- Top glass reflection highlight -->
     <linearGradient id="glossHighlight" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.35"/>
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.3"/>
       <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
     </linearGradient>
 
@@ -32,15 +32,15 @@
     </linearGradient>
   </defs>
 
-  <!-- iOS / Material 3 Squircle App Icon Base -->
-  <rect x="8" y="8" width="496" height="496" rx="116" fill="url(#appBgGrad)"/>
+  <!-- iOS / Material 3 Squircle App Icon Base with safe splash padding -->
+  <rect x="36" y="36" width="440" height="440" rx="104" fill="url(#appBgGrad)"/>
   
   <!-- Subtle inner glass rim highlight -->
-  <rect x="8" y="8" width="496" height="496" rx="116" fill="none" stroke="url(#appBorder)" stroke-width="6"/>
-  <path d="M16 124 C16 60, 60 16, 124 16 L388 16 C452 16, 496 60, 496 124 L496 220 C350 200, 160 210, 16 260 Z" fill="url(#glossHighlight)"/>
+  <rect x="36" y="36" width="440" height="440" rx="104" fill="none" stroke="url(#appBorder)" stroke-width="5"/>
+  <path d="M42 140 C42 84, 84 42, 140 42 L372 42 C428 42, 470 84, 470 140 L470 220 C340 200, 170 210, 42 250 Z" fill="url(#glossHighlight)"/>
 
   <!-- Centered Professional Fintech Emblem (Wallet + Card + Gold Accent) -->
-  <g transform="translate(88, 88) scale(14.083)" stroke-linecap="round" stroke-linejoin="round">
+  <g transform="translate(108, 108) scale(12.333)" stroke-linecap="round" stroke-linejoin="round">
     <!-- Bank Card emerging from the wallet -->
     <rect x="5.5" y="3" width="13" height="7" rx="1.6" fill="url(#cardAccentGrad)" stroke="#E0E7FF" stroke-width="0.7"/>
     <line x1="5.5" y1="5.6" x2="18.5" y2="5.6" stroke="#1E1B4B" stroke-width="0.9"/>

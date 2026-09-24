@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="maskBgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7C65FF"/>
+      <stop offset="50%" stop-color="#6352F7"/>
+      <stop offset="100%" stop-color="#4834DF"/>
+    </linearGradient>
+
+    <linearGradient id="cardAccentGradM" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="100%" stop-color="#818CF8"/>
+    </linearGradient>
+
+    <linearGradient id="coinGradM" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FDE047"/>
+      <stop offset="100%" stop-color="#F59E0B"/>
+    </linearGradient>
+
+    <linearGradient id="glossHighlightM" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Full bleed background for Android Maskable Icon (safe zone is inner 66% circle) -->
+  <rect width="512" height="512" fill="url(#maskBgGrad)"/>
+  
+  <!-- Subtle ambient gloss -->
+  <path d="M0 0 L512 0 L512 240 C350 210, 160 220, 0 280 Z" fill="url(#glossHighlightM)"/>
+
+  <!-- Centered Fintech Emblem positioned strictly inside the 66% safe zone circle (center 256,256) -->
+  <g transform="translate(136, 136) scale(10)" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Bank Card emerging from the wallet -->
+    <rect x="5.5" y="3" width="13" height="7" rx="1.6" fill="url(#cardAccentGradM)" stroke="#E0E7FF" stroke-width="0.7"/>
+    <line x1="5.5" y1="5.6" x2="18.5" y2="5.6" stroke="#1E1B4B" stroke-width="0.9"/>
+    <rect x="7.2" y="7.2" width="2.2" height="1.6" rx="0.4" fill="#FDE047" stroke="none"/>
+
+    <!-- Main Wallet Body -->
+    <path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"
+          fill="#2E1065" fill-opacity="0.3" stroke="#FFFFFF" stroke-width="1.75"/>
+    <path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"
+          fill="#2E1065" fill-opacity="0.3" stroke="#FFFFFF" stroke-width="1.75"/>
+
+    <!-- Golden Lock/Clasp Accent Coin -->
+    <circle cx="18" cy="13" r="1.1" fill="url(#coinGradM)" stroke="#FFFFFF" stroke-width="0.5"/>
+  </g>
+</svg>
