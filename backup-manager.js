@@ -75,7 +75,9 @@ function switchBackupTab(tab) {
  * Обновление счетчиков существующих данных для экспорта
  */
 function updateExportCounters() {
-  const txCount = Cache?.transactions?.length || 0;
+  const txCount = Array.isArray(Cache?.transactions)
+    ? Cache.transactions.reduce((sum, m) => sum + (Array.isArray(m.items) ? m.items.length : (m.amount !== undefined ? 1 : 0)), 0)
+    : 0;
   const depCount = Cache?.deposits?.length || 0;
   const brokerCount = Cache?.broker?.history?.length || 0;
   const goalsCount = Cache?.goals?.length || 0;
@@ -189,18 +191,35 @@ async function downloadBackupJson() {
     const rawTxList = Array.isArray(Cache.transactions) 
       ? Cache.transactions.flatMap(m => m.items || (m.amount !== undefined ? [m] : []))
       : [];
-    exportPayload.data.transactions = rawTxList.map(t => ({
-      id: t.id,
-      amount: t.amount,
-      category: t.category,
-      date: t.date || t.rawDate,
-      description: t.description || t.comment || '',
-      type: t.type || 'expense',
-      goalId: t.goalId || null,
-      goalName: t.goalName || null,
-      authorName: t.authorName || (t.author ? t.author.name : null),
-      createdAt: t.createdAt || null
-    }));
+    exportPayload.data.transactions = rawTxList.map(t => {
+      const commentVal = (typeof getTxComment === 'function')
+        ? getTxComment(t)
+        : (t.comment || t.description || t.merchant || t.title || t.name || t.note || t.notes || t.payee || t.details || '');
+      const rawType = String(t.type || '').trim().toLowerCase();
+      const isInc = rawType === 'income' || rawType === 'доход';
+      const typeVal = isInc ? 'Доход' : 'Расход';
+      return {
+        id: t.id,
+        amount: Math.abs(Number(t.amount)) || 0,
+        category: t.category || 'Прочее',
+        date: t.date || t.rawDate,
+        comment: commentVal,
+        description: commentVal,
+        merchant: commentVal,
+        note: commentVal,
+        title: commentVal,
+        type: typeVal,
+        excludeFromBudget: !!(t.excludeFromBudget || t.isExcludedFromBudget),
+        spreadMonths: parseInt(t.spreadMonths, 10) || 1,
+        isBillPayment: !!t.isBillPayment,
+        billId: t.billId || null,
+        billName: t.billName || '',
+        goalId: t.goalId || null,
+        goalName: t.goalName || null,
+        authorName: t.authorName || (t.author ? t.author.name : null),
+        createdAt: t.createdAt || null
+      };
+    });
   }
 
   if (expDep && Cache?.deposits) {
@@ -417,12 +436,17 @@ function analyzeAndDisplayBackup(parsed) {
   } else if (parsed && typeof parsed === 'object') {
     const src = parsed.data || parsed;
     if (Array.isArray(src.transactions)) rawSections.transactions = src.transactions;
-    if (Array.isArray(src.deposits)) rawSections.deposits = src.deposits;
-    if (Array.isArray(src.broker)) rawSections.broker = src.broker;
-    if (Array.isArray(src.goals)) rawSections.goals = src.goals;
-    if (Array.isArray(src.calendarBills || src.bills)) rawSections.calendarBills = src.calendarBills || src.bills;
-    if (src.budget || src.budgetPlans) rawSections.budget = src.budget || src.budgetPlans;
-    if (Array.isArray(src.categoryRules || src.rules)) rawSections.categoryRules = src.categoryRules || src.rules;
+    else if (Array.isArray(src.operations)) rawSections.transactions = src.operations;
+    else if (Array.isArray(src.items)) rawSections.transactions = src.items;
+    else if (Array.isArray(src.records)) rawSections.transactions = src.records;
+    else if (Array.isArray(src['транзакции'])) rawSections.transactions = src['транзакции'];
+    else if (Array.isArray(src['операции'])) rawSections.transactions = src['операции'];
+    if (Array.isArray(src.deposits || src['вклады'])) rawSections.deposits = src.deposits || src['вклады'];
+    if (Array.isArray(src.broker || src['брокер'])) rawSections.broker = src.broker || src['брокер'];
+    if (Array.isArray(src.goals || src['цели'])) rawSections.goals = src.goals || src['цели'];
+    if (Array.isArray(src.calendarBills || src.bills || src['счета'])) rawSections.calendarBills = src.calendarBills || src.bills || src['счета'];
+    if (src.budget || src.budgetPlans || src['бюджет']) rawSections.budget = src.budget || src.budgetPlans || src['бюджет'];
+    if (Array.isArray(src.categoryRules || src.rules || src['правила'])) rawSections.categoryRules = src.categoryRules || src.rules || src['правила'];
   }
 
   const existingTxs = Array.isArray(Cache?.transactions)
@@ -813,12 +837,16 @@ function renderInspectItemRow(secKey, item, actualIndex) {
 
   switch (secKey) {
     case 'tx': {
-      const isIncome = raw.type === 'income' || raw.type === 'Доход';
+      const rawType = String(raw.type || '').trim().toLowerCase();
+      const isIncome = rawType === 'income' || rawType === 'доход' || (Number(raw.amount) > 0 && raw.isIncome);
       const amountFormatted = Math.abs(Number(raw.amount || 0)).toLocaleString('ru-RU');
       const sign = isIncome ? '+' : '−';
       const amountColor = isIncome ? 'text-emerald-400' : 'text-gray-100';
       const dateStr = formatInspectDate(raw.date || raw.rawDate);
-      const title = raw.description || raw.comment || raw.category || 'Операция';
+      const comment = (typeof getTxComment === 'function')
+        ? getTxComment(raw)
+        : (raw.comment || raw.description || raw.merchant || raw.title || raw.name || raw.note || raw.notes || raw.payee || raw.details || '');
+      const title = comment || raw.category || 'Операция';
 
       topRowLeft = `<span class="text-xs font-semibold text-white break-words">${escapeHtml(title)}</span>`;
       topRowRight = `<span class="text-xs font-bold ${amountColor}">${sign} ${amountFormatted} ₽</span>`;
@@ -1029,24 +1057,26 @@ function escapeHtml(str) {
 function isTransactionDuplicate(tx, existingList) {
   if (!tx || !Array.isArray(existingList) || existingList.length === 0) return false;
   const txDate = String(tx.date || tx.rawDate || '').slice(0, 10);
-  const txAmount = Math.round(Number(tx.amount || 0) * 100) / 100;
+  const txAmount = Math.round(Math.abs(Number(tx.amount || 0)) * 100) / 100;
   const txCat = String(tx.category || '').trim().toLowerCase();
-  const txDesc = String(tx.description || tx.comment || '').trim().toLowerCase();
-  const txType = String(tx.type || 'expense').trim().toLowerCase();
+  const txDesc = ((typeof getTxComment === 'function') ? getTxComment(tx) : String(tx.description || tx.comment || '')).trim().toLowerCase();
+  const rawTxType = String(tx.type || '').trim().toLowerCase();
+  const txType = (rawTxType === 'income' || rawTxType === 'доход') ? 'доход' : 'расход';
 
   return existingList.some(ex => {
     if (!ex) return false;
     if (tx.id && ex.id && tx.id === ex.id) return true;
     const exDate = String(ex.date || ex.rawDate || '').slice(0, 10);
-    const exAmount = Math.round(Number(ex.amount || 0) * 100) / 100;
+    const exAmount = Math.round(Math.abs(Number(ex.amount || 0)) * 100) / 100;
     const exCat = String(ex.category || '').trim().toLowerCase();
-    const exDesc = String(ex.description || ex.comment || '').trim().toLowerCase();
-    const exType = String(ex.type || 'expense').trim().toLowerCase();
+    const exDesc = ((typeof getTxComment === 'function') ? getTxComment(ex) : String(ex.description || ex.comment || '')).trim().toLowerCase();
+    const rawExType = String(ex.type || '').trim().toLowerCase();
+    const exType = (rawExType === 'income' || rawExType === 'доход') ? 'доход' : 'расход';
 
     return exDate === txDate &&
       Math.abs(exAmount - txAmount) < 0.01 &&
       exCat === txCat &&
-      exDesc === txDesc &&
+      (!txDesc || !exDesc || txDesc === exDesc) &&
       exType === txType;
   });
 }
@@ -1182,17 +1212,33 @@ async function executeBackupImport() {
         const chunk = selectedTx.slice(i, i + 400);
         const batch = db.batch();
         chunk.forEach(tx => {
-          const docRef = txCol.doc();
+          const docRef = (tx.id && typeof tx.id === 'string' && tx.id.length > 5) ? txCol.doc(tx.id) : txCol.doc();
+          const commentVal = (typeof getTxComment === 'function')
+            ? getTxComment(tx)
+            : String(tx.comment || tx.description || tx.merchant || tx.title || tx.name || tx.note || tx.notes || tx.payee || tx.details || '').trim();
+          const rawType = String(tx.type || '').trim().toLowerCase();
+          const isIncome = rawType === 'income' || rawType === 'доход';
+          const typeVal = isIncome ? 'Доход' : 'Расход';
+
           batch.set(docRef, {
-            amount: Number(tx.amount) || 0,
+            amount: Math.abs(Number(tx.amount)) || 0,
             category: tx.category || 'Прочее',
-            date: tx.date || new Date().toISOString().slice(0, 10),
-            description: tx.description || '',
-            type: tx.type || 'expense',
+            date: String(tx.date || tx.rawDate || new Date().toISOString().slice(0, 10)).slice(0, 10),
+            comment: commentVal,
+            description: commentVal,
+            merchant: commentVal,
+            title: commentVal,
+            note: commentVal,
+            type: typeVal,
+            excludeFromBudget: !!(tx.excludeFromBudget || tx.isExcludedFromBudget),
+            spreadMonths: parseInt(tx.spreadMonths, 10) || 1,
+            isBillPayment: !!tx.isBillPayment,
+            billId: tx.billId || null,
+            billName: tx.billName || '',
             goalId: tx.goalId || null,
             goalName: tx.goalName || null,
             createdAt: tx.createdAt || firebase.firestore.FieldValue.serverTimestamp()
-          });
+          }, { merge: true });
         });
         await batch.commit();
       }

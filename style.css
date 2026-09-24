@@ -518,7 +518,7 @@ body.selection-mode .deposit-goal-tag {
 /* ---------- top transaction controls ---------- */
 #transactions-tab { gap:14px !important; }
 #transactions-tab > .grid { gap:10px !important; }
-#transactions-tab > .grid > div { background:linear-gradient(145deg,var(--surface-2),var(--surface)) !important; border:1px solid var(--line) !important; border-radius:20px !important; padding:16px !important; box-shadow:none !important; }
+#transactions-tab > .grid > div { background: var(--surface) !important; border: 1px solid var(--line) !important; border-radius: 20px !important; padding: 16px !important; box-shadow: none !important; }
 #transactions-tab > .grid p:first-child { color:var(--muted) !important; }
 #transactions-tab > .grid p:last-child { font-size:19px !important; margin-top:4px; }
 #transactions-tab > button { min-height:54px; background:var(--accent-soft) !important; border:1px solid rgba(123,131,255,.30) !important; color:#aeb4ff !important; border-radius:18px !important; font-size:15px !important; box-shadow:none !important; }

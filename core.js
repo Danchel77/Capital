@@ -60,21 +60,37 @@ const firebaseConfig = {
 };
 
 // Инициализируем приложение
-if (!firebase.apps.length) {
-  firebase.initializeApp(firebaseConfig);
+let db = null;
+let auth = null;
+
+if (typeof firebase !== 'undefined') {
+  if (!firebase.apps || !firebase.apps.length) {
+    try {
+      firebase.initializeApp(firebaseConfig);
+    } catch (e) {
+      console.warn('Firebase init error:', e);
+    }
+  }
+  if (typeof firebase.firestore === 'function') {
+    db = firebase.firestore();
+    // Включаем поддержку офлайн-режима Firestore
+    try {
+      db.enablePersistence({ synchronizeTabs: true }).catch(err => {
+        if (err.code === 'failed-precondition') {
+          console.warn('Firestore persistence failed: Multiple tabs open');
+        } else if (err.code === 'unimplemented') {
+          console.warn('Firestore persistence is not supported by the browser');
+        }
+      });
+    } catch (e) {}
+  }
+  if (typeof firebase.auth === 'function') {
+    auth = firebase.auth();
+  }
 }
 
-const db = firebase.firestore();
-const auth = firebase.auth();
-
-// Включаем поддержку офлайн-режима Firestore
-db.enablePersistence({ synchronizeTabs: true }).catch(err => {
-  if (err.code === 'failed-precondition') {
-    console.warn('Firestore persistence failed: Multiple tabs open');
-  } else if (err.code === 'unimplemented') {
-    console.warn('Firestore persistence is not supported by the browser');
-  }
-});
+window.db = db;
+window.auth = auth;
 
 // ==========================================
 // Global Application State (Cache)
@@ -418,7 +434,8 @@ async function submitAction(btnId, table, data) {
         rawDate: formatDateStr(parsedDate, 'yyyy-MM-dd'),
         formattedDate: formatDateStr(parsedDate, 'dd.MM.yyyy'),
         category: item.category,
-        comment: item.comment || '',
+        comment: (typeof getTxComment === 'function') ? getTxComment(item) : (item.comment || item.description || item.merchant || item.title || item.name || item.note || item.notes || item.payee || item.details || ''),
+        description: (typeof getTxComment === 'function') ? getTxComment(item) : (item.comment || item.description || item.merchant || item.title || item.name || item.note || item.notes || item.payee || item.details || ''),
         author: item.author || defaultAuthor,
         excludeFromBudget: !!item.excludeFromBudget,
         spreadMonths: parseInt(item.spreadMonths, 10) || 1,
@@ -1018,6 +1035,42 @@ function showToast(text, isError = false, keep = false) {
   }
 }
 
+// Универсальный хелпер надежного извлечения комментария/описания/названия транзакции
+function getTxComment(tx) {
+  if (!tx || typeof tx !== 'object') return '';
+  const val = tx.comment ??
+    tx.description ??
+    tx.merchant ??
+    tx.note ??
+    tx.notes ??
+    tx.title ??
+    tx.name ??
+    tx.payee ??
+    tx.details ??
+    tx.rawDetails ??
+    tx.memo ??
+    tx.purpose ??
+    tx.text ??
+    tx.message ??
+    tx.label ??
+    tx['комментарий'] ??
+    tx['описание'] ??
+    tx['назначение'] ??
+    tx['контрагент'] ??
+    tx['получатель'] ??
+    tx['плательщик'] ??
+    tx['название'] ??
+    tx['наименование'] ??
+    '';
+  if (typeof val === 'string') {
+    const trimmed = val.trim();
+    if (trimmed === 'undefined' || trimmed === 'null') return '';
+    return trimmed;
+  }
+  if (typeof val === 'number') return String(val);
+  return '';
+}
+
 /* Управление блокировкой и сохранением прокрутки страницы при открытии модальных окон */
 let modalScrollPos = 0;
 let openModalsCount = 0;
@@ -1037,11 +1090,26 @@ function unlockBodyScroll(force = false) {
   } else if (openModalsCount > 0) {
     openModalsCount--;
   }
-  if (openModalsCount <= 0) {
+
+  // Проверяем, есть ли на экране реально открытые модальные окна
+  const activeDialogs = Array.from(document.querySelectorAll('.fixed.inset-0')).filter(el => {
+    if (el.id === 'loading-screen' || el.id === 'login-screen' || el.id === 'goal-flow-animation-overlay') return false;
+    if (el.classList.contains('hidden')) return false;
+    return (el.offsetWidth > 0 || el.offsetHeight > 0 || el.getClientRects().length > 0);
+  });
+
+  if (activeDialogs.length === 0) {
+    openModalsCount = 0;
+  }
+
+  if (openModalsCount <= 0 || force) {
     openModalsCount = 0;
     const scrollY = document.body.style.top;
     document.body.classList.remove('modal-open');
     document.body.style.top = '';
+    document.body.style.position = '';
+    document.body.style.overflow = '';
+    document.documentElement.style.overflow = '';
     const topVal = parseInt(scrollY || '0', 10) * -1;
     const targetY = !isNaN(topVal) && topVal > 0 ? topVal : modalScrollPos;
     window.scrollTo({ top: targetY, left: 0, behavior: 'instant' });
@@ -1115,6 +1183,7 @@ window.parseAmount = parseAmount;
 window.escapeHtml = escapeHtml;
 window.showToast = showToast;
 window.showDialog = showDialog;
+window.getTxComment = getTxComment;
 window.lockBodyScroll = lockBodyScroll;
 window.unlockBodyScroll = unlockBodyScroll;
 window.resetGlobalCache = resetGlobalCache;

@@ -1257,7 +1257,16 @@ function downloadParsedJSON() {
   const slug = window._lastActiveBank?.slug || 'statement';
   const today = new Date().toISOString().slice(0, 10);
 
-  const jsonStr = JSON.stringify(window._lastParsedTransactions, null, 2);
+  const payload = (window._lastParsedTransactions || []).map(t => {
+    const comm = t.merchant || t.comment || t.description || '';
+    return {
+      ...t,
+      comment: comm,
+      description: comm
+    };
+  });
+
+  const jsonStr = JSON.stringify(payload, null, 2);
   const blob = new Blob([jsonStr], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
 

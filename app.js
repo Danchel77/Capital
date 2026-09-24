@@ -15,7 +15,9 @@ if (typeof window.showLoadingScreen === 'function') {
 }
 
 // Слушатель состояния авторизации пользователя (Запуск приложения)
-auth.onAuthStateChanged(async user => {
+const currentAuth = typeof auth !== 'undefined' ? auth : window.auth;
+if (currentAuth && typeof currentAuth.onAuthStateChanged === 'function') {
+  currentAuth.onAuthStateChanged(async user => {
   if (user) {
     document.getElementById('login-screen')?.classList.add('hidden');
 
@@ -97,7 +99,8 @@ auth.onAuthStateChanged(async user => {
 
     document.getElementById('login-screen')?.classList.remove('hidden');
   }
-});
+  });
+}
 
 // Слушатель возвращения пользователя в приложение (разворачивание из фона)
 document.addEventListener('visibilitychange', () => {

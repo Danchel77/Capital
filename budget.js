@@ -769,7 +769,7 @@ function renderBudgetGoals(goals, plan, bills, targetDate = getSelectedBudgetDat
                 </div>
                 <div class="flex justify-between text-gray-400">
                   <span>Со вкладов:</span>
-                  <b class="text-white font-mono">+${formatMoney(monthlyDepInterest)}</b>
+                  <b class="${monthlyDepInterest > 0 ? 'text-[#30D158]' : 'text-gray-400'} font-mono">+${formatMoney(monthlyDepInterest)}</b>
                 </div>
               </div>
               ${monthsNeeded > 0 ? `
@@ -944,13 +944,17 @@ function openBudgetPlanModal() {
   if (avgEl) avgEl.innerText = `${formatMoney(avgIncome)}/мес`;
 
   updatePlanForecast();
+  if (typeof lockBodyScroll === 'function') lockBodyScroll();
   dlg.classList.remove('hidden');
   if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
 function closeBudgetPlanModal() {
   const dlg = document.getElementById('budget-plan-dialog');
-  if (dlg) dlg.classList.add('hidden');
+  if (dlg) {
+    dlg.classList.add('hidden');
+    if (typeof unlockBodyScroll === 'function') unlockBodyScroll();
+  }
 }
 
 function updatePlanForecast() {
@@ -2544,13 +2548,17 @@ function openAddCategoryLimitPicker() {
     </button>
   `).join('');
 
+  if (typeof lockBodyScroll === 'function') lockBodyScroll();
   dlg.classList.remove('hidden');
   if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
 function closeAddCategoryLimitPicker() {
   const dlg = document.getElementById('wiz-category-picker-dialog');
-  if (dlg) dlg.classList.add('hidden');
+  if (dlg) {
+    dlg.classList.add('hidden');
+    if (typeof unlockBodyScroll === 'function') unlockBodyScroll();
+  }
 }
 
 function addCategoryToWizard(catName) {
@@ -2790,6 +2798,16 @@ async function finishBudgetOnboarding() {
     // 4. Коммитим все изменения единым пакетом
     await batch.commit();
 
+    // Гарантированное снятие блокировки прокрутки после завершения настройки бюджета
+    if (typeof unlockBodyScroll === 'function') {
+      unlockBodyScroll(true);
+    }
+    document.body.classList.remove('modal-open');
+    document.body.style.top = '';
+    document.body.style.position = '';
+    document.body.style.overflow = '';
+    document.documentElement.style.overflow = '';
+
     // 5. Полная перезагрузка актуальных данных и переход к дашборду
     await fetchAllData();
     // Сброс сохраненного шага после успешного запуска бюджета
@@ -2800,6 +2818,15 @@ async function finishBudgetOnboarding() {
   } catch (err) {
     console.error('Ошибка активации бюджета:', err);
     showToast('Ошибка сохранения: ' + err.message, true);
+  } finally {
+    if (typeof unlockBodyScroll === 'function') {
+      unlockBodyScroll(true);
+    }
+    document.body.classList.remove('modal-open');
+    document.body.style.top = '';
+    document.body.style.position = '';
+    document.body.style.overflow = '';
+    document.documentElement.style.overflow = '';
   }
 }
 
@@ -3722,6 +3749,7 @@ function openWizAvgDetailsModal(type, categoryName, isInitialOpen = true) {
   renderWizAvgTxList();
 
   recalculateWizAvgModal();
+  if (typeof lockBodyScroll === 'function') lockBodyScroll();
   dlg.classList.remove('hidden');
   if (typeof lucide !== 'undefined') lucide.createIcons();
 }
@@ -3956,6 +3984,7 @@ function closeWizAvgDetailsModal() {
   document.removeEventListener('click', closeWizAvgSortDropdownOnClickOutside);
   document.removeEventListener('click', closeWizAvgCatFilterDropdownOnClickOutside);
   wizAvgCurrentContext = null;
+  if (typeof unlockBodyScroll === 'function') unlockBodyScroll();
 }
 
 function wizAvgToggleTx(uid) {

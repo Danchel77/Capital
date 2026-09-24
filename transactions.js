@@ -54,8 +54,9 @@ function processTransactions(txs) {
       };
     }
     const amount = typeof parseAmount === 'function' ? parseAmount(tx.amount) : (parseFloat(String(tx.amount || 0).replace(/\s/g, '').replace(/,/g, '.')) || 0);
-    const isExpense = tx.type === 'Расход' || String(tx.type || '').trim().toLowerCase() === 'расход';
-    const isIncome = tx.type === 'Доход' || String(tx.type || '').trim().toLowerCase() === 'доход';
+    const rawType = String(tx.type || '').trim().toLowerCase();
+    const isIncome = rawType === 'доход' || rawType === 'income';
+    const isExpense = !isIncome;
     if (isExpense) grouped[key].expense += amount;
     else if (isIncome) grouped[key].income += amount;
 
@@ -76,13 +77,21 @@ function processTransactions(txs) {
       createdTime = Number(tx.timestamp);
     }
 
+    const commentVal = (typeof getTxComment === 'function')
+      ? getTxComment(tx)
+      : (tx.comment || tx.description || tx.merchant || tx.note || tx.notes || tx.title || tx.name || tx.payee || tx.details || '');
+
     grouped[key].items.push({
       ...tx,
       id: tx.id,
       type: isIncome ? 'Доход' : 'Расход',
-      category: tx.category,
+      category: tx.category || 'Прочее',
       amount,
-      comment: tx.comment || '',
+      comment: commentVal,
+      description: commentVal,
+      merchant: commentVal,
+      title: commentVal,
+      note: commentVal,
       author: tx.author || null,
       excludeFromBudget: !!(tx.excludeFromBudget || tx.isExcludedFromBudget),
       isBillPayment: !!tx.isBillPayment,
@@ -845,7 +854,7 @@ function openEditTxModal(id) {
   if (dateInput) dateInput.value = formattedDate;
   if (dateLabel) dateLabel.innerText = formattedDate;
 
-  document.getElementById('edit-tx-comment').value = (tx.comment && tx.comment !== 'undefined') ? tx.comment : '';
+  document.getElementById('edit-tx-comment').value = (tx.comment && tx.comment !== 'undefined') ? tx.comment : (tx.description || tx.merchant || '');
 
   const catArr = (tx.type === 'Доход') ? (Cache?.categories?.income || []) : (Cache?.categories?.expense || []);
   const foundCat = catArr.find(c => c.name === tx.category);
@@ -1709,12 +1718,15 @@ function renderTxRowHtml(tx, largeThreshold, hasDynamicThreshold) {
     ? 'bg-[#212430] text-[#9EA7B3] border border-[rgba(255,255,255,0.04)]' 
     : 'bg-[#30D158]/10 text-[#30D158] border border-[#30D158]/20';
 
-  const rawComment = (tx.comment || tx.merchant || tx.title || '').trim();
-  const hasComment = rawComment && rawComment !== 'undefined' && rawComment !== 'null';
-  const mainTitle = hasComment
-    ? (typeof cleanMerchantTitle === 'function' ? cleanMerchantTitle(rawComment) : rawComment)
-    : (tx.category || (isExp ? 'Расход' : 'Доход'));
-  const subCategory = hasComment ? tx.category : '';
+  const rawComment = (typeof getTxComment === 'function')
+    ? getTxComment(tx)
+    : (tx.comment || tx.description || tx.merchant || tx.title || tx.name || tx.note || tx.notes || tx.payee || tx.details || '').trim();
+  const hasComment = Boolean(rawComment && rawComment !== 'undefined' && rawComment !== 'null');
+  const cleanedTitle = (hasComment && typeof cleanMerchantTitle === 'function') ? cleanMerchantTitle(rawComment) : rawComment;
+  const mainTitle = (hasComment && cleanedTitle)
+    ? cleanedTitle
+    : (hasComment ? rawComment : (tx.category || (isExp ? 'Расход' : 'Доход')));
+  const subCategory = hasComment ? (tx.category || '') : '';
 
   let authorBadgeHtml = '';
   let authorInfo = null;

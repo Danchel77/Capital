@@ -85,10 +85,33 @@ function renderDeposits() {
   const data = Cache.deposits || [];
   const listEl = document.getElementById('deposits-list');
   const topBtn = document.getElementById('dep-open-top-btn');
+  const summaryPanel = document.getElementById('deposits-summary-panel');
+  const totalAmountEl = document.getElementById('deposits-total-amount');
+  const monthlyInterestEl = document.getElementById('deposits-monthly-interest');
+
+  const active = data.filter(d => !d.isClosed);
+  const closed = data.filter(d => d.isClosed);
+
+  const totalActiveAmount = active.reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0);
+  const totalMonthlyInterest = Math.round(active.reduce((sum, d) => sum + (parseFloat(d.monthlyInterest) || 0), 0));
+
+  if (totalAmountEl) {
+    totalAmountEl.innerText = formatMoney(totalActiveAmount);
+  }
+  if (monthlyInterestEl) {
+    monthlyInterestEl.innerText = `+${formatMoney(totalMonthlyInterest)}`;
+  }
+
   if (topBtn) {
     if (data.length === 0) topBtn.classList.add('hidden');
     else topBtn.classList.remove('hidden');
   }
+
+  if (summaryPanel) {
+    if (data.length === 0) summaryPanel.classList.add('hidden');
+    else summaryPanel.classList.remove('hidden');
+  }
+
   if (!listEl) return;
 
   if (data.length === 0) {
@@ -111,9 +134,6 @@ function renderDeposits() {
     return;
   }
 
-  const active = data.filter(d => !d.isClosed);
-  const closed = data.filter(d => d.isClosed);
-
   let html = '';
 
   const renderCard = (dep, isCls) => `
@@ -127,7 +147,7 @@ function renderDeposits() {
 
       <div class="flex justify-between items-start w-full">
         <div class="flex items-center gap-3 min-w-0">
-          <div class="w-9 h-9 rounded-xl ${isCls ? 'bg-gray-700/30 text-gray-400' : 'bg-blue-500/15 text-blue-400'} flex items-center justify-center flex-shrink-0">
+          <div class="w-9 h-9 rounded-xl ${isCls ? 'bg-gray-700/30 text-gray-400' : 'bg-[#6C5DD3]/15 text-[#8C7DFF]'} flex items-center justify-center flex-shrink-0">
             <i data-lucide="${isCls ? 'check-circle' : 'vault'}" class="w-4 h-4"></i>
           </div>
           <div class="min-w-0">
@@ -172,7 +192,7 @@ function renderDeposits() {
 
       <!-- Тонкая полоска прогресса (Material/iOS) -->
       <div class="w-full bg-[rgba(255,255,255,0.06)] h-1.5 rounded-full overflow-hidden mt-2.5">
-        <div class="bg-gradient-to-r from-[#6C5DD3] to-[#32ADE6] h-full rounded-full transition-all duration-500" style="width:${dep.progress}%"></div>
+        <div class="bg-gradient-to-r from-[#6C5DD3] to-[#8C7DFF] h-full rounded-full transition-all duration-500" style="width:${dep.progress}%"></div>
       </div>
 
     </div>
