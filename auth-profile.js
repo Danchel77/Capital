@@ -17,11 +17,11 @@ function setAuthMode(mode) {
   const submitBtn = document.getElementById('auth-submit-btn');
 
   if (mode === 'login') {
-    loginTab.className = 'flex-1 py-2 text-xs font-semibold rounded-xl bg-blue-600 text-white transition-all cursor-pointer';
+    loginTab.className = 'flex-1 py-2 text-xs font-semibold rounded-xl bg-[#6C5DD3] text-white transition-all cursor-pointer';
     regTab.className = 'flex-1 py-2 text-xs font-semibold rounded-xl text-gray-400 hover:text-white transition-all cursor-pointer';
     submitBtn.innerText = 'Войти';
   } else {
-    regTab.className = 'flex-1 py-2 text-xs font-semibold rounded-xl bg-blue-600 text-white transition-all cursor-pointer';
+    regTab.className = 'flex-1 py-2 text-xs font-semibold rounded-xl bg-[#6C5DD3] text-white transition-all cursor-pointer';
     loginTab.className = 'flex-1 py-2 text-xs font-semibold rounded-xl text-gray-400 hover:text-white transition-all cursor-pointer';
     submitBtn.innerText = 'Создать аккаунт';
   }
@@ -430,7 +430,7 @@ async function applySelectedAvatar() {
   // Обновляем аватарку в модалке профиля
   const avatarContainer = document.getElementById('profile-avatar-container');
   if (avatarContainer && typeof getAvatarHtml === 'function') {
-    avatarContainer.innerHTML = getAvatarHtml(selectedAvatarPresetId, 'w-20 h-20', 'w-10 h-10', 'ring-4 ring-white/10 shadow-xl cursor-pointer hover:ring-blue-500/50 transition-all active:scale-95');
+    avatarContainer.innerHTML = getAvatarHtml(selectedAvatarPresetId, 'w-14 h-14', 'w-7 h-7', 'ring-2 ring-white/10 shadow-lg cursor-pointer hover:ring-[#6C5DD3]/50 transition-all active:scale-95');
     if (typeof lucide !== 'undefined') lucide.createIcons({ root: avatarContainer });
   }
 
@@ -715,15 +715,15 @@ function renderFamilySettingsUI() {
       <div class="p-4 rounded-2xl bg-[#181B24] border border-[rgba(255,255,255,0.06)] space-y-4">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2.5">
-            <div class="w-8 h-8 rounded-xl bg-purple-500/15 text-purple-400 flex items-center justify-center">
+            <div class="w-8 h-8 rounded-xl bg-[#6C5DD3]/15 text-[#8C7DFF] flex items-center justify-center">
               <i data-lucide="users" class="w-4 h-4"></i>
             </div>
             <div>
               <h4 class="text-sm font-bold text-white">${escapeHtml(family.name || 'Семейный бюджет')}</h4>
-              <p class="text-[11px] text-gray-400">Общие транзакции, бюджет и накопления</p>
+              <p class="text-[11px] text-[#848D99]">Общие транзакции, бюджет и накопления</p>
             </div>
           </div>
-          <span class="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 text-[11px] font-semibold border border-purple-500/30">
+          <span class="px-2 py-0.5 rounded-full bg-[#6C5DD3]/20 text-[#8C7DFF] text-[11px] font-semibold border border-[#6C5DD3]/30">
             ${members.length} уч.
           </span>
         </div>
@@ -731,10 +731,10 @@ function renderFamilySettingsUI() {
         <!-- Код приглашения -->
         <div class="p-3 rounded-xl bg-[#12151C] border border-[rgba(255,255,255,0.05)] flex items-center justify-between gap-3">
           <div>
-            <span class="text-[10px] text-gray-400 uppercase font-bold tracking-wider block mb-0.5">Код для подключения члена семьи</span>
-            <span class="text-base font-mono font-bold text-purple-400 tracking-wider select-all">${escapeHtml(family.code || '')}</span>
+            <span class="text-[10px] text-[#848D99] uppercase font-bold tracking-wider block mb-0.5">Код для подключения члена семьи</span>
+            <span class="text-base font-mono font-bold text-[#8C7DFF] tracking-wider select-all">${escapeHtml(family.code || '')}</span>
           </div>
-          <button type="button" onclick="copyFamilyInviteCode('${family.code}')" class="px-3 py-2 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 text-xs font-semibold border border-purple-500/30 flex items-center gap-1.5 cursor-pointer transition-colors active:scale-95">
+          <button type="button" onclick="copyFamilyInviteCode('${family.code}')" class="px-3 py-2 rounded-xl bg-[#6C5DD3]/20 hover:bg-[#6C5DD3]/30 text-[#8C7DFF] text-xs font-semibold border border-[#6C5DD3]/30 flex items-center gap-1.5 cursor-pointer transition-colors active:scale-95">
             <i data-lucide="copy" class="w-3.5 h-3.5"></i>
             <span>Скопировать</span>
           </button>
@@ -766,22 +766,22 @@ function renderFamilySettingsUI() {
     container.innerHTML = `
       <div class="p-4 rounded-2xl bg-[#181B24] border border-[rgba(255,255,255,0.06)]">
         <div class="flex items-center gap-3 mb-3">
-          <div class="w-10 h-10 rounded-2xl bg-purple-500/15 text-purple-400 flex items-center justify-center flex-shrink-0">
+          <div class="w-10 h-10 rounded-2xl bg-[#6C5DD3]/15 text-[#8C7DFF] flex items-center justify-center flex-shrink-0">
             <i data-lucide="users-round" class="w-5 h-5"></i>
           </div>
           <div>
             <h4 class="text-sm font-bold text-white">Семейный доступ к бюджету</h4>
-            <p class="text-xs text-gray-400 mt-0.5">Ведите общий учет расходов и накоплений с членами семьи в реальном времени</p>
+            <p class="text-xs text-[#848D99] mt-0.5">Ведите общий учет расходов и накоплений с членами семьи в реальном времени</p>
           </div>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4">
-          <button type="button" onclick="openCreateFamilyModal()" class="w-full py-2.5 px-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-1.5 shadow-md">
+          <button type="button" onclick="openCreateFamilyModal()" class="w-full py-2.5 px-3 rounded-xl bg-[#6C5DD3] hover:bg-[#5E4FC9] text-white text-xs font-semibold transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-1.5 shadow-md shadow-[#6C5DD3]/25">
             <i data-lucide="plus-circle" class="w-4 h-4"></i>
             <span>Создать семью</span>
           </button>
-          <button type="button" onclick="openJoinFamilyModal()" class="w-full py-2.5 px-3 rounded-xl bg-[#212430] hover:bg-[#2A2D3C] text-purple-300 text-xs font-semibold border border-purple-500/20 transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-1.5">
-            <i data-lucide="key-round" class="w-4 h-4"></i>
+          <button type="button" onclick="openJoinFamilyModal()" class="w-full py-2.5 px-3 rounded-xl bg-[#212430] hover:bg-[#2A2D3C] text-gray-200 hover:text-white text-xs font-semibold border border-[rgba(255,255,255,0.08)] transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-1.5">
+            <i data-lucide="key-round" class="w-4 h-4 text-[#8C7DFF]"></i>
             <span>Ввести код семьи</span>
           </button>
         </div>

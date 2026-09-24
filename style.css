@@ -342,11 +342,6 @@ nav button:active,
   transform-origin: top center;
 }
 
-#custom-datepicker:not(.hidden) {
-  animation: dropdown-spring-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
-  transform-origin: top center;
-}
-
 /* Плавное раскрытие форм создания */
 @keyframes form-expand-in {
   from {
@@ -538,10 +533,49 @@ body.selection-mode .deposit-goal-tag {
 .category-chart-wrap { display:grid; grid-template-columns:minmax(0,1fr); gap:12px; }
 .chart-canvas--donut { height:236px; max-width:280px; margin:0 auto; position:relative; }
 .donut-center { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; pointer-events:none; transform:translateY(-2px); transition:opacity 0.15s ease; }
-.donut-center__clickable { width:125px; height:125px; border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center; pointer-events:auto; cursor:pointer; user-select:none; transition:transform 0.15s ease; }
+.donut-center__clickable { width:136px; height:136px; border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center; pointer-events:auto; cursor:pointer; user-select:none; padding:6px; box-sizing:border-box; transition:transform 0.15s ease; }
 .donut-center__clickable:active { transform:scale(0.96); }
-.donut-center span { color:var(--muted-2); font-size:11px; text-transform:uppercase; letter-spacing:.06em; font-weight:600; max-width:145px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; transition:color 0.15s ease; }
-.donut-center strong { color:var(--text); font-size:19px; font-weight:700; margin-top:3px; transition:color 0.15s ease; }
+.donut-center__label,
+.donut-center span:not(.donut-center__percent) {
+  color: var(--muted-2);
+  font-size: 11px;
+  line-height: 1.25;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  max-width: 118px;
+  text-align: center;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  transition: color 0.15s ease;
+}
+.donut-center__total,
+.donut-center strong {
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin-top: 3px;
+  max-width: 118px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 0.15s ease;
+}
+.donut-center__percent {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  margin-top: 2px;
+  max-width: 100px;
+  white-space: nowrap;
+  transition: color 0.15s ease, opacity 0.15s ease;
+}
 
 /* Интегрированная полоса месяца внутри карточки структуры */
 .analytics-month-strip {
@@ -579,6 +613,16 @@ body.selection-mode .deposit-goal-tag {
 }
 
 /* ---------- forms / generic UI ---------- */
+.input-reset,
+#edit-tx-date {
+  border: none !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
 input, select, textarea {
   color: var(--text) !important;
   background: var(--surface-2) !important;
@@ -924,7 +968,13 @@ body.selection-mode .selection-panel {
   .analytics-summary__main strong { font-size:21px; }
   .analytics-summary__rows { padding:15px 12px; }
   .chart-canvas--trend { height:245px; }
-  .chart-canvas--donut { height:215px; }
+  .chart-canvas--donut { height:226px; }
+  .donut-center__clickable { width:128px; height:128px; padding:4px; }
+  .donut-center__label,
+  .donut-center span:not(.donut-center__percent) { max-width:110px; font-size:10.5px; }
+  .donut-center__total,
+  .donut-center strong { max-width:110px; font-size:17px; }
+  .donut-center__percent { font-size:10.5px; }
 }
 
 /* ---------- analytics-specific layout ---------- */
@@ -1255,6 +1305,21 @@ body.privacy-mode-active canvas:hover {
 
 .nav-tab-btn {
   -webkit-tap-highlight-color: transparent !important;
+}
+
+/* ==========================================
+   Pinned Modal Header (Закрепленная шапка модальных окон)
+   ========================================== */
+.modal-sticky-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  padding-top: max(14px, env(safe-area-inset-top));
+}
+@media (min-width: 640px) {
+  .modal-sticky-header {
+    padding-top: 18px;
+  }
 }
 
 

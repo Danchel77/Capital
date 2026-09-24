@@ -21,5 +21,20 @@
       "type": "image/svg+xml",
       "purpose": "maskable"
     }
+  ],
+  "shortcuts": [
+    {
+      "name": "Записать расход",
+      "short_name": "Расход",
+      "description": "Быстро записать новую операцию расхода",
+      "url": "./index.html?action=new-expense",
+      "icons": [
+        {
+          "src": "shortcut-expense.svg",
+          "sizes": "192x192",
+          "type": "image/svg+xml"
+        }
+      ]
+    }
   ]
 }

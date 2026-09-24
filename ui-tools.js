@@ -382,10 +382,11 @@ function setupCustomDatePickers() {
 
 function openCustomDatePicker(inputEl) {
   activeDateInput = inputEl;
+  const modal = document.getElementById('custom-datepicker-modal');
   const picker = document.getElementById('custom-datepicker');
-  if (!picker) return;
+  if (!picker && !modal) return;
 
-  const currentVal = inputEl.value ? (typeof parseAnyDate === 'function' ? parseAnyDate(inputEl.value) : new Date(inputEl.value)) : new Date();
+  const currentVal = inputEl?.value ? (typeof parseAnyDate === 'function' ? parseAnyDate(inputEl.value) : new Date(inputEl.value)) : new Date();
   currentPickerDate = (currentVal && !isNaN(currentVal.getTime())) ? currentVal : new Date();
 
   renderCustomDatePicker();
@@ -400,21 +401,27 @@ function openCustomDatePicker(inputEl) {
     manualInput.classList.remove('border-[#FF453A]');
   }
 
-  // Позиционируем прямо под полем (или над ним, если снизу нет места)
-  const rect = inputEl.getBoundingClientRect();
-  picker.classList.remove('hidden');
+  // Сбрасываем устаревшие inline-координаты
+  if (picker) {
+    picker.style.top = '';
+    picker.style.left = '';
+    picker.style.transform = '';
+  }
 
-  const spaceBelow = window.innerHeight - rect.bottom;
-  let top = (spaceBelow < 330) ? (rect.top - 335) : (rect.bottom + 6);
-  let left = Math.min(window.innerWidth - 295, Math.max(12, rect.left));
+  if (modal) {
+    modal.classList.remove('hidden');
+    picker?.classList.remove('hidden');
+  } else if (picker) {
+    picker.classList.remove('hidden');
+  }
 
-  picker.style.top = `${top}px`;
-  picker.style.left = `${left}px`;
   if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
 function closeCustomDatePicker() {
+  const modal = document.getElementById('custom-datepicker-modal');
   const picker = document.getElementById('custom-datepicker');
+  if (modal) modal.classList.add('hidden');
   if (picker) picker.classList.add('hidden');
   activeDateInput = null;
 }
@@ -457,11 +464,15 @@ function renderCustomDatePicker() {
 
 function applyCustomDate(dateStr) {
   if (activeDateInput) {
-    if (activeDateInput.type === 'date') {
-      activeDateInput.value = (typeof formatDateStr === 'function') ? formatDateStr(dateStr, 'yyyy-MM-dd') : dateStr;
-    } else {
-      activeDateInput.value = (typeof formatDateStr === 'function') ? formatDateStr(dateStr, 'dd.MM.yyyy') : dateStr;
+    const isNativeDate = (activeDateInput.type === 'date');
+    const formatted = (typeof formatDateStr === 'function') ? formatDateStr(dateStr, isNativeDate ? 'yyyy-MM-dd' : 'dd.MM.yyyy') : dateStr;
+    activeDateInput.value = formatted;
+
+    const label = document.getElementById('edit-tx-date-label');
+    if (label && activeDateInput.id === 'edit-tx-date') {
+      label.innerText = (typeof formatDateStr === 'function') ? formatDateStr(dateStr, 'dd.MM.yyyy') : dateStr;
     }
+
     activeDateInput.dispatchEvent(new Event('change'));
     activeDateInput.dispatchEvent(new Event('input'));
   }
@@ -567,11 +578,7 @@ function selectCustomDatePickerToday() {
   const yyyy = today.getFullYear();
   const mm = String(today.getMonth() + 1).padStart(2, '0');
   const dd = String(today.getDate()).padStart(2, '0');
-  if (activeDateInput) {
-    activeDateInput.value = `${yyyy}-${mm}-${dd}`;
-    activeDateInput.dispatchEvent(new Event('change'));
-  }
-  closeCustomDatePicker();
+  applyCustomDate(`${yyyy}-${mm}-${dd}`);
 }
 
 // ==========================================
@@ -708,15 +715,17 @@ document.addEventListener('click', (e) => {
   }
 
   // 5. Закрытие DatePicker при клике вне его
+  const modal = document.getElementById('custom-datepicker-modal');
   const picker = document.getElementById('custom-datepicker');
-  if (picker && !picker.classList.contains('hidden')) {
-    if (!el.closest('#custom-datepicker') && !el.closest('input[type="date"]') && !el.closest('input[data-datepicker]')) {
+  const isDatepickerOpen = (modal && !modal.classList.contains('hidden')) || (picker && !picker.classList.contains('hidden'));
+  if (isDatepickerOpen) {
+    if (!el.closest('#custom-datepicker') && !el.closest('input[type="date"]') && !el.closest('input[data-datepicker]') && !el.closest('#edit-tx-date-btn')) {
       closeCustomDatePicker();
     }
   }
 
   // Закрытие всех кастомных выпадающих меню при клике мимо (не закрывать при работе с дейтпикером)
-  if (!el.closest('.custom-dropdown-wrap') && !el.closest('.custom-dropdown-menu') && !el.closest('#custom-datepicker')) {
+  if (!el.closest('.custom-dropdown-wrap') && !el.closest('.custom-dropdown-menu') && !el.closest('#custom-datepicker') && !el.closest('#custom-datepicker-modal')) {
     document.querySelectorAll('.custom-dropdown-menu').forEach(m => m.classList.add('hidden'));
     document.querySelectorAll('.tx-item').forEach(r => r.style.zIndex = '');
   }

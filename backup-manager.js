@@ -48,18 +48,18 @@ function switchBackupTab(tab) {
   if (tab === 'export') {
     exportPane?.classList.remove('hidden');
     importPane?.classList.add('hidden');
-    exportTabBtn?.classList.add('bg-blue-600', 'text-white', 'shadow-sm');
+    exportTabBtn?.classList.add('bg-[#6C5DD3]', 'text-white', 'shadow-sm');
     exportTabBtn?.classList.remove('text-gray-400', 'hover:text-gray-200');
-    importTabBtn?.classList.remove('bg-blue-600', 'text-white', 'shadow-sm');
+    importTabBtn?.classList.remove('bg-[#6C5DD3]', 'text-white', 'shadow-sm');
     importTabBtn?.classList.add('text-gray-400', 'hover:text-gray-200');
     updateExportCounters();
     updateBackupExportToggleAllButton();
   } else {
     exportPane?.classList.add('hidden');
     importPane?.classList.remove('hidden');
-    importTabBtn?.classList.add('bg-blue-600', 'text-white', 'shadow-sm');
+    importTabBtn?.classList.add('bg-[#6C5DD3]', 'text-white', 'shadow-sm');
     importTabBtn?.classList.remove('text-gray-400', 'hover:text-gray-200');
-    exportTabBtn?.classList.remove('bg-blue-600', 'text-white', 'shadow-sm');
+    exportTabBtn?.classList.remove('bg-[#6C5DD3]', 'text-white', 'shadow-sm');
     exportTabBtn?.classList.add('text-gray-400', 'hover:text-gray-200');
     
     if (currentParsedBackup) {

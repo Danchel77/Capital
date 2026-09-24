@@ -708,7 +708,13 @@ function openCreateTxModal(initData = {}) {
     titleEl.innerText = initData.title || (initData.billName ? 'Оплата счета' : 'Новая операция');
   }
   if (subtitleEl) {
-    subtitleEl.innerText = initData.subtitle || (initData.billName ? `Счет: «${initData.billName}»` : 'Создание транзакции');
+    if (initData.billName) {
+      subtitleEl.innerText = `Счет: «${initData.billName}»`;
+      subtitleEl.classList.remove('hidden');
+    } else {
+      subtitleEl.innerText = '';
+      subtitleEl.classList.add('hidden');
+    }
   }
 
   const type = initData.type || 'Расход';
@@ -726,7 +732,11 @@ function openCreateTxModal(initData = {}) {
   } else if (typeof targetDate === 'string') {
     targetDate = (typeof parseAnyDate === 'function' ? parseAnyDate(targetDate) : new Date(targetDate)) || new Date();
   }
-  document.getElementById('edit-tx-date').value = (typeof formatDateStr === 'function') ? formatDateStr(targetDate, 'dd.MM.yyyy') : '';
+  const formattedDate = (typeof formatDateStr === 'function') ? formatDateStr(targetDate, 'dd.MM.yyyy') : '';
+  const dateInput = document.getElementById('edit-tx-date');
+  const dateLabel = document.getElementById('edit-tx-date-label');
+  if (dateInput) dateInput.value = formattedDate;
+  if (dateLabel) dateLabel.innerText = formattedDate;
 
   document.getElementById('edit-tx-comment').value = (initData.comment || initData.billName || '');
 
@@ -803,7 +813,15 @@ function openEditTxModal(id) {
   const saveBtn = document.getElementById('edit-tx-save-btn');
 
   if (titleEl) titleEl.innerText = 'Редактирование операции';
-  if (subtitleEl) subtitleEl.innerText = 'Изменение параметров транзакции';
+  if (subtitleEl) {
+    if (tx.billName) {
+      subtitleEl.innerText = `Счет: «${tx.billName}»`;
+      subtitleEl.classList.remove('hidden');
+    } else {
+      subtitleEl.innerText = '';
+      subtitleEl.classList.add('hidden');
+    }
+  }
   if (deleteBtn) deleteBtn.classList.remove('hidden');
   if (saveBtn) saveBtn.innerText = 'Сохранить';
 
@@ -821,7 +839,11 @@ function openEditTxModal(id) {
 
   const rawDate = tx.rawDate || tx.date || new Date().toISOString().split('T')[0];
   const parsedDate = typeof parseAnyDate === 'function' ? parseAnyDate(rawDate) : new Date(rawDate);
-  document.getElementById('edit-tx-date').value = (typeof formatDateStr === 'function') ? formatDateStr(parsedDate, 'dd.MM.yyyy') : rawDate;
+  const formattedDate = (typeof formatDateStr === 'function') ? formatDateStr(parsedDate, 'dd.MM.yyyy') : rawDate;
+  const dateInput = document.getElementById('edit-tx-date');
+  const dateLabel = document.getElementById('edit-tx-date-label');
+  if (dateInput) dateInput.value = formattedDate;
+  if (dateLabel) dateLabel.innerText = formattedDate;
 
   document.getElementById('edit-tx-comment').value = (tx.comment && tx.comment !== 'undefined') ? tx.comment : '';
 
@@ -981,12 +1003,17 @@ function selectEditTxCategory(catName, iconName) {
 function toggleEditTxCategoryMenu(e) {
   if (e) e.stopPropagation();
   const menu = document.getElementById('edit-tx-category-menu');
+  const btn = document.getElementById('edit-tx-category-btn');
   if (!menu) return;
   const isClosed = menu.classList.contains('hidden');
   document.querySelectorAll('.custom-dropdown-menu').forEach(m => m.classList.add('hidden'));
   if (isClosed) {
     renderEditTxCategories();
+    if (btn && typeof smartPositionDropdown === 'function') {
+      smartPositionDropdown(menu, btn);
+    }
     menu.classList.remove('hidden');
+    if (typeof lucide !== 'undefined') lucide.createIcons();
   }
 }
 
@@ -2300,14 +2327,20 @@ let currentDonutColors = [];
 function resetCategoryDonutCenter() {
   const centerLabelEl = document.getElementById('donut-center-label');
   const totalEl = document.getElementById('category-total');
+  const percentEl = document.getElementById('donut-center-percent');
   const defaultLabel = currentStructureType === 'Расход' ? 'Расходы' : 'Доходы';
 
   if (centerLabelEl) {
     centerLabelEl.textContent = defaultLabel;
     centerLabelEl.style.color = '';
+    centerLabelEl.removeAttribute('title');
   }
   if (totalEl) {
     totalEl.textContent = formatMoney(currentDonutTotal);
+  }
+  if (percentEl) {
+    percentEl.textContent = '';
+    percentEl.classList.add('hidden');
   }
   document.querySelectorAll('.category-legend__item').forEach(el => el.classList.remove('is-selected'));
   if (categoryChartObj) {
@@ -2336,13 +2369,20 @@ function selectCategorySlice(idx) {
 
   const centerLabelEl = document.getElementById('donut-center-label');
   const totalEl = document.getElementById('category-total');
+  const percentEl = document.getElementById('donut-center-percent');
 
   if (centerLabelEl) {
-    centerLabelEl.textContent = `${catLabel} (${pct}%)`;
+    centerLabelEl.textContent = catLabel;
     centerLabelEl.style.color = col;
+    centerLabelEl.title = catLabel;
   }
   if (totalEl) {
     totalEl.textContent = formatMoney(catVal);
+  }
+  if (percentEl) {
+    percentEl.textContent = `${pct}%`;
+    percentEl.style.color = col;
+    percentEl.classList.remove('hidden');
   }
 
   document.querySelectorAll('.category-legend__item').forEach((item, i) => {
@@ -2390,6 +2430,7 @@ function updateAnalyticsForMonth(monthId) {
 
   const totalEl = document.getElementById('category-total');
   const centerLabelEl = document.getElementById('donut-center-label');
+  const percentEl = document.getElementById('donut-center-percent');
   const legendEl = document.getElementById('category-legend');
 
   const defaultLabel = currentStructureType === 'Расход' ? 'Расходы' : 'Доходы';
@@ -2397,6 +2438,11 @@ function updateAnalyticsForMonth(monthId) {
   if (centerLabelEl) {
     centerLabelEl.textContent = defaultLabel;
     centerLabelEl.style.color = '';
+    centerLabelEl.removeAttribute('title');
+  }
+  if (percentEl) {
+    percentEl.textContent = '';
+    percentEl.classList.add('hidden');
   }
 
   if (legendEl) {
@@ -2420,6 +2466,7 @@ function updateAnalyticsForMonth(monthId) {
     categoryChartObj.data.labels = data.length ? labels : ['Нет данных'];
     categoryChartObj.data.datasets[0].data = data.length ? data : [1];
     categoryChartObj.data.datasets[0].backgroundColor = data.length ? colors.slice(0, data.length) : ['#303740'];
+    categoryChartObj.options.cutout = '74%';
     
     // Мгновенно обнуляем дугу без анимации
     categoryChartObj.options.circumference = 0;
@@ -2453,9 +2500,9 @@ function updateAnalyticsForMonth(monthId) {
         responsive: true,
         maintainAspectRatio: false,
         layout: {
-          padding: 14 // Защитный отступ от краев canvas, чтобы выделенный верхний/боковые сегменты не обрезались
+          padding: 10
         },
-        cutout: '72%',
+        cutout: '74%',
         rotation: -90,
         circumference: 0,
         animation: {

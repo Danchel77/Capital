@@ -482,7 +482,7 @@
 
       <!-- Переключатель: Вход / Регистрация -->
       <div class="flex bg-gray-900/80 p-1 rounded-2xl border border-gray-700/80 mb-4">
-        <button type="button" id="tab-auth-login" onclick="setAuthMode('login')" class="flex-1 py-2 text-xs font-semibold rounded-xl bg-blue-600 text-white transition-all cursor-pointer">Вход</button>
+        <button type="button" id="tab-auth-login" onclick="setAuthMode('login')" class="flex-1 py-2 text-xs font-semibold rounded-xl bg-[#6C5DD3] text-white transition-all cursor-pointer">Вход</button>
         <button type="button" id="tab-auth-register" onclick="setAuthMode('register')" class="flex-1 py-2 text-xs font-semibold rounded-xl text-gray-400 hover:text-white transition-all cursor-pointer">Регистрация</button>
       </div>
 
@@ -490,15 +490,15 @@
       <form id="auth-form" onsubmit="handleAuthSubmit(event)">
         <div class="mb-3">
           <label class="block text-xs text-gray-400 mb-1">Никнейм</label>
-          <input type="text" id="auth-username" placeholder="Например: alex" required class="w-full bg-gray-700 border border-gray-600 text-white rounded-xl p-3 outline-none text-sm focus:border-blue-500 transition-colors">
+          <input type="text" id="auth-username" placeholder="Например: alex" required class="w-full bg-gray-700 border border-gray-600 text-white rounded-xl p-3 outline-none text-sm focus:border-[#6C5DD3] transition-colors">
         </div>
 
         <div class="mb-5">
           <label class="block text-xs text-gray-400 mb-1">Пароль</label>
-          <input type="password" id="auth-password" placeholder="От 6 символов" required minlength="6" class="w-full bg-gray-700 border border-gray-600 text-white rounded-xl p-3 outline-none text-sm focus:border-blue-500 transition-colors">
+          <input type="password" id="auth-password" placeholder="От 6 символов" required minlength="6" class="w-full bg-gray-700 border border-gray-600 text-white rounded-xl p-3 outline-none text-sm focus:border-[#6C5DD3] transition-colors">
         </div>
 
-        <button type="submit" id="auth-submit-btn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl py-3.5 shadow-md transition-all active:scale-95 text-sm cursor-pointer">Войти</button>
+        <button type="submit" id="auth-submit-btn" class="w-full bg-[#6C5DD3] hover:bg-[#5E4FC9] text-white font-semibold rounded-xl py-3.5 shadow-md shadow-[#6C5DD3]/25 transition-all active:scale-95 text-sm cursor-pointer">Войти</button>
       </form>
     </div>
   </div>
@@ -521,7 +521,7 @@
     <div id="category-icon-grid" class="grid grid-cols-6 gap-2 mb-4"></div>
     <div class="flex gap-2">
       <button id="category-cancel-btn" class="flex-1 bg-gray-700 text-white py-3 rounded-xl font-medium">Отмена</button>
-      <button id="category-save-btn" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-medium">Сохранить</button>
+      <button id="category-save-btn" class="flex-1 bg-[#6C5DD3] hover:bg-[#5E4FC9] text-white py-3 rounded-xl font-medium shadow-md shadow-[#6C5DD3]/25 transition-all active:scale-95">Сохранить</button>
     </div>
   </div>
 </div>
@@ -1085,7 +1085,7 @@
       <div id="transactions-list-wrap" class="space-y-3">
         <!-- Кнопки добавления операций и импорта выписки -->
         <div id="tx-top-actions" class="flex gap-2">
-          <button onclick="toggleForm('tx-form-container', 'tx-submit-btn', 'Сохранить', 'tx-form', 'tx')" class="flex-1 bg-blue-900/40 text-blue-300 border border-blue-800/50 font-semibold rounded-xl text-sm px-5 py-3 active:bg-blue-900/60 transition-all cursor-pointer">+ Добавить операции</button>
+          <button onclick="toggleForm('tx-form-container', 'tx-submit-btn', 'Сохранить', 'tx-form', 'tx')" class="flex-1 bg-[#6C5DD3]/15 text-[#8C7DFF] border border-[#6C5DD3]/30 font-semibold rounded-xl text-sm px-5 py-3 hover:bg-[#6C5DD3]/25 active:scale-[0.98] transition-all cursor-pointer shadow-sm">+ Добавить операции</button>
           
           <!-- Скрытый инпут для выбора PDF (поддержка множественного выбора файлов) -->
           <input type="file" id="pdf-file-input" accept="application/pdf" multiple class="hidden" onchange="handleStatementUpload(event)">
@@ -1103,7 +1103,7 @@
             <button type="button" id="add-tx-row-btn" onclick="addTxRow()" class="w-full mb-2.5 py-1.5 border border-dashed border-gray-600/70 rounded-xl text-gray-400 text-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 active:scale-[0.99] outline-none focus:outline-none focus:ring-0 focus-visible:outline-none select-none">+ Добавить еще транзакцию</button>
             <div class="flex gap-2 h-[38px]">
               <button type="button" onclick="closeForm('tx-form-container', 'tx-submit-btn', 'Сохранить', 'tx-form')" class="w-1/3 h-full bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 font-semibold rounded-xl text-xs flex items-center justify-center cursor-pointer transition-colors active:scale-95 leading-none">Отмена</button>
-              <button type="submit" id="tx-submit-btn" class="w-2/3 h-full bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl text-xs flex items-center justify-center cursor-pointer shadow-md transition-all active:scale-95 leading-none">Сохранить</button>
+              <button type="submit" id="tx-submit-btn" class="w-2/3 h-full bg-[#6C5DD3] hover:bg-[#5E4FC9] text-white font-semibold rounded-xl text-xs flex items-center justify-center cursor-pointer shadow-md shadow-[#6C5DD3]/25 transition-all active:scale-95 leading-none">Сохранить</button>
             </div>
           </form>
         </div>
@@ -1272,8 +1272,9 @@
                 <canvas id="categoryExpensesChart"></canvas>
                 <div class="donut-center">
                   <div class="donut-center__clickable" onclick="resetCategoryDonutCenter()" title="Нажмите, чтобы показать общую сумму">
-                    <span id="donut-center-label">Расходы</span>
-                    <strong id="category-total">0 ₽</strong>
+                    <span id="donut-center-label" class="donut-center__label">Расходы</span>
+                    <strong id="category-total" class="donut-center__total">0 ₽</strong>
+                    <span id="donut-center-percent" class="donut-center__percent hidden">0%</span>
                   </div>
                 </div>
               </div>
@@ -1324,7 +1325,7 @@
           <!-- Кнопки действий: 42px с идеальным вертикальным центрированием надписей -->
           <div class="flex gap-2 h-[42px]">
             <button type="button" onclick="closeForm('deposit-form-container', 'dep-submit-btn', 'Сохранить вклад', 'deposit-form')" class="w-1/3 h-full bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 font-semibold rounded-xl text-xs flex items-center justify-center cursor-pointer transition-colors active:scale-95 leading-none">Отмена</button>
-            <button type="submit" id="dep-submit-btn" class="w-2/3 h-full bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl text-xs flex items-center justify-center cursor-pointer shadow-md transition-all active:scale-95 leading-none">Сохранить</button>
+            <button type="submit" id="dep-submit-btn" class="w-2/3 h-full bg-[#6C5DD3] hover:bg-[#5E4FC9] text-white font-semibold rounded-xl text-xs flex items-center justify-center cursor-pointer shadow-md shadow-[#6C5DD3]/25 transition-all active:scale-95 leading-none">Сохранить</button>
           </div>
         </form>
       </div>
@@ -1445,7 +1446,7 @@
           </div>
           <div class="flex gap-2 h-[42px]">
             <button type="button" onclick="closeForm('goal-form-container', 'goal-submit-btn', 'Создать цель', 'goal-form')" class="w-1/3 h-full bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 font-semibold rounded-xl text-xs flex items-center justify-center cursor-pointer transition-colors active:scale-95 leading-none">Отмена</button>
-            <button type="submit" id="goal-submit-btn" class="w-2/3 h-full bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl text-xs flex items-center justify-center cursor-pointer shadow-md transition-all active:scale-95 leading-none">Сохранить</button>
+            <button type="submit" id="goal-submit-btn" class="w-2/3 h-full bg-[#6C5DD3] hover:bg-[#5E4FC9] text-white font-semibold rounded-xl text-xs flex items-center justify-center cursor-pointer shadow-md shadow-[#6C5DD3]/25 transition-all active:scale-95 leading-none">Сохранить</button>
           </div>
         </form>
       </div>
@@ -2531,25 +2532,34 @@
    
   <!-- Модальное окно Личного кабинета -->
   <div id="profile-dialog" class="fixed inset-0 bg-[#0F1117]/90 sm:bg-black/75 z-[150] hidden flex flex-col items-center justify-start overflow-y-auto backdrop-blur-sm animate-fade-in p-0 sm:py-6 sm:px-4" onclick="if (event.target === this) closeProfileModal();">
-    <div class="w-full max-w-[760px] mx-auto min-h-full sm:min-h-0 bg-[#0F1117] sm:bg-[#181B24] sm:border sm:border-[rgba(255,255,255,0.08)] sm:rounded-3xl p-4 sm:p-6 sm:shadow-2xl flex flex-col pt-4 sm:pt-6 pb-safe">
-      <!-- Нативный заголовок iOS-стиль -->
-      <div class="flex items-center justify-between mb-3.5 px-1">
-        <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-white">Личный кабинет</h2>
-        <button type="button" onclick="closeProfileModal()" class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#212430] hover:bg-[#2A2D3C] text-gray-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors" title="Закрыть">
+    <div class="w-full max-w-[760px] mx-auto min-h-full sm:min-h-0 bg-[#0F1117] sm:bg-[#181B24] sm:border sm:border-[rgba(255,255,255,0.08)] sm:rounded-3xl sm:shadow-2xl flex flex-col relative pb-safe">
+      <!-- Закрепленная верхняя панель (Sticky Header) -->
+      <div class="modal-sticky-header bg-[#0F1117]/95 sm:bg-[#181B24]/95 backdrop-blur-md px-4 sm:px-6 pb-3 sm:pb-3.5 border-b border-[rgba(255,255,255,0.08)] sm:rounded-t-3xl flex items-center justify-between shadow-sm">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-blue-500/15 text-blue-400 flex items-center justify-center flex-shrink-0">
+            <i data-lucide="user" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+          </div>
+          <h2 class="text-lg sm:text-xl font-bold tracking-tight text-white">Личный кабинет</h2>
+        </div>
+        <button type="button" onclick="closeProfileModal()" class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#212430] hover:bg-[#2A2D3C] active:scale-95 text-gray-400 hover:text-white flex items-center justify-center cursor-pointer transition-all flex-shrink-0 shadow-sm" title="Закрыть">
           <i data-lucide="x" class="w-4 h-4 sm:w-5 sm:h-5"></i>
         </button>
       </div>
 
-      <div class="flex-1 space-y-3 sm:space-y-3.5">
+      <div class="flex-1 p-4 sm:p-6 space-y-3 sm:space-y-3.5">
         <!-- Компактная карточка профиля с вектором аватара и редактированием -->
         <div class="p-3 sm:p-3.5 rounded-2xl bg-[#181B24] sm:bg-[#12151C] border border-[rgba(255,255,255,0.06)] flex items-center gap-3">
-          <div class="relative group cursor-pointer flex-shrink-0" onclick="openAvatarPickerModal()" title="Нажмите, чтобы изменить аватарку">
-            <div id="profile-avatar-container">
+          <!-- Аватарка с кнопкой палитры в нижнем правом углу -->
+          <div class="relative flex-shrink-0">
+            <div id="profile-avatar-container" onclick="openAvatarPickerModal()" class="cursor-pointer active:scale-95 transition-transform" title="Нажмите, чтобы выбрать значок">
               <!-- Rendered avatar circle or placeholder -->
             </div>
-            <div class="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center ring-2 ring-[#181B24] shadow-md group-hover:bg-blue-500 transition-transform active:scale-90 pointer-events-none">
-              <i data-lucide="camera" class="w-2.5 h-2.5 stroke-[2.2]"></i>
-            </div>
+            <button type="button" 
+                    onclick="openAvatarPickerModal()" 
+                    class="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-[#181B24] sm:bg-[#12151C] hover:bg-[#212430] active:scale-90 border border-white/15 text-[#8C7DFF] flex items-center justify-center cursor-pointer transition-all shadow-md z-10" 
+                    title="Сменить значок аватарки">
+              <i data-lucide="palette" class="w-3.5 h-3.5 stroke-[2.2]"></i>
+            </button>
           </div>
 
           <div class="flex-1 min-w-0">
@@ -2564,9 +2574,9 @@
             <!-- Раскрывающееся поле изменения имени (открывается по кнопке редактирования) -->
             <div id="profile-edit-name-row" class="mt-2 hidden flex items-center gap-2">
               <div class="relative flex-1 min-w-0">
-                <input type="text" id="profile-edit-name-input" placeholder="Ваше имя" maxlength="30" onkeydown="if (event.key === 'Enter') saveProfileInfo(true);" class="w-full bg-[#12151C] sm:bg-[#181B24] border border-blue-500/50 focus:border-blue-500 text-white rounded-xl px-3 py-1.5 text-xs outline-none transition-colors">
+                <input type="text" id="profile-edit-name-input" placeholder="Ваше имя" maxlength="30" onkeydown="if (event.key === 'Enter') saveProfileInfo(true);" class="w-full bg-[#12151C] sm:bg-[#181B24] border border-[#6C5DD3]/50 focus:border-[#6C5DD3] text-white rounded-xl px-3 py-1.5 text-xs outline-none transition-colors">
               </div>
-              <button type="button" onclick="saveProfileInfo(true)" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-xl cursor-pointer transition-all active:scale-95 shadow-sm flex items-center gap-1 flex-shrink-0">
+              <button type="button" onclick="saveProfileInfo(true)" class="px-3 py-1.5 bg-[#6C5DD3] hover:bg-[#5E4FC9] text-white text-xs font-semibold rounded-xl cursor-pointer transition-all active:scale-95 shadow-sm shadow-[#6C5DD3]/25 flex items-center gap-1 flex-shrink-0">
                 <i data-lucide="check" class="w-3.5 h-3.5"></i>
                 <span>Готово</span>
               </button>
@@ -2718,7 +2728,7 @@
 
       <!-- Вкладки: Экспорт / Импорт -->
       <div class="flex bg-[#12151C] sm:bg-[#12151C] p-1 rounded-2xl border border-[rgba(255,255,255,0.06)] mb-4">
-        <button id="backup-tab-btn-export" type="button" onclick="switchBackupTab('export')" class="flex-1 py-2 px-3 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 bg-blue-600 text-white shadow-sm">
+        <button id="backup-tab-btn-export" type="button" onclick="switchBackupTab('export')" class="flex-1 py-2 px-3 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 bg-[#6C5DD3] text-white shadow-sm">
           <i data-lucide="download" class="w-4 h-4"></i>
           <span>Экспорт (Скачать)</span>
         </button>
@@ -2828,7 +2838,7 @@
           </label>
         </div>
 
-        <button type="button" onclick="downloadBackupJson()" class="w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm cursor-pointer transition-all active:scale-[0.98] shadow-md shadow-blue-600/20 flex items-center justify-center gap-2 mt-2">
+        <button type="button" onclick="downloadBackupJson()" class="w-full py-3 px-4 rounded-xl bg-[#6C5DD3] hover:bg-[#5E4FC9] text-white font-semibold text-sm cursor-pointer transition-all active:scale-[0.98] shadow-md shadow-[#6C5DD3]/25 flex items-center justify-center gap-2 mt-2">
           <i data-lucide="download" class="w-4 h-4"></i>
           <span>Скачать JSON файл</span>
         </button>
@@ -2845,7 +2855,7 @@
                ondragover="handleBackupDragOver(event)"
                ondragleave="handleBackupDragLeave(event)"
                ondrop="handleBackupFileDrop(event)"
-               class="border-2 border-dashed border-[rgba(255,255,255,0.12)] hover:border-blue-500/60 rounded-2xl p-6 text-center cursor-pointer transition-all bg-[#12151C]/60 hover:bg-blue-500/[0.04] flex flex-col items-center justify-center gap-2.5">
+               class="border-2 border-dashed border-[rgba(255,255,255,0.12)] hover:border-[#6C5DD3]/60 rounded-2xl p-6 text-center cursor-pointer transition-all bg-[#12151C]/60 hover:bg-[#6C5DD3]/[0.04] flex flex-col items-center justify-center gap-2.5">
             <div class="w-12 h-12 rounded-2xl bg-blue-500/15 text-blue-400 flex items-center justify-center">
               <i data-lucide="file-up" class="w-6 h-6"></i>
             </div>
@@ -3086,7 +3096,7 @@
         <div class="text-xs text-[#848D99]">
           Выбрано для импорта: <strong id="backup-inspect-selected-summary" class="text-emerald-400 font-semibold">0</strong>
         </div>
-        <button type="button" onclick="closeBackupInspectModal()" class="py-2 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs sm:text-sm cursor-pointer transition-all active:scale-95 shadow-md shadow-blue-600/20 flex items-center gap-1.5">
+        <button type="button" onclick="closeBackupInspectModal()" class="py-2 px-4 rounded-xl bg-[#6C5DD3] hover:bg-[#5E4FC9] text-white font-semibold text-xs sm:text-sm cursor-pointer transition-all active:scale-95 shadow-md shadow-[#6C5DD3]/25 flex items-center gap-1.5">
           <i data-lucide="check" class="w-4 h-4"></i>
           <span>Готово</span>
         </button>
@@ -3114,7 +3124,7 @@
 
       <div class="flex gap-2.5 mt-5 pt-3 border-t border-[rgba(255,255,255,0.06)]">
         <button type="button" onclick="closeAvatarPickerModal()" class="flex-1 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 py-3 rounded-xl text-xs font-semibold cursor-pointer transition-colors">Отмена</button>
-        <button type="button" onclick="applySelectedAvatar()" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl text-xs font-semibold shadow-md active:scale-95 cursor-pointer transition-all flex items-center justify-center gap-1.5">
+        <button type="button" onclick="applySelectedAvatar()" class="flex-1 bg-[#6C5DD3] hover:bg-[#5E4FC9] text-white py-3 rounded-xl text-xs font-semibold shadow-md shadow-[#6C5DD3]/25 active:scale-95 cursor-pointer transition-all flex items-center justify-center gap-1.5">
           <i data-lucide="check" class="w-4 h-4"></i>
           <span>Применить</span>
         </button>
@@ -3138,16 +3148,16 @@
       <div class="space-y-3.5">
         <div>
           <label class="block text-[11px] text-[#848D99] uppercase font-bold mb-1.5">Новый логин</label>
-          <input type="text" id="change-login-new" placeholder="Введите новый логин" class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-blue-500 text-white rounded-xl p-3 outline-none text-sm transition-colors">
+          <input type="text" id="change-login-new" placeholder="Введите новый логин" class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white rounded-xl p-3 outline-none text-sm transition-colors">
         </div>
         <div>
           <label class="block text-[11px] text-[#848D99] uppercase font-bold mb-1.5">Текущий пароль для подтверждения</label>
-          <input type="password" id="change-login-password" placeholder="Ваш действующий пароль" class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-blue-500 text-white rounded-xl p-3 outline-none text-sm transition-colors">
+          <input type="password" id="change-login-password" placeholder="Ваш действующий пароль" class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white rounded-xl p-3 outline-none text-sm transition-colors">
         </div>
 
         <div class="flex gap-2.5 pt-2">
           <button type="button" onclick="closeChangeLoginModal()" class="flex-1 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 py-3 rounded-xl text-xs font-semibold cursor-pointer transition-colors">Отмена</button>
-          <button type="button" id="change-login-submit-btn" onclick="submitChangeLogin()" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl text-xs font-semibold shadow-md active:scale-95 cursor-pointer transition-all flex items-center justify-center gap-1.5">
+          <button type="button" id="change-login-submit-btn" onclick="submitChangeLogin()" class="flex-1 bg-[#6C5DD3] hover:bg-[#5E4FC9] text-white py-3 rounded-xl text-xs font-semibold shadow-md shadow-[#6C5DD3]/25 active:scale-95 cursor-pointer transition-all flex items-center justify-center gap-1.5">
             <i data-lucide="check" class="w-3.5 h-3.5"></i>
             <span>Обновить</span>
           </button>
@@ -3211,7 +3221,7 @@
 
         <div class="flex gap-2.5 pt-2">
           <button type="button" onclick="closeCreateFamilyModal()" class="flex-1 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 py-3 rounded-xl text-xs font-semibold cursor-pointer transition-colors">Отмена</button>
-          <button type="button" id="create-family-submit-btn" onclick="submitCreateFamily()" class="flex-1 bg-purple-600 hover:bg-purple-500 text-white py-3 rounded-xl text-xs font-semibold shadow-md active:scale-95 cursor-pointer transition-all flex items-center justify-center gap-1.5">
+          <button type="button" id="create-family-submit-btn" onclick="submitCreateFamily()" class="flex-1 bg-[#6C5DD3] hover:bg-[#5E4FC9] text-white py-3 rounded-xl text-xs font-semibold shadow-md shadow-[#6C5DD3]/25 active:scale-95 cursor-pointer transition-all flex items-center justify-center gap-1.5">
             <i data-lucide="plus-circle" class="w-4 h-4"></i>
             <span>Создать</span>
           </button>
@@ -3301,7 +3311,7 @@
 
         <div class="flex gap-2.5 pt-2">
           <button type="button" onclick="closeJoinFamilyModal()" class="flex-1 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 py-3 rounded-xl text-xs font-semibold cursor-pointer transition-colors">Отмена</button>
-          <button type="button" id="join-family-submit-btn" onclick="submitJoinFamily()" class="flex-1 bg-purple-600 hover:bg-purple-500 text-white py-3 rounded-xl text-xs font-semibold shadow-md active:scale-95 cursor-pointer transition-all flex items-center justify-center gap-1.5">
+          <button type="button" id="join-family-submit-btn" onclick="submitJoinFamily()" class="flex-1 bg-[#6C5DD3] hover:bg-[#5E4FC9] text-white py-3 rounded-xl text-xs font-semibold shadow-md shadow-[#6C5DD3]/25 active:scale-95 cursor-pointer transition-all flex items-center justify-center gap-1.5">
             <i data-lucide="link-2" class="w-4 h-4"></i>
             <span>Присоединиться</span>
           </button>
@@ -3423,14 +3433,15 @@
   </div>
 
   <!-- МОДАЛЬНОЕ ОКНО РЕДАКТИРОВАНИЯ ОПЕРАЦИИ (ТРАНЗАКЦИИ) -->
-  <div id="tx-edit-modal" onclick="if(event.target === this) closeEditTxModal()" class="fixed inset-0 bg-black/80 z-[150] hidden flex flex-col justify-center items-center p-4 animate-fade-in">
+  <div id="tx-edit-modal" onclick="if(event.target === this) closeEditTxModal()" class="fixed inset-0 bg-black/80 z-[150] hidden flex flex-col justify-center items-center p-4 backdrop-blur-sm animate-fade-in">
     <div class="bg-[#181B24] border border-[rgba(255,255,255,0.08)] w-full max-w-sm rounded-3xl p-5 shadow-2xl">
+      <!-- Шапка модального окна -->
       <div class="flex items-center justify-between mb-3.5 pb-2.5 border-b border-[rgba(255,255,255,0.06)]">
         <div>
           <h3 id="tx-edit-modal-title" class="font-bold text-white text-base">Редактирование операции</h3>
-          <p id="tx-edit-modal-subtitle" class="text-xs text-[#848D99] mt-0.5">Изменение параметров транзакции</p>
+          <p id="tx-edit-modal-subtitle" class="text-xs text-[#848D99] mt-0.5 hidden"></p>
         </div>
-        <button type="button" id="tx-edit-modal-close-btn" onclick="closeEditTxModal()" class="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-[#212430] cursor-pointer">
+        <button type="button" id="tx-edit-modal-close-btn" onclick="closeEditTxModal()" class="w-8 h-8 rounded-xl bg-[#212430] hover:bg-[#2A2D3C] text-gray-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors active:scale-95">
           <i data-lucide="x" class="w-4 h-4"></i>
         </button>
       </div>
@@ -3443,91 +3454,92 @@
         <input type="hidden" id="edit-tx-is-bill-payment" value="false">
 
         <!-- Переключатель типа: Расход / Доход -->
-        <div class="flex bg-[#12151C] p-1 rounded-xl mb-3.5 border border-[rgba(255,255,255,0.06)]">
-          <button type="button" id="edit-tx-type-expense" onclick="setEditTxType('Расход')" class="flex-1 py-2 text-xs font-semibold rounded-xl transition-all text-white bg-[#FF453A]/20 border border-[#FF453A]/30 cursor-pointer shadow-sm">Расход</button>
-          <button type="button" id="edit-tx-type-income" onclick="setEditTxType('Доход')" class="flex-1 py-2 text-xs font-semibold rounded-xl transition-all text-gray-400 hover:text-white border border-transparent cursor-pointer">Доход</button>
+        <div class="flex bg-[#12151C] p-1 rounded-xl mb-3 border border-[rgba(255,255,255,0.06)]">
+          <button type="button" id="edit-tx-type-expense" onclick="setEditTxType('Расход')" class="flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all text-white bg-[#FF453A]/20 border border-[#FF453A]/30 cursor-pointer shadow-sm">Расход</button>
+          <button type="button" id="edit-tx-type-income" onclick="setEditTxType('Доход')" class="flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all text-gray-400 hover:text-white border border-transparent cursor-pointer">Доход</button>
         </div>
 
-        <!-- Сумма -->
-        <div class="mb-3.5">
-          <label class="block text-[10px] text-[#848D99] uppercase font-bold mb-1">Сумма (₽)</label>
-          <input type="text" inputmode="decimal" oninput="formatSumInput(this)" id="edit-tx-amount" placeholder="0 ₽" required class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white rounded-xl p-3 outline-none text-sm font-bold">
+        <!-- Поле ввода суммы без лишней надписи -->
+        <div class="mb-3">
+          <input type="text" inputmode="decimal" oninput="formatSumInput(this)" id="edit-tx-amount" placeholder="0 ₽" required class="w-full h-12 bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white text-xl font-bold rounded-xl px-3.5 outline-none tracking-wide transition-colors placeholder-gray-500">
         </div>
 
-        <!-- Категория с кастомным меню -->
-        <div class="relative mb-3.5 custom-dropdown-wrap" id="wrap-edit-tx-cat">
-          <label class="block text-[10px] text-[#848D99] uppercase font-bold mb-1">Категория</label>
-          <input type="hidden" id="edit-tx-category" required value="">
-          <button type="button" id="edit-tx-category-btn" onclick="toggleEditTxCategoryMenu(event)" class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white rounded-xl px-3.5 py-2.5 text-xs flex items-center justify-between outline-none cursor-pointer hover:border-gray-500 transition-colors">
-            <span id="edit-tx-category-label" class="flex items-center gap-2 truncate text-white">
-              <i data-lucide="tag" class="w-4 h-4 text-[#848D99]"></i>
-              <span class="truncate">Выберите категорию</span>
-            </span>
-            <span class="text-gray-400 text-[9px] ml-1">▼</span>
-          </button>
-          <div id="edit-tx-category-menu" class="custom-dropdown-menu hidden absolute left-0 top-full mt-1.5 w-full max-h-56 overflow-y-auto bg-gray-800/95 backdrop-blur-md border border-gray-700 rounded-2xl shadow-2xl z-[160] p-1 space-y-0.5"></div>
+        <!-- Компактная строка в 2 колонки: Дата + Категория -->
+        <div class="grid grid-cols-[140px_1fr] gap-2 mb-3">
+          <!-- Дата операции: кнопка-плашка 1-в-1 по стилю с категорией -->
+          <div class="relative min-w-0">
+            <button type="button" id="edit-tx-date-btn" onclick="openCustomDatePicker(document.getElementById('edit-tx-date'))" class="w-full h-10 bg-[#12151C] border border-[rgba(255,255,255,0.08)] hover:border-gray-500 text-white rounded-xl px-2.5 text-xs flex items-center gap-2 outline-none cursor-pointer transition-colors select-none">
+              <i data-lucide="calendar" class="w-4 h-4 text-[#848D99] flex-shrink-0"></i>
+              <span id="edit-tx-date-label" class="text-xs text-white truncate font-normal">...</span>
+              <input type="hidden" id="edit-tx-date" data-datepicker="true" value="">
+            </button>
+          </div>
+
+          <!-- Категория с кастомным меню -->
+          <div class="relative custom-dropdown-wrap min-w-0" id="wrap-edit-tx-cat">
+            <input type="hidden" id="edit-tx-category" required value="">
+            <button type="button" id="edit-tx-category-btn" onclick="toggleEditTxCategoryMenu(event)" class="w-full h-10 bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white rounded-xl px-2.5 text-xs flex items-center justify-between outline-none cursor-pointer hover:border-gray-500 transition-colors">
+              <span id="edit-tx-category-label" class="flex items-center gap-1.5 truncate text-white min-w-0">
+                <i data-lucide="tag" class="w-4 h-4 text-[#848D99] flex-shrink-0"></i>
+                <span class="truncate text-gray-200">Категория</span>
+              </span>
+              <span class="text-gray-400 text-[8px] ml-1 flex-shrink-0">▼</span>
+            </button>
+            <div id="edit-tx-category-menu" class="custom-dropdown-menu hidden absolute right-0 top-full mt-1.5 w-full min-w-[210px] max-h-56 overflow-y-auto bg-[#181B24]/95 backdrop-blur-md border border-gray-700 rounded-2xl shadow-2xl z-[160] p-1 space-y-0.5"></div>
+          </div>
         </div>
 
-        <!-- Дата операции -->
-        <div class="mb-3.5">
-          <label class="block text-[10px] text-[#848D99] uppercase font-bold mb-1">Дата операции</label>
-          <input type="text" id="edit-tx-date" data-datepicker="true" readonly required class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white rounded-xl p-3 outline-none text-xs cursor-pointer">
-        </div>
-
-        <!-- Магазин или назначение платежа -->
-        <div class="mb-3.5">
-          <label class="block text-[10px] text-[#848D99] uppercase font-bold mb-1">Магазин или назначение платежа</label>
+        <!-- Магазин или назначение платежа + булавка сохранения в словарь -->
+        <div class="mb-3">
           <div class="flex items-center gap-2">
-            <input type="text" id="edit-tx-comment" oninput="handleEditTxCommentInput(this)" placeholder="Например, Пятерочка или Перевод маме" class="flex-1 min-w-0 bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white rounded-xl p-3 outline-none text-xs transition-colors">
-            <!-- Кнопка булавка для добавления в словарь -->
+            <input type="text" id="edit-tx-comment" oninput="handleEditTxCommentInput(this)" placeholder="Магазин или назначение платежа" class="flex-1 min-w-0 h-10 bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white placeholder-gray-500 rounded-xl px-3 outline-none text-xs transition-colors">
             <button type="button" 
                     onclick="openRememberRuleForEditTx()" 
-                    class="w-11 h-11 rounded-xl bg-[#6C5DD3]/15 hover:bg-[#6C5DD3]/25 active:scale-90 text-[#9E86FF] hover:text-white border border-[#6C5DD3]/25 flex items-center justify-center flex-shrink-0 cursor-pointer transition-all shadow-sm group" 
+                    class="w-10 h-10 rounded-xl bg-[#6C5DD3]/15 hover:bg-[#6C5DD3]/25 active:scale-90 text-[#9E86FF] hover:text-white border border-[#6C5DD3]/20 flex items-center justify-center flex-shrink-0 cursor-pointer transition-all shadow-sm group" 
                     title="Запомнить в словарь категорий">
-              <i data-lucide="pin" class="w-4.5 h-4.5 transition-transform group-hover:scale-110"></i>
+              <i data-lucide="pin" class="w-4 h-4 transition-transform group-hover:scale-110"></i>
             </button>
           </div>
         </div>
 
-        <!-- Опция исключения из лимита месяца и распределения в календаре -->
-        <div id="wrap-edit-tx-amortize" class="mb-4 bg-[#12151C] p-3 rounded-2xl border border-[rgba(255,255,255,0.06)] space-y-2.5">
-          <label class="flex items-center justify-between cursor-pointer">
+        <!-- Опция: сделать разовой тратой -->
+        <div id="wrap-edit-tx-amortize" class="mb-3.5 bg-[#12151C] p-3 rounded-2xl border border-[rgba(255,255,255,0.06)] space-y-2.5">
+          <label class="flex items-center justify-between cursor-pointer select-none">
             <div class="min-w-0 pr-2">
-              <span class="text-xs font-semibold text-white block">Исключить из лимита месяца</span>
-              <span class="text-[10px] text-[#848D99] block leading-tight">Распределить как крупную разовую трату в календаре</span>
+              <div class="flex items-center gap-2 mb-0.5">
+                <i data-lucide="split" class="w-4 h-4 text-amber-400 flex-shrink-0"></i>
+                <span class="text-xs font-semibold text-white">Сделать разовой тратой</span>
+              </div>
+              <p class="text-[11px] text-[#848D99] leading-tight pl-6 truncate">Распределит нагрузку на несколько месяцев</p>
             </div>
-            <input type="checkbox" id="edit-tx-exclude-budget" onchange="toggleTxAmortizeSection(this.checked)" class="w-4 h-4 rounded bg-[#181B24] border-gray-600 text-[#6C5DD3] focus:ring-0 cursor-pointer accent-[#6C5DD3]">
+            <input type="checkbox" id="edit-tx-exclude-budget" onchange="toggleTxAmortizeSection(this.checked)" class="w-4 h-4 rounded bg-[#181B24] border-gray-600 text-[#6C5DD3] focus:ring-0 cursor-pointer accent-[#6C5DD3] flex-shrink-0">
           </label>
 
-          <div id="edit-tx-amortize-details" class="hidden space-y-2 pt-2 border-t border-[rgba(255,255,255,0.06)]">
+          <div id="edit-tx-amortize-details" class="hidden space-y-2 pt-2.5 border-t border-[rgba(255,255,255,0.06)]">
             <div class="flex items-center justify-between">
-              <span class="text-[11px] text-gray-300">Разделить на:</span>
+              <span class="text-[11px] text-gray-300">Период распределения:</span>
               <div class="flex items-center bg-[#181B24] border border-[rgba(255,255,255,0.08)] rounded-xl p-0.5">
                 <button type="button" onclick="changeTxSpreadMonths(-1)" class="w-6 h-6 rounded-lg text-gray-300 hover:text-white hover:bg-[#212430] flex items-center justify-center font-bold cursor-pointer transition-colors">-</button>
-                <span id="edit-tx-spread-months-label" class="px-2 text-xs font-bold font-mono text-amber-300 min-w-[50px] text-center">3 мес.</span>
+                <span id="edit-tx-spread-months-label" class="px-2 text-xs font-bold font-mono text-amber-300 min-w-[48px] text-center">3 мес.</span>
                 <button type="button" onclick="changeTxSpreadMonths(1)" class="w-6 h-6 rounded-lg text-gray-300 hover:text-white hover:bg-[#212430] flex items-center justify-center font-bold cursor-pointer transition-colors">+</button>
               </div>
               <input type="hidden" id="edit-tx-spread-months" value="3">
             </div>
-            <div class="flex items-center justify-between text-[11px] bg-[#181B24] p-2 rounded-xl">
-              <span class="text-[10px] text-[#848D99]">Нагрузка в календаре:</span>
+            <div class="flex items-center justify-between text-[11px] bg-[#181B24] px-2.5 py-1.5 rounded-xl">
+              <span class="text-[10px] text-[#848D99]">Нагрузка на календарь:</span>
               <span id="edit-tx-spread-calc" class="font-mono font-bold text-amber-300">0 ₽/мес</span>
-            </div>
-            <div class="flex items-start gap-2 bg-[#181B24] p-2.5 rounded-xl border border-[rgba(255,255,255,0.04)] text-[11px] text-[#848D99] leading-relaxed">
-              <i data-lucide="split" class="w-3.5 h-3.5 text-amber-400 flex-shrink-0 mt-0.5"></i>
-              <span>Полная сумма сохранится в истории операций, а нагрузка на лимиты распределится равными долями по месяцам.</span>
             </div>
           </div>
         </div>
 
         <!-- Кнопки действий: Удалить | Отмена | Сохранить -->
         <div class="flex items-center gap-2">
-          <button type="button" id="edit-tx-delete-btn" onclick="deleteTxFromModal()" class="px-3.5 py-2.5 bg-[#FF453A]/15 hover:bg-[#FF453A]/25 text-[#FF453A] border border-[#FF453A]/20 rounded-xl text-xs font-semibold transition-colors cursor-pointer flex items-center justify-center gap-1 active:scale-95" title="Удалить операцию">
+          <button type="button" id="edit-tx-delete-btn" onclick="deleteTxFromModal()" class="px-3.5 h-10 bg-[#FF453A]/15 hover:bg-[#FF453A]/25 text-[#FF453A] border border-[#FF453A]/20 rounded-xl text-xs font-semibold transition-colors cursor-pointer flex items-center justify-center gap-1.5 active:scale-95" title="Удалить операцию">
             <i data-lucide="trash-2" class="w-4 h-4"></i>
             <span>Удалить</span>
           </button>
-          <button type="button" id="edit-tx-cancel-btn" onclick="closeEditTxModal()" class="flex-1 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 py-2.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer">Отмена</button>
-          <button type="submit" id="edit-tx-save-btn" class="flex-1 bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white py-2.5 rounded-xl text-xs font-semibold shadow-md transition-all active:scale-95 cursor-pointer">Сохранить</button>
+          <button type="button" id="edit-tx-cancel-btn" onclick="closeEditTxModal()" class="flex-1 h-10 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 rounded-xl text-xs font-semibold transition-colors cursor-pointer active:scale-95">Отмена</button>
+          <button type="submit" id="edit-tx-save-btn" class="flex-1 h-10 bg-[#6C5DD3] hover:bg-[#5E4FC9] text-white rounded-xl text-xs font-semibold shadow-md shadow-[#6C5DD3]/25 transition-all active:scale-95 cursor-pointer">Сохранить</button>
         </div>
       </form>
     </div>
@@ -3661,37 +3673,39 @@
     </div>
   </div>
 
-  <!-- КАСТОМНЫЙ АККУРАТНЫЙ КАЛЕНДАРЬ-ПОПОВЕР -->
-  <div id="custom-datepicker" class="fixed z-[220] hidden bg-[#181B24] border border-[rgba(255,255,255,0.08)] rounded-2xl shadow-2xl p-3.5 w-72 backdrop-blur-md">
-    <!-- Строка ручного ввода даты с клавиатуры -->
-    <div class="flex items-center gap-1.5 mb-2.5">
-      <input type="text"
-             id="datepicker-manual-input"
-             inputmode="numeric"
-             placeholder="ДД.ММ.ГГГГ"
-             maxlength="10"
-             oninput="formatManualDateInput(this)"
-             onkeydown="handleManualDateKeydown(event)"
-             class="flex-1 bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white text-xs rounded-xl px-3 py-2 outline-none font-mono transition-colors">
-      <button type="button"
-              onclick="applyManualDateInput()"
-              class="bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white px-3 py-2 rounded-xl text-xs font-semibold transition-all active:scale-95 cursor-pointer flex-shrink-0">
-        OK
-      </button>
-    </div>
+  <!-- КАСТОМНЫЙ АККУРАТНЫЙ КАЛЕНДАРЬ-МОДАЛКА -->
+  <div id="custom-datepicker-modal" onclick="if(event.target === this) closeCustomDatePicker()" class="fixed inset-0 z-[220] hidden bg-black/70 backdrop-blur-[2px] flex items-center justify-center p-4 animate-fade-in">
+    <div id="custom-datepicker" class="bg-[#181B24] border border-[rgba(255,255,255,0.1)] rounded-3xl shadow-2xl p-4 w-[310px] max-w-full backdrop-blur-md">
+      <!-- Строка ручного ввода даты с клавиатуры -->
+      <div class="flex items-center gap-1.5 mb-2.5">
+        <input type="text"
+               id="datepicker-manual-input"
+               inputmode="numeric"
+               placeholder="ДД.ММ.ГГГГ"
+               maxlength="10"
+               oninput="formatManualDateInput(this)"
+               onkeydown="handleManualDateKeydown(event)"
+               class="flex-1 bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white text-xs rounded-xl px-3 py-2 outline-none font-mono transition-colors">
+        <button type="button"
+                onclick="applyManualDateInput()"
+                class="bg-[#6C5DD3] hover:bg-[#5E4FC9] text-white px-3 py-2 rounded-xl text-xs font-semibold transition-all active:scale-95 cursor-pointer flex-shrink-0">
+          OK
+        </button>
+      </div>
 
-    <div class="flex items-center justify-between mb-3 pb-2 border-b border-[rgba(255,255,255,0.06)]">
-      <button type="button" onclick="changeCustomDatePickerMonth(-1)" class="w-7 h-7 rounded-lg hover:bg-[#212430] flex items-center justify-center text-gray-400 hover:text-white cursor-pointer"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
-      <span id="datepicker-month-year" class="text-xs font-bold text-white tracking-wide">...</span>
-      <button type="button" onclick="changeCustomDatePickerMonth(1)" class="w-7 h-7 rounded-lg hover:bg-[#212430] flex items-center justify-center text-gray-400 hover:text-white cursor-pointer"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
-    </div>
-    <div class="grid grid-cols-7 gap-1 text-center text-[10px] text-gray-500 font-bold mb-1.5">
-      <span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span>
-    </div>
-    <div id="datepicker-days-grid" class="grid grid-cols-7 gap-1 text-center text-xs"></div>
-    <div class="mt-2.5 pt-2 border-t border-[rgba(255,255,255,0.06)] flex justify-between items-center text-[11px]">
-      <button type="button" onclick="selectCustomDatePickerToday()" class="text-blue-400 hover:underline font-semibold cursor-pointer">Сегодня</button>
-      <button type="button" onclick="closeCustomDatePicker()" class="px-3 py-1.5 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 hover:text-white rounded-xl text-xs font-semibold transition-colors cursor-pointer ml-auto">Закрыть</button>
+      <div class="flex items-center justify-between mb-3 pb-2 border-b border-[rgba(255,255,255,0.06)]">
+        <button type="button" onclick="changeCustomDatePickerMonth(-1)" class="w-8 h-8 rounded-xl hover:bg-[#212430] flex items-center justify-center text-gray-400 hover:text-white cursor-pointer transition-colors active:scale-90"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+        <span id="datepicker-month-year" class="text-xs font-bold text-white tracking-wide">...</span>
+        <button type="button" onclick="changeCustomDatePickerMonth(1)" class="w-8 h-8 rounded-xl hover:bg-[#212430] flex items-center justify-center text-gray-400 hover:text-white cursor-pointer transition-colors active:scale-90"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+      </div>
+      <div class="grid grid-cols-7 gap-1 text-center text-[10px] text-[#848D99] font-bold mb-1.5">
+        <span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span>
+      </div>
+      <div id="datepicker-days-grid" class="grid grid-cols-7 gap-1 text-center text-xs"></div>
+      <div class="mt-3 pt-2.5 border-t border-[rgba(255,255,255,0.06)] flex justify-between items-center text-xs">
+        <button type="button" onclick="selectCustomDatePickerToday()" class="text-[#8C7DFF] hover:text-white font-medium cursor-pointer transition-colors">Сегодня</button>
+        <button type="button" onclick="closeCustomDatePicker()" class="px-3.5 py-1.5 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 hover:text-white rounded-xl text-xs font-medium transition-colors cursor-pointer ml-auto active:scale-95">Закрыть</button>
+      </div>
     </div>
   </div>
 
