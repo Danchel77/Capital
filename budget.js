@@ -910,9 +910,9 @@ function isBillPaidInCurrentMonth(bill, monthItems, customDate) {
   }
 
   // 3. Проверяем наличие привязанной транзакции в рамках выбранного месяца
-  if (monthItems && monthItems.length > 0) {
-    const hasLinked = monthItems.some(tx => 
-      tx.type === 'Расход' && 
+  if (Array.isArray(monthItems) && monthItems.length > 0) {
+    const hasLinked = (monthItems || []).some(tx => 
+      tx && tx.type === 'Расход' && 
       tx.billId === bill.id && 
       (tx.isBillPayment || tx.excludeFromBudget)
     );
@@ -1823,29 +1823,29 @@ function initBudgetWizard(forceReset = false) {
     currentWizardStep = 1;
     localStorage.setItem('budget_wizard_step', '1');
   } else {
-    currentWizardStep = parseInt(localStorage.getItem('budget_wizard_step'), 10) || currentWizardStep || 1;
+    currentWizardStep = parseInt(localStorage.getItem('budget_wizard_step'), 10) || 1;
   }
 
   // Заполняем доходы, если уже были сохранены
-  if (existingPlan.monthlyIncome && incInput && !incInput.value) {
+  if (existingPlan.monthlyIncome && incInput) {
     incInput.value = formatMoney(existingPlan.monthlyIncome);
   }
 
-  // Заполняем лимиты категорий, если были сохранены
+  // Заполняем кастомные категории из сохраненного плана, если есть
   if (existingPlan.categoryLimits) {
-    document.querySelectorAll('[data-wiz-cat]').forEach(inp => {
-      const cat = inp.dataset.wizCat;
-      if (existingPlan.categoryLimits[cat]) {
-        inp.value = formatMoney(existingPlan.categoryLimits[cat]);
+    const standardCats = ['Продукты', 'Кафе и рестораны', 'Развлечения', 'Прочие расходы', 'Прочие траты'];
+    Object.keys(existingPlan.categoryLimits).forEach(cat => {
+      if (!standardCats.includes(cat)) {
+        wizardCustomCategories.add(cat);
       }
     });
   }
 
   if (hasExistingGoal) {
     const firstGoal = Cache.goals[0];
-    if (gName && !gName.value) gName.value = firstGoal.name || '';
-    if (gTarget && !gTarget.value) gTarget.value = firstGoal.target ? formatMoney(firstGoal.target) : '';
-    if (gSaved && !gSaved.value) gSaved.value = firstGoal.saved ? formatMoney(firstGoal.saved) : '';
+    if (gName) gName.value = firstGoal.name || '';
+    if (gTarget) gTarget.value = firstGoal.target ? formatMoney(firstGoal.target) : '';
+    if (gSaved) gSaved.value = firstGoal.saved ? formatMoney(firstGoal.saved) : '';
     if (firstGoal.icon) {
       selectWizardGoalIcon(firstGoal.icon);
     } else if (!wizGoalIcon) {
@@ -1864,6 +1864,28 @@ function initBudgetWizard(forceReset = false) {
   goToWizardStep(currentWizardStep);
   renderWizardIncomeSources();
   calculateHistoricalIncomeForWizard();
+}
+
+function openBudgetPlanWizardReview() {
+  if (typeof unlockBodyScroll === 'function') unlockBodyScroll(true);
+  document.body.classList.remove('modal-open');
+  document.body.style.top = '';
+
+  if (typeof switchTab === 'function') {
+    switchTab('budget');
+  }
+
+  const wizardEl = document.getElementById('budget-wizard');
+  const dashboardEl = document.getElementById('budget-dashboard');
+  if (wizardEl) wizardEl.classList.remove('hidden');
+  if (dashboardEl) dashboardEl.classList.add('hidden');
+
+  localStorage.setItem('budget_wizard_step', '1');
+  currentWizardStep = 1;
+
+  initBudgetWizard(true);
+
+  window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
 }
 
 function goToWizardStep(step) {
@@ -1886,14 +1908,12 @@ function goToWizardStep(step) {
 
   const badge = document.getElementById('wizard-step-badge');
   const title = document.getElementById('wizard-step-title');
-  const counter = document.getElementById('wizard-step-counter');
-  if (counter) counter.innerText = `${step}/5`;
 
   const titles = [
     'Создайте цель накопления',
     'Планируемый доход',
     'Календарь обязательных счетов',
-    'Лимиты на каждый день',
+    'Месячные лимиты расходов',
     'Итоговый план бюджета'
   ];
 
@@ -2372,16 +2392,19 @@ function closeWizDayTooltip() {
 // Закрытие тултипа при клике вне его области
 if (typeof document !== 'undefined') {
   document.addEventListener('click', (e) => {
+    const target = (e?.target?.nodeType === 3) ? e.target.parentElement : e?.target;
+    if (!target || typeof target.closest !== 'function') return;
+
     const tooltipWiz = document.getElementById('wiz-day-tooltip');
     if (tooltipWiz && !tooltipWiz.classList.contains('hidden')) {
-      if (!tooltipWiz.contains(e.target) && !e.target.closest('.wiz-day-cell') && !e.target.closest('#calendar-bill-dialog')) {
+      if (!tooltipWiz.contains(target) && !target.closest('.wiz-day-cell') && !target.closest('#calendar-bill-dialog')) {
         closeWizDayTooltip();
       }
     }
 
     const tooltipModal = document.getElementById('budget-modal-day-tooltip');
     if (tooltipModal && !tooltipModal.classList.contains('hidden')) {
-      if (!tooltipModal.contains(e.target) && !e.target.closest('.wiz-day-cell') && !e.target.closest('#calendar-bill-dialog')) {
+      if (!tooltipModal.contains(target) && !target.closest('.wiz-day-cell') && !target.closest('#calendar-bill-dialog')) {
         closeBudgetModalDayTooltip();
       }
     }
@@ -3284,7 +3307,8 @@ function hideGoalPaceTooltips() {
 // Глобальное закрытие тултипов темпа целей при клике во внешнюю область
 if (typeof document !== 'undefined') {
   document.addEventListener('click', (e) => {
-    if (!e.target.closest('.goal-pace-tooltip') && !e.target.closest('.goal-pace-badge')) {
+    const target = (e?.target?.nodeType === 3) ? e.target.parentElement : e?.target;
+    if (target && typeof target.closest === 'function' && !target.closest('.goal-pace-tooltip') && !target.closest('.goal-pace-badge')) {
       hideGoalPaceTooltips();
     }
   });
@@ -5228,7 +5252,7 @@ async function handleTransactionsDeleted(txIds, deletedTxs = [], existingBatch =
       }
 
       bill.isPaid = false;
-      if (isLinkedByBillTxId || matchingTxs.some(t => t.id === bill.linkedTxId)) {
+      if (isLinkedByBillTxId || (Array.isArray(matchingTxs) && matchingTxs.some(t => t && t.id === bill.linkedTxId))) {
         bill.linkedTxId = null;
       }
       bill.paidMonths = paidMonths;
@@ -5603,3 +5627,4 @@ window.selectBillMatchTx = selectBillMatchTx;
 window.createAndLinkBillTransaction = createAndLinkBillTransaction;
 window.applySelectedBillMatch = applySelectedBillMatch;
 window.unlinkCurrentBillPayment = unlinkCurrentBillPayment;
+window.openBudgetPlanWizardReview = openBudgetPlanWizardReview;

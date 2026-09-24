@@ -1,0 +1,23 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Личные данные пользователя и все вложенные коллекции (Transactions, Categories, Deposits и т.д.)
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      
+      match /{allSubcollections=**} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+    
+    // Семейные группы и все связанные общие таблицы
+    match /families/{familyId} {
+      allow read, create, update, delete: if request.auth != null;
+      
+      match /{allSubcollections=**} {
+        allow read, write: if request.auth != null;
+      }
+    }
+  }
+}

@@ -38,19 +38,20 @@
   <!-- PDF.js для чтения выписок в браузере -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
-  <link rel="stylesheet" href="style.css?v=14">
-  <script defer src="iconsSVG.js?v=1"></script>
-  <script defer src="default-rules.js?v=1"></script>
-  <script defer src="statement-parser.js?v=2"></script>
+  <link rel="stylesheet" href="style.css?v=20">
+  <script defer src="iconsSVG.js?v=20"></script>
+  <script defer src="default-rules.js?v=20"></script>
+  <script defer src="statement-parser.js?v=20"></script>
   
   <!-- Модули приложения -->
-  <script defer src="core.js?v=14"></script>
-  <script defer src="auth-profile.js?v=14"></script>
-  <script defer src="ui-tools.js?v=14"></script>
-  <script defer src="transactions.js?v=14"></script>
-  <script defer src="investments.js?v=14"></script>
-  <script defer src="budget.js?v=14"></script>
-  <script defer src="app.js?v=14"></script>
+  <script defer src="core.js?v=20"></script>
+  <script defer src="auth-profile.js?v=20"></script>
+  <script defer src="backup-manager.js?v=20"></script>
+  <script defer src="ui-tools.js?v=20"></script>
+  <script defer src="transactions.js?v=20"></script>
+  <script defer src="investments.js?v=20"></script>
+  <script defer src="budget.js?v=20"></script>
+  <script defer src="app.js?v=20"></script>
 </head>
 <body class="bg-[#121212] text-[#e5e7eb]" ontouchstart="">
 
@@ -167,10 +168,18 @@
     </div>
   </div>
 
-  <header class="bg-gray-900 border-b border-gray-800 text-white p-4 sticky top-0 z-10 flex justify-between items-center shadow-md">
-    <h1 class="text-lg font-bold flex items-center gap-2">
-      <span class="text-blue-400">◇</span> Бюджет
-    </h1>
+  <header class="bg-gray-900 border-b border-gray-800 text-white px-3.5 py-2 sm:px-4 sm:py-2.5 sticky top-0 z-10 flex justify-between items-center shadow-md">
+    <div class="flex items-center gap-2 min-w-0">
+      <h1 class="text-base sm:text-lg font-bold flex items-center gap-1.5">
+        <span class="text-blue-400">◇</span> Бюджет
+      </h1>
+      
+      <!-- Компактный индикатор офлайн-режима -->
+      <span id="offline-badge" class="hidden items-center gap-1.5 text-[10px] font-semibold text-amber-300 bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 rounded-full shadow-sm select-none" title="Офлайн-режим. Данные сохраняются локально">
+        <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+        <span>Офлайн</span>
+      </span>
+    </div>
     
     <div class="flex items-center gap-2 sm:gap-3 text-xs">
       <span class="text-gray-400 hidden sm:inline">Обновлено: <span id="last-sync">...</span></span>
@@ -179,10 +188,10 @@
       <button type="button" 
               id="privacy-toggle-btn" 
               onclick="togglePrivacyMode()" 
-              class="w-8 h-8 rounded-xl bg-gray-800 hover:bg-gray-700 active:scale-95 border border-gray-700 text-gray-300 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-sm" 
+              class="w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-xl bg-gray-800 hover:bg-gray-700 active:scale-95 border border-gray-700 text-gray-300 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-sm" 
               title="Скрыть / показать суммы">
         <span id="privacy-icon-container" class="flex items-center justify-center pointer-events-none">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 sm:w-4 sm:h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0z"/>
             <circle cx="12" cy="12" r="3"/>
           </svg>
@@ -190,39 +199,27 @@
       </button>
 
       <!-- Кнопка Личного кабинета -->
-      <button type="button" onclick="openProfileModal()" class="bg-gray-800 hover:bg-gray-700 active:scale-95 px-3 py-1.5 rounded-xl border border-gray-700 transition-all flex items-center gap-2 text-xs font-semibold text-gray-200 cursor-pointer shadow-sm">
-        <span class="w-6 h-6 rounded-full bg-blue-600/20 text-blue-500 border border-blue-500/30 flex items-center justify-center">
-  <i data-lucide="user" class="w-3.5 h-3.5 stroke-[2.5px]"></i>
-</span>
-        <span id="header-user-name" class="truncate max-w-[90px] sm:max-w-[130px]">Профиль</span>
+      <button type="button" onclick="openProfileModal()" class="bg-gray-800 hover:bg-gray-700 active:scale-95 px-2.5 py-1 sm:py-1.5 rounded-xl border border-gray-700 transition-all flex items-center gap-1.5 sm:gap-2 text-xs font-semibold text-gray-200 cursor-pointer shadow-sm">
+        <span id="header-user-avatar" class="w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center flex-shrink-0 select-none">
+          <i data-lucide="user" class="w-3 h-3 sm:w-3.5 sm:h-3.5 stroke-[2.5px]"></i>
+        </span>
+        <span id="header-user-name" class="truncate max-w-[80px] sm:max-w-[130px]">Профиль</span>
       </button>
     </div>
   </header>
 
-  <!-- БАННЕР ОФФЛАЙН-РЕЖИМА -->
-  <div id="offline-status-banner" class="hidden bg-amber-500/10 border-b border-amber-500/20 text-amber-200 px-4 py-2 text-xs font-medium flex items-center justify-between animate-fade-in sticky top-[57px] z-[9] backdrop-blur-md">
-    <div class="flex items-center gap-2">
-      <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
-      <span>Офлайн-режим — данные сохраняются локально</span>
-    </div>
-    <span class="text-[10px] text-amber-400/90 bg-amber-500/20 px-2 py-0.5 rounded-full border border-amber-500/30">IndexedDB</span>
-  </div>
-
-  <main id="app-content" class="p-4 pb-28 sm:pb-24">
+  <main id="app-content" class="p-3.5 sm:p-4 pb-20 sm:pb-16">
     
     <!-- ЭКРАН БЮДЖЕТА (ГЛАВНЫЙ ЭКРАН УПРАВЛЕНИЯ ФИНАНСАМИ) -->
     <div id="budget-tab" class="tab-pane space-y-4">
       
       <!-- СОСТОЯНИЕ 1: ПОШАГОВЫЙ МАСТЕР ЗАПУСКА (NEOBANK СТИЛЬ) -->
-      <div id="budget-wizard" class="hidden space-y-3.5 max-w-md mx-auto">
+      <div id="budget-wizard" class="hidden space-y-2.5 max-w-md mx-auto">
         <!-- Компактная шапка прогресса с сегментным трекером -->
-        <div class="bg-[#181B24] border border-[rgba(255,255,255,0.06)] rounded-2xl p-3.5 shadow-sm">
+        <div class="bg-[#181B24] border border-[rgba(255,255,255,0.06)] rounded-2xl px-3.5 py-3 shadow-sm">
           <div class="flex items-center justify-between mb-2">
-            <div>
-              <span id="wizard-step-badge" class="text-[10px] font-bold tracking-wider uppercase text-[#727cff]">Шаг 1 из 5</span>
-              <h2 id="wizard-step-title" class="text-sm font-bold text-white tracking-tight mt-0.5">Создайте цель накопления</h2>
-            </div>
-            <span class="text-xs font-mono font-bold text-[#848D99]" id="wizard-step-counter">1/5</span>
+            <h2 id="wizard-step-title" class="text-sm font-bold text-white tracking-tight">Создайте цель накопления</h2>
+            <span id="wizard-step-badge" class="text-[11px] font-semibold text-[#9DA5FF] bg-[#6C5DD3]/20 px-2 py-0.5 rounded-full border border-[#6C5DD3]/30">Шаг 1 из 5</span>
           </div>
           <!-- 5-сегментный прогресс-бар -->
           <div class="grid grid-cols-5 gap-1.5 h-1">
@@ -299,27 +296,25 @@
           </div>
         </div>
 
-        <!-- ШАГ 2: Доход (Компактные чипсы и моментальный импорт) -->
+        <!-- ШАГ 2: Доход (Компактный дружелюбный импорт и ручной ввод) -->
         <div id="wizard-step-2" class="hidden wiz-step-card bg-[#181B24] border border-[rgba(255,255,255,0.06)] rounded-3xl p-4 shadow-md animate-fade-in">
           <div class="wiz-step-content">
-            <!-- Блок пояснений для пользователя -->
-            <div class="bg-[#12151C] border border-[rgba(255,255,255,0.04)] rounded-2xl p-3 space-y-2">
-              <div class="flex items-start gap-2.5">
-                <div class="w-7 h-7 rounded-xl bg-[#6C5DD3]/15 text-[#727cff] flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <i data-lucide="info" class="w-4 h-4"></i>
-                </div>
-                <p class="text-[11px] text-[#848D99] leading-relaxed">
-                  Вы можете примерно наметить свой средний доход вручную или загрузить банковские выписки (PDF) — тогда система рассчитает среднемесячный доход автоматически.
-                </p>
+            <!-- Компактная подсказка и кнопка загрузки выписки -->
+            <div class="bg-[#12151C] border border-[rgba(255,255,255,0.04)] rounded-2xl p-3 flex items-start gap-2.5">
+              <div class="w-8 h-8 rounded-xl bg-[#6C5DD3]/15 text-[#727cff] flex items-center justify-center flex-shrink-0 mt-0.5">
+                <i data-lucide="sparkles" class="w-4 h-4"></i>
               </div>
-
-              <!-- Кнопка загрузки выписки -->
-              <div class="flex items-center justify-between pt-1 border-t border-[rgba(255,255,255,0.04)]">
-                <span class="text-[10px] text-[#848D99] font-medium">Есть выписка из банка?</span>
-                <button type="button" onclick="triggerPdfImportFromWizard()" class="bg-[#212430] hover:bg-[#2A2D3C] text-[#727cff] border border-[rgba(255,255,255,0.06)] px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 flex-shrink-0 cursor-pointer transition-colors active:scale-95">
-                  <i data-lucide="file-up" class="w-3.5 h-3.5"></i>
-                  <span>Загрузить PDF</span>
-                </button>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between gap-2">
+                  <p class="text-xs font-semibold text-gray-200 truncate">Авторасчет по выписке</p>
+                  <button type="button" onclick="triggerPdfImportFromWizard()" class="bg-[#212430] hover:bg-[#2A2D3C] text-[#727cff] hover:text-white border border-[rgba(255,255,255,0.06)] px-2.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 flex-shrink-0 cursor-pointer transition-all active:scale-95 shadow-sm" title="Загрузить банковскую выписку">
+                    <i data-lucide="file-up" class="w-3.5 h-3.5"></i>
+                    <span>Импорт PDF</span>
+                  </button>
+                </div>
+                <p class="text-[11px] text-[#848D99] mt-1 leading-relaxed">
+                  Загрузите PDF из банка или введите сумму среднемесячного дохода вручную.
+                </p>
               </div>
             </div>
 
@@ -423,6 +418,25 @@
         <!-- ШАГ 4: Лимиты по категориям (Кликабельные чипсы вместо громоздких кнопок) -->
         <div id="wizard-step-4" class="hidden wiz-step-card bg-[#181B24] border border-[rgba(255,255,255,0.06)] rounded-3xl p-4 shadow-md animate-fade-in">
           <div class="wiz-step-content">
+            <!-- Компактная подсказка по лимитам категорий с кнопкой импорта PDF -->
+            <div class="bg-[#12151C] border border-[rgba(255,255,255,0.04)] rounded-2xl p-3 flex items-start gap-2.5">
+              <div class="w-8 h-8 rounded-xl bg-[#6C5DD3]/15 text-[#727cff] flex items-center justify-center flex-shrink-0 mt-0.5">
+                <i data-lucide="shield-check" class="w-4 h-4"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between gap-2">
+                  <p class="text-xs font-semibold text-gray-200">Лимиты расходов</p>
+                  <button type="button" onclick="triggerPdfImportFromWizard()" class="bg-[#212430] hover:bg-[#2A2D3C] text-[#727cff] hover:text-white border border-[rgba(255,255,255,0.06)] px-2.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 flex-shrink-0 cursor-pointer transition-all active:scale-95 shadow-sm" title="Рассчитать средние траты по банковской выписке">
+                    <i data-lucide="file-up" class="w-3.5 h-3.5"></i>
+                    <span>Импорт PDF</span>
+                  </button>
+                </div>
+                <p class="text-[11px] text-[#848D99] mt-1 leading-relaxed">
+                  Лимиты задают комфортные рамки для регулярных расходов (продукты, кафе, покупки). На их основе формируется ваш бюджет на неделю и на месяц.
+                </p>
+              </div>
+            </div>
+
             <!-- Сводный бейдж -->
             <div class="bg-gradient-to-r from-[#12151C] to-[#1E2330] border border-[rgba(255,255,255,0.06)] rounded-2xl p-3 flex items-center justify-between">
               <div>
@@ -940,7 +954,28 @@
 
     <!-- ЭКРАН БРОКЕРА -->
     <div id="broker-tab" class="tab-pane hidden space-y-4">
-      <div class="bg-[#181B24] p-5 rounded-3xl border border-[rgba(255,255,255,0.06)] shadow-sm relative">
+      <!-- Красивая заглушка если данных нет (в едином стиле с вкладами и целями) -->
+      <div id="broker-empty-state" class="hidden card rounded-2xl p-6 text-center flex flex-col items-center justify-center gap-3 mt-1 border border-[rgba(255,255,255,0.06)] bg-[#181B24]">
+        <div class="w-12 h-12 rounded-2xl bg-[#6C5DD3]/15 text-[#727cff] flex items-center justify-center">
+          <i data-lucide="trending-up" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <p class="text-sm font-semibold text-gray-200">Брокерский портфель пока пуст</p>
+          <p class="text-xs text-[#848D99] mt-1.5 max-w-[320px] leading-relaxed">Внесите первое пополнение брокерского счета или зафиксируйте текущий баланс, чтобы отслеживать доходность, чистую прибыль и динамику капитала на графике.</p>
+        </div>
+        <div class="grid grid-cols-2 gap-2.5 mt-2 w-full max-w-xs sm:max-w-sm">
+          <button type="button" onclick="openBrokerActionFromEmpty('deposit', event)" class="w-full py-2.5 px-2 rounded-xl bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white text-xs font-semibold transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-1.5 shadow-md truncate">
+            <i data-lucide="plus" class="w-3.5 h-3.5 flex-shrink-0"></i>
+            <span class="truncate">Пополнить</span>
+          </button>
+          <button type="button" onclick="openBrokerActionFromEmpty('balance', event)" class="w-full py-2.5 px-2 rounded-xl bg-[#212430] hover:bg-[#2A2D3C] text-gray-200 border border-[rgba(255,255,255,0.06)] text-xs font-semibold transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-1.5 truncate">
+            <i data-lucide="scale" class="w-3.5 h-3.5 text-gray-400 flex-shrink-0"></i>
+            <span class="truncate">Указать баланс</span>
+          </button>
+        </div>
+      </div>
+
+      <div id="broker-main-card" class="bg-[#181B24] p-5 rounded-3xl border border-[rgba(255,255,255,0.06)] shadow-sm relative">
         <p class="text-[11px] text-[#848D99] uppercase tracking-wider font-bold mb-1">Брокерский портфель</p>
         
         <!-- Основной баланс -->
@@ -1039,53 +1074,53 @@
     </div>
   </main>
 
-  <nav id="bottom-nav-bar" class="fixed bottom-0 left-0 right-0 w-full bg-[#12141C]/95 backdrop-blur-xl border-t border-[rgba(255,255,255,0.08)] flex items-center justify-around px-2 pt-1.5 pb-safe z-40 shadow-[0_-8px_32px_rgba(0,0,0,0.6)]">
+  <nav id="bottom-nav-bar" class="fixed bottom-0 left-0 right-0 w-full bg-[#12141C]/95 backdrop-blur-xl border-t border-[rgba(255,255,255,0.08)] flex items-center justify-around px-2 pt-1 pb-safe z-40 shadow-[0_-8px_32px_rgba(0,0,0,0.6)]">
     <!-- Бюджет -->
     <button type="button" 
             onclick="switchTab('budget')" 
             id="nav-budget" 
-            class="nav-tab-btn flex-1 py-1 px-1 flex flex-col items-center justify-center gap-0.5 transition-all duration-200 cursor-pointer text-[#727cff]">
-      <div class="nav-icon-wrap w-10 h-7 rounded-xl flex items-center justify-center transition-all duration-200 bg-[#6C5DD3]/15 text-[#727cff]">
-        <i data-lucide="wallet" class="w-4 h-4 stroke-[2.2px] transition-transform duration-200 scale-105"></i>
+            class="nav-tab-btn flex-1 py-0.5 px-1 flex flex-col items-center justify-center gap-0.5 transition-all duration-200 cursor-pointer text-[#727cff]">
+      <div class="nav-icon-wrap w-9 h-6 rounded-lg flex items-center justify-center transition-all duration-200 bg-[#6C5DD3]/15 text-[#727cff]">
+        <i data-lucide="wallet" class="w-3.5 h-3.5 stroke-[2.2px] transition-transform duration-200 scale-105"></i>
       </div>
-      <span class="nav-label text-[11px] font-bold tracking-tight transition-colors duration-200 text-white">Бюджет</span>
-      <div class="nav-indicator w-5 h-0.5 rounded-full bg-[#727cff] transition-all duration-200 opacity-100 scale-100 shadow-[0_0_8px_rgba(114,124,255,0.7)]"></div>
+      <span class="nav-label text-[10px] font-bold tracking-tight transition-colors duration-200 text-white">Бюджет</span>
+      <div class="nav-indicator w-4 h-0.5 rounded-full bg-[#727cff] transition-all duration-200 opacity-100 scale-100 shadow-[0_0_8px_rgba(114,124,255,0.7)]"></div>
     </button>
 
     <!-- Траты -->
     <button type="button" 
             onclick="switchTab('transactions')" 
             id="nav-transactions" 
-            class="nav-tab-btn flex-1 py-1 px-1 flex flex-col items-center justify-center gap-0.5 transition-all duration-200 cursor-pointer text-[#848D99] hover:text-gray-300">
-      <div class="nav-icon-wrap w-10 h-7 rounded-xl flex items-center justify-center transition-all duration-200 bg-transparent text-inherit">
-        <i data-lucide="arrow-left-right" class="w-4 h-4 stroke-[2px] transition-transform duration-200"></i>
+            class="nav-tab-btn flex-1 py-0.5 px-1 flex flex-col items-center justify-center gap-0.5 transition-all duration-200 cursor-pointer text-[#848D99] hover:text-gray-300">
+      <div class="nav-icon-wrap w-9 h-6 rounded-lg flex items-center justify-center transition-all duration-200 bg-transparent text-inherit">
+        <i data-lucide="arrow-left-right" class="w-3.5 h-3.5 stroke-[2px] transition-transform duration-200"></i>
       </div>
-      <span class="nav-label text-[11px] font-medium tracking-tight transition-colors duration-200 text-[#848D99]">Траты</span>
-      <div class="nav-indicator w-5 h-0.5 rounded-full bg-[#727cff] transition-all duration-200 opacity-0 scale-75 shadow-[0_0_8px_rgba(114,124,255,0.7)]"></div>
+      <span class="nav-label text-[10px] font-medium tracking-tight transition-colors duration-200 text-[#848D99]">Траты</span>
+      <div class="nav-indicator w-4 h-0.5 rounded-full bg-[#727cff] transition-all duration-200 opacity-0 scale-75 shadow-[0_0_8px_rgba(114,124,255,0.7)]"></div>
     </button>
 
     <!-- Вклады -->
     <button type="button" 
             onclick="switchTab('deposits')" 
             id="nav-deposits" 
-            class="nav-tab-btn flex-1 py-1 px-1 flex flex-col items-center justify-center gap-0.5 transition-all duration-200 cursor-pointer text-[#848D99] hover:text-gray-300">
-      <div class="nav-icon-wrap w-10 h-7 rounded-xl flex items-center justify-center transition-all duration-200 bg-transparent text-inherit">
-        <i data-lucide="piggy-bank" class="w-4 h-4 stroke-[2px] transition-transform duration-200"></i>
+            class="nav-tab-btn flex-1 py-0.5 px-1 flex flex-col items-center justify-center gap-0.5 transition-all duration-200 cursor-pointer text-[#848D99] hover:text-gray-300">
+      <div class="nav-icon-wrap w-9 h-6 rounded-lg flex items-center justify-center transition-all duration-200 bg-transparent text-inherit">
+        <i data-lucide="piggy-bank" class="w-3.5 h-3.5 stroke-[2px] transition-transform duration-200"></i>
       </div>
-      <span class="nav-label text-[11px] font-medium tracking-tight transition-colors duration-200 text-[#848D99]">Вклады</span>
-      <div class="nav-indicator w-5 h-0.5 rounded-full bg-[#727cff] transition-all duration-200 opacity-0 scale-75 shadow-[0_0_8px_rgba(114,124,255,0.7)]"></div>
+      <span class="nav-label text-[10px] font-medium tracking-tight transition-colors duration-200 text-[#848D99]">Вклады</span>
+      <div class="nav-indicator w-4 h-0.5 rounded-full bg-[#727cff] transition-all duration-200 opacity-0 scale-75 shadow-[0_0_8px_rgba(114,124,255,0.7)]"></div>
     </button>
 
     <!-- Брокер -->
     <button type="button" 
             onclick="switchTab('broker')" 
             id="nav-broker" 
-            class="nav-tab-btn flex-1 py-1 px-1 flex flex-col items-center justify-center gap-0.5 transition-all duration-200 cursor-pointer text-[#848D99] hover:text-gray-300">
-      <div class="nav-icon-wrap w-10 h-7 rounded-xl flex items-center justify-center transition-all duration-200 bg-transparent text-inherit">
-        <i data-lucide="trending-up" class="w-4 h-4 stroke-[2px] transition-transform duration-200"></i>
+            class="nav-tab-btn flex-1 py-0.5 px-1 flex flex-col items-center justify-center gap-0.5 transition-all duration-200 cursor-pointer text-[#848D99] hover:text-gray-300">
+      <div class="nav-icon-wrap w-9 h-6 rounded-lg flex items-center justify-center transition-all duration-200 bg-transparent text-inherit">
+        <i data-lucide="trending-up" class="w-3.5 h-3.5 stroke-[2px] transition-transform duration-200"></i>
       </div>
-      <span class="nav-label text-[11px] font-medium tracking-tight transition-colors duration-200 text-[#848D99]">Брокер</span>
-      <div class="nav-indicator w-5 h-0.5 rounded-full bg-[#727cff] transition-all duration-200 opacity-0 scale-75 shadow-[0_0_8px_rgba(114,124,255,0.7)]"></div>
+      <span class="nav-label text-[10px] font-medium tracking-tight transition-colors duration-200 text-[#848D99]">Брокер</span>
+      <div class="nav-indicator w-4 h-0.5 rounded-full bg-[#727cff] transition-all duration-200 opacity-0 scale-75 shadow-[0_0_8px_rgba(114,124,255,0.7)]"></div>
     </button>
   </nav>
 
@@ -1128,7 +1163,17 @@
         <div class="tx-category-menu custom-dropdown-menu hidden absolute left-0 w-full max-h-56 overflow-y-auto bg-[#181B24]/95 backdrop-blur-md border border-gray-700 rounded-xl shadow-2xl z-50 p-1 space-y-0.5"></div>
       </div>
     </div>
-    <input type="text" placeholder="Магазин или назначение платежа" oninput="handleTxRowCommentInput(this)" class="tx-comment w-full bg-[#181B24] border border-[rgba(255,255,255,0.1)] text-white placeholder-gray-500 rounded-lg px-2.5 py-1.5 outline-none text-xs">
+
+    <div class="flex items-center gap-2">
+      <input type="text" placeholder="Магазин или назначение платежа" oninput="handleTxRowCommentInput(this)" class="tx-comment flex-1 min-w-0 bg-[#181B24] border border-[rgba(255,255,255,0.1)] text-white placeholder-gray-500 rounded-lg px-2.5 py-1.5 outline-none text-xs focus:border-[#6C5DD3] transition-colors">
+      <!-- Кнопка булавка для добавления в словарь -->
+      <button type="button" 
+              onclick="openRememberRuleForTxRow(this)" 
+              class="w-8 h-8 rounded-lg bg-[#6C5DD3]/15 hover:bg-[#6C5DD3]/25 active:scale-90 text-[#9E86FF] hover:text-white border border-[#6C5DD3]/20 flex items-center justify-center flex-shrink-0 cursor-pointer transition-all shadow-sm group" 
+              title="Запомнить в словарь категорий">
+        <i data-lucide="pin" class="w-4 h-4 transition-transform group-hover:scale-110"></i>
+      </button>
+    </div>
   </div>
 </template>
 
@@ -1476,6 +1521,12 @@
           </div>
           <div id="bill-spread-period-hint" class="text-[10px] text-[#848D99] text-center font-medium">
             Период: текущий месяц
+          </div>
+
+          <!-- Подсказка о механике распределения в лимитах -->
+          <div class="flex items-start gap-2 bg-[#181B24] p-2.5 rounded-xl border border-[rgba(255,255,255,0.04)] text-[11px] text-[#848D99] leading-relaxed">
+            <i data-lucide="info" class="w-3.5 h-3.5 text-amber-400 flex-shrink-0 mt-0.5"></i>
+            <span>Сумма крупной разовой траты распределится по бюджетам выбранных месяцев равными частями, не перегружая лимит одного месяца.</span>
           </div>
         </div>
 
@@ -1965,142 +2016,915 @@
     </div>
   </div>
   
-    <!-- Модальное окно создания правила категории -->
-  <div id="remember-rule-dialog" class="fixed inset-0 bg-black/80 z-[140] hidden flex flex-col justify-center items-center p-4">
-    <div class="bg-gray-800 border border-gray-700 w-full max-w-sm rounded-3xl p-5 shadow-2xl">
-      <h3 class="font-bold text-white text-base mb-1">Запомнить категорию</h3>
-      <p class="text-xs text-gray-400 mb-4">При совпадении фразы категория будет проставляться автоматически.</p>
-
-      <label class="block text-xs text-gray-400 mb-1">Ключевое слово / фраза</label>
-      <input type="text" id="rule-keyword-input" class="w-full bg-gray-700 border border-gray-600 text-white rounded-xl p-3 outline-none mb-3 text-sm" placeholder="Например: PEREK или ВкусВилл">
-
-      <label class="block text-xs text-gray-400 mb-1">Категория</label>
-      <div class="relative mb-5 custom-dropdown-wrap" id="wrap-rule-cat">
-        <input type="hidden" id="rule-category-input">
-        <button type="button" id="rule-category-btn" onclick="toggleModalCatMenu('rule')" class="w-full bg-gray-700 border border-gray-600 text-white rounded-xl p-3 text-xs flex items-center justify-between outline-none cursor-pointer">
-          <span id="rule-category-label" class="truncate">Выберите категорию...</span>
-          <span class="text-gray-400 text-[9px] ml-1">▼</span>
+  <!-- МОДАЛЬНОЕ ОКНО: ЗАПОМНИТЬ В СЛОВАРЬ КАТЕГОРИЙ -->
+  <div id="remember-rule-dialog" class="fixed inset-0 bg-black/85 z-[170] hidden flex flex-col justify-center items-center p-4 backdrop-blur-md animate-fade-in" onclick="if (event.target === this) closeRememberRuleModal();">
+    <div class="bg-[#181B24] border border-[rgba(255,255,255,0.08)] w-full max-w-md rounded-3xl p-5 sm:p-6 shadow-2xl flex flex-col relative max-h-[90vh] overflow-y-auto custom-scrollbar">
+      
+      <!-- Шапка модального окна -->
+      <div class="flex items-center justify-between pb-3.5 mb-3.5 border-b border-[rgba(255,255,255,0.06)] flex-shrink-0">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-2xl bg-[#6C5DD3]/15 border border-[#6C5DD3]/25 flex items-center justify-center text-[#9E86FF] shadow-sm flex-shrink-0">
+            <i data-lucide="pin" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-white text-base leading-tight">Запомнить в словарь</h3>
+            <p class="text-[11px] text-[#848D99] mt-0.5">Автоматическое определение категории</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeRememberRuleModal()" class="w-8 h-8 rounded-full bg-[#212430] hover:bg-[#2A2D3C] text-gray-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors active:scale-95" title="Закрыть">
+          <i data-lucide="x" class="w-4 h-4"></i>
         </button>
-        <div id="rule-category-menu" class="custom-dropdown-menu hidden absolute left-0 top-full mt-1.5 w-full max-h-48 overflow-y-auto bg-gray-800 border border-gray-700 rounded-xl shadow-2xl z-50 p-1 space-y-0.5"></div>
       </div>
-      <div class="flex gap-2">
-        <button type="button" onclick="closeRememberRuleModal()" class="flex-1 bg-gray-700 text-white py-3 rounded-xl font-medium text-sm">Отмена</button>
-        <button type="button" onclick="saveCategoryRuleFromModal()" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl font-medium text-sm">Сохранить</button>
+
+      <div class="space-y-3.5">
+        <!-- Поле ключевого слова / фразы -->
+        <div>
+          <label class="block text-[10px] text-[#848D99] uppercase font-bold mb-1.5">Ключевое слово или фраза</label>
+          <input type="text" id="rule-keyword-input" class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white rounded-xl p-3 outline-none text-xs transition-colors" placeholder="Например: pyaterochka или ВкусВилл">
+        </div>
+
+        <!-- Выбор категории -->
+        <div>
+          <label class="block text-[10px] text-[#848D99] uppercase font-bold mb-1.5">Назначаемая категория</label>
+          <div class="relative custom-dropdown-wrap" id="wrap-rule-cat">
+            <input type="hidden" id="rule-category-input">
+            <button type="button" id="rule-category-btn" onclick="toggleModalCatMenu('rule')" class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] hover:border-gray-500 focus:border-[#6C5DD3] text-white rounded-xl p-3 text-xs flex items-center justify-between outline-none cursor-pointer transition-colors">
+              <span id="rule-category-label" class="truncate flex items-center gap-2 text-white">
+                <i data-lucide="tag" class="w-4 h-4 text-[#848D99]"></i>
+                <span class="truncate">Выберите категорию...</span>
+              </span>
+              <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 flex-shrink-0 ml-1"></i>
+            </button>
+            <div id="rule-category-menu" class="custom-dropdown-menu hidden absolute left-0 top-full mt-1.5 w-full max-h-52 overflow-y-auto bg-[#181B24]/95 backdrop-blur-md border border-gray-700 rounded-2xl shadow-2xl z-50 p-1 space-y-0.5"></div>
+          </div>
+        </div>
+
+        <!-- Подсказка: какие слова лучше добавлять -->
+        <div class="bg-[#6C5DD3]/10 border border-[#6C5DD3]/20 rounded-2xl p-3.5 space-y-2">
+          <div class="flex items-center gap-2 text-[#9E86FF] font-semibold text-xs">
+            <i data-lucide="lightbulb" class="w-4 h-4 flex-shrink-0"></i>
+            <span>Какие слова лучше добавлять?</span>
+          </div>
+          <ul class="text-[11px] text-gray-300 space-y-1.5 leading-relaxed pl-1">
+            <li class="flex items-start gap-1.5">
+              <span class="text-[#9E86FF] font-bold">•</span>
+              <span><strong>Уникальная основа названия:</strong> корень бренда магазина (например: <code class="bg-[#12151C] px-1 py-0.5 rounded text-purple-300 font-mono">pyaterochka</code>, <code class="bg-[#12151C] px-1 py-0.5 rounded text-purple-300 font-mono">вкусвилл</code>, <code class="bg-[#12151C] px-1 py-0.5 rounded text-purple-300 font-mono">ozon</code>, <code class="bg-[#12151C] px-1 py-0.5 rounded text-purple-300 font-mono">yandex go</code>).</span>
+            </li>
+            <li class="flex items-start gap-1.5">
+              <span class="text-[#9E86FF] font-bold">•</span>
+              <span><strong>Избегайте общих слов:</strong> <span class="text-rose-300">«оплата»</span>, <span class="text-rose-300">«перевод»</span>, <span class="text-rose-300">«card»</span>, чтобы не перебивать другие категории.</span>
+            </li>
+            <li class="flex items-start gap-1.5">
+              <span class="text-[#9E86FF] font-bold">•</span>
+              <span><strong>Регистр не важен:</strong> поиск работает автоматически без учета регистра букв.</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Кнопки действий -->
+      <div class="flex gap-2.5 mt-5 pt-3 border-t border-[rgba(255,255,255,0.06)] flex-shrink-0">
+        <button type="button" onclick="closeRememberRuleModal()" class="flex-1 bg-[#212430] hover:bg-[#2A2D3C] active:scale-95 text-gray-300 hover:text-white py-3 rounded-2xl font-semibold text-xs transition-all cursor-pointer">
+          Отмена
+        </button>
+        <button type="button" onclick="saveCategoryRuleFromModal()" class="flex-1 bg-[#6C5DD3] hover:bg-[#5b4ec2] active:scale-95 text-white py-3 rounded-2xl font-semibold text-xs shadow-lg shadow-[#6C5DD3]/25 transition-all cursor-pointer flex items-center justify-center">
+          Сохранить в словарь
+        </button>
       </div>
     </div>
   </div>
 
-    <!-- Модальное окно редактора словаря категорий -->
-  <div id="rules-editor-dialog" class="fixed inset-0 bg-black/85 z-[160] hidden flex flex-col justify-center items-center p-4 animate-fade-in">
-    <div class="bg-gray-800 border border-gray-700 w-full max-w-md rounded-3xl p-5 shadow-2xl flex flex-col max-h-[85vh]">
-      <div class="flex items-center justify-between pb-3 border-b border-gray-700">
-        <h3 class="font-bold text-white text-base">Словарь категорий парсера</h3>
-        <button type="button" onclick="closeRulesEditorModal()" class="text-gray-400 hover:text-white text-lg p-1 cursor-pointer">✕</button>
+  <!-- Модальное окно редактора словаря категорий -->
+  <div id="rules-editor-dialog" class="fixed inset-0 bg-black/85 z-[160] hidden flex flex-col justify-start items-center p-0 sm:py-6 sm:px-4 animate-fade-in backdrop-blur-sm overflow-y-auto custom-scrollbar" onclick="if(event.target === this) closeRulesEditorModal();">
+    <div class="bg-[#181B24] sm:border sm:border-[rgba(255,255,255,0.08)] w-full max-w-lg min-h-full sm:min-h-0 sm:rounded-3xl p-5 sm:p-6 shadow-2xl flex flex-col my-auto sm:my-0">
+      <!-- Шапка модального окна -->
+      <div class="flex items-center justify-between pb-3.5 mb-3 border-b border-[rgba(255,255,255,0.06)] flex-shrink-0">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-2xl bg-[#6C5DD3]/15 border border-[#6C5DD3]/25 flex items-center justify-center text-[#727cff] shadow-sm flex-shrink-0">
+            <i data-lucide="book-open-check" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-white text-base leading-tight">Словарь категорий</h3>
+            <p class="text-[11px] text-[#848D99]">Автоматическое определение категорий по названию магазина</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeRulesEditorModal()" class="w-8 h-8 rounded-full bg-[#212430] hover:bg-[#2A2D3C] text-gray-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors" title="Закрыть">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
       </div>
 
-      <!-- Добавление нового слова -->
-      <div class="pt-3 pb-3 border-b border-gray-700/80">
-        <p class="text-[11px] text-gray-400 mb-2">Добавить новое слово / фразу:</p>
-        <div class="flex flex-col sm:flex-row gap-2 mb-2 w-full">
-          <input type="text" id="editor-keyword-input" placeholder="Слово / магазин" class="w-full flex-1 bg-gray-700 border border-gray-600 text-white rounded-xl px-3 py-2.5 text-xs outline-none focus:border-blue-500 min-w-0">
+      <!-- Добавление нового правила в словарь -->
+      <div class="p-3.5 bg-[#12151C] border border-[rgba(255,255,255,0.04)] rounded-2xl mb-3 flex-shrink-0 space-y-2.5">
+        <span class="text-[10px] text-[#848D99] uppercase font-bold tracking-wider block">Добавить фразу в словарь</span>
+        <div class="flex flex-col sm:flex-row gap-2 w-full">
+          <input type="text" id="editor-keyword-input" placeholder="Название магазина или фраза" class="w-full flex-1 bg-[#181B24] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white rounded-xl px-3 py-2.5 text-xs outline-none transition-colors min-w-0 font-medium">
           
           <div class="relative w-full sm:w-44 flex-shrink-0 custom-dropdown-wrap" id="wrap-editor-cat">
             <input type="hidden" id="editor-category-input">
-            <button type="button" id="editor-category-btn" onclick="toggleModalCatMenu('editor')" class="w-full bg-gray-700 border border-gray-600 text-white rounded-xl px-2.5 py-2.5 text-xs flex items-center justify-between outline-none cursor-pointer">
-              <span id="editor-category-label" class="truncate">Категория...</span>
+            <button type="button" id="editor-category-btn" onclick="toggleModalCatMenu('editor')" class="w-full bg-[#181B24] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white rounded-xl px-3 py-2.5 text-xs flex items-center justify-between outline-none cursor-pointer hover:border-gray-500 transition-colors">
+              <span id="editor-category-label" class="truncate flex items-center gap-1.5">Категория...</span>
               <span class="text-gray-400 text-[9px] ml-1">▼</span>
             </button>
-            <div id="editor-category-menu" class="custom-dropdown-menu hidden absolute left-0 top-full mt-1.5 w-full max-h-48 overflow-y-auto bg-gray-800 border border-gray-700 rounded-xl shadow-2xl z-50 p-1 space-y-0.5"></div>
+            <div id="editor-category-menu" class="custom-dropdown-menu hidden absolute left-0 top-full mt-1.5 w-full max-h-48 overflow-y-auto bg-gray-800/95 backdrop-blur-md border border-gray-700 rounded-2xl shadow-2xl z-[170] p-1 space-y-0.5"></div>
           </div>
         </div>
-        <button type="button" onclick="addRuleFromEditor()" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer">+ Добавить в словарь</button>
+        <button type="button" onclick="addRuleFromEditor()" class="w-full bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white py-2.5 rounded-xl text-xs font-semibold transition-all active:scale-95 shadow-md cursor-pointer flex items-center justify-center gap-1.5">
+          <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+          <span>Добавить в словарь</span>
+        </button>
       </div>
 
       <!-- Список слов с группировкой по категориям -->
-      <div id="editor-rules-list" class="flex-1 overflow-y-auto pt-3 space-y-4 pr-1">
+      <div id="editor-rules-list" class="space-y-3 pr-0.5">
         <!-- Сюда динамически выводятся карточки -->
       </div>
 
-      <div class="pt-3 border-t border-gray-700 mt-2 flex justify-between items-center gap-2">
-        <button type="button" onclick="restoreDefaultRules()" class="text-xs text-gray-400 hover:text-white px-2 py-1.5 rounded-lg hover:bg-gray-700/50 transition-colors cursor-pointer" title="Вернуть удалённые системные правила">
-          Восстановить системные
+      <!-- Подвал -->
+      <div class="pt-3.5 border-t border-[rgba(255,255,255,0.06)] mt-4 flex justify-between items-center gap-2 flex-shrink-0">
+        <button type="button" onclick="restoreDefaultRules()" class="text-xs text-[#848D99] hover:text-white px-2.5 py-1.5 rounded-xl hover:bg-[#212430] transition-colors cursor-pointer flex items-center gap-1.5" title="Вернуть исходные системные правила">
+          <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+          <span>Сбросить к исходным</span>
         </button>
-        <button type="button" onclick="closeRulesEditorModal()" class="bg-gray-700 hover:bg-gray-600 text-white px-5 py-2 rounded-xl text-xs font-semibold cursor-pointer transition-colors">Закрыть</button>
+        <button type="button" onclick="closeRulesEditorModal()" class="bg-[#212430] hover:bg-[#2A2D3C] text-gray-200 px-5 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition-colors">Готово</button>
       </div>
     </div>
   </div>
    
   <!-- Модальное окно Личного кабинета -->
-  <div id="profile-dialog" class="fixed inset-0 bg-[#0F1117]/90 sm:bg-black/75 z-[150] hidden flex flex-col items-center justify-start overflow-y-auto backdrop-blur-sm animate-fade-in p-0 sm:py-8 sm:px-4" onclick="if (event.target === this) closeProfileModal();">
-    <div class="w-full max-w-[760px] mx-auto min-h-full sm:min-h-0 bg-[#0F1117] sm:bg-[#181B24] sm:border sm:border-[rgba(255,255,255,0.08)] sm:rounded-3xl p-5 sm:p-7 sm:shadow-2xl flex flex-col pt-10 sm:pt-7 pb-safe">
+  <div id="profile-dialog" class="fixed inset-0 bg-[#0F1117]/90 sm:bg-black/75 z-[150] hidden flex flex-col items-center justify-start overflow-y-auto backdrop-blur-sm animate-fade-in p-0 sm:py-6 sm:px-4" onclick="if (event.target === this) closeProfileModal();">
+    <div class="w-full max-w-[760px] mx-auto min-h-full sm:min-h-0 bg-[#0F1117] sm:bg-[#181B24] sm:border sm:border-[rgba(255,255,255,0.08)] sm:rounded-3xl p-4 sm:p-6 sm:shadow-2xl flex flex-col pt-4 sm:pt-6 pb-safe">
       <!-- Нативный заголовок iOS-стиль -->
-      <div class="flex items-center justify-between mb-6 px-1">
-        <h2 class="text-2xl font-bold tracking-tight text-white">Настройки</h2>
-        <button type="button" onclick="closeProfileModal()" class="w-9 h-9 rounded-full bg-[#212430] hover:bg-[#2A2D3C] text-gray-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors" title="Закрыть">
-          <i data-lucide="x" class="w-5 h-5"></i>
+      <div class="flex items-center justify-between mb-3.5 px-1">
+        <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-white">Личный кабинет</h2>
+        <button type="button" onclick="closeProfileModal()" class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#212430] hover:bg-[#2A2D3C] text-gray-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors" title="Закрыть">
+          <i data-lucide="x" class="w-4 h-4 sm:w-5 sm:h-5"></i>
         </button>
       </div>
 
-      <div class="flex-1 space-y-6">
-        <!-- Крупный аватар без глоу-эффектов -->
-        <div class="flex flex-col items-center justify-center pt-2 pb-4">
-          <div id="profile-avatar-letter" class="w-20 h-20 rounded-full bg-blue-500/10 text-blue-500 font-medium text-3xl flex items-center justify-center mb-4 ring-1 ring-blue-500/20">
-            U
+      <div class="flex-1 space-y-3 sm:space-y-3.5">
+        <!-- Компактная карточка профиля с вектором аватара и редактированием -->
+        <div class="p-3 sm:p-3.5 rounded-2xl bg-[#181B24] sm:bg-[#12151C] border border-[rgba(255,255,255,0.06)] flex items-center gap-3">
+          <div class="relative group cursor-pointer flex-shrink-0" onclick="openAvatarPickerModal()" title="Нажмите, чтобы изменить аватарку">
+            <div id="profile-avatar-container">
+              <!-- Rendered avatar circle or placeholder -->
+            </div>
+            <div class="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center ring-2 ring-[#181B24] shadow-md group-hover:bg-blue-500 transition-transform active:scale-90 pointer-events-none">
+              <i data-lucide="camera" class="w-2.5 h-2.5 stroke-[2.2]"></i>
+            </div>
           </div>
-          <h3 id="profile-username-display" class="text-xl font-semibold text-white">Имя пользователя</h3>
-          <p id="profile-auth-type" class="text-[13px] text-gray-500 mt-1">user@budget.local</p>
+
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-1.5 min-w-0">
+              <h3 id="profile-username-display" class="text-base sm:text-lg font-bold text-white truncate">Пользователь</h3>
+              <button type="button" onclick="toggleProfileNameEdit()" class="p-1 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer active:scale-95 flex-shrink-0" title="Редактировать имя">
+                <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+            <p id="profile-auth-type" class="text-xs text-gray-400 mt-0.5 truncate">user@budget.local</p>
+
+            <!-- Раскрывающееся поле изменения имени (открывается по кнопке редактирования) -->
+            <div id="profile-edit-name-row" class="mt-2 hidden flex items-center gap-2">
+              <div class="relative flex-1 min-w-0">
+                <input type="text" id="profile-edit-name-input" placeholder="Ваше имя" maxlength="30" onkeydown="if (event.key === 'Enter') saveProfileInfo(true);" class="w-full bg-[#12151C] sm:bg-[#181B24] border border-blue-500/50 focus:border-blue-500 text-white rounded-xl px-3 py-1.5 text-xs outline-none transition-colors">
+              </div>
+              <button type="button" onclick="saveProfileInfo(true)" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-xl cursor-pointer transition-all active:scale-95 shadow-sm flex items-center gap-1 flex-shrink-0">
+                <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                <span>Готово</span>
+              </button>
+              <button type="button" onclick="toggleProfileNameEdit(false)" class="p-1.5 text-gray-400 hover:text-gray-200 bg-[#12151C] sm:bg-[#181B24] border border-white/10 rounded-xl cursor-pointer transition-colors flex-shrink-0" title="Отмена">
+                <i data-lucide="x" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </div>
         </div>
 
-        <!-- Системный список настроек -->
+        <!-- СЕКЦИЯ 2: СЕМЕЙНЫЙ БЮДЖЕТ (СВЯЗКА АККАУНТОВ) -->
+        <div id="family-section-container">
+          <!-- Динамически рендерится функцией renderFamilySettingsUI() -->
+        </div>
+
+        <!-- СЕКЦИЯ 3: БЕЗОПАСНОСТЬ И УЧЕТНАЯ ЗАПИСЬ -->
         <div class="bg-[#181B24] sm:bg-[#12151C] border border-[rgba(255,255,255,0.06)] rounded-2xl overflow-hidden divide-y divide-[rgba(255,255,255,0.03)]">
-          
-          <label class="flex items-center justify-between p-4 cursor-pointer hover:bg-white/[0.01] transition-colors">
+          <div class="py-2.5 px-3.5 bg-white/[0.01]">
+            <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">Безопасность и аккаунт</span>
+          </div>
+
+          <button type="button" onclick="openChangeLoginModal()" class="w-full flex items-center justify-between p-3 sm:p-3.5 hover:bg-white/[0.01] transition-colors cursor-pointer">
             <div class="flex items-center gap-3">
-              <div class="p-2 rounded-xl bg-[#6C5DD3]/15 text-[#6C5DD3]"><i data-lucide="trending-up" class="w-5 h-5"></i></div>
-              <span class="text-[15px] font-medium text-gray-200">Брокерский счёт</span>
+              <div class="p-2 rounded-xl bg-blue-500/15 text-blue-400"><i data-lucide="user-pen" class="w-4 h-4 sm:w-5 sm:h-5"></i></div>
+              <div class="text-left">
+                <span class="text-[14px] sm:text-[15px] font-medium text-gray-200 block">Сменить логин</span>
+                <span class="text-[11px] text-[#848D99]">Изменить логин для входа</span>
+              </div>
             </div>
-            <div class="relative inline-flex items-center">
+            <i data-lucide="chevron-right" class="w-4 h-4 sm:w-5 sm:h-5 text-gray-600"></i>
+          </button>
+
+          <button type="button" onclick="openChangePasswordModal()" class="w-full flex items-center justify-between p-3 sm:p-3.5 hover:bg-white/[0.01] transition-colors cursor-pointer">
+            <div class="flex items-center gap-3">
+              <div class="p-2 rounded-xl bg-emerald-500/15 text-emerald-400"><i data-lucide="key" class="w-4 h-4 sm:w-5 sm:h-5"></i></div>
+              <div class="text-left">
+                <span class="text-[14px] sm:text-[15px] font-medium text-gray-200 block">Сменить пароль</span>
+                <span class="text-[11px] text-[#848D99]">Обновить пароль учетной записи</span>
+              </div>
+            </div>
+            <i data-lucide="chevron-right" class="w-4 h-4 sm:w-5 sm:h-5 text-gray-600"></i>
+          </button>
+        </div>
+
+        <!-- СЕКЦИЯ 4: НАСТРОЙКИ ПРИЛОЖЕНИЯ -->
+        <div class="bg-[#181B24] sm:bg-[#12151C] border border-[rgba(255,255,255,0.06)] rounded-2xl overflow-hidden divide-y divide-[rgba(255,255,255,0.03)]">
+          <div class="py-2.5 px-3.5 bg-white/[0.01]">
+            <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">Настройки приложения</span>
+          </div>
+
+          <!-- Брокерский счет -->
+          <label class="flex items-center justify-between p-3 sm:p-3.5 cursor-pointer hover:bg-white/[0.01] transition-colors">
+            <div class="flex items-center gap-3">
+              <div class="p-2 rounded-xl bg-[#6C5DD3]/15 text-[#6C5DD3]"><i data-lucide="trending-up" class="w-4 h-4 sm:w-5 sm:h-5"></i></div>
+              <div class="text-left">
+                <span class="text-[14px] sm:text-[15px] font-medium text-gray-200 block">Брокерский счёт</span>
+                <span class="text-[11px] text-[#848D99] leading-tight block mt-0.5">Учет инвестиций, доходности и капитала</span>
+              </div>
+            </div>
+            <div class="relative inline-flex items-center flex-shrink-0">
               <input type="checkbox" id="toggle-broker-setting" onchange="toggleBrokerSetting(this.checked)" class="sr-only peer">
               <div class="w-11 h-6 bg-[#2A2D3C] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-[#30D158] after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
             </div>
           </label>
 
-          <button type="button" onclick="openSubModalFromProfile('categories')" class="w-full flex items-center justify-between p-4 hover:bg-white/[0.01] transition-colors cursor-pointer">
+          <!-- Информационное окно при импорте выписок -->
+          <label class="flex items-center justify-between p-3 sm:p-3.5 cursor-pointer hover:bg-white/[0.01] transition-colors">
             <div class="flex items-center gap-3">
-              <div class="p-2 rounded-xl bg-orange-500/15 text-orange-500"><i data-lucide="folders" class="w-5 h-5"></i></div>
-              <span class="text-[15px] font-medium text-gray-200">Справочник категорий</span>
+              <div class="p-2 rounded-xl bg-[#6C5DD3]/15 text-[#727cff]"><i data-lucide="file-text" class="w-4 h-4 sm:w-5 sm:h-5"></i></div>
+              <div class="text-left">
+                <span class="text-[14px] sm:text-[15px] font-medium text-gray-200 block">Подсказка при импорте PDF</span>
+                <span class="text-[11px] text-[#848D99] leading-tight block mt-0.5">Показывать памятку перед выбором выписки</span>
+              </div>
             </div>
-            <i data-lucide="chevron-right" class="w-5 h-5 text-gray-600"></i>
+            <div class="relative inline-flex items-center flex-shrink-0">
+              <input type="checkbox" id="toggle-pdf-info-setting" onchange="togglePdfInfoSetting(this.checked)" class="sr-only peer">
+              <div class="w-11 h-6 bg-[#2A2D3C] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-[#30D158] after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+            </div>
+          </label>
+
+          <!-- Словарь категорий -->
+          <button type="button" onclick="openSubModalFromProfile('rules')" class="w-full flex items-center justify-between p-3 sm:p-3.5 hover:bg-white/[0.01] transition-colors cursor-pointer">
+            <div class="flex items-center gap-3">
+              <div class="p-2 rounded-xl bg-[#6C5DD3]/15 text-[#727cff]"><i data-lucide="book-open-check" class="w-4 h-4 sm:w-5 sm:h-5"></i></div>
+              <div class="text-left">
+                <span class="text-[14px] sm:text-[15px] font-medium text-gray-200 block">Словарь категорий</span>
+                <span class="text-[11px] text-[#848D99] leading-tight block mt-0.5">Автоматическое распознавание расходов</span>
+              </div>
+            </div>
+            <i data-lucide="chevron-right" class="w-4 h-4 sm:w-5 sm:h-5 text-gray-600"></i>
           </button>
 
-          <button type="button" onclick="openSubModalFromProfile('rules')" class="w-full flex items-center justify-between p-4 hover:bg-white/[0.01] transition-colors cursor-pointer">
+          <!-- Резервное копирование и JSON -->
+          <button type="button" onclick="openDataBackupModal()" class="w-full flex items-center justify-between p-3 sm:p-3.5 hover:bg-white/[0.01] transition-colors cursor-pointer">
             <div class="flex items-center gap-3">
-              <div class="p-2 rounded-xl bg-gray-500/15 text-gray-400"><i data-lucide="book-open-check" class="w-5 h-5"></i></div>
-              <span class="text-[15px] font-medium text-gray-200">Словарь выписок</span>
+              <div class="p-2 rounded-xl bg-blue-500/15 text-blue-400"><i data-lucide="database" class="w-4 h-4 sm:w-5 sm:h-5"></i></div>
+              <div class="text-left">
+                <span class="text-[14px] sm:text-[15px] font-medium text-gray-200 block">Резервное копирование (JSON)</span>
+                <span class="text-[11px] text-[#848D99] leading-tight block mt-0.5">Экспорт и импорт операций, вкладов и целей</span>
+              </div>
             </div>
-            <i data-lucide="chevron-right" class="w-5 h-5 text-gray-600"></i>
+            <i data-lucide="chevron-right" class="w-4 h-4 sm:w-5 sm:h-5 text-gray-600"></i>
           </button>
 
           <!-- Кнопка установки PWA приложения в профиле -->
-          <button id="profile-install-app-btn" type="button" onclick="showPwaInstallFromProfile()" class="w-full flex items-center justify-between p-4 hover:bg-white/[0.01] transition-colors cursor-pointer">
+          <button id="profile-install-app-btn" type="button" onclick="showPwaInstallFromProfile()" class="w-full flex items-center justify-between p-3 sm:p-3.5 hover:bg-white/[0.01] transition-colors cursor-pointer">
             <div class="flex items-center gap-3">
-              <div class="p-2 rounded-xl bg-[#6C5DD3]/15 text-[#8C7DFF]"><i data-lucide="smartphone" class="w-5 h-5"></i></div>
+              <div class="p-2 rounded-xl bg-[#6C5DD3]/15 text-[#8C7DFF]"><i data-lucide="smartphone" class="w-4 h-4 sm:w-5 sm:h-5"></i></div>
               <div class="text-left">
-                <span class="text-[15px] font-medium text-gray-200 block">Установить приложение</span>
-                <span class="text-[11px] text-[#848D99]">Для работы без адресной строки и офлайн</span>
+                <span class="text-[14px] sm:text-[15px] font-medium text-gray-200 block">Установить приложение</span>
+                <span class="text-[11px] text-[#848D99] leading-tight block mt-0.5">Для работы без адресной строки и офлайн</span>
               </div>
             </div>
-            <i data-lucide="chevron-right" class="w-5 h-5 text-gray-600"></i>
+            <i data-lucide="chevron-right" class="w-4 h-4 sm:w-5 sm:h-5 text-gray-600"></i>
           </button>
         </div>
 
-        <!-- Деструктивные действия вынесены отдельно и не привлекают внимание без причины -->
-        <div class="mt-6 pt-2">
-          <button type="button" onclick="closeProfileModal(); logoutUser();" class="w-full flex justify-center items-center gap-2 p-3 text-[#848D99] hover:text-white font-medium cursor-pointer transition-colors">
+        <!-- Деструктивные действия вынесены отдельно с компактными отступами -->
+        <div class="mt-3.5 pt-1 space-y-0.5">
+          <button type="button" onclick="closeProfileModal(); logoutUser();" class="w-full flex justify-center items-center gap-2 py-2 px-3 text-xs sm:text-sm text-[#848D99] hover:text-white font-medium cursor-pointer transition-colors">
             <i data-lucide="log-out" class="w-4 h-4"></i> Выйти из приложения
           </button>
-          <button type="button" onclick="closeProfileModal(); openDeleteAccountModal();" class="w-full flex justify-center items-center gap-2 p-3 text-[#FF453A]/80 hover:text-[#FF453A] font-medium text-sm mt-1 cursor-pointer transition-colors">
+          <button type="button" onclick="closeProfileModal(); openDeleteAccountModal();" class="w-full flex justify-center items-center gap-2 py-2 px-3 text-[#FF453A]/80 hover:text-[#FF453A] font-medium text-xs sm:text-sm cursor-pointer transition-colors">
             Удалить аккаунт навсегда
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- МОДАЛЬНОЕ ОКНО: РЕЗЕРВНОЕ КОПИРОВАНИЕ И JSON (ЭКСПОРТ / ИМПОРТ) -->
+  <div id="data-backup-dialog" class="fixed inset-0 bg-[#0F1117]/90 sm:bg-black/80 z-[160] hidden flex flex-col items-center justify-start sm:justify-center overflow-y-auto backdrop-blur-sm animate-fade-in p-0 sm:py-6 sm:px-4" onclick="if (event.target === this) closeDataBackupModal();">
+    <div class="w-full max-w-[620px] mx-auto min-h-full sm:min-h-0 bg-[#0F1117] sm:bg-[#181B24] sm:border sm:border-[rgba(255,255,255,0.08)] sm:rounded-3xl p-4 sm:p-6 sm:shadow-2xl flex flex-col pt-4 sm:pt-6 pb-safe">
+      <!-- Заголовок и закрытие -->
+      <div class="flex items-center justify-between mb-4 px-1">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-2xl bg-blue-500/15 text-blue-400 flex items-center justify-center">
+            <i data-lucide="database" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h2 class="text-lg sm:text-xl font-bold tracking-tight text-white">Резервное копирование (JSON)</h2>
+            <p class="text-xs text-[#848D99]">Экспорт и импорт данных учетной записи</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeDataBackupModal()" class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#212430] hover:bg-[#2A2D3C] text-gray-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors" title="Закрыть">
+          <i data-lucide="x" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+        </button>
+      </div>
+
+      <!-- Вкладки: Экспорт / Импорт -->
+      <div class="flex bg-[#12151C] sm:bg-[#12151C] p-1 rounded-2xl border border-[rgba(255,255,255,0.06)] mb-4">
+        <button id="backup-tab-btn-export" type="button" onclick="switchBackupTab('export')" class="flex-1 py-2 px-3 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 bg-blue-600 text-white shadow-sm">
+          <i data-lucide="download" class="w-4 h-4"></i>
+          <span>Экспорт (Скачать)</span>
+        </button>
+        <button id="backup-tab-btn-import" type="button" onclick="switchBackupTab('import')" class="flex-1 py-2 px-3 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 text-gray-400 hover:text-gray-200">
+          <i data-lucide="upload" class="w-4 h-4"></i>
+          <span>Импорт (Загрузить)</span>
+        </button>
+      </div>
+
+      <!-- ================= ВКЛАДКА 1: ЭКСПОРТ ================= -->
+      <div id="backup-pane-export" class="flex-1 flex flex-col space-y-3.5">
+        <div class="flex items-center justify-between px-1">
+          <span class="text-xs text-[#848D99]">Выберите данные для выгрузки в JSON:</span>
+          <button type="button" 
+                  id="backup-export-toggle-all-btn" 
+                  onclick="toggleSmartBackupExportAll()" 
+                  class="h-7 bg-[#12151C] hover:bg-[#212430] text-gray-200 hover:text-white border border-[rgba(255,255,255,0.08)] hover:border-[#727cff]/40 text-[11px] font-medium rounded-xl px-2.5 flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-sm" 
+                  title="Выбрать все / Снять выделение">
+            <i id="backup-export-toggle-all-icon" data-lucide="square" class="w-3.5 h-3.5 text-gray-400 flex-shrink-0"></i>
+            <span id="backup-export-toggle-all-label" class="font-medium">Снять</span>
+          </button>
+        </div>
+
+        <div class="bg-[#12151C] border border-[rgba(255,255,255,0.06)] rounded-2xl divide-y divide-[rgba(255,255,255,0.03)] overflow-hidden">
+          <!-- 1. Транзакции -->
+          <label class="flex items-center justify-between p-3 cursor-pointer hover:bg-white/[0.02] transition-colors">
+            <div class="flex items-center gap-3">
+              <div class="p-2 rounded-xl bg-blue-500/15 text-blue-400"><i data-lucide="arrow-left-right" class="w-4 h-4"></i></div>
+              <div>
+                <span class="text-xs sm:text-sm font-semibold text-gray-200 block">Операции и переводы</span>
+                <span id="export-count-tx" class="text-[11px] text-[#848D99]">0 записей</span>
+              </div>
+            </div>
+            <input type="checkbox" id="chk-exp-tx" checked onchange="onBackupExportCheckboxChange()" class="backup-export-chk w-4 h-4 rounded border-gray-600 text-blue-600 focus:ring-0 focus:ring-offset-0 bg-[#212430]">
+          </label>
+
+          <!-- 2. Вклады -->
+          <label class="flex items-center justify-between p-3 cursor-pointer hover:bg-white/[0.02] transition-colors">
+            <div class="flex items-center gap-3">
+              <div class="p-2 rounded-xl bg-emerald-500/15 text-emerald-400"><i data-lucide="piggy-bank" class="w-4 h-4"></i></div>
+              <div>
+                <span class="text-xs sm:text-sm font-semibold text-gray-200 block">Вклады и накопления</span>
+                <span id="export-count-dep" class="text-[11px] text-[#848D99]">0 счетов</span>
+              </div>
+            </div>
+            <input type="checkbox" id="chk-exp-dep" checked onchange="onBackupExportCheckboxChange()" class="backup-export-chk w-4 h-4 rounded border-gray-600 text-blue-600 focus:ring-0 focus:ring-offset-0 bg-[#212430]">
+          </label>
+
+          <!-- 3. Брокер -->
+          <label class="flex items-center justify-between p-3 cursor-pointer hover:bg-white/[0.02] transition-colors">
+            <div class="flex items-center gap-3">
+              <div class="p-2 rounded-xl bg-[#6C5DD3]/15 text-[#727cff]"><i data-lucide="trending-up" class="w-4 h-4"></i></div>
+              <div>
+                <span class="text-xs sm:text-sm font-semibold text-gray-200 block">Брокерский портфель</span>
+                <span id="export-count-broker" class="text-[11px] text-[#848D99]">0 операций</span>
+              </div>
+            </div>
+            <input type="checkbox" id="chk-exp-broker" checked onchange="onBackupExportCheckboxChange()" class="backup-export-chk w-4 h-4 rounded border-gray-600 text-blue-600 focus:ring-0 focus:ring-offset-0 bg-[#212430]">
+          </label>
+
+          <!-- 4. Цели -->
+          <label class="flex items-center justify-between p-3 cursor-pointer hover:bg-white/[0.02] transition-colors">
+            <div class="flex items-center gap-3">
+              <div class="p-2 rounded-xl bg-amber-500/15 text-amber-400"><i data-lucide="target" class="w-4 h-4"></i></div>
+              <div>
+                <span class="text-xs sm:text-sm font-semibold text-gray-200 block">Финансовые цели</span>
+                <span id="export-count-goals" class="text-[11px] text-[#848D99]">0 целей</span>
+              </div>
+            </div>
+            <input type="checkbox" id="chk-exp-goals" checked onchange="onBackupExportCheckboxChange()" class="backup-export-chk w-4 h-4 rounded border-gray-600 text-blue-600 focus:ring-0 focus:ring-offset-0 bg-[#212430]">
+          </label>
+
+          <!-- 5. Платежи календаря -->
+          <label class="flex items-center justify-between p-3 cursor-pointer hover:bg-white/[0.02] transition-colors">
+            <div class="flex items-center gap-3">
+              <div class="p-2 rounded-xl bg-rose-500/15 text-rose-400"><i data-lucide="calendar" class="w-4 h-4"></i></div>
+              <div>
+                <span class="text-xs sm:text-sm font-semibold text-gray-200 block">Обязательные счета и подписки</span>
+                <span id="export-count-bills" class="text-[11px] text-[#848D99]">0 счетов</span>
+              </div>
+            </div>
+            <input type="checkbox" id="chk-exp-bills" checked onchange="onBackupExportCheckboxChange()" class="backup-export-chk w-4 h-4 rounded border-gray-600 text-blue-600 focus:ring-0 focus:ring-offset-0 bg-[#212430]">
+          </label>
+
+          <!-- 6. План бюджета -->
+          <label class="flex items-center justify-between p-3 cursor-pointer hover:bg-white/[0.02] transition-colors">
+            <div class="flex items-center gap-3">
+              <div class="p-2 rounded-xl bg-indigo-500/15 text-indigo-400"><i data-lucide="sliders" class="w-4 h-4"></i></div>
+              <div>
+                <span class="text-xs sm:text-sm font-semibold text-gray-200 block">Планы бюджета и лимиты</span>
+                <span class="text-[11px] text-[#848D99]">Структура расходов и дневной лимит</span>
+              </div>
+            </div>
+            <input type="checkbox" id="chk-exp-budget" checked onchange="onBackupExportCheckboxChange()" class="backup-export-chk w-4 h-4 rounded border-gray-600 text-blue-600 focus:ring-0 focus:ring-offset-0 bg-[#212430]">
+          </label>
+
+          <!-- 7. Словарь правил -->
+          <label class="flex items-center justify-between p-3 cursor-pointer hover:bg-white/[0.02] transition-colors">
+            <div class="flex items-center gap-3">
+              <div class="p-2 rounded-xl bg-purple-500/15 text-purple-400"><i data-lucide="book-open-check" class="w-4 h-4"></i></div>
+              <div>
+                <span class="text-xs sm:text-sm font-semibold text-gray-200 block">Словарь категорий</span>
+                <span id="export-count-rules" class="text-[11px] text-[#848D99]">0 правил</span>
+              </div>
+            </div>
+            <input type="checkbox" id="chk-exp-rules" checked onchange="onBackupExportCheckboxChange()" class="backup-export-chk w-4 h-4 rounded border-gray-600 text-blue-600 focus:ring-0 focus:ring-offset-0 bg-[#212430]">
+          </label>
+        </div>
+
+        <button type="button" onclick="downloadBackupJson()" class="w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm cursor-pointer transition-all active:scale-[0.98] shadow-md shadow-blue-600/20 flex items-center justify-center gap-2 mt-2">
+          <i data-lucide="download" class="w-4 h-4"></i>
+          <span>Скачать JSON файл</span>
+        </button>
+      </div>
+
+      <!-- ================= ВКЛАДКА 2: ИМПОРТ ================= -->
+      <div id="backup-pane-import" class="flex-1 flex flex-col space-y-3.5 hidden">
+        <!-- Шаг 1: Дропзона выбора файла -->
+        <div id="backup-import-drop-step" class="space-y-3">
+          <input type="file" id="backup-import-file-input" accept=".json,application/json" onchange="handleBackupFileSelect(event)" class="hidden">
+          
+          <div id="backup-dropzone" 
+               onclick="triggerBackupFileSelect()"
+               ondragover="handleBackupDragOver(event)"
+               ondragleave="handleBackupDragLeave(event)"
+               ondrop="handleBackupFileDrop(event)"
+               class="border-2 border-dashed border-[rgba(255,255,255,0.12)] hover:border-blue-500/60 rounded-2xl p-6 text-center cursor-pointer transition-all bg-[#12151C]/60 hover:bg-blue-500/[0.04] flex flex-col items-center justify-center gap-2.5">
+            <div class="w-12 h-12 rounded-2xl bg-blue-500/15 text-blue-400 flex items-center justify-center">
+              <i data-lucide="file-up" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <p class="text-sm font-semibold text-white">Нажмите для выбора JSON файла</p>
+              <p class="text-xs text-[#848D99] mt-1">или перетащите файл резервной копии сюда</p>
+            </div>
+            <span class="inline-flex items-center gap-1 text-[11px] text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded-lg mt-1 font-medium">
+              <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+              Защита от дубликатов включена
+            </span>
+          </div>
+
+          <div class="p-3 rounded-xl bg-white/[0.02] border border-white/[0.04] text-[11px] text-gray-400 space-y-1">
+            <div class="font-medium text-gray-300 flex items-center gap-1.5">
+              <i data-lucide="info" class="w-3.5 h-3.5 text-blue-400 flex-shrink-0"></i>
+              <span>Как работает импорт:</span>
+            </div>
+            <p>Вы можете загрузить как полный файл резервной копии, так и отдельный JSON с операциями или вкладами. Существующие одинаковые записи не будут продублированы.</p>
+          </div>
+        </div>
+
+        <!-- Шаг 2: Предпросмотр и подтверждение найденных данных -->
+        <div id="backup-import-preview-step" class="space-y-3 hidden">
+          <!-- Инфо о файле -->
+          <div class="flex items-center justify-between p-3 rounded-xl bg-[#12151C] border border-[rgba(255,255,255,0.06)]">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <div class="w-8 h-8 rounded-xl bg-blue-500/15 text-blue-400 flex items-center justify-center flex-shrink-0">
+                <i data-lucide="file-json" class="w-4 h-4"></i>
+              </div>
+              <div class="min-w-0">
+                <p id="backup-file-name-display" class="text-xs sm:text-sm font-semibold text-white truncate">backup.json</p>
+                <p id="backup-file-size-display" class="text-[11px] text-gray-400">0 КБ</p>
+              </div>
+            </div>
+            <button type="button" onclick="resetImportState()" class="text-xs text-[#848D99] hover:text-white transition-colors cursor-pointer px-2 py-1 rounded-lg hover:bg-white/5">
+              Сменить файл
+            </button>
+          </div>
+
+          <!-- Сводка дедупликации -->
+          <div id="import-summary-badge" class="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-gray-200">
+            <!-- Динамически заполняется -->
+          </div>
+
+          <!-- Список сущностей для выбора -->
+          <div class="text-xs text-[#848D99] px-1">Отметьте разделы для импорта или нажмите для детального просмотра:</div>
+
+          <div class="bg-[#12151C] border border-[rgba(255,255,255,0.06)] rounded-2xl divide-y divide-[rgba(255,255,255,0.03)] overflow-hidden">
+            <!-- 1. Транзакции -->
+            <div id="import-row-tx" class="flex items-center justify-between p-3 hover:bg-white/[0.03] transition-colors hidden">
+              <button type="button" class="flex items-center gap-3 cursor-pointer flex-1 min-w-0 pr-3 text-left group" onclick="openBackupInspectModal('tx')">
+                <div class="p-2 rounded-xl bg-blue-500/15 text-blue-400 group-hover:scale-105 transition-transform flex-shrink-0">
+                  <i data-lucide="arrow-left-right" class="w-4 h-4"></i>
+                </div>
+                <div class="min-w-0 flex-1">
+                  <span class="text-xs sm:text-sm font-semibold text-gray-200 group-hover:text-blue-400 transition-colors block truncate">Операции</span>
+                  <span id="import-count-tx" class="text-[11px] text-[#848D99] block truncate mt-0.5">0 записей</span>
+                </div>
+                <div class="text-gray-500 group-hover:text-blue-400 transition-colors flex-shrink-0 p-1">
+                  <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                </div>
+              </button>
+              <div class="h-6 w-px bg-white/10 mr-3 flex-shrink-0"></div>
+              <input type="checkbox" id="chk-imp-tx" checked onchange="toggleImportSectionAll('tx', this.checked)" class="w-4 h-4 rounded border-gray-600 text-blue-600 focus:ring-0 focus:ring-offset-0 bg-[#212430] cursor-pointer flex-shrink-0">
+            </div>
+
+            <!-- 2. Вклады -->
+            <div id="import-row-dep" class="flex items-center justify-between p-3 hover:bg-white/[0.03] transition-colors hidden">
+              <button type="button" class="flex items-center gap-3 cursor-pointer flex-1 min-w-0 pr-3 text-left group" onclick="openBackupInspectModal('dep')">
+                <div class="p-2 rounded-xl bg-emerald-500/15 text-emerald-400 group-hover:scale-105 transition-transform flex-shrink-0">
+                  <i data-lucide="piggy-bank" class="w-4 h-4"></i>
+                </div>
+                <div class="min-w-0 flex-1">
+                  <span class="text-xs sm:text-sm font-semibold text-gray-200 group-hover:text-emerald-400 transition-colors block truncate">Вклады и счета</span>
+                  <span id="import-count-dep" class="text-[11px] text-[#848D99] block truncate mt-0.5">0 счетов</span>
+                </div>
+                <div class="text-gray-500 group-hover:text-emerald-400 transition-colors flex-shrink-0 p-1">
+                  <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                </div>
+              </button>
+              <div class="h-6 w-px bg-white/10 mr-3 flex-shrink-0"></div>
+              <input type="checkbox" id="chk-imp-dep" checked onchange="toggleImportSectionAll('dep', this.checked)" class="w-4 h-4 rounded border-gray-600 text-blue-600 focus:ring-0 focus:ring-offset-0 bg-[#212430] cursor-pointer flex-shrink-0">
+            </div>
+
+            <!-- 3. Брокер -->
+            <div id="import-row-broker" class="flex items-center justify-between p-3 hover:bg-white/[0.03] transition-colors hidden">
+              <button type="button" class="flex items-center gap-3 cursor-pointer flex-1 min-w-0 pr-3 text-left group" onclick="openBackupInspectModal('broker')">
+                <div class="p-2 rounded-xl bg-[#6C5DD3]/15 text-[#727cff] group-hover:scale-105 transition-transform flex-shrink-0">
+                  <i data-lucide="trending-up" class="w-4 h-4"></i>
+                </div>
+                <div class="min-w-0 flex-1">
+                  <span class="text-xs sm:text-sm font-semibold text-gray-200 group-hover:text-[#727cff] transition-colors block truncate">Брокерский портфель</span>
+                  <span id="import-count-broker" class="text-[11px] text-[#848D99] block truncate mt-0.5">0 записей</span>
+                </div>
+                <div class="text-gray-500 group-hover:text-[#727cff] transition-colors flex-shrink-0 p-1">
+                  <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                </div>
+              </button>
+              <div class="h-6 w-px bg-white/10 mr-3 flex-shrink-0"></div>
+              <input type="checkbox" id="chk-imp-broker" checked onchange="toggleImportSectionAll('broker', this.checked)" class="w-4 h-4 rounded border-gray-600 text-blue-600 focus:ring-0 focus:ring-offset-0 bg-[#212430] cursor-pointer flex-shrink-0">
+            </div>
+
+            <!-- 4. Цели -->
+            <div id="import-row-goals" class="flex items-center justify-between p-3 hover:bg-white/[0.03] transition-colors hidden">
+              <button type="button" class="flex items-center gap-3 cursor-pointer flex-1 min-w-0 pr-3 text-left group" onclick="openBackupInspectModal('goals')">
+                <div class="p-2 rounded-xl bg-amber-500/15 text-amber-400 group-hover:scale-105 transition-transform flex-shrink-0">
+                  <i data-lucide="target" class="w-4 h-4"></i>
+                </div>
+                <div class="min-w-0 flex-1">
+                  <span class="text-xs sm:text-sm font-semibold text-gray-200 group-hover:text-amber-400 transition-colors block truncate">Финансовые цели</span>
+                  <span id="import-count-goals" class="text-[11px] text-[#848D99] block truncate mt-0.5">0 целей</span>
+                </div>
+                <div class="text-gray-500 group-hover:text-amber-400 transition-colors flex-shrink-0 p-1">
+                  <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                </div>
+              </button>
+              <div class="h-6 w-px bg-white/10 mr-3 flex-shrink-0"></div>
+              <input type="checkbox" id="chk-imp-goals" checked onchange="toggleImportSectionAll('goals', this.checked)" class="w-4 h-4 rounded border-gray-600 text-blue-600 focus:ring-0 focus:ring-offset-0 bg-[#212430] cursor-pointer flex-shrink-0">
+            </div>
+
+            <!-- 5. Платежи календаря -->
+            <div id="import-row-bills" class="flex items-center justify-between p-3 hover:bg-white/[0.03] transition-colors hidden">
+              <button type="button" class="flex items-center gap-3 cursor-pointer flex-1 min-w-0 pr-3 text-left group" onclick="openBackupInspectModal('bills')">
+                <div class="p-2 rounded-xl bg-rose-500/15 text-rose-400 group-hover:scale-105 transition-transform flex-shrink-0">
+                  <i data-lucide="calendar" class="w-4 h-4"></i>
+                </div>
+                <div class="min-w-0 flex-1">
+                  <span class="text-xs sm:text-sm font-semibold text-gray-200 group-hover:text-rose-400 transition-colors block truncate">Обязательные платежи</span>
+                  <span id="import-count-bills" class="text-[11px] text-[#848D99] block truncate mt-0.5">0 счетов</span>
+                </div>
+                <div class="text-gray-500 group-hover:text-rose-400 transition-colors flex-shrink-0 p-1">
+                  <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                </div>
+              </button>
+              <div class="h-6 w-px bg-white/10 mr-3 flex-shrink-0"></div>
+              <input type="checkbox" id="chk-imp-bills" checked onchange="toggleImportSectionAll('bills', this.checked)" class="w-4 h-4 rounded border-gray-600 text-blue-600 focus:ring-0 focus:ring-offset-0 bg-[#212430] cursor-pointer flex-shrink-0">
+            </div>
+
+            <!-- 6. План бюджета -->
+            <label id="import-row-budget" class="flex items-center justify-between p-3 cursor-pointer hover:bg-white/[0.03] transition-colors hidden">
+              <div class="flex items-center gap-3 min-w-0 flex-1 pr-3">
+                <div class="p-2 rounded-xl bg-indigo-500/15 text-indigo-400 flex-shrink-0"><i data-lucide="sliders" class="w-4 h-4"></i></div>
+                <div class="min-w-0">
+                  <span class="text-xs sm:text-sm font-semibold text-gray-200 block truncate">Планы бюджета и лимиты</span>
+                  <span class="text-[11px] text-[#848D99] block truncate mt-0.5">Лимиты и параметры расходов</span>
+                </div>
+              </div>
+              <div class="h-6 w-px bg-white/10 mr-3 flex-shrink-0"></div>
+              <input type="checkbox" id="chk-imp-budget" checked onchange="updateImportAnalysis()" class="w-4 h-4 rounded border-gray-600 text-blue-600 focus:ring-0 focus:ring-offset-0 bg-[#212430] cursor-pointer flex-shrink-0">
+            </label>
+
+            <!-- 7. Словарь правил -->
+            <div id="import-row-rules" class="flex items-center justify-between p-3 hover:bg-white/[0.03] transition-colors hidden">
+              <button type="button" class="flex items-center gap-3 cursor-pointer flex-1 min-w-0 pr-3 text-left group" onclick="openBackupInspectModal('rules')">
+                <div class="p-2 rounded-xl bg-purple-500/15 text-purple-400 group-hover:scale-105 transition-transform flex-shrink-0">
+                  <i data-lucide="book-open-check" class="w-4 h-4"></i>
+                </div>
+                <div class="min-w-0 flex-1">
+                  <span class="text-xs sm:text-sm font-semibold text-gray-200 group-hover:text-purple-400 transition-colors block truncate">Словарь категорий</span>
+                  <span id="import-count-rules" class="text-[11px] text-[#848D99] block truncate mt-0.5">0 правил</span>
+                </div>
+                <div class="text-gray-500 group-hover:text-purple-400 transition-colors flex-shrink-0 p-1">
+                  <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                </div>
+              </button>
+              <div class="h-6 w-px bg-white/10 mr-3 flex-shrink-0"></div>
+              <input type="checkbox" id="chk-imp-rules" checked onchange="toggleImportSectionAll('rules', this.checked)" class="w-4 h-4 rounded border-gray-600 text-blue-600 focus:ring-0 focus:ring-offset-0 bg-[#212430] cursor-pointer flex-shrink-0">
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 pt-1">
+            <button type="button" onclick="resetImportState()" class="w-1/3 py-3 px-3 rounded-xl bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 font-semibold text-xs sm:text-sm cursor-pointer transition-colors text-center">
+              Отмена
+            </button>
+            <button id="btn-execute-backup-import" type="button" onclick="executeBackupImport()" class="w-2/3 py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs sm:text-sm cursor-pointer transition-all active:scale-[0.98] shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2">
+              <i data-lucide="upload" class="w-4 h-4"></i>
+              <span>Импортировать выбранное</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- МОДАЛЬНОЕ ОКНО: ДЕТАЛЬНЫЙ ПРОСМОТР И ВЫБОР ЭЛЕМЕНТОВ ДЛЯ ИМПОРТА -->
+  <div id="backup-inspect-dialog" class="fixed inset-0 bg-black/80 z-[170] hidden flex flex-col items-center justify-center p-3 sm:p-4 backdrop-blur-md animate-fade-in" onclick="if (event.target === this) closeBackupInspectModal();">
+    <div class="w-full max-w-lg bg-[#181B24] border border-[rgba(255,255,255,0.08)] rounded-3xl p-4 sm:p-5 shadow-2xl flex flex-col max-h-[85vh] my-auto">
+      <!-- Заголовок -->
+      <div class="flex items-center justify-between mb-3 px-1 pb-2 border-b border-[rgba(255,255,255,0.06)]">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <div id="backup-inspect-icon-wrap" class="w-9 h-9 rounded-2xl bg-blue-500/15 text-blue-400 flex items-center justify-center flex-shrink-0">
+            <i id="backup-inspect-icon" data-lucide="arrow-left-right" class="w-5 h-5"></i>
+          </div>
+          <div class="min-w-0">
+            <h3 id="backup-inspect-title" class="text-base sm:text-lg font-bold text-white truncate">Просмотр операций</h3>
+            <p id="backup-inspect-subtitle" class="text-xs text-[#848D99] truncate">Отметьте записи для добавления в базу</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeBackupInspectModal()" class="w-8 h-8 rounded-full bg-[#212430] hover:bg-[#2A2D3C] text-gray-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors" title="Закрыть">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Панель фильтрации и переключения выбора -->
+      <div class="flex items-center justify-between gap-2 mb-3 px-1 flex-wrap">
+        <!-- Табы фильтрации -->
+        <div class="flex bg-[#12151C] p-1 rounded-xl border border-[rgba(255,255,255,0.06)] text-xs">
+          <button id="backup-inspect-filter-all" type="button" onclick="setBackupInspectFilter('all')" class="px-2.5 py-1 rounded-lg font-medium transition-colors bg-white/10 text-white cursor-pointer">
+            Все (<span id="inspect-count-all">0</span>)
+          </button>
+          <button id="backup-inspect-filter-new" type="button" onclick="setBackupInspectFilter('new')" class="px-2.5 py-1 rounded-lg font-medium transition-colors text-gray-400 hover:text-gray-200 cursor-pointer">
+            Новые (<span id="inspect-count-new">0</span>)
+          </button>
+          <button id="backup-inspect-filter-dup" type="button" onclick="setBackupInspectFilter('dup')" class="px-2.5 py-1 rounded-lg font-medium transition-colors text-gray-400 hover:text-gray-200 cursor-pointer">
+            Дубликаты (<span id="inspect-count-dup">0</span>)
+          </button>
+        </div>
+
+        <!-- Кнопка Все / Снять -->
+        <button type="button" 
+                id="backup-inspect-toggle-all-btn" 
+                onclick="toggleBackupInspectAll()" 
+                class="h-7 bg-[#12151C] hover:bg-[#212430] text-gray-200 hover:text-white border border-[rgba(255,255,255,0.08)] hover:border-[#727cff]/40 text-[11px] font-medium rounded-xl px-2.5 flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-sm" 
+                title="Выбрать все / Снять выделение">
+          <i id="backup-inspect-toggle-all-icon" data-lucide="check-check" class="w-3.5 h-3.5 text-[#727cff] flex-shrink-0"></i>
+          <span id="backup-inspect-toggle-all-label" class="font-medium">Все</span>
+        </button>
+      </div>
+
+      <!-- Список элементов -->
+      <div id="backup-inspect-list" class="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar max-h-[50vh]">
+        <!-- Рендерится динамически -->
+      </div>
+
+      <!-- Нижняя панель действий -->
+      <div class="pt-3 mt-2 border-t border-[rgba(255,255,255,0.06)] flex items-center justify-between gap-3">
+        <div class="text-xs text-[#848D99]">
+          Выбрано для импорта: <strong id="backup-inspect-selected-summary" class="text-emerald-400 font-semibold">0</strong>
+        </div>
+        <button type="button" onclick="closeBackupInspectModal()" class="py-2 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs sm:text-sm cursor-pointer transition-all active:scale-95 shadow-md shadow-blue-600/20 flex items-center gap-1.5">
+          <i data-lucide="check" class="w-4 h-4"></i>
+          <span>Готово</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- МОДАЛЬНОЕ ОКНО: ВЫБОР ВЕКТОРНОГО АВАТАРА -->
+  <div id="avatar-picker-dialog" class="fixed inset-0 bg-black/80 z-[160] hidden flex flex-col justify-center items-center p-4 backdrop-blur-sm animate-fade-in" onclick="if (event.target === this) closeAvatarPickerModal();">
+    <div class="bg-[#181B24] border border-[rgba(255,255,255,0.08)] w-full max-w-md rounded-3xl p-6 shadow-2xl flex flex-col max-h-[90vh]">
+      <div class="flex items-center justify-between mb-4 pb-2 border-b border-[rgba(255,255,255,0.06)]">
+        <div>
+          <h3 class="text-lg font-bold text-white">Выбор аватарки</h3>
+          <p class="text-xs text-gray-400 mt-0.5">Стильный векторный значок для вас и транзакций</p>
+        </div>
+        <button type="button" onclick="closeAvatarPickerModal()" class="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-[#212430] cursor-pointer">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Сетка 16 векторных аватаров -->
+      <div id="avatar-picker-grid" class="grid grid-cols-4 gap-3 overflow-y-auto p-1 max-h-[380px]">
+        <!-- Рендерится динамически -->
+      </div>
+
+      <div class="flex gap-2.5 mt-5 pt-3 border-t border-[rgba(255,255,255,0.06)]">
+        <button type="button" onclick="closeAvatarPickerModal()" class="flex-1 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 py-3 rounded-xl text-xs font-semibold cursor-pointer transition-colors">Отмена</button>
+        <button type="button" onclick="applySelectedAvatar()" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl text-xs font-semibold shadow-md active:scale-95 cursor-pointer transition-all flex items-center justify-center gap-1.5">
+          <i data-lucide="check" class="w-4 h-4"></i>
+          <span>Применить</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- МОДАЛЬНОЕ ОКНО: СМЕНА ЛОГИНА -->
+  <div id="change-login-dialog" class="fixed inset-0 bg-black/80 z-[160] hidden flex flex-col justify-center items-center p-4 backdrop-blur-sm animate-fade-in" onclick="if (event.target === this) closeChangeLoginModal();">
+    <div class="bg-[#181B24] border border-[rgba(255,255,255,0.08)] w-full max-w-sm rounded-3xl p-6 shadow-2xl">
+      <div class="flex items-center justify-between mb-4 pb-2 border-b border-[rgba(255,255,255,0.06)]">
+        <div>
+          <h3 class="text-lg font-bold text-white">Смена логина</h3>
+          <p class="text-xs text-gray-400 mt-0.5">Текущий: <span id="change-login-current" class="text-blue-400 font-medium"></span></p>
+        </div>
+        <button type="button" onclick="closeChangeLoginModal()" class="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-[#212430] cursor-pointer">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3.5">
+        <div>
+          <label class="block text-[11px] text-[#848D99] uppercase font-bold mb-1.5">Новый логин</label>
+          <input type="text" id="change-login-new" placeholder="Введите новый логин" class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-blue-500 text-white rounded-xl p-3 outline-none text-sm transition-colors">
+        </div>
+        <div>
+          <label class="block text-[11px] text-[#848D99] uppercase font-bold mb-1.5">Текущий пароль для подтверждения</label>
+          <input type="password" id="change-login-password" placeholder="Ваш действующий пароль" class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-blue-500 text-white rounded-xl p-3 outline-none text-sm transition-colors">
+        </div>
+
+        <div class="flex gap-2.5 pt-2">
+          <button type="button" onclick="closeChangeLoginModal()" class="flex-1 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 py-3 rounded-xl text-xs font-semibold cursor-pointer transition-colors">Отмена</button>
+          <button type="button" id="change-login-submit-btn" onclick="submitChangeLogin()" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl text-xs font-semibold shadow-md active:scale-95 cursor-pointer transition-all flex items-center justify-center gap-1.5">
+            <i data-lucide="check" class="w-3.5 h-3.5"></i>
+            <span>Обновить</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- МОДАЛЬНОЕ ОКНО: СМЕНА ПАРОЛЯ -->
+  <div id="change-password-dialog" class="fixed inset-0 bg-black/80 z-[160] hidden flex flex-col justify-center items-center p-4 backdrop-blur-sm animate-fade-in" onclick="if (event.target === this) closeChangePasswordModal();">
+    <div class="bg-[#181B24] border border-[rgba(255,255,255,0.08)] w-full max-w-sm rounded-3xl p-6 shadow-2xl">
+      <div class="flex items-center justify-between mb-4 pb-2 border-b border-[rgba(255,255,255,0.06)]">
+        <div>
+          <h3 class="text-lg font-bold text-white">Смена пароля</h3>
+          <p class="text-xs text-gray-400 mt-0.5">Минимум 6 символов</p>
+        </div>
+        <button type="button" onclick="closeChangePasswordModal()" class="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-[#212430] cursor-pointer">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3.5">
+        <div>
+          <label class="block text-[11px] text-[#848D99] uppercase font-bold mb-1.5">Текущий пароль</label>
+          <input type="password" id="change-pass-current" placeholder="Действующий пароль" class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-blue-500 text-white rounded-xl p-3 outline-none text-sm transition-colors">
+        </div>
+        <div>
+          <label class="block text-[11px] text-[#848D99] uppercase font-bold mb-1.5">Новый пароль</label>
+          <input type="password" id="change-pass-new" placeholder="От 6 символов" class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-blue-500 text-white rounded-xl p-3 outline-none text-sm transition-colors">
+        </div>
+        <div>
+          <label class="block text-[11px] text-[#848D99] uppercase font-bold mb-1.5">Повторите новый пароль</label>
+          <input type="password" id="change-pass-confirm" placeholder="Повторите пароль" class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-blue-500 text-white rounded-xl p-3 outline-none text-sm transition-colors">
+        </div>
+
+        <div class="flex gap-2.5 pt-2">
+          <button type="button" onclick="closeChangePasswordModal()" class="flex-1 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 py-3 rounded-xl text-xs font-semibold cursor-pointer transition-colors">Отмена</button>
+          <button type="button" id="change-password-submit-btn" onclick="submitChangePassword()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-xl text-xs font-semibold shadow-md active:scale-95 cursor-pointer transition-all flex items-center justify-center gap-1.5">
+            <i data-lucide="lock" class="w-3.5 h-3.5"></i>
+            <span>Сохранить</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- МОДАЛЬНОЕ ОКНО: СОЗДАНИЕ СЕМЕЙНОГО БЮДЖЕТА -->
+  <div id="create-family-dialog" class="fixed inset-0 bg-black/80 z-[160] hidden flex flex-col justify-center items-center p-4 backdrop-blur-sm animate-fade-in" onclick="if (event.target === this) closeCreateFamilyModal();">
+    <div class="bg-[#181B24] border border-[rgba(255,255,255,0.08)] w-full max-w-sm rounded-3xl p-6 shadow-2xl">
+      <div class="w-12 h-12 rounded-2xl bg-purple-500/15 text-purple-400 flex items-center justify-center mx-auto mb-3">
+        <i data-lucide="users-round" class="w-6 h-6"></i>
+      </div>
+      <h3 class="text-lg font-bold text-white text-center mb-1">Создать семейный бюджет</h3>
+      <p class="text-xs text-gray-400 text-center mb-5">Все ваши текущие операции сохранятся и станут доступны участникам по приглашению.</p>
+
+      <div class="space-y-3.5">
+        <div>
+          <label class="block text-[11px] text-[#848D99] uppercase font-bold mb-1.5">Название группы</label>
+          <input type="text" id="create-family-name" value="Семейный бюджет" class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-purple-500 text-white rounded-xl p-3 outline-none text-sm transition-colors">
+        </div>
+
+        <div class="flex gap-2.5 pt-2">
+          <button type="button" onclick="closeCreateFamilyModal()" class="flex-1 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 py-3 rounded-xl text-xs font-semibold cursor-pointer transition-colors">Отмена</button>
+          <button type="button" id="create-family-submit-btn" onclick="submitCreateFamily()" class="flex-1 bg-purple-600 hover:bg-purple-500 text-white py-3 rounded-xl text-xs font-semibold shadow-md active:scale-95 cursor-pointer transition-all flex items-center justify-center gap-1.5">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+            <span>Создать</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- МОДАЛЬНОЕ ОКНО: ПРЕДЛОЖЕНИЕ ПЕРЕСМОТРА БЮДЖЕТА ПРИ ПОДКЛЮЧЕНИИ НОВОГО ЧЛЕНА СЕМЬИ -->
+  <div id="family-review-dialog" class="fixed inset-0 bg-black/80 z-[165] hidden flex flex-col justify-center items-center p-4 backdrop-blur-md animate-fade-in" onclick="if (event.target === this) closeFamilyReviewDialog(false);">
+    <div class="bg-[#181B24] border border-[rgba(255,255,255,0.08)] w-full max-w-sm rounded-3xl p-6 shadow-2xl relative overflow-hidden">
+      <!-- Верхний декоративный градиентный блик -->
+      <div class="absolute -top-10 -left-10 w-36 h-36 bg-[#6C5DD3]/20 rounded-full blur-2xl pointer-events-none"></div>
+
+      <!-- Иконка шапки с акцентом -->
+      <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#6C5DD3]/25 to-[#8E59FF]/10 border border-[#6C5DD3]/30 text-[#A594FD] flex items-center justify-center mx-auto mb-3 shadow-lg shadow-[#6C5DD3]/15">
+        <i data-lucide="sparkles" class="w-7 h-7"></i>
+      </div>
+
+      <!-- Заголовок и подзаголовок -->
+      <h3 class="text-lg font-bold text-white text-center tracking-tight mb-1">Новый участник в семье</h3>
+      <div class="flex items-center justify-center gap-1.5 mb-4">
+        <span class="text-[11px] font-semibold text-[#848D99]">К группе присоединился:</span>
+        <span id="family-review-member-name" class="text-xs font-bold text-[#A594FD] bg-[#6C5DD3]/15 px-2 py-0.5 rounded-lg border border-[#6C5DD3]/25 truncate max-w-[140px]">Участник</span>
+      </div>
+
+      <!-- Карточки возможностей настройки -->
+      <div class="space-y-2 mb-5">
+        <div class="flex items-center gap-3 p-2.5 rounded-xl bg-[#12151C] border border-[rgba(255,255,255,0.04)]">
+          <div class="w-8 h-8 rounded-lg bg-[#6C5DD3]/15 text-[#A594FD] flex items-center justify-center flex-shrink-0">
+            <i data-lucide="wallet" class="w-4 h-4"></i>
+          </div>
+          <div class="min-w-0">
+            <div class="text-xs font-bold text-gray-200">Доходы семьи</div>
+            <div class="text-[10px] text-gray-400">Объедините доход и источники заработка</div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3 p-2.5 rounded-xl bg-[#12151C] border border-[rgba(255,255,255,0.04)]">
+          <div class="w-8 h-8 rounded-lg bg-emerald-500/15 text-emerald-400 flex items-center justify-center flex-shrink-0">
+            <i data-lucide="shopping-cart" class="w-4 h-4"></i>
+          </div>
+          <div class="min-w-0">
+            <div class="text-xs font-bold text-gray-200">Лимиты расходов</div>
+            <div class="text-[10px] text-gray-400">Скорректируйте траты на продукты, дом и кафе</div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3 p-2.5 rounded-xl bg-[#12151C] border border-[rgba(255,255,255,0.04)]">
+          <div class="w-8 h-8 rounded-lg bg-amber-500/15 text-amber-400 flex items-center justify-center flex-shrink-0">
+            <i data-lucide="target" class="w-4 h-4"></i>
+          </div>
+          <div class="min-w-0">
+            <div class="text-xs font-bold text-gray-200">Семейные цели</div>
+            <div class="text-[10px] text-gray-400">Настройте общие цели и накопления</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Кнопки действий -->
+      <div class="space-y-2">
+        <button type="button" onclick="confirmFamilyBudgetReview()" class="w-full bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white py-3 rounded-xl font-bold text-xs shadow-lg shadow-[#6C5DD3]/25 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer">
+          <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
+          <span>Настроить семейный бюджет</span>
+        </button>
+        <button type="button" onclick="closeFamilyReviewDialog(false)" class="w-full bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 py-3 rounded-xl font-semibold text-xs active:scale-95 transition-colors cursor-pointer text-center">
+          Оставить как есть
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- МОДАЛЬНОЕ ОКНО: ПОДКЛЮЧЕНИЕ К СЕМЬЕ ПО КОДУ -->
+  <div id="join-family-dialog" class="fixed inset-0 bg-black/80 z-[160] hidden flex flex-col justify-center items-center p-4 backdrop-blur-sm animate-fade-in" onclick="if (event.target === this) closeJoinFamilyModal();">
+    <div class="bg-[#181B24] border border-[rgba(255,255,255,0.08)] w-full max-w-sm rounded-3xl p-6 shadow-2xl">
+      <div class="w-12 h-12 rounded-2xl bg-purple-500/15 text-purple-400 flex items-center justify-center mx-auto mb-3">
+        <i data-lucide="key-round" class="w-6 h-6"></i>
+      </div>
+      <h3 class="text-lg font-bold text-white text-center mb-1">Присоединиться к семье</h3>
+      <p class="text-xs text-gray-400 text-center mb-5">Введите код приглашения, полученный от члена семьи.</p>
+
+      <div class="space-y-3.5">
+        <div>
+          <label class="block text-[11px] text-[#848D99] uppercase font-bold mb-1.5">Код приглашения (например 7K9X2M)</label>
+          <input type="text" id="join-family-code" placeholder="XXXXXX" maxlength="12" class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-purple-500 text-white rounded-xl p-3 outline-none text-sm uppercase tracking-wider font-mono transition-colors">
+        </div>
+
+        <div class="flex gap-2.5 pt-2">
+          <button type="button" onclick="closeJoinFamilyModal()" class="flex-1 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 py-3 rounded-xl text-xs font-semibold cursor-pointer transition-colors">Отмена</button>
+          <button type="button" id="join-family-submit-btn" onclick="submitJoinFamily()" class="flex-1 bg-purple-600 hover:bg-purple-500 text-white py-3 rounded-xl text-xs font-semibold shadow-md active:scale-95 cursor-pointer transition-all flex items-center justify-center gap-1.5">
+            <i data-lucide="link-2" class="w-4 h-4"></i>
+            <span>Присоединиться</span>
           </button>
         </div>
       </div>
@@ -2274,7 +3098,16 @@
         <!-- Магазин или назначение платежа -->
         <div class="mb-3.5">
           <label class="block text-[10px] text-[#848D99] uppercase font-bold mb-1">Магазин или назначение платежа</label>
-          <input type="text" id="edit-tx-comment" oninput="handleEditTxCommentInput(this)" placeholder="Например, Пятерочка или Перевод маме" class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white rounded-xl p-3 outline-none text-xs">
+          <div class="flex items-center gap-2">
+            <input type="text" id="edit-tx-comment" oninput="handleEditTxCommentInput(this)" placeholder="Например, Пятерочка или Перевод маме" class="flex-1 min-w-0 bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white rounded-xl p-3 outline-none text-xs transition-colors">
+            <!-- Кнопка булавка для добавления в словарь -->
+            <button type="button" 
+                    onclick="openRememberRuleForEditTx()" 
+                    class="w-11 h-11 rounded-xl bg-[#6C5DD3]/15 hover:bg-[#6C5DD3]/25 active:scale-90 text-[#9E86FF] hover:text-white border border-[#6C5DD3]/25 flex items-center justify-center flex-shrink-0 cursor-pointer transition-all shadow-sm group" 
+                    title="Запомнить в словарь категорий">
+              <i data-lucide="pin" class="w-4.5 h-4.5 transition-transform group-hover:scale-110"></i>
+            </button>
+          </div>
         </div>
 
         <!-- Опция исключения из лимита месяца и распределения в календаре -->
@@ -2300,6 +3133,10 @@
             <div class="flex items-center justify-between text-[11px] bg-[#181B24] p-2 rounded-xl">
               <span class="text-[10px] text-[#848D99]">Нагрузка в календаре:</span>
               <span id="edit-tx-spread-calc" class="font-mono font-bold text-amber-300">0 ₽/мес</span>
+            </div>
+            <div class="flex items-start gap-2 bg-[#181B24] p-2.5 rounded-xl border border-[rgba(255,255,255,0.04)] text-[11px] text-[#848D99] leading-relaxed">
+              <i data-lucide="split" class="w-3.5 h-3.5 text-amber-400 flex-shrink-0 mt-0.5"></i>
+              <span>Полная сумма сохранится в истории операций, а нагрузка на лимиты распределится равными долями по месяцам.</span>
             </div>
           </div>
         </div>
@@ -2358,9 +3195,10 @@
             <span id="quick-amortize-monthly-calc" class="font-mono font-bold text-amber-300 text-[13px]">0 ₽/мес</span>
           </div>
 
-          <p class="text-[10px] text-[#848D99] leading-tight">
-            Трата будет исключена из текущего месячного лимита и равномерно добавлена в календарь обязательных счетов.
-          </p>
+          <div class="flex items-start gap-2 bg-[#181B24] p-2.5 rounded-xl border border-[rgba(255,255,255,0.04)] text-[11px] text-[#848D99] leading-relaxed">
+            <i data-lucide="split" class="w-3.5 h-3.5 text-amber-400 flex-shrink-0 mt-0.5"></i>
+            <span>Полная сумма остается в истории операции, а нагрузка на лимиты распределится равными долями по месяцам.</span>
+          </div>
         </div>
       </div>
 

@@ -62,6 +62,20 @@ function processTransactions(txs) {
     const isoDateStr = (typeof formatDateStr === 'function') ? formatDateStr(txDate, 'yyyy-MM-dd') : (tx.date || tx.rawDate);
     const ruDateStr = (typeof formatDateStr === 'function') ? formatDateStr(txDate, 'dd.MM.yyyy') : (tx.formattedDate || isoDateStr);
 
+    let createdTime = 0;
+    if (tx.createdAt) {
+      if (typeof tx.createdAt === 'object' && typeof tx.createdAt.toMillis === 'function') {
+        createdTime = tx.createdAt.toMillis();
+      } else if (typeof tx.createdAt === 'object' && typeof tx.createdAt.seconds === 'number') {
+        createdTime = tx.createdAt.seconds * 1000;
+      } else {
+        const parsedCreated = new Date(tx.createdAt).getTime();
+        if (!isNaN(parsedCreated)) createdTime = parsedCreated;
+      }
+    } else if (tx.timestamp && Number(tx.timestamp) > 2000000000) {
+      createdTime = Number(tx.timestamp);
+    }
+
     grouped[key].items.push({
       ...tx,
       id: tx.id,
@@ -69,22 +83,38 @@ function processTransactions(txs) {
       category: tx.category,
       amount,
       comment: tx.comment || '',
+      author: tx.author || null,
       excludeFromBudget: !!(tx.excludeFromBudget || tx.isExcludedFromBudget),
       isBillPayment: !!tx.isBillPayment,
       billId: tx.billId || null,
       billName: tx.billName || '',
       billType: tx.billType || (tx.spreadMonths > 1 ? 'onetime' : (tx.isBillPayment ? 'recurring' : '')),
       spreadMonths: parseInt(tx.spreadMonths, 10) || 1,
-      date: tx.date || isoDateStr,
+      date: isoDateStr,
       rawDate: tx.rawDate || tx.date || isoDateStr,
       formattedDate: ruDateStr,
-      timestamp: tx.timestamp || txDate.getTime()
+      dayTimestamp: txDate.getTime(),
+      createdAt: createdTime || txDate.getTime(),
+      timestamp: createdTime || txDate.getTime()
     });
   });
+
   return Object.values(grouped)
     .sort((a, b) => b.id.localeCompare(a.id))
     .map(m => {
-      m.items.sort((a, b) => b.timestamp - a.timestamp);
+      m.items.sort((a, b) => {
+        // 1. Сортировка по календарному дню (от свежих дней к прошлым)
+        if (a.date !== b.date) {
+          return (b.dayTimestamp || 0) - (a.dayTimestamp || 0);
+        }
+        // 2. В рамках одного дня: новые добавленные операции располагаются строго сверху
+        const timeA = a.createdAt || a.timestamp || 0;
+        const timeB = b.createdAt || b.timestamp || 0;
+        if (timeA !== timeB) {
+          return timeB - timeA;
+        }
+        return (b.id || '').localeCompare(a.id || '');
+      });
       return m;
     });
 }
@@ -110,12 +140,13 @@ function processCategories(cats) {
 
   const expense = [...defaultExpense];
   const income = [...defaultIncome];
-  cats.forEach(c => {
+  (Array.isArray(cats) ? cats : []).forEach(c => {
+    if (!c || !c.name) return;
     let rawIcon = c.icon && c.icon.length < 5 ? 'tag' : c.icon;
     if (c.type === 'Расход') { 
-      if (!expense.some(item => item.name === c.name)) expense.push({ name: c.name, icon: rawIcon || 'tag' }); 
+      if (!expense.some(item => item && item.name === c.name)) expense.push({ name: c.name, icon: rawIcon || 'tag' }); 
     } else if (c.type === 'Доход') { 
-      if (!income.some(item => item.name === c.name)) income.push({ name: c.name, icon: rawIcon || 'tag' }); 
+      if (!income.some(item => item && item.name === c.name)) income.push({ name: c.name, icon: rawIcon || 'tag' }); 
     }
   });
   return { expense, income };
@@ -496,16 +527,21 @@ function submitTransactions(e) {
   e.preventDefault();
   const rows = document.querySelectorAll('.tx-item');
   if (rows.length === 0) return showDialog('Ошибка', 'Добавьте хотя бы одну операцию', false);
+  
+  const userProfile = (typeof getCurrentUserProfile === 'function') ? getCurrentUserProfile() : (Cache?.userProfile || { displayName: 'Пользователь', avatarId: 'user' });
+  const authorInfo = {
+    uid: auth?.currentUser?.uid || '',
+    name: userProfile.displayName,
+    avatarId: userProfile.avatarId || 'user'
+  };
+
   const txData = Array.from(rows).map(row => {
     const type = row.querySelector('.tx-type:checked').value;
     const amount = getUnformattedVal(row.querySelector('.tx-amount'));
     const date = row.querySelector('.tx-date').value;
     const category = row.querySelector('.tx-category').value;
     const comment = row.querySelector('.tx-comment').value;
-    if (comment && category) {
-      learnMerchantCategory(comment, category, type);
-    }
-    return { type, amount, date, category, comment };
+    return { type, amount, date, category, comment, author: authorInfo };
   });
   submitAction('tx-submit-btn', 'Transactions', txData);
 }
@@ -588,6 +624,63 @@ function learnMerchantCategory(merchant, category, type) {
     } catch (e) {
       console.warn('Could not persist category rule', e);
     }
+  }
+}
+
+// Открытие модального окна добавления правила из строки добавления транзакции
+function openRememberRuleForTxRow(btn) {
+  if (!btn) return;
+  const row = btn.closest('.tx-row') || btn.closest('.tx-item');
+  if (!row) return;
+
+  const commentInput = row.querySelector('.tx-comment');
+  const catInput = row.querySelector('.tx-category');
+  const typeBtn = row.querySelector('.tx-type-btn.active');
+  const typeRadio = row.querySelector('.tx-type:checked');
+
+  const comment = commentInput ? commentInput.value.trim() : '';
+  const category = catInput ? catInput.value : '';
+  const type = typeBtn ? typeBtn.innerText.trim() : (typeRadio ? typeRadio.value : 'Расход');
+
+  if (typeof window.openRememberRuleCustom === 'function') {
+    window.openRememberRuleCustom(comment, category, type, (savedKeyword, savedCategory) => {
+      // Подставляем категорию в текущую строку операции
+      if (catInput) {
+        catInput.value = savedCategory;
+        const catLabel = row.querySelector('.tx-category-label');
+        if (catLabel) {
+          const icon = (typeof getCategoryIcon === 'function') ? getCategoryIcon(savedCategory) : 'tag';
+          catLabel.innerHTML = `<span class="inline-flex items-center gap-1.5 text-xs text-gray-200 font-normal truncate min-w-0"><i data-lucide="${icon}" class="w-3.5 h-3.5 text-[#727cff] flex-shrink-0"></i><span class="truncate">${escapeHtml(savedCategory)}</span></span>`;
+          catLabel.classList.remove('text-gray-400', 'text-white');
+          catLabel.classList.add('text-gray-200');
+          if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+      }
+    });
+  } else if (typeof openRememberRuleModal === 'function') {
+    openRememberRuleModal();
+  }
+}
+
+// Открытие модального окна добавления правила из формы редактирования транзакции
+function openRememberRuleForEditTx() {
+  const commentInput = document.getElementById('edit-tx-comment');
+  const catInput = document.getElementById('edit-tx-category');
+  const typeInput = document.getElementById('edit-tx-type');
+
+  const comment = commentInput ? commentInput.value.trim() : '';
+  const category = catInput ? catInput.value : '';
+  const type = typeInput ? typeInput.value : 'Расход';
+
+  if (typeof window.openRememberRuleCustom === 'function') {
+    window.openRememberRuleCustom(comment, category, type, (savedKeyword, savedCategory) => {
+      if (typeof selectEditTxCategory === 'function') {
+        const icon = (typeof getCategoryIcon === 'function') ? getCategoryIcon(savedCategory) : 'tag';
+        selectEditTxCategory(savedCategory, icon);
+      }
+    });
+  } else if (typeof openRememberRuleModal === 'function') {
+    openRememberRuleModal();
   }
 }
 
@@ -963,10 +1056,6 @@ async function submitEditTxModal(e) {
   const tempTxId = id || `opt_tx_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
   const isNew = !id;
 
-  if (comment && category) {
-    learnMerchantCategory(comment, category, type);
-  }
-
   // 1. Получаем плоский список и сохраняем временную метку дня при редактировании
   const allFlat = typeof getAllCachedTransactionsFlat === 'function' ? getAllCachedTransactionsFlat() : [];
   let itemTimestamp = parsedDate.getTime();
@@ -978,6 +1067,13 @@ async function submitEditTxModal(e) {
   }
 
   // 2. Формируем локальный объект транзакции
+  const userProfile = (typeof getCurrentUserProfile === 'function') ? getCurrentUserProfile() : { displayName: 'Пользователь', avatarId: 'user' };
+  const authorInfo = (id && existing && existing.author) ? existing.author : {
+    uid: auth?.currentUser?.uid || '',
+    name: userProfile.displayName,
+    avatarId: userProfile.avatarId
+  };
+
   const txObj = {
     id: tempTxId,
     type,
@@ -993,7 +1089,8 @@ async function submitEditTxModal(e) {
     billId: billId || null,
     billName: billName || '',
     billType: isOneTimeBill ? 'onetime' : (effectiveIsBillPayment ? 'recurring' : ''),
-    timestamp: itemTimestamp
+    timestamp: itemTimestamp,
+    author: authorInfo
   };
 
   // 3. Мгновенно обновляем локальный кэш Cache в 0мс
@@ -1099,6 +1196,7 @@ async function submitEditTxModal(e) {
         billId: billId || null,
         billName: billName || '',
         billType: isOneTimeBill ? 'onetime' : (effectiveIsBillPayment ? 'recurring' : ''),
+        author: authorInfo,
         createdAt: Date.now()
       };
 
@@ -1591,8 +1689,43 @@ function renderTxRowHtml(tx, largeThreshold, hasDynamicThreshold) {
     : (tx.category || (isExp ? 'Расход' : 'Доход'));
   const subCategory = hasComment ? tx.category : '';
 
+  let authorBadgeHtml = '';
+  let authorInfo = null;
+  const familyMembers = Cache?.family?.members || [];
+
+  if (tx.author && (tx.author.avatarId || tx.author.uid)) {
+    const matched = tx.author.uid ? familyMembers.find(m => m.uid === tx.author.uid) : null;
+    authorInfo = {
+      name: matched?.name || tx.author.name || 'Член семьи',
+      avatarId: matched?.avatarId || tx.author.avatarId || 'user'
+    };
+  } else if (tx.authorUid || tx.userId) {
+    const uid = tx.authorUid || tx.userId;
+    const matched = familyMembers.find(m => m.uid === uid);
+    if (matched) {
+      authorInfo = { name: matched.name, avatarId: matched.avatarId };
+    }
+  }
+
+  // Если семейный режим активен, а у старой записи не был сохранен автор — привязываем к владельцу семьи
+  if (!authorInfo && Cache?.family && familyMembers.length > 0) {
+    const owner = familyMembers.find(m => m.role === 'owner' || m.uid === Cache.family.ownerUid) || familyMembers[0];
+    if (owner) {
+      authorInfo = { name: owner.name, avatarId: owner.avatarId };
+    }
+  }
+
+  if (authorInfo && (Cache?.family || familyMembers.length > 0 || tx.author)) {
+    const authorPreset = (window.AVATAR_PRESETS && window.AVATAR_PRESETS[authorInfo.avatarId]) || window.AVATAR_PRESETS?.user || { bg: 'bg-blue-600', icon: 'user' };
+    authorBadgeHtml = `
+      <div class="absolute top-2 right-2.5 flex items-center justify-center w-[18px] h-[18px] rounded-full ${authorPreset.bg} text-white ring-2 ring-[#181B24] shadow-sm select-none pointer-events-none" title="Добавил(а): ${escapeHtml(authorInfo.name)}">
+        <i data-lucide="${authorPreset.icon}" class="w-2.5 h-2.5 stroke-[2.5]"></i>
+      </div>
+    `;
+  }
+
   return `
-    <div class="card cursor-pointer w-full py-[13px] px-4 flex items-center justify-between ${isJustAdded ? 'tx-row-new' : ''}"
+    <div class="card cursor-pointer w-full py-[13px] px-4 relative flex items-center justify-between ${isJustAdded ? 'tx-row-new' : ''}"
          data-id="${tx.id}"
          data-table="Transactions"
          onclick="openTxContextMenu(event, '${tx.id}')">
@@ -1624,9 +1757,11 @@ function renderTxRowHtml(tx, largeThreshold, hasDynamicThreshold) {
          </div>
       </div>
 
-     <div class="tx-amount flex-shrink-0 text-right font-medium ml-2 ${isExp ? 'text-gray-200' : 'text-[#30D158]'} text-[16px]">
+     <div class="tx-amount flex-shrink-0 text-right font-medium ml-2 ${authorBadgeHtml ? 'pr-4' : ''} ${isExp ? 'text-gray-200' : 'text-[#30D158]'} text-[16px]">
         ${window.isPrivacyModeEnabled ? '•••• ₽' : (isExp ? '-' : '+') + formatMoney(tx.amount)}
      </div>
+
+     ${authorBadgeHtml}
     </div>
   `;
 }
@@ -2374,13 +2509,16 @@ function updateAnalyticsForMonth(monthId) {
 // 6. Global Event Listeners (Фильтры и модалки)
 // ==========================================
 document.addEventListener('click', (e) => {
-  if (!e.target.closest('#wrap-filter-month') && !e.target.closest('#wrap-filter-cat')) {
+  const target = (e?.target?.nodeType === 3) ? e.target.parentElement : e?.target;
+  if (!target || typeof target.closest !== 'function') return;
+
+  if (!target.closest('#wrap-filter-month') && !target.closest('#wrap-filter-cat')) {
     const mm = document.getElementById('menu-filter-month');
     const cm = document.getElementById('menu-filter-cat');
     if (mm) mm.classList.add('hidden');
     if (cm) cm.classList.add('hidden');
   }
-  if (!e.target.closest('.custom-dropdown-wrap')) {
+  if (!target.closest('.custom-dropdown-wrap')) {
     document.querySelectorAll('.tx-category-menu').forEach(m => m.classList.add('hidden'));
     document.querySelectorAll('.tx-item').forEach(r => r.style.zIndex = '');
   }
@@ -2446,6 +2584,8 @@ window.submitTransactions = submitTransactions;
 window.editTx = editTx;
 window.handleTxRowCommentInput = handleTxRowCommentInput;
 window.handleEditTxCommentInput = handleEditTxCommentInput;
+window.openRememberRuleForTxRow = openRememberRuleForTxRow;
+window.openRememberRuleForEditTx = openRememberRuleForEditTx;
 window.learnMerchantCategory = learnMerchantCategory;
 window.openTxContextMenu = openTxContextMenu;
 window.openQuickAmortizeModal = openQuickAmortizeModal;

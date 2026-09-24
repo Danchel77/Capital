@@ -10,15 +10,17 @@ if ('serviceWorker' in navigator) {
 }
 
 function initOfflineResilience() {
-  const banner = document.getElementById('offline-status-banner');
+  const badge = document.getElementById('offline-badge');
 
   function updateNetworkStatus() {
     const isOnline = navigator.onLine;
-    if (banner) {
+    if (badge) {
       if (!isOnline) {
-        banner.classList.remove('hidden');
+        badge.classList.remove('hidden');
+        badge.classList.add('inline-flex');
       } else {
-        banner.classList.add('hidden');
+        badge.classList.add('hidden');
+        badge.classList.remove('inline-flex');
       }
     }
   }
@@ -86,7 +88,9 @@ window.Cache = {
   categoryRules: [],
   budgetPlan: {},
   calendarBills: [],
-  settings: {}
+  settings: {},
+  userProfile: { displayName: 'Пользователь', avatarId: '' },
+  family: null
 };
 let Cache = window.Cache;
 
@@ -100,10 +104,23 @@ function resetGlobalCache() {
     categoryRules: [],
     budgetPlan: {},
     calendarBills: [],
-    settings: {}
+    settings: {},
+    userProfile: { displayName: 'Пользователь', avatarId: '' },
+    family: null
   };
   Cache = window.Cache;
   return Cache;
+}
+
+function getCurrentUserProfile() {
+  const user = typeof auth !== 'undefined' ? auth.currentUser : null;
+  const defName = user ? (user.displayName || (user.email?.includes('@budget.local') ? user.email.replace('@budget.local', '') : user.email?.split('@')[0]) || 'Пользователь') : 'Пользователь';
+  const rawAvatarId = Cache?.userProfile?.avatarId;
+  const avatarId = (rawAvatarId !== undefined && rawAvatarId !== null && rawAvatarId !== '') ? rawAvatarId : 'user';
+  return {
+    displayName: Cache?.userProfile?.displayName || defName,
+    avatarId: avatarId
+  };
 }
 
 // Переменные текущего редактирования
@@ -114,10 +131,14 @@ let currentEditTable = null;
 // Database CRUD & Sync Operations
 // ==========================================
 
-// Хелпер доступа к личной подколлекции авторизованного пользователя
+// Хелпер доступа к коллекции: если подключен семейный бюджет — возвращает подколлекцию семьи, иначе личную
 function getUserCol(table) {
   const user = auth.currentUser;
   if (!user) throw new Error('Пользователь не авторизован');
+  
+  if (Cache?.family?.id) {
+    return db.collection('families').doc(Cache.family.id).collection(table);
+  }
   return db.collection('users').doc(user.uid).collection(table);
 }
 
@@ -129,7 +150,7 @@ async function fetchAllData() {
     const cachedSnaps = await Promise.all(
       tables.map(tbl => getUserCol(tbl).get({ source: 'cache' }))
     );
-    if (cachedSnaps.some(s => !s.empty)) {
+    if (Array.isArray(cachedSnaps) && cachedSnaps.some(s => s && !s.empty)) {
       await applySnapshotsToUI(cachedSnaps, false);
       document.getElementById('loading-screen')?.classList.add('hidden');
     }
@@ -145,6 +166,10 @@ async function fetchAllData() {
     document.getElementById('last-sync').innerText = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     document.getElementById('toast-container')?.classList.add('hidden');
     document.getElementById('loading-screen')?.classList.add('hidden');
+
+    if (typeof checkFamilyBudgetReviewPrompt === 'function') {
+      checkFamilyBudgetReviewPrompt();
+    }
   } catch (err) {
     document.getElementById('toast-container')?.classList.add('hidden');
     document.getElementById('loading-screen')?.classList.add('hidden');
@@ -246,12 +271,16 @@ async function applySnapshotsToUI([txS, depS, brS, goalS, catS, rulesS, planS, b
   const categories = processCategories(catData);
 
   const existingSettings = (Cache && Cache.settings) ? Cache.settings : {};
+  const existingUserProfile = (Cache && Cache.userProfile) ? Cache.userProfile : { displayName: 'Пользователь', avatarId: '' };
+  const existingFamily = (Cache && Cache.family) ? Cache.family : null;
   const wasServerSyncComplete = Cache ? !!Cache.isServerSyncComplete : false;
 
   Cache = {
     isInitialDataLoaded: true,
     isServerSyncComplete: fromServer || wasServerSyncComplete,
     settings: existingSettings,
+    userProfile: existingUserProfile,
+    family: existingFamily,
     transactions: processTransactions(txData),
     deposits: processedDeposits,
     broker: processedBroker,
@@ -309,10 +338,23 @@ async function submitAction(btnId, table, data) {
 
   // 2. Оптимистично обновляем данные в памяти Cache и вызываем моментальный перерендер
   if (table === 'Transactions') {
+    const userProfile = (typeof getCurrentUserProfile === 'function') ? getCurrentUserProfile() : (Cache?.userProfile || { displayName: 'Пользователь', avatarId: 'user' });
+    const defaultAuthor = {
+      uid: auth?.currentUser?.uid || '',
+      name: userProfile.displayName,
+      avatarId: userProfile.avatarId || 'user'
+    };
+
+    const now = Date.now();
     const items = Array.isArray(data) ? data : [data];
-    const newIds = items.map((item, idx) => isEdit ? targetId : `opt_tx_${Date.now()}_${idx}`);
+    items.forEach((item, idx) => {
+      if (!item.author) item.author = defaultAuthor;
+      if (!item.createdAt) item.createdAt = now + idx;
+    });
+
+    const newIds = items.map((item, idx) => isEdit ? targetId : `opt_tx_${now}_${idx}`);
     window.lastAddedTxIds = newIds;
-    window.lastAddedTxTime = Date.now();
+    window.lastAddedTxTime = now;
 
     const allFlat = typeof getAllCachedTransactionsFlat === 'function' ? getAllCachedTransactionsFlat() : [];
     items.forEach((item, idx) => {
@@ -327,13 +369,15 @@ async function submitAction(btnId, table, data) {
         formattedDate: formatDateStr(parsedDate, 'dd.MM.yyyy'),
         category: item.category,
         comment: item.comment || '',
+        author: item.author || defaultAuthor,
         excludeFromBudget: !!item.excludeFromBudget,
         spreadMonths: parseInt(item.spreadMonths, 10) || 1,
         isBillPayment: !!item.isBillPayment,
         billId: item.billId || null,
         billName: item.billName || '',
         billType: item.billType || (item.spreadMonths > 1 ? 'onetime' : (item.isBillPayment ? 'recurring' : '')),
-        timestamp: parsedDate.getTime()
+        createdAt: item.createdAt || (now + idx),
+        timestamp: item.createdAt || (now + idx)
       };
       if (isEdit) {
         const foundIdx = allFlat.findIndex(t => t.id === targetId);
@@ -358,20 +402,28 @@ async function submitAction(btnId, table, data) {
 
   // 3. Асинхронное фоновое сохранение в Firestore
   try {
+    const saveTime = Date.now();
     if (isEdit) {
       await getUserCol(table).doc(targetId).update(data);
     } else if (Array.isArray(data)) {
       const batch = db.batch();
       const realAddedIds = [];
-      data.forEach(item => {
+      data.forEach((item, idx) => {
         const docRef = getUserCol(table).doc();
-        batch.set(docRef, item);
+        batch.set(docRef, {
+          ...item,
+          createdAt: item.createdAt || (saveTime + idx)
+        });
         realAddedIds.push(docRef.id);
       });
       await batch.commit();
       window.lastAddedTxIds = realAddedIds;
     } else {
-      const docRef = await getUserCol(table).add(data);
+      const payload = {
+        ...data,
+        createdAt: data.createdAt || saveTime
+      };
+      const docRef = await getUserCol(table).add(payload);
       if (table === 'Transactions') {
         window.lastAddedTxIds = [docRef.id];
       }
@@ -468,11 +520,16 @@ async function seedNewUserInitialData(user) {
   try {
     const batch = db.batch();
 
+    const displayName = user.displayName || user.email?.split('@')[0] || 'Пользователь';
     // Документ пользователя
     batch.set(db.collection('users').doc(user.uid), {
       migrated: true,
-      displayName: user.displayName || user.email?.split('@')[0] || 'Пользователь',
+      displayName: displayName,
       email: user.email || '',
+      profile: {
+        displayName: displayName,
+        avatarId: ''
+      },
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
 
@@ -924,11 +981,14 @@ function lockBodyScroll() {
   openModalsCount++;
 }
 
-function unlockBodyScroll() {
-  if (openModalsCount > 0) {
+function unlockBodyScroll(force = false) {
+  if (force) {
+    openModalsCount = 0;
+  } else if (openModalsCount > 0) {
     openModalsCount--;
   }
-  if (openModalsCount === 0) {
+  if (openModalsCount <= 0) {
+    openModalsCount = 0;
     const scrollY = document.body.style.top;
     document.body.classList.remove('modal-open');
     document.body.style.top = '';
@@ -941,7 +1001,7 @@ function unlockBodyScroll() {
 }
 
 /* Кастомное диалоговое окно */
-function showDialog(title, message, isConfirm, callback) {
+function showDialog(title, message, isConfirm, callback, cancelCallback, customOkText, customCancelText) {
   const dialog = document.getElementById('custom-dialog');
   if (!dialog) return;
   lockBodyScroll();
@@ -952,15 +1012,17 @@ function showDialog(title, message, isConfirm, callback) {
 
   if (isConfirm) {
     const isDelete = (title || '').toLowerCase().includes('удал');
-    const okBtnClass = isDelete ? 'bg-red-600 hover:bg-red-500' : 'bg-blue-600 hover:bg-blue-500';
-    const okBtnText = isDelete ? 'Удалить' : 'ОК';
+    const okBtnClass = isDelete ? 'bg-red-600 hover:bg-red-500' : 'bg-[#6C5DD3] hover:bg-[#5b4ec2]';
+    const okBtnText = customOkText || (isDelete ? 'Удалить' : 'ОК');
+    const cancelBtnText = customCancelText || 'Отмена';
 
-    btns.innerHTML = `<button id="dialog-cancel" type="button" class="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-3 rounded-xl font-medium cursor-pointer transition-colors active:scale-95">Отмена</button>
-                      <button id="dialog-ok" type="button" class="flex-1 ${okBtnClass} text-white py-3 rounded-xl font-medium cursor-pointer transition-colors active:scale-95 shadow-md">${okBtnText}</button>`;
+    btns.innerHTML = `<button id="dialog-cancel" type="button" class="flex-1 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 hover:text-white py-3 rounded-xl font-semibold text-xs cursor-pointer transition-colors active:scale-95">${escapeHtml(cancelBtnText)}</button>
+                      <button id="dialog-ok" type="button" class="flex-1 ${okBtnClass} text-white py-3 rounded-xl font-semibold text-xs cursor-pointer transition-colors active:scale-95 shadow-md">${escapeHtml(okBtnText)}</button>`;
     document.getElementById('dialog-cancel').onclick = (e) => {
       if (e) e.stopPropagation();
       dialog.classList.add('hidden');
       unlockBodyScroll();
+      if (cancelCallback) cancelCallback();
     };
     document.getElementById('dialog-ok').onclick = (e) => {
       if (e) e.stopPropagation();
@@ -969,7 +1031,8 @@ function showDialog(title, message, isConfirm, callback) {
       if (callback) callback();
     };
   } else {
-    btns.innerHTML = `<button id="dialog-ok" type="button" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl font-medium cursor-pointer transition-colors active:scale-95 shadow-md">Понятно</button>`;
+    const okBtnText = customOkText || 'Понятно';
+    btns.innerHTML = `<button id="dialog-ok" type="button" class="w-full bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white py-3 rounded-xl font-semibold text-xs cursor-pointer transition-colors active:scale-95 shadow-md">${escapeHtml(okBtnText)}</button>`;
     document.getElementById('dialog-ok').onclick = (e) => {
       if (e) e.stopPropagation();
       dialog.classList.add('hidden');
@@ -1010,3 +1073,4 @@ window.processOrSeedRules = processOrSeedRules;
 window.togglePrivacyMode = togglePrivacyMode;
 window.updatePrivacyModeUI = updatePrivacyModeUI;
 window.initOfflineResilience = initOfflineResilience;
+window.getCurrentUserProfile = getCurrentUserProfile;

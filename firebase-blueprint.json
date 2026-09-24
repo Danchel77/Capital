@@ -1,0 +1,72 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User account document",
+      "type": "object",
+      "properties": {
+        "displayName": { "type": "string" },
+        "email": { "type": "string" },
+        "profile": {
+          "type": "object",
+          "properties": {
+            "displayName": { "type": "string" },
+            "avatarId": { "type": "string" }
+          }
+        },
+        "settings": {
+          "type": "object",
+          "properties": {
+            "showBroker": { "type": "boolean" }
+          }
+        },
+        "familyId": { "type": "string" },
+        "migrated": { "type": "boolean" },
+        "createdAt": { "type": "string" }
+      }
+    },
+    "Family": {
+      "title": "Family",
+      "description": "Family group shared space",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "code": { "type": "string" },
+        "ownerUid": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "members": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "uid": { "type": "string" },
+              "name": { "type": "string" },
+              "avatarId": { "type": "string" },
+              "role": { "type": "string" },
+              "joinedAt": { "type": "number" }
+            }
+          }
+        }
+      },
+      "required": ["name", "code", "ownerUid", "members"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "entity": "User",
+      "rules": "allow read, write: if request.auth != null && request.auth.uid == userId;"
+    },
+    "/users/{userId}/{allTables=**}": {
+      "entity": "User",
+      "rules": "allow read, write: if request.auth != null && request.auth.uid == userId;"
+    },
+    "/families/{familyId}": {
+      "entity": "Family",
+      "rules": "allow read, write: if request.auth != null;"
+    },
+    "/families/{familyId}/{allTables=**}": {
+      "entity": "Family",
+      "rules": "allow read, write: if request.auth != null;"
+    }
+  }
+}

@@ -108,7 +108,7 @@ function cancelTouchPress() {
   }
 }
 
-// 1. Обработка Touch-событий (смартфоны и планшеты) — мгновенная реакция без ватности
+// 1. Обработка Touch-событий (смартфоны и планшеты) — защита от ложных сжатий при свайпе
 document.addEventListener('touchstart', (e) => {
   if (e.touches.length !== 1) {
     cancelTouchPress();
@@ -128,17 +128,22 @@ document.addEventListener('touchstart', (e) => {
   isTouchScrolling = false;
   activePressedEl = target;
 
-  // Мгновенно активируем отклик при касании (0мс задержки)
-  activePressedEl.classList.add('is-pressed');
+  // Небольшая задержка в 60мс перед добавлением класса is-pressed.
+  // Если палец сразу начал свайп или скролл — отклик отменяется до того, как элемент успеет визуально сжаться.
+  touchPressTimer = setTimeout(() => {
+    if (activePressedEl && !isTouchScrolling) {
+      activePressedEl.classList.add('is-pressed');
+    }
+  }, 60);
 }, { passive: true });
 
 document.addEventListener('touchmove', (e) => {
-  if (!activePressedEl || isTouchScrolling || e.touches.length !== 1) return;
+  if (!activePressedEl || e.touches.length !== 1) return;
   const dx = Math.abs(e.touches[0].clientX - touchStartX);
   const dy = Math.abs(e.touches[0].clientY - touchStartY);
 
-  // Порог сдвига в 6px: если палец сдвинулся, это скролл страницы, снимаем отклик моментально
-  if (dx > 6 || dy > 6) {
+  // Порог сдвига в 4px: если палец сдвинулся, это свайп или скролл списка, моментально отменяем нажатие
+  if (dx > 4 || dy > 4) {
     isTouchScrolling = true;
     cancelTouchPress();
   }
@@ -490,7 +495,8 @@ function initPwaSwipeGesture() {
   card.addEventListener('touchstart', (e) => {
     if (e.touches.length !== 1) return;
     // Если тап пришелся по кнопке или крестику — даем кнопке сработать
-    if (e.target.closest('button, a, input')) return;
+    const target = (e?.target?.nodeType === 3) ? e.target.parentElement : e?.target;
+    if (target && typeof target.closest === 'function' && target.closest('button, a, input')) return;
 
     pwaTouchStartX = e.touches[0].clientX;
     pwaTouchCurrentX = pwaTouchStartX;

@@ -71,7 +71,7 @@ function renderDeposits() {
         </div>
         <div>
           <p class="text-sm font-semibold text-gray-200">У вас пока нет открытых вкладов</p>
-          <p class="text-xs text-[#848D99] mt-1 max-w-[280px]">Добавьте банковский вклад или накопительный счет, чтобы отслеживать доходность и срок выплаты процентов</p>
+          <p class="text-xs text-[#848D99] mt-1.5 max-w-[320px] leading-relaxed">Добавьте банковский вклад или накопительный счет, чтобы отслеживать доходность. Вклад можно привязать к цели, и начисленные проценты будут автоматически пополнять ваши накопления.</p>
         </div>
         <button type="button" onclick="toggleForm('deposit-form-container', 'deposit-submit-btn', 'Добавить вклад', 'deposit-form', 'deposit')" class="mt-1 px-4 py-2.5 rounded-xl bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white text-xs font-semibold transition-all active:scale-95 cursor-pointer flex items-center gap-2">
           <i data-lucide="plus" class="w-3.5 h-3.5"></i>
@@ -533,7 +533,29 @@ function processBroker(ops) {
 
 function renderBroker() {
   const br = Cache?.broker;
-  if (!br) return;
+  const history = br?.history || br?.deposits || [];
+  const mainCard = document.getElementById('broker-main-card');
+  const emptyState = document.getElementById('broker-empty-state');
+  const list = document.getElementById('broker-deposits-list');
+
+  if (!br || history.length === 0) {
+    if (mainCard) mainCard.classList.add('hidden');
+    if (emptyState) emptyState.classList.remove('hidden');
+    if (list) {
+      list.innerHTML = '';
+      list.classList.add('hidden');
+    }
+    if (brokerChartObj) {
+      brokerChartObj.destroy();
+      brokerChartObj = null;
+    }
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+    return;
+  }
+
+  if (mainCard) mainCard.classList.remove('hidden');
+  if (emptyState) emptyState.classList.add('hidden');
+  if (list) list.classList.remove('hidden');
 
   // Основной баланс
   const balEl = document.getElementById('broker-balance');
@@ -555,61 +577,42 @@ function renderBroker() {
   }
 
   // Отрисовка списка операций
-  const list = document.getElementById('broker-deposits-list');
   if (list) {
-    const history = br.history || br.deposits || [];
-    if (history.length === 0) {
-      list.innerHTML = `
-        <div class="card rounded-2xl p-6 text-center flex flex-col items-center justify-center gap-3 mt-4 border border-[rgba(255,255,255,0.06)] bg-[#181B24]">
-          <div class="w-12 h-12 rounded-2xl bg-[#6C5DD3]/15 text-[#727cff] flex items-center justify-center">
-            <i data-lucide="trending-up" class="w-6 h-6"></i>
-          </div>
-          <div>
-            <p class="text-sm font-semibold text-gray-200">Операций пока нет</p>
-            <p class="text-xs text-[#848D99] mt-0.5">Внесите первое пополнение или зафиксируйте баланс</p>
-          </div>
-          <button type="button" onclick="toggleBrokerPopover('deposit', event)" class="mt-1 px-4 py-2.5 rounded-xl bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white text-xs font-semibold transition-all active:scale-95 cursor-pointer">
-            + Внести первое пополнение
-          </button>
-        </div>
-      `;
-    } else {
-      list.innerHTML = `
-        <div class="flex items-center justify-between mt-5 mb-2.5 px-1">
-          <h3 class="text-[11px] uppercase font-bold tracking-wider text-[#848D99]">История операций (${history.length})</h3>
-          <span class="text-[10px] text-[#848D99]">Нажмите для изменения</span>
-        </div>
-        <div class="space-y-2">
-          ${history.map(d => {
-            const isDep = d.type === 'Пополнение';
-            return `
-              <div class="card relative bg-[#181B24] hover:bg-[#1C202B] rounded-2xl border border-[rgba(255,255,255,0.06)] hover:border-[rgba(255,255,255,0.12)] p-3.5 flex justify-between items-center transition-all cursor-pointer"
-                   data-id="${d.id}"
-                   data-table="Broker"
-                   onclick="openEditBrokerPointModal('${d.id}')">
-                <input type="checkbox" class="select-checkbox" data-id="${d.id}">
-                <div class="flex items-center gap-3 min-w-0">
-                  <div class="w-9 h-9 rounded-xl ${isDep ? 'bg-[#30D158]/10 text-[#30D158]' : 'bg-[#6C5DD3]/15 text-[#6C5DD3]'} flex items-center justify-center flex-shrink-0">
-                    <i data-lucide="${isDep ? 'arrow-down-left' : 'scale'}" class="w-4 h-4"></i>
+    list.innerHTML = `
+      <div class="flex items-center justify-between mt-5 mb-2.5 px-1">
+        <h3 class="text-[11px] uppercase font-bold tracking-wider text-[#848D99]">История операций (${history.length})</h3>
+        <span class="text-[10px] text-[#848D99]">Нажмите для изменения</span>
+      </div>
+      <div class="space-y-2">
+        ${history.map(d => {
+          const isDep = d.type === 'Пополнение';
+          return `
+            <div class="card relative bg-[#181B24] hover:bg-[#1C202B] rounded-2xl border border-[rgba(255,255,255,0.06)] hover:border-[rgba(255,255,255,0.12)] p-3.5 flex justify-between items-center transition-all cursor-pointer"
+                 data-id="${d.id}"
+                 data-table="Broker"
+                 onclick="openEditBrokerPointModal('${d.id}')">
+              <input type="checkbox" class="select-checkbox" data-id="${d.id}">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-9 h-9 rounded-xl ${isDep ? 'bg-[#30D158]/10 text-[#30D158]' : 'bg-[#6C5DD3]/15 text-[#6C5DD3]'} flex items-center justify-center flex-shrink-0">
+                  <i data-lucide="${isDep ? 'arrow-down-left' : 'scale'}" class="w-4 h-4"></i>
+                </div>
+                <div class="min-w-0">
+                  <div class="flex items-center gap-2">
+                    <p class="text-[15px] font-semibold ${isDep ? 'text-[#30D158]' : 'text-white'} truncate">
+                      ${isDep ? `+${formatMoney(d.amount)}` : `Баланс: ${formatMoney(d.balance)}`}
+                    </p>
+                    <span class="text-[10px] font-medium px-2 py-0.5 rounded-full ${isDep ? 'bg-[#30D158]/10 text-[#30D158]' : 'bg-[#6C5DD3]/15 text-[#a89eff]'} flex-shrink-0">
+                      ${d.type}
+                    </span>
                   </div>
-                  <div class="min-w-0">
-                    <div class="flex items-center gap-2">
-                      <p class="text-[15px] font-semibold ${isDep ? 'text-[#30D158]' : 'text-white'} truncate">
-                        ${isDep ? `+${formatMoney(d.amount)}` : `Баланс: ${formatMoney(d.balance)}`}
-                      </p>
-                      <span class="text-[10px] font-medium px-2 py-0.5 rounded-full ${isDep ? 'bg-[#30D158]/10 text-[#30D158]' : 'bg-[#6C5DD3]/15 text-[#a89eff]'} flex-shrink-0">
-                        ${d.type}
-                      </span>
-                    </div>
-                    <p class="text-[11px] text-[#848D99] mt-0.5">${d.formattedDate} • Баланс: ${formatMoney(d.balance)}</p>
-                  </div>
+                  <p class="text-[11px] text-[#848D99] mt-0.5">${d.formattedDate} • Баланс: ${formatMoney(d.balance)}</p>
                 </div>
               </div>
-            `;
-          }).join('')}
-        </div>
-      `;
-    }
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
   }
 
   if (typeof lucide !== 'undefined') lucide.createIcons();
@@ -1400,11 +1403,27 @@ function toggleBrokerPopover(type, e) {
   }
 }
 
+function openBrokerActionFromEmpty(type, e) {
+  const mainCard = document.getElementById('broker-main-card');
+  const emptyState = document.getElementById('broker-empty-state');
+  if (mainCard) mainCard.classList.remove('hidden');
+  if (emptyState) emptyState.classList.add('hidden');
+  toggleBrokerPopover(type, e);
+}
+
 function closeAllBrokerPopovers() {
   const popDep = document.getElementById('broker-popover-deposit');
   const popBal = document.getElementById('broker-popover-balance');
   if (popDep) popDep.classList.add('hidden');
   if (popBal) popBal.classList.add('hidden');
+
+  const history = Cache?.broker?.history || Cache?.broker?.deposits || [];
+  if (history.length === 0) {
+    const mainCard = document.getElementById('broker-main-card');
+    const emptyState = document.getElementById('broker-empty-state');
+    if (mainCard) mainCard.classList.add('hidden');
+    if (emptyState) emptyState.classList.remove('hidden');
+  }
 }
 
 async function submitBrokerPopover(type) {
@@ -1444,22 +1463,25 @@ async function submitBrokerPopover(type) {
 // 5. Global Event Listeners (Инвестиции)
 // ==========================================
 document.addEventListener('click', (e) => {
+  const target = (e?.target?.nodeType === 3) ? e.target.parentElement : e?.target;
+  if (!target || typeof target.closest !== 'function') return;
+
   // Закрывать попап точки брокера при клике вне него
-  if (!e.target.closest('#broker-point-popup')) {
+  if (!target.closest('#broker-point-popup')) {
     if (!isBrokerLongPressActive) {
       closeBrokerPointPopup();
     }
   }
 
   // Не закрывать поповеры брокера, если клик произошел внутри самого поповера, кнопок его вызова, модалки точки, или внутри дейтпикера
-  if (e.target.closest('.broker-popover') ||
-      e.target.closest('#broker-deposit-btn') ||
-      e.target.closest('#broker-balance-btn') ||
-      e.target.closest('#broker-point-modal') ||
-      e.target.closest('#broker-point-popup') ||
-      e.target.closest('#custom-datepicker') ||
-      e.target.closest('input[data-datepicker]') ||
-      e.target.closest('input[type="date"]')) {
+  if (target.closest('.broker-popover') ||
+      target.closest('#broker-deposit-btn') ||
+      target.closest('#broker-balance-btn') ||
+      target.closest('#broker-point-modal') ||
+      target.closest('#broker-point-popup') ||
+      target.closest('#custom-datepicker') ||
+      target.closest('input[data-datepicker]') ||
+      target.closest('input[type="date"]')) {
     return;
   }
   if (typeof closeAllBrokerPopovers === 'function') {
@@ -1469,9 +1491,12 @@ document.addEventListener('click', (e) => {
 
 // Мгновенная реакция закрытия попапа при начале касания/клика вне его
 document.addEventListener('pointerdown', (e) => {
+  const target = (e?.target?.nodeType === 3) ? e.target.parentElement : e?.target;
+  if (!target || typeof target.closest !== 'function') return;
+
   const popup = document.getElementById('broker-point-popup');
   if (popup && !popup.classList.contains('hidden')) {
-    if (!e.target.closest('#broker-point-popup') && !e.target.closest('#brokerChart')) {
+    if (!target.closest('#broker-point-popup') && !target.closest('#brokerChart')) {
       closeBrokerPointPopup();
     }
   }
@@ -1528,6 +1553,7 @@ window.openBrokerPointPopup = openBrokerPointPopup;
 window.closeBrokerPointPopup = closeBrokerPointPopup;
 window.toggleBrokerPopover = toggleBrokerPopover;
 window.closeAllBrokerPopovers = closeAllBrokerPopovers;
+window.openBrokerActionFromEmpty = openBrokerActionFromEmpty;
 window.submitBrokerPopover = submitBrokerPopover;
 window.updateGoalDropdowns = updateGoalDropdowns;
 

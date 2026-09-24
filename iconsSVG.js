@@ -88,3 +88,39 @@ function renderBankIcons() {
   });
 }
 window.renderBankIcons = renderBankIcons;
+
+// ==========================================
+// Vector Avatar Presets Library
+// ==========================================
+const AVATAR_PRESETS = {
+  user: { id: 'user', icon: 'user', label: 'Классика', bg: 'bg-gradient-to-tr from-blue-600 to-indigo-600', color: '#4F46E5' },
+  cat: { id: 'cat', icon: 'cat', label: 'Кот', bg: 'bg-gradient-to-tr from-amber-500 to-orange-600', color: '#EA580C' },
+  dog: { id: 'dog', icon: 'dog', label: 'Пёс', bg: 'bg-gradient-to-tr from-yellow-500 to-amber-600', color: '#D97706' },
+  rocket: { id: 'rocket', icon: 'rocket', label: 'Ракета', bg: 'bg-gradient-to-tr from-purple-600 to-pink-600', color: '#C026D3' },
+  flame: { id: 'flame', icon: 'flame', label: 'Огонь', bg: 'bg-gradient-to-tr from-red-500 to-rose-600', color: '#E11D48' },
+  crown: { id: 'crown', icon: 'crown', label: 'Корона', bg: 'bg-gradient-to-tr from-amber-400 to-yellow-600', color: '#CA8A04' },
+  heart: { id: 'heart', icon: 'heart', label: 'Сердце', bg: 'bg-gradient-to-tr from-rose-500 to-pink-600', color: '#E11D48' },
+  shield: { id: 'shield', icon: 'shield', label: 'Щит', bg: 'bg-gradient-to-tr from-emerald-500 to-teal-600', color: '#0D9488' },
+  star: { id: 'star', icon: 'star', label: 'Звезда', bg: 'bg-gradient-to-tr from-cyan-500 to-blue-600', color: '#0284C7' },
+  sparkles: { id: 'sparkles', icon: 'sparkles', label: 'Магия', bg: 'bg-gradient-to-tr from-violet-500 to-purple-600', color: '#7C3AED' },
+  coffee: { id: 'coffee', icon: 'coffee', label: 'Кофе', bg: 'bg-gradient-to-tr from-amber-700 to-yellow-900', color: '#78350F' },
+  wallet: { id: 'wallet', icon: 'wallet', label: 'Кошелек', bg: 'bg-gradient-to-tr from-green-500 to-emerald-600', color: '#16A34A' },
+  gem: { id: 'gem', icon: 'gem', label: 'Алмаз', bg: 'bg-gradient-to-tr from-blue-500 to-cyan-600', color: '#2563EB' },
+  gamepad: { id: 'gamepad', icon: 'gamepad-2', label: 'Геймер', bg: 'bg-gradient-to-tr from-indigo-500 to-purple-600', color: '#6366F1' },
+  music: { id: 'music', icon: 'music', label: 'Музыка', bg: 'bg-gradient-to-tr from-fuchsia-500 to-pink-600', color: '#C026D3' },
+  compass: { id: 'compass', icon: 'compass', label: 'Компас', bg: 'bg-gradient-to-tr from-sky-500 to-blue-600', color: '#0284C7' }
+};
+
+window.AVATAR_PRESETS = AVATAR_PRESETS;
+
+function getAvatarHtml(avatarId, sizeClass = 'w-8 h-8', iconSizeClass = 'w-4 h-4', customClass = '') {
+  if (!avatarId || avatarId === 'none' || avatarId === 'placeholder') {
+    return `<div class="${sizeClass} rounded-full bg-[#212430] border-2 border-dashed border-gray-500/50 text-gray-400 flex flex-col items-center justify-center flex-shrink-0 shadow-sm ${customClass} select-none" data-avatar-id="placeholder" title="Нажмите, чтобы выбрать аватарку"><i data-lucide="camera" class="${iconSizeClass} stroke-[2]"></i></div>`;
+  }
+  const preset = (window.AVATAR_PRESETS && window.AVATAR_PRESETS[avatarId]) || window.AVATAR_PRESETS?.user || {
+    id: 'user', icon: 'user', bg: 'bg-gradient-to-tr from-blue-600 to-indigo-600'
+  };
+  return `<div class="${sizeClass} rounded-full ${preset.bg} text-white flex items-center justify-center flex-shrink-0 shadow-sm ${customClass} select-none" data-avatar-id="${preset.id}"><i data-lucide="${preset.icon}" class="${iconSizeClass} stroke-[2.2]"></i></div>`;
+}
+
+window.getAvatarHtml = getAvatarHtml;

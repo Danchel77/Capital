@@ -155,10 +155,18 @@ function startLongPress(card) {
   }, 500);
 }
 
+function getEventTargetElement(target) {
+  if (!target) return null;
+  if (target.nodeType === 3) return target.parentElement; // TextNode
+  return (typeof target.closest === 'function') ? target : null;
+}
+
 function handleTouchStart(e) {
+  const el = getEventTargetElement(e?.target);
+  if (!el) return;
   // Касания по плавающей панели выбора, бейджам темпа целей и тултипам не должны инициировать события карточек
-  if (e.target.closest('#selection-panel') || e.target.closest('.goal-pace-badge') || e.target.closest('.goal-pace-tooltip')) return;
-  const card = e.target.closest('.card, [data-table]');
+  if (el.closest('#selection-panel') || el.closest('.goal-pace-badge') || el.closest('.goal-pace-tooltip')) return;
+  const card = el.closest('.card, [data-table]');
   if (!card) return;
   if (selectionMode) return;
   startLongPress(card);
@@ -178,8 +186,10 @@ function handleTouchMove(e) {
 }
 
 function handleMouseDown(e) {
-  if (e.target.closest('#selection-panel') || e.target.closest('.goal-pace-badge') || e.target.closest('.goal-pace-tooltip')) return;
-  const card = e.target.closest('.card, [data-table]');
+  const el = getEventTargetElement(e?.target);
+  if (!el) return;
+  if (el.closest('#selection-panel') || el.closest('.goal-pace-badge') || el.closest('.goal-pace-tooltip')) return;
+  const card = el.closest('.card, [data-table]');
   if (!card) return;
   if (selectionMode) return;
   startLongPress(card);
@@ -203,7 +213,8 @@ function handleMouseMove(e) {
 function openCardContextMenu(e, title, onEdit, onDelete, extraAction = null) {
   if (selectionMode) {
     if (e) e.stopPropagation();
-    const card = e ? (e.currentTarget || (e.target && e.target.closest('.card'))) : null;
+    const el = getEventTargetElement(e?.target);
+    const card = e ? (e.currentTarget || (el && el.closest('.card'))) : null;
     if (card) {
       toggleItemSelection(card.dataset.id, card.dataset.table);
     }
@@ -220,7 +231,8 @@ function openCardContextMenu(e, title, onEdit, onDelete, extraAction = null) {
   const amortizeIcon = document.getElementById('context-amortize-icon');
   if (!menu) return;
 
-  const card = e ? (e.currentTarget || (e.target && e.target.closest('.card'))) : null;
+  const el = getEventTargetElement(e?.target);
+  const card = e ? (e.currentTarget || (el && el.closest('.card'))) : null;
   if (!card) return;
 
   // Снимаем подсветку с предыдущей активной карточки, если была
@@ -566,7 +578,12 @@ function selectCustomDatePickerToday() {
 // 4. PDF Import (Модалка и загрузка)
 // ==========================================
 // Управление информационным окном импорта PDF
-function openPdfInfoModal() {
+function openPdfInfoModal(forceShow = false) {
+  const showPdfInfo = Cache?.settings?.showPdfInfo !== undefined ? Cache.settings.showPdfInfo : true;
+  if (!forceShow && !showPdfInfo) {
+    triggerPdfFileInput();
+    return;
+  }
   const dlg = document.getElementById('pdf-info-dialog');
   if (dlg) {
     dlg.classList.remove('hidden');
@@ -608,7 +625,9 @@ window.addEventListener('scroll', () => {
 
 // Перехват нативного календаря Android / iOS (Capture phase)
 document.addEventListener('click', (e) => {
-  const dateInput = e.target.closest('input[type="date"], input[data-datepicker]');
+  const el = getEventTargetElement(e?.target);
+  if (!el) return;
+  const dateInput = el.closest('input[type="date"], input[data-datepicker]');
   if (dateInput) {
     e.preventDefault();
     e.stopPropagation();
@@ -620,7 +639,9 @@ document.addEventListener('click', (e) => {
 }, true);
 
 document.addEventListener('pointerdown', (e) => {
-  const dateInput = e.target.closest('input[type="date"], input[data-datepicker]');
+  const el = getEventTargetElement(e?.target);
+  if (!el) return;
+  const dateInput = el.closest('input[type="date"], input[data-datepicker]');
   if (dateInput) {
     dateInput.readOnly = true;
     dateInput.setAttribute('inputmode', 'none');
@@ -639,13 +660,16 @@ document.addEventListener('click', (e) => {
 
   // 2. Блокировщик действий в режиме мультивыбора
   if (selectionMode) {
+    const el = getEventTargetElement(e?.target);
+    if (!el) return;
+
     // Клики по кнопкам самой панели мультивыбора, кастомным диалогам и модальным окнам не блокируем
-    if (e.target.closest('#selection-panel, #custom-dialog, [id$="-dialog"], [id$="-modal"], .dialog, .modal')) {
+    if (el.closest('#selection-panel, #custom-dialog, [id$="-dialog"], [id$="-modal"], .dialog, .modal')) {
       return;
     }
 
     // Клик по любой карточке сущности (транзакция, брокер, вклад, счет, цель)
-    const card = e.target.closest('.card, [data-table]');
+    const card = el.closest('.card, [data-table]');
     if (card && card.dataset.id && card.dataset.table) {
       e.preventDefault();
       e.stopImmediatePropagation();
@@ -654,7 +678,7 @@ document.addEventListener('click', (e) => {
     }
 
     // Блокируем любые сторонние клики по кнопкам, ссылкам и onclick при активном мультивыборе
-    if (e.target.closest('button, a, [onclick], .cursor-pointer')) {
+    if (el.closest('button, a, [onclick], .cursor-pointer')) {
       e.preventDefault();
       e.stopImmediatePropagation();
     }
@@ -663,33 +687,36 @@ document.addEventListener('click', (e) => {
 
 // Глобальный клик: мультиселект, закрытие меню и тултипов
 document.addEventListener('click', (e) => {
+  const el = getEventTargetElement(e?.target);
+  if (!el) return;
+
   // 1. Кнопки плавающей панели мультивыбора
-  if (e.target.id === 'cancel-selection' || e.target.closest('#cancel-selection')) {
+  if (el.id === 'cancel-selection' || el.closest('#cancel-selection')) {
     e.stopPropagation();
     cancelSelection();
     return;
   }
-  if (e.target.id === 'delete-selected' || e.target.closest('#delete-selected')) {
+  if (el.id === 'delete-selected' || el.closest('#delete-selected')) {
     e.stopPropagation();
     deleteSelectedItems();
     return;
   }
 
   // 2. Закрытие контекстного мини-меню карточки при клике мимо
-  if (activeContextCard && !e.target.closest('#card-context-menu') && !e.target.closest('.context-menu-btn')) {
+  if (activeContextCard && !el.closest('#card-context-menu') && !el.closest('.context-menu-btn')) {
     closeCardContextMenu();
   }
 
   // 5. Закрытие DatePicker при клике вне его
   const picker = document.getElementById('custom-datepicker');
   if (picker && !picker.classList.contains('hidden')) {
-    if (!e.target.closest('#custom-datepicker') && !e.target.closest('input[type="date"]') && !e.target.closest('input[data-datepicker]')) {
+    if (!el.closest('#custom-datepicker') && !el.closest('input[type="date"]') && !el.closest('input[data-datepicker]')) {
       closeCustomDatePicker();
     }
   }
 
   // Закрытие всех кастомных выпадающих меню при клике мимо (не закрывать при работе с дейтпикером)
-  if (!e.target.closest('.custom-dropdown-wrap') && !e.target.closest('.custom-dropdown-menu') && !e.target.closest('#custom-datepicker')) {
+  if (!el.closest('.custom-dropdown-wrap') && !el.closest('.custom-dropdown-menu') && !el.closest('#custom-datepicker')) {
     document.querySelectorAll('.custom-dropdown-menu').forEach(m => m.classList.add('hidden'));
     document.querySelectorAll('.tx-item').forEach(r => r.style.zIndex = '');
   }
@@ -700,12 +727,12 @@ document.addEventListener('click', (e) => {
   }
 
   // 7. Кнопки вызова категорий (если кликнули по ним)
-  if (e.target.classList.contains('manage-categories-btn')) {
+  if (el.classList?.contains('manage-categories-btn')) {
     if (typeof showManageCategoriesDialog === 'function') showManageCategoriesDialog();
     return;
   }
-  if (e.target.classList.contains('add-category-btn')) {
-    const row = e.target.closest('.tx-item');
+  if (el.classList?.contains('add-category-btn')) {
+    const row = el.closest('.tx-item');
     if (row && typeof showAddCategoryDialog === 'function') {
       const type = row.querySelector('.tx-type:checked')?.value || 'Расход';
       const select = row.querySelector('.tx-category');

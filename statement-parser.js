@@ -288,15 +288,15 @@ class UniversalStatementParser {
 
   static _checkIfTransfer(fullText, merchant, config) {
     const text = `${fullText} ${merchant}`.toLowerCase();
-    const hasUniversal = UNIVERSAL_TRANSFER_KEYWORDS.some(kw => text.includes(kw));
-    const hasCustom = config.customTransferCheck ? config.customTransferCheck(text) : false;
+    const hasUniversal = Array.isArray(UNIVERSAL_TRANSFER_KEYWORDS) && UNIVERSAL_TRANSFER_KEYWORDS.some(kw => text.includes(kw));
+    const hasCustom = (config && typeof config.customTransferCheck === 'function') ? config.customTransferCheck(text) : false;
     return hasUniversal || hasCustom;
   }
 
   static _isServiceLine(line, config) {
     const l = line.toLowerCase();
-    const isCommon = COMMON_SERVICE_LINES.some(kw => l.includes(kw));
-    const isCustom = config.isServiceLine ? config.isServiceLine(l) : false;
+    const isCommon = Array.isArray(COMMON_SERVICE_LINES) && COMMON_SERVICE_LINES.some(kw => l.includes(kw));
+    const isCustom = (config && typeof config.isServiceLine === 'function') ? config.isServiceLine(l) : false;
     return isCommon || isCustom;
   }
 }
@@ -763,10 +763,10 @@ window.setBankFilter = setBankFilter;
 // Массовый выбор: отметить все новые транзакции (с учетом активного фильтра по банку)
 function toggleSelectAllNew() {
   const txs = window._lastParsedTransactions || [];
-  const targetTxs = currentBankFilter === 'all' ? txs : txs.filter(t => t.bank === currentBankFilter);
-  const anyUnselected = targetTxs.some(t => !t.isDuplicate && !t.isTransfer && !t.selected);
-  targetTxs.forEach(t => {
-    if (!t.isDuplicate && !t.isTransfer) {
+  const targetTxs = currentBankFilter === 'all' ? txs : (Array.isArray(txs) ? txs.filter(t => t && t.bank === currentBankFilter) : []);
+  const anyUnselected = (Array.isArray(targetTxs) ? targetTxs : []).some(t => t && !t.isDuplicate && !t.isTransfer && !t.selected);
+  (Array.isArray(targetTxs) ? targetTxs : []).forEach(t => {
+    if (t && !t.isDuplicate && !t.isTransfer) {
       t.selected = anyUnselected;
     }
   });
@@ -897,12 +897,12 @@ function renderFilteredRows(transactions) {
               </div>
             </div>
 
-            <!-- Аккуратный пин правила -->
+            <!-- Кнопка булавка закрепления правила с тактильным эффектом -->
             <button type="button" 
                     onclick="openRememberRuleModal('${tx._id}')" 
-                    class="text-gray-500 hover:text-[#6C5DD3] hover:bg-[#212430] p-1.5 rounded-lg transition-colors cursor-pointer flex items-center justify-center" 
-                    title="Закрепить правило категории">
-              <i data-lucide="pin" class="w-3.5 h-3.5"></i>
+                    class="w-7 h-7 rounded-xl bg-[#6C5DD3]/15 hover:bg-[#6C5DD3]/25 active:scale-90 text-[#9E86FF] hover:text-white border border-[#6C5DD3]/25 flex items-center justify-center flex-shrink-0 cursor-pointer transition-all shadow-sm group" 
+                    title="Запомнить в словарь категорий">
+              <i data-lucide="pin" class="w-3.5 h-3.5 transition-transform group-hover:scale-110"></i>
             </button>
           </div>
         </div>
@@ -1195,6 +1195,13 @@ async function importSelectedTransactions() {
   try {
     // В Firestore батч вмещает максимум 500 операций
     const CHUNK_SIZE = 400;
+    const userProfile = (typeof getCurrentUserProfile === 'function') ? getCurrentUserProfile() : { displayName: 'Пользователь', avatarId: 'user' };
+    const authorInfo = {
+      uid: auth?.currentUser?.uid || '',
+      name: userProfile.displayName,
+      avatarId: userProfile.avatarId
+    };
+
     for (let i = 0; i < selected.length; i += CHUNK_SIZE) {
       const chunk = selected.slice(i, i + CHUNK_SIZE);
       const batch = db.batch();
@@ -1206,7 +1213,9 @@ async function importSelectedTransactions() {
           amount: tx.amount,
           date: tx.date,            // YYYY-MM-DD
           category: tx.category,
-          comment: tx.merchant      // Записываем название точки в комментарий
+          comment: tx.merchant,     // Записываем название точки в комментарий
+          author: authorInfo,
+          createdAt: Date.now()
         });
       });
 
@@ -1262,26 +1271,24 @@ function downloadParsedJSON() {
 }
 
 // -------------------------------------------------------------
-// ЛОГИКА ОКНА "ЗАПОМНИТЬ ПРАВИЛО"
+// ЛОГИКА ОКНА "ЗАПОМНИТЬ ПРАВИЛО В СЛОВАРЬ"
 // -------------------------------------------------------------
 let currentRememberTx = null;
+let currentRememberCallback = null;
 
 function openRememberRuleModal(txId) {
   const tx = window._lastParsedTransactions?.find(t => t._id === txId);
   if (!tx) return;
 
   currentRememberTx = tx;
+  currentRememberCallback = null;
 
   const keywordInput = document.getElementById('rule-keyword-input');
+  if (keywordInput) keywordInput.value = tx.merchant || '';
 
-  // Предзаполняем ключевое слово названием торговой точки
-  keywordInput.value = tx.merchant;
-
-  // Выбираем список категорий в зависимости от типа операции (Доход или Расход)
   let targetCats = [];
-  
   if (tx.type === 'Доход') {
-    targetCats = window.Cache?.categories?.income?.map(c => c.name) || ['Зарплата', 'Другое'];
+    targetCats = window.Cache?.categories?.income?.map(c => c.name) || ['Зарплата', 'Кэшбек', 'Возврат', 'Другое'];
   } else {
     targetCats = [
       'Продукты', 'Кафе и рестораны', 'Маркетплейсы', 'Транспорт', 'Жилье', 'Одежда', 'Здоровье', 'Развлечения', 'Другое'
@@ -1293,45 +1300,91 @@ function openRememberRuleModal(txId) {
     }
   }
 
-  populateModalCatMenu('rule', targetCats, tx.category);
+  populateModalCatMenu('rule', targetCats, tx.category || 'Другое');
 
-  document.getElementById('remember-rule-dialog').classList.remove('hidden');
+  const dlg = document.getElementById('remember-rule-dialog');
+  if (dlg) {
+    dlg.classList.remove('hidden');
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  }
+}
+
+function openRememberRuleCustom(keyword, category, type = 'Расход', onSavedCallback = null) {
+  currentRememberTx = null;
+  currentRememberCallback = (typeof onSavedCallback === 'function') ? onSavedCallback : null;
+
+  const keywordInput = document.getElementById('rule-keyword-input');
+  if (keywordInput) keywordInput.value = keyword || '';
+
+  let targetCats = [];
+  const isIncome = type === 'Доход' || String(type || '').toLowerCase() === 'доход';
+  if (isIncome) {
+    targetCats = window.Cache?.categories?.income?.map(c => c.name) || ['Зарплата', 'Кэшбек', 'Возврат', 'Другое'];
+  } else {
+    targetCats = [
+      'Продукты', 'Кафе и рестораны', 'Маркетплейсы', 'Транспорт', 'Жилье', 'Одежда', 'Здоровье', 'Развлечения', 'Другое'
+    ];
+    if (window.Cache?.categories?.expense) {
+      window.Cache.categories.expense.forEach(c => {
+        if (!targetCats.includes(c.name)) targetCats.push(c.name);
+      });
+    }
+  }
+
+  const selectedCat = (category && category !== 'Категория...' && targetCats.includes(category)) ? category : (targetCats[0] || 'Продукты');
+  populateModalCatMenu('rule', targetCats, selectedCat);
+
+  const dlg = document.getElementById('remember-rule-dialog');
+  if (dlg) {
+    dlg.classList.remove('hidden');
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  }
 }
 
 function closeRememberRuleModal() {
-  document.getElementById('remember-rule-dialog').classList.add('hidden');
+  const dlg = document.getElementById('remember-rule-dialog');
+  if (dlg) dlg.classList.add('hidden');
   currentRememberTx = null;
+  currentRememberCallback = null;
 }
 
 async function saveCategoryRuleFromModal() {
-  const keyword = document.getElementById('rule-keyword-input').value.trim();
-  const category = document.getElementById('rule-category-input').value;
+  const keyword = document.getElementById('rule-keyword-input')?.value.trim();
+  const category = document.getElementById('rule-category-input')?.value;
   
   if (!keyword) {
-    showToast('Введите ключевую фразу', true);
+    if (typeof showToast === 'function') showToast('Введите ключевое слово или фразу', true);
+    return;
+  }
+
+  if (!category || category === 'Категория...') {
+    if (typeof showToast === 'function') showToast('Выберите категорию', true);
     return;
   }
 
   try {
-    const col = window.getUserCol ? getUserCol('CategoryRules') : db.collection('CategoryRules');
+    const col = (typeof window.getUserCol === 'function') ? window.getUserCol('CategoryRules') : (typeof db !== 'undefined' ? db.collection('CategoryRules') : null);
 
-    // Если слово ранее было подавлено пользователем — удаляем маркер disabled
-    const snap = await col.where('pattern', '==', keyword).get();
-    const batch = db.batch();
-    snap.docs.forEach(d => batch.delete(d.ref));
+    if (col) {
+      // Если слово ранее было подавлено пользователем — удаляем маркер disabled
+      const snap = await col.where('pattern', '==', keyword).get();
+      const batch = db.batch();
+      snap.docs.forEach(d => batch.delete(d.ref));
 
-    const newDocRef = col.doc();
-    batch.set(newDocRef, { pattern: keyword, category: category });
-    await batch.commit();
+      const newDocRef = col.doc();
+      batch.set(newDocRef, { pattern: keyword, category: category, updatedAt: Date.now() });
+      await batch.commit();
 
-    const normKeyword = StatementCategorizer.normalize(keyword);
-    if (!window.Cache.categoryRules) window.Cache.categoryRules = [];
-    window.Cache.categoryRules = window.Cache.categoryRules.filter(r => StatementCategorizer.normalize(r.pattern) !== normKeyword);
-    window.Cache.categoryRules.push({ id: newDocRef.id, pattern: keyword, category: category, isSystem: false });
+      const normKeyword = (typeof StatementCategorizer !== 'undefined') ? StatementCategorizer.normalize(keyword) : keyword.toLowerCase();
+      if (!window.Cache) window.Cache = {};
+      if (!window.Cache.categoryRules) window.Cache.categoryRules = [];
+      window.Cache.categoryRules = window.Cache.categoryRules.filter(r => ((typeof StatementCategorizer !== 'undefined') ? StatementCategorizer.normalize(r.pattern) : r.pattern.toLowerCase()) !== normKeyword);
+      window.Cache.categoryRules.push({ id: newDocRef.id, pattern: keyword, category: category, isSystem: false });
+    }
 
     if (window._lastParsedTransactions) {
       window._lastParsedTransactions.forEach(t => {
-        const full = `${t.merchant} ${t.rawDetails}`.toLowerCase();
+        const full = `${t.merchant || ''} ${t.rawDetails || ''}`.toLowerCase();
         if (full.includes(keyword.toLowerCase())) {
           t.category = category;
           const sel = document.getElementById(`cat-select-${t._id}`);
@@ -1340,10 +1393,19 @@ async function saveCategoryRuleFromModal() {
       });
     }
 
+    if (typeof currentRememberCallback === 'function') {
+      try {
+        currentRememberCallback(keyword, category);
+      } catch (cbErr) {
+        console.warn('Callback error:', cbErr);
+      }
+    }
+
     closeRememberRuleModal();
+    if (typeof showToast === 'function') showToast(`«${keyword}» сохранено для «${category}»`);
   } catch (err) {
     console.error('Ошибка сохранения правила:', err);
-    showToast('Ошибка при сохранении: ' + err.message, true);
+    if (typeof showToast === 'function') showToast('Ошибка при сохранении: ' + err.message, true);
   }
 }
 
@@ -1363,14 +1425,9 @@ function openRulesEditorModal() {
 }
 
 function closeRulesEditorModal() {
-  document.getElementById('rules-editor-dialog').classList.add('hidden');
-  
-  if (window._returnToProfile) {
-    window._returnToProfile = false;
-    if (typeof openProfileModal === 'function') {
-      openProfileModal();
-    }
-  }
+  const dialog = document.getElementById('rules-editor-dialog');
+  if (dialog) dialog.classList.add('hidden');
+  window._returnToProfile = false;
 }
 
 function renderRulesList() {
@@ -1378,7 +1435,14 @@ function renderRulesList() {
   const rules = window.Cache?.categoryRules || [];
 
   if (rules.length === 0) {
-    container.innerHTML = '<p class="text-xs text-gray-500 text-center py-4">В словаре пока нет правил</p>';
+    container.innerHTML = `
+      <div class="py-8 text-center bg-[#12151C] rounded-2xl border border-[rgba(255,255,255,0.04)]">
+        <i data-lucide="book-open" class="w-8 h-8 text-[#848D99] mx-auto mb-2 opacity-50"></i>
+        <p class="text-xs text-gray-400 font-medium">В словаре пока нет правил</p>
+        <p class="text-[10px] text-[#848D99] mt-0.5">Добавьте ключевые слова магазинов выше</p>
+      </div>
+    `;
+    if (typeof lucide !== 'undefined') lucide.createIcons({ root: container });
     return;
   }
 
@@ -1393,20 +1457,27 @@ function renderRulesList() {
   Object.keys(grouped).sort().forEach(cat => {
     const catIcon = getDynamicCategoryIcon(cat);
     html += `
-      <div class="bg-[#181B24] border border-[rgba(255,255,255,0.06)] rounded-2xl p-3 mb-3">
-        <div class="text-[13px] font-bold text-gray-200 mb-2.5 flex items-center gap-2 border-b border-[rgba(255,255,255,0.06)] pb-2">
-          <i data-lucide="${catIcon}" class="w-4 h-4 text-[#848D99]"></i>
-          <span>${escapeHtml(cat)}</span>
-          <span class="text-[11px] text-[#848D99] font-normal">(${grouped[cat].length})</span>
+      <div class="bg-[#12151C] border border-[rgba(255,255,255,0.04)] rounded-2xl p-3.5 space-y-2.5">
+        <div class="flex items-center justify-between border-b border-[rgba(255,255,255,0.04)] pb-2">
+          <div class="flex items-center gap-2">
+            <div class="w-6 h-6 rounded-lg bg-[#181B24] border border-[rgba(255,255,255,0.06)] text-[#848D99] flex items-center justify-center flex-shrink-0">
+              <i data-lucide="${catIcon}" class="w-3.5 h-3.5"></i>
+            </div>
+            <span class="text-xs font-bold text-gray-200">${escapeHtml(cat)}</span>
+          </div>
+          <span class="text-[10px] font-mono text-[#848D99] px-2 py-0.5 rounded-md bg-[#181B24] border border-[rgba(255,255,255,0.04)]">${grouped[cat].length} шт</span>
         </div>
-        <div class="flex flex-wrap gap-2">
+        <div class="flex flex-wrap gap-1.5">
     `;
 
     grouped[cat].forEach(r => {
+      const isCustom = !r.isSystem;
       html += `
-        <span class="inline-flex items-center gap-1.5 ${r.isSystem ? 'bg-[#212430] text-gray-300' : 'bg-[#6C5DD3]/15 text-white border border-[#6C5DD3]/30'} text-[12px] px-2.5 py-1.5 rounded-lg">
-          <span>${escapeHtml(r.pattern)}</span>
-          <button type="button" onclick="deleteRuleFromEditor('${r.id}', ${r.isSystem ? 'true' : 'false'}, '${escapeHtml(r.pattern)}')" class="text-gray-500 hover:text-[#FF453A] cursor-pointer" title="Удалить слово"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+        <span class="inline-flex items-center gap-1.5 ${isCustom ? 'bg-[#6C5DD3]/15 text-white border border-[#6C5DD3]/30' : 'bg-[#181B24] text-gray-300 border border-[rgba(255,255,255,0.06)]'} text-[11px] px-2.5 py-1 rounded-xl transition-all">
+          <span class="font-medium">${escapeHtml(r.pattern)}</span>
+          <button type="button" onclick="deleteRuleFromEditor('${r.id}', ${r.isSystem ? 'true' : 'false'}, '${escapeHtml(r.pattern)}')" class="text-gray-500 hover:text-[#FF453A] cursor-pointer p-0.5 transition-colors" title="Удалить фразу">
+            <i data-lucide="x" class="w-3 h-3"></i>
+          </button>
         </span>
       `;
     });
@@ -1418,7 +1489,7 @@ function renderRulesList() {
   });
 
   container.innerHTML = html;
-  if (typeof lucide !== 'undefined') lucide.createIcons();
+  if (typeof lucide !== 'undefined') lucide.createIcons({ root: container });
 }
 
 async function addRuleFromEditor() {
@@ -1570,11 +1641,18 @@ function populateModalCatMenu(type, categories, selectedCat) {
 
 // Глобальное закрытие любых открытых кастомных меню при клике в любое место мимо
 document.addEventListener('click', (e) => {
-  if (!e.target.closest('.custom-dropdown-wrap')) {
+  const target = (e?.target?.nodeType === 3) ? e.target.parentElement : e?.target;
+  if (target && typeof target.closest === 'function' && !target.closest('.custom-dropdown-wrap')) {
     document.querySelectorAll('.custom-dropdown-menu').forEach(m => m.classList.add('hidden'));
   }
 });
 
 window.renderParsedTransactionsView = renderParsedTransactionsView;
 window.setBankFilter = setBankFilter;
+window.openRememberRuleModal = openRememberRuleModal;
+window.openRememberRuleCustom = openRememberRuleCustom;
+window.closeRememberRuleModal = closeRememberRuleModal;
+window.saveCategoryRuleFromModal = saveCategoryRuleFromModal;
+window.toggleModalCatMenu = toggleModalCatMenu;
+window.selectModalCat = selectModalCat;
 
