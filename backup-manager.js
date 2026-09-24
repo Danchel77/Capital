@@ -206,18 +206,20 @@ async function downloadBackupJson() {
   if (expDep && Cache?.deposits) {
     exportPayload.data.deposits = (Cache.deposits || []).map(d => ({
       id: d.id,
-      name: d.name,
+      name: d.name || '',
+      amount: Number(d.amount !== undefined ? d.amount : (d.initialAmount || d.currentAmount || 0)),
+      rate: Number(d.rate !== undefined ? d.rate : (d.percent || 0)),
+      startDate: d.rawStart || d.startDate || '',
+      endDate: d.rawEnd || d.endDate || '',
+      goalId: d.goalId || '',
+      goalName: d.goalName || '',
       bank: d.bank || '',
-      initialAmount: d.initialAmount || d.amount || 0,
-      currentAmount: d.currentAmount || d.initialAmount || 0,
-      percent: d.percent || 0,
-      startDate: d.startDate || '',
-      endDate: d.endDate || '',
-      months: d.months || 0,
-      type: d.type || 'deposit',
-      isCustom: !!d.isCustom,
-      autoRenewal: !!d.autoRenewal,
-      capitalization: !!d.capitalization
+      status: d.isClosed ? 'Закрыт' : (d.status || 'Активен'),
+      isInterestCredited: !!d.isInterestCredited,
+      // Алиасы для обратной совместимости
+      initialAmount: Number(d.amount !== undefined ? d.amount : (d.initialAmount || 0)),
+      currentAmount: Number(d.amount !== undefined ? d.amount : (d.currentAmount || d.initialAmount || 0)),
+      percent: Number(d.rate !== undefined ? d.rate : (d.percent || 0))
     }));
   }
 
@@ -237,12 +239,12 @@ async function downloadBackupJson() {
     exportPayload.data.goals = (Cache.goals || []).map(g => ({
       id: g.id,
       name: g.name,
-      target: g.target || 0,
-      current: g.current || 0,
-      deadline: g.deadline || '',
+      target: Number(g.target) || 0,
+      saved: Number(g.saved !== undefined ? g.saved : (g.current || 0)),
+      current: Number(g.saved !== undefined ? g.saved : (g.current || 0)),
       icon: g.icon || 'target',
-      color: g.color || '#6C5DD3',
-      type: g.type || 'standard'
+      share: Number(g.share) || 100,
+      status: g.status || 'В процессе'
     }));
   }
 
@@ -250,20 +252,21 @@ async function downloadBackupJson() {
     exportPayload.data.calendarBills = (Cache.calendarBills || []).map(b => ({
       id: b.id,
       name: b.name,
-      amount: b.amount || 0,
-      day: b.day || 1,
+      amount: Number(b.amount) || 0,
+      day: Number(b.day) || 1,
       category: b.category || 'Счета',
       paid: !!b.paid,
       icon: b.icon || 'receipt'
     }));
   }
 
-  if (expBudget && Cache?.budget) {
+  if (expBudget && (Cache?.budgetPlan || Cache?.budget)) {
+    const bPlan = Cache?.budgetPlan || Cache?.budget || {};
     exportPayload.data.budget = {
-      isConfigured: Cache.budget.isConfigured,
-      income: Cache.budget.income || 0,
-      dailyLimit: Cache.budget.dailyLimit || 0,
-      categories: Cache.budget.categories || {}
+      isConfigured: bPlan.isConfigured !== false,
+      monthlyIncome: Number(bPlan.monthlyIncome || bPlan.income || 0),
+      monthlyVariableLimit: Number(bPlan.monthlyVariableLimit || bPlan.dailyLimit || 0),
+      categoryLimits: bPlan.categoryLimits || bPlan.categories || {}
     };
   }
 
@@ -824,8 +827,10 @@ function renderInspectItemRow(secKey, item, actualIndex) {
     }
 
     case 'dep': {
-      const amount = Number(raw.initialAmount || raw.amount || 0).toLocaleString('ru-RU');
-      const percent = raw.percent ? `${raw.percent}%` : '';
+      const amountVal = Number(raw.amount !== undefined ? raw.amount : (raw.initialAmount || raw.currentAmount || 0));
+      const amount = amountVal.toLocaleString('ru-RU');
+      const rateVal = raw.rate !== undefined ? raw.rate : (raw.percent || 0);
+      const percent = rateVal ? `${rateVal}%` : '';
 
       topRowLeft = `<span class="text-xs font-semibold text-white break-words">${escapeHtml(raw.name || 'Вклад')}</span>`;
       topRowRight = `<span class="text-xs font-bold text-emerald-400">${amount} ₽</span>`;
@@ -848,7 +853,7 @@ function renderInspectItemRow(secKey, item, actualIndex) {
 
     case 'goals': {
       const target = Number(raw.target || 0).toLocaleString('ru-RU');
-      const current = Number(raw.current || 0).toLocaleString('ru-RU');
+      const current = Number(raw.saved !== undefined ? raw.saved : (raw.current || 0)).toLocaleString('ru-RU');
 
       topRowLeft = `<span class="text-xs font-semibold text-white break-words">${escapeHtml(raw.name || 'Цель')}</span>`;
       topRowRight = `<span class="text-xs font-bold text-amber-400">${target} ₽</span>`;
@@ -1050,20 +1055,20 @@ function isDepositDuplicate(dep, existingList) {
   if (!dep || !Array.isArray(existingList) || existingList.length === 0) return false;
   const name = String(dep.name || '').trim().toLowerCase();
   const bank = String(dep.bank || '').trim().toLowerCase();
-  const amount = Math.round(Number(dep.initialAmount || dep.amount || 0) * 100) / 100;
-  const startDate = String(dep.startDate || '').slice(0, 10);
+  const amount = Math.round(Number(dep.amount !== undefined ? dep.amount : (dep.initialAmount || dep.currentAmount || 0)) * 100) / 100;
+  const startDate = String(dep.startDate || dep.rawStart || '').slice(0, 10);
 
   return existingList.some(ex => {
     if (!ex) return false;
     if (dep.id && ex.id && dep.id === ex.id) return true;
     const exName = String(ex.name || '').trim().toLowerCase();
     const exBank = String(ex.bank || '').trim().toLowerCase();
-    const exAmount = Math.round(Number(ex.initialAmount || ex.amount || 0) * 100) / 100;
-    const exStartDate = String(ex.startDate || '').slice(0, 10);
+    const exAmount = Math.round(Number(ex.amount !== undefined ? ex.amount : (ex.initialAmount || ex.currentAmount || 0)) * 100) / 100;
+    const exStartDate = String(ex.startDate || ex.rawStart || '').slice(0, 10);
 
     return exName === name &&
-      exBank === bank &&
       Math.abs(exAmount - amount) < 0.01 &&
+      (!bank || !exBank || exBank === bank) &&
       (!startDate || !exStartDate || exStartDate === startDate);
   });
 }
@@ -1200,19 +1205,34 @@ async function executeBackupImport() {
       const batch = db.batch();
       selectedDep.forEach(dep => {
         const docRef = depCol.doc();
+        const amount = Number(dep.amount !== undefined ? dep.amount : (dep.initialAmount !== undefined ? dep.initialAmount : (dep.currentAmount || 0))) || 0;
+        const rate = Number(dep.rate !== undefined ? dep.rate : (dep.percent !== undefined ? dep.percent : (dep.interestRate || 0))) || 0;
+        
+        let startDate = dep.startDate || dep.rawStart || new Date().toISOString().slice(0, 10);
+        let endDate = dep.endDate || dep.rawEnd || '';
+        
+        if (!endDate && dep.months) {
+          const s = new Date(startDate);
+          s.setMonth(s.getMonth() + Number(dep.months));
+          endDate = s.toISOString().slice(0, 10);
+        }
+
+        const isClosed = dep.status === 'Закрыт' || dep.isClosed === true;
+
         batch.set(docRef, {
-          name: dep.name,
+          name: dep.name || 'Вклад',
+          amount: amount,
+          rate: rate,
+          startDate: startDate,
+          endDate: endDate,
+          status: isClosed ? 'Закрыт' : (dep.status || 'Активен'),
+          goalId: dep.goalId || '',
           bank: dep.bank || '',
-          initialAmount: Number(dep.initialAmount || dep.amount) || 0,
-          currentAmount: Number(dep.currentAmount || dep.initialAmount || dep.amount) || 0,
-          percent: Number(dep.percent) || 0,
-          startDate: dep.startDate || new Date().toISOString().slice(0, 10),
-          endDate: dep.endDate || '',
-          months: Number(dep.months) || 0,
-          type: dep.type || 'deposit',
-          isCustom: !!dep.isCustom,
-          autoRenewal: !!dep.autoRenewal,
-          capitalization: !!dep.capitalization,
+          isInterestCredited: !!dep.isInterestCredited,
+          // Сохраняем и алиасы
+          initialAmount: amount,
+          currentAmount: amount,
+          percent: rate,
           createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
       });
@@ -1246,14 +1266,14 @@ async function executeBackupImport() {
       selectedGoals.forEach(g => {
         const docRef = goalsCol.doc();
         batch.set(docRef, {
-          name: g.name,
+          name: g.name || 'Цель',
           target: Number(g.target) || 0,
-          current: Number(g.current) || 0,
-          deadline: g.deadline || '',
+          saved: Number(g.saved !== undefined ? g.saved : (g.current || 0)) || 0,
           icon: g.icon || 'target',
-          color: g.color || '#6C5DD3',
-          type: g.type || 'standard',
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          share: Number(g.share) || 100,
+          status: g.status || 'В процессе',
+          createdAt: g.createdAt || Date.now(),
+          updatedAt: Date.now()
         });
       });
       await batch.commit();
@@ -1267,7 +1287,7 @@ async function executeBackupImport() {
       selectedBills.forEach(b => {
         const docRef = billsCol.doc();
         batch.set(docRef, {
-          name: b.name,
+          name: b.name || 'Платеж',
           amount: Number(b.amount) || 0,
           day: Number(b.day) || 1,
           category: b.category || 'Счета',
@@ -1283,11 +1303,14 @@ async function executeBackupImport() {
     // 6. Бюджет
     if (impBudget && budget) {
       const budgetCol = getUserCol('BudgetPlan');
+      const mIncome = Number(budget.monthlyIncome || budget.income || 0);
+      const mLimit = Number(budget.monthlyVariableLimit || budget.dailyLimit || 0);
+      const cLimits = budget.categoryLimits || budget.categories || {};
       await budgetCol.doc('plan').set({
         isConfigured: budget.isConfigured !== false,
-        income: Number(budget.income) || 0,
-        dailyLimit: Number(budget.dailyLimit) || 0,
-        categories: budget.categories || {},
+        monthlyIncome: mIncome,
+        monthlyVariableLimit: mLimit,
+        categoryLimits: cLimits,
         updatedAt: Date.now()
       }, { merge: true });
       importedStats.added += 1;

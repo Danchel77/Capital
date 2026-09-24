@@ -12,16 +12,31 @@ function processDeposits(deposits, goals) {
   (goals || []).forEach(g => goalsMap[g.id] = g.name || '');
 
   return deposits.map(dep => {
-    const amount = parseFloat(dep.amount) || 0;
-    const rate = parseFloat(dep.rate) || 0;
-    const endDate = dep.endDate ? new Date(dep.endDate) : new Date();
-    const startDate = dep.startDate ? new Date(dep.startDate) : new Date();
+    const amount = parseFloat(dep.amount !== undefined ? dep.amount : (dep.initialAmount !== undefined ? dep.initialAmount : (dep.currentAmount || 0))) || 0;
+    const rate = parseFloat(dep.rate !== undefined ? dep.rate : (dep.percent !== undefined ? dep.percent : (dep.interestRate || 0))) || 0;
+    
+    const rawStart = dep.startDate || dep.rawStart;
+    const startDate = rawStart ? (typeof parseAnyDate === 'function' ? parseAnyDate(rawStart) : new Date(rawStart)) : new Date();
+    
+    const rawEnd = dep.endDate || dep.rawEnd;
+    let endDate;
+    if (rawEnd) {
+      endDate = typeof parseAnyDate === 'function' ? parseAnyDate(rawEnd) : new Date(rawEnd);
+    } else if (dep.months && !isNaN(Number(dep.months))) {
+      endDate = new Date(startDate);
+      endDate.setMonth(endDate.getMonth() + Number(dep.months));
+    } else {
+      endDate = new Date(startDate);
+      endDate.setMonth(endDate.getMonth() + 1);
+    }
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const end = new Date(endDate);
     end.setHours(0, 0, 0, 0);
-    const isClosed = dep.status === 'Закрыт' || today >= end;
+
+    const isExplicitlyClosed = dep.status === 'Закрыт' || dep.isClosed === true;
+    const isClosed = isExplicitlyClosed || (today >= end && dep.status !== 'Активен');
 
     const totalDays = Math.max(1, Math.round((endDate - startDate) / 86400000));
     const daysPassed = isClosed ? totalDays : Math.max(0, Math.min(Math.round((new Date() - startDate) / 86400000), totalDays));
@@ -32,9 +47,22 @@ function processDeposits(deposits, goals) {
     const currentInterest = Math.round(daysPassed * (amount * (rate / 100) / 365));
     const monthlyInterest = (amount * (rate / 100)) / 12;
 
+    // Авто-миграция неполных записей в Firestore при чтении
+    if (dep.id && (dep.amount === undefined || dep.rate === undefined || !dep.startDate || !dep.endDate)) {
+      try {
+        getUserCol('Deposits').doc(dep.id).update({
+          amount: amount,
+          rate: rate,
+          startDate: formatDateStr(startDate, 'yyyy-MM-dd') || dep.startDate,
+          endDate: formatDateStr(endDate, 'yyyy-MM-dd') || dep.endDate,
+          status: isClosed ? 'Закрыт' : 'Активен'
+        }).catch(() => {});
+      } catch (e) {}
+    }
+
     return {
       id: dep.id,
-      name: dep.name,
+      name: dep.name || 'Вклад',
       amount,
       rate,
       goalId: goalIdStr,
@@ -43,10 +71,10 @@ function processDeposits(deposits, goals) {
       expectedInterest: totalExpectedInterest,
       monthlyInterest,
       progress: Math.min(100, (daysPassed / totalDays) * 100).toFixed(1),
-      endDateStr: formatDateStr(dep.endDate, 'dd.MM.yyyy'),
+      endDateStr: formatDateStr(endDate, 'dd.MM.yyyy'),
       durationStr,
-      rawStart: dep.startDate,
-      rawEnd: dep.endDate,
+      rawStart: formatDateStr(startDate, 'yyyy-MM-dd') || dep.startDate,
+      rawEnd: formatDateStr(endDate, 'yyyy-MM-dd') || dep.endDate,
       isClosed,
       isInterestCredited: !!dep.isInterestCredited
     };
