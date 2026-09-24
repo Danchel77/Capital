@@ -1,47 +1,50 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
   <defs>
-    <linearGradient id="maskBgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#7C65FF"/>
-      <stop offset="50%" stop-color="#6352F7"/>
-      <stop offset="100%" stop-color="#4834DF"/>
+    <!-- Премиальный глубокий фон темной темы (#0F1117 / #181B24) -->
+    <radialGradient id="maskIconBgGrad" cx="50%" cy="46%" r="65%">
+      <stop offset="0%" stop-color="#191D28"/>
+      <stop offset="55%" stop-color="#0F1117"/>
+      <stop offset="100%" stop-color="#080A0E"/>
+    </radialGradient>
+
+    <!-- Фирменный неоновый градиент ромба -->
+    <linearGradient id="maskIconDiamondGrad" x1="20%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="18%" stop-color="#38BDF8"/>
+      <stop offset="60%" stop-color="#818CF8"/>
+      <stop offset="100%" stop-color="#6C5DD3"/>
     </linearGradient>
 
-    <linearGradient id="cardAccentGradM" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#38BDF8"/>
-      <stop offset="100%" stop-color="#818CF8"/>
-    </linearGradient>
-
-    <linearGradient id="coinGradM" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FDE047"/>
-      <stop offset="100%" stop-color="#F59E0B"/>
-    </linearGradient>
-
-    <linearGradient id="glossHighlightM" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.25"/>
-      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
-    </linearGradient>
+    <!-- Мягкое неоновое свечение -->
+    <radialGradient id="maskIconGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="rgba(56, 189, 248, 0.28)"/>
+      <stop offset="50%" stop-color="rgba(108, 93, 211, 0.18)"/>
+      <stop offset="100%" stop-color="rgba(15, 17, 23, 0)"/>
+    </radialGradient>
   </defs>
 
-  <!-- Full bleed background for Android Maskable Icon (safe zone is inner 66% circle) -->
-  <rect width="512" height="512" fill="url(#maskBgGrad)"/>
-  
-  <!-- Subtle ambient gloss -->
-  <path d="M0 0 L512 0 L512 240 C350 210, 160 220, 0 280 Z" fill="url(#glossHighlightM)"/>
+  <!-- Full-bleed background для любых масок Android (squircle, circle, teardrop) -->
+  <rect width="512" height="512" fill="url(#maskIconBgGrad)"/>
 
-  <!-- Centered Fintech Emblem positioned strictly inside the 66% safe zone circle (center 256,256) -->
-  <g transform="translate(136, 136) scale(10)" stroke-linecap="round" stroke-linejoin="round">
-    <!-- Bank Card emerging from the wallet -->
-    <rect x="5.5" y="3" width="13" height="7" rx="1.6" fill="url(#cardAccentGradM)" stroke="#E0E7FF" stroke-width="0.7"/>
-    <line x1="5.5" y1="5.6" x2="18.5" y2="5.6" stroke="#1E1B4B" stroke-width="0.9"/>
-    <rect x="7.2" y="7.2" width="2.2" height="1.6" rx="0.4" fill="#FDE047" stroke="none"/>
+  <!-- Ореол свечения в безопасной зоне 66% (центр 256, 256) -->
+  <circle cx="256" cy="256" r="170" fill="url(#maskIconGlow)"/>
 
-    <!-- Main Wallet Body -->
-    <path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"
-          fill="#2E1065" fill-opacity="0.3" stroke="#FFFFFF" stroke-width="1.75"/>
-    <path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"
-          fill="#2E1065" fill-opacity="0.3" stroke="#FFFFFF" stroke-width="1.75"/>
+  <!-- Тонкая внутренняя грань -->
+  <polygon points="256,168 344,256 256,344 168,256"
+           fill="rgba(108, 93, 211, 0.05)"
+           stroke="rgba(255, 255, 255, 0.12)"
+           stroke-width="3"
+           stroke-linejoin="miter"
+           stroke-miterlimit="10"/>
 
-    <!-- Golden Lock/Clasp Accent Coin -->
-    <circle cx="18" cy="13" r="1.1" fill="url(#coinGradM)" stroke="#FFFFFF" stroke-width="0.5"/>
-  </g>
+  <!-- Основной ромб баланса (вершины на дистанции 136px от центра, гарантированно внутри безопасного круга r=168px) -->
+  <polygon points="256,120 392,256 256,392 120,256"
+           fill="none"
+           stroke="url(#maskIconDiamondGrad)"
+           stroke-width="22"
+           stroke-linejoin="miter"
+           stroke-miterlimit="10"/>
+
+  <!-- Ослепительная искра в вершине -->
+  <circle cx="256" cy="120" r="4.5" fill="#FFFFFF"/>
 </svg>

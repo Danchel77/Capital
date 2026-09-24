@@ -1,58 +1,50 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
   <defs>
-    <!-- Vibrant App Store / Google Play style gradient -->
-    <linearGradient id="appBgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#7C65FF"/>
-      <stop offset="45%" stop-color="#6352F7"/>
-      <stop offset="100%" stop-color="#4834DF"/>
+    <!-- Премиальный глубокий фон темной темы (#0F1117 / #181B24) -->
+    <radialGradient id="iconBgGrad" cx="50%" cy="46%" r="65%">
+      <stop offset="0%" stop-color="#191D28"/>
+      <stop offset="55%" stop-color="#0F1117"/>
+      <stop offset="100%" stop-color="#080A0E"/>
+    </radialGradient>
+
+    <!-- Фирменный неоновый градиент ромба: ослепительный акцент в вершине -> циан -> индиго -->
+    <linearGradient id="iconDiamondGrad" x1="20%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="18%" stop-color="#38BDF8"/>
+      <stop offset="60%" stop-color="#818CF8"/>
+      <stop offset="100%" stop-color="#6C5DD3"/>
     </linearGradient>
 
-    <!-- Top glass reflection highlight -->
-    <linearGradient id="glossHighlight" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.3"/>
-      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
-    </linearGradient>
-
-    <!-- Gold & Emerald card accents -->
-    <linearGradient id="cardAccentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#38BDF8"/>
-      <stop offset="100%" stop-color="#818CF8"/>
-    </linearGradient>
-
-    <!-- Coin Gold Gradient -->
-    <linearGradient id="coinGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FDE047"/>
-      <stop offset="100%" stop-color="#F59E0B"/>
-    </linearGradient>
-
-    <!-- App Icon Outer Rim -->
-    <linearGradient id="appBorder" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="rgba(255, 255, 255, 0.45)"/>
-      <stop offset="100%" stop-color="rgba(255, 255, 255, 0.1)"/>
-    </linearGradient>
+    <!-- Мягкое неоновое свечение за ромбом -->
+    <radialGradient id="iconGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="rgba(56, 189, 248, 0.28)"/>
+      <stop offset="50%" stop-color="rgba(108, 93, 211, 0.18)"/>
+      <stop offset="100%" stop-color="rgba(15, 17, 23, 0)"/>
+    </radialGradient>
   </defs>
 
-  <!-- iOS / Material 3 Squircle App Icon Base with safe splash padding -->
-  <rect x="36" y="36" width="440" height="440" rx="104" fill="url(#appBgGrad)"/>
-  
-  <!-- Subtle inner glass rim highlight -->
-  <rect x="36" y="36" width="440" height="440" rx="104" fill="none" stroke="url(#appBorder)" stroke-width="5"/>
-  <path d="M42 140 C42 84, 84 42, 140 42 L372 42 C428 42, 470 84, 470 140 L470 220 C340 200, 170 210, 42 250 Z" fill="url(#glossHighlight)"/>
+  <!-- 1. Полноформатный бесшовный фон (Full bleed для адаптивных масок One UI / iOS) -->
+  <rect width="512" height="512" fill="url(#iconBgGrad)"/>
 
-  <!-- Centered Professional Fintech Emblem (Wallet + Card + Gold Accent) -->
-  <g transform="translate(108, 108) scale(12.333)" stroke-linecap="round" stroke-linejoin="round">
-    <!-- Bank Card emerging from the wallet -->
-    <rect x="5.5" y="3" width="13" height="7" rx="1.6" fill="url(#cardAccentGrad)" stroke="#E0E7FF" stroke-width="0.7"/>
-    <line x1="5.5" y1="5.6" x2="18.5" y2="5.6" stroke="#1E1B4B" stroke-width="0.9"/>
-    <rect x="7.2" y="7.2" width="2.2" height="1.6" rx="0.4" fill="#FDE047" stroke="none"/>
+  <!-- 2. Фоновый рассеянный ореол свечения -->
+  <circle cx="256" cy="256" r="180" fill="url(#iconGlow)"/>
 
-    <!-- Main Wallet Body (Authentic Lucide Geometry with Crisp Pure White Stroke) -->
-    <path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"
-          fill="#2E1065" fill-opacity="0.3" stroke="#FFFFFF" stroke-width="1.75"/>
-    <path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"
-          fill="#2E1065" fill-opacity="0.3" stroke="#FFFFFF" stroke-width="1.75"/>
+  <!-- 3. Тончайшая внутренняя кристаллическая грань с острыми углами -->
+  <polygon points="256,168 344,256 256,344 168,256"
+           fill="rgba(108, 93, 211, 0.05)"
+           stroke="rgba(255, 255, 255, 0.12)"
+           stroke-width="3"
+           stroke-linejoin="miter"
+           stroke-miterlimit="10"/>
 
-    <!-- Golden Lock/Clasp Accent Coin -->
-    <circle cx="18" cy="13" r="1.1" fill="url(#coinGrad)" stroke="#FFFFFF" stroke-width="0.5"/>
-  </g>
+  <!-- 4. Основной геометрический ромб баланса (абсолютно острые вершины) -->
+  <polygon points="256,120 392,256 256,392 120,256"
+           fill="none"
+           stroke="url(#iconDiamondGrad)"
+           stroke-width="22"
+           stroke-linejoin="miter"
+           stroke-miterlimit="10"/>
+
+  <!-- 5. Ослепительная вершина-искра (лазерный акцент на верхнем острие ромба) -->
+  <circle cx="256" cy="120" r="4.5" fill="#FFFFFF"/>
 </svg>
