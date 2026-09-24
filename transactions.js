@@ -1095,8 +1095,9 @@ async function submitEditTxModal(e) {
   // 1. Получаем плоский список и сохраняем временную метку дня при редактировании
   const allFlat = typeof getAllCachedTransactionsFlat === 'function' ? getAllCachedTransactionsFlat() : [];
   let itemTimestamp = parsedDate.getTime();
+  let existing = null;
   if (id) {
-    const existing = allFlat.find(t => t.id === id);
+    existing = allFlat.find(t => t.id === id);
     if (existing && existing.timestamp && (existing.formattedDate === formatDateStr(parsedDate, 'dd.MM.yyyy') || existing.date === date)) {
       itemTimestamp = existing.timestamp;
     }

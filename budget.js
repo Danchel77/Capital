@@ -24,29 +24,6 @@ function getSelectedBudgetDate() {
   return new Date(selectedBudgetYear, selectedBudgetMonth, 1);
 }
 
-function getAllCachedTransactionsFlat() {
-  const list = [];
-  (Cache?.transactions || []).forEach(m => {
-    if (m && Array.isArray(m.items)) {
-      m.items.forEach(tx => {
-        const item = { ...tx };
-        if (!item.date && (item.rawDate || item.formattedDate)) {
-          const parsed = typeof parseAnyDate === 'function' ? parseAnyDate(item.rawDate || item.formattedDate) : null;
-          if (parsed && !isNaN(parsed.getTime()) && typeof formatDateStr === 'function') {
-            item.date = formatDateStr(parsed, 'yyyy-MM-dd');
-          } else {
-            item.date = item.rawDate || item.formattedDate;
-          }
-        }
-        list.push(item);
-      });
-    } else if (m && (m.type || m.amount !== undefined)) {
-      list.push({ ...m });
-    }
-  });
-  return list;
-}
-
 function getBudgetStartMonthDate() {
   const plan = Cache?.budgetPlan || {};
   if (plan.startMonth) {

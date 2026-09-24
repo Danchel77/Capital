@@ -256,23 +256,40 @@ async function fetchCollection(table) {
     switch (table) {
       case 'Transactions':
         Cache.transactions = processTransactions(data);
-        renderTransactions();
-        renderBudgetTab();
+        if (typeof renderTransactions === 'function') renderTransactions();
+        if (typeof renderBudgetTab === 'function') renderBudgetTab();
         break;
       case 'Deposits':
         Cache.deposits = processDeposits(data, Cache.goals);
-        renderDeposits();
+        if (typeof renderDeposits === 'function') renderDeposits();
+        if (typeof renderBudgetTab === 'function') renderBudgetTab();
         break;
       case 'Broker':
         Cache.broker = processBroker(data, Cache.goals);
-        renderBroker();
+        if (typeof renderBroker === 'function') renderBroker();
         break;
       case 'CalendarBills':
         Cache.calendarBills = data;
-        renderBudgetTab();
+        if (typeof renderBudgetTab === 'function') renderBudgetTab();
         break;
       case 'Goals':
-        await fetchAllData();
+        Cache.goals = data;
+        if (typeof renderBudgetTab === 'function') renderBudgetTab();
+        if (typeof renderDeposits === 'function') renderDeposits();
+        if (typeof renderBroker === 'function') renderBroker();
+        if (typeof updateGoalDropdowns === 'function') updateGoalDropdowns();
+        break;
+      case 'Categories':
+        Cache.categories = processCategories(data);
+        if (typeof renderTransactions === 'function') renderTransactions();
+        if (typeof renderBudgetTab === 'function') renderBudgetTab();
+        break;
+      case 'CategoryRules':
+        Cache.categoryRules = await processOrSeedRules(querySnapshot);
+        break;
+      case 'BudgetPlan':
+        Cache.budgetPlan = data.length ? data[0] : {};
+        if (typeof renderBudgetTab === 'function') renderBudgetTab();
         break;
     }
   } catch (e) {
@@ -497,15 +514,11 @@ async function submitAction(btnId, table, data) {
     }
 
     // Фоновая тихая синхронизация коллекции
-    if (table === 'Transactions') {
-      fetchCollection('Transactions').catch(() => {});
-    } else {
-      fetchAllData().catch(() => {});
-    }
+    fetchCollection(table).catch(() => {});
   } catch (e) {
     console.error('Ошибка сохранения:', e);
     showToast('Ошибка сохранения: ' + (e.message || ''), true);
-    fetchAllData();
+    fetchCollection(table).catch(() => {});
   }
 }
 
@@ -553,15 +566,11 @@ function deleteRecord(table, id) {
       // Фоновое удаление из Firestore
       await getUserCol(table).doc(id).delete();
 
-      if (table === 'Transactions') {
-        fetchCollection('Transactions').catch(() => {});
-      } else {
-        fetchAllData().catch(() => {});
-      }
+      fetchCollection(table).catch(() => {});
     } catch (e) {
       console.error(e);
       showToast("Ошибка удаления", true);
-      fetchAllData();
+      fetchCollection(table).catch(() => {});
     }
   });
 }
@@ -859,6 +868,29 @@ function formatDateStr(dateStr, format) {
     return `${year}-${month}`;
   }
   return `${year}-${month}-${day}`;
+}
+
+function getAllCachedTransactionsFlat() {
+  const list = [];
+  (Cache?.transactions || []).forEach(m => {
+    if (m && Array.isArray(m.items)) {
+      m.items.forEach(tx => {
+        const item = { ...tx };
+        if (!item.date && (item.rawDate || item.formattedDate)) {
+          const parsed = typeof parseAnyDate === 'function' ? parseAnyDate(item.rawDate || item.formattedDate) : null;
+          if (parsed && !isNaN(parsed.getTime()) && typeof formatDateStr === 'function') {
+            item.date = formatDateStr(parsed, 'yyyy-MM-dd');
+          } else {
+            item.date = item.rawDate || item.formattedDate;
+          }
+        }
+        list.push(item);
+      });
+    } else if (m && (m.type || m.amount !== undefined)) {
+      list.push({ ...m });
+    }
+  });
+  return list;
 }
 
 // ==========================================
@@ -1195,3 +1227,4 @@ window.initOfflineResilience = initOfflineResilience;
 window.hideLoadingScreen = hideLoadingScreen;
 window.showLoadingScreen = showLoadingScreen;
 window.getCurrentUserProfile = getCurrentUserProfile;
+window.getAllCachedTransactionsFlat = getAllCachedTransactionsFlat;

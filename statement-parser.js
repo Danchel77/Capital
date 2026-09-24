@@ -695,22 +695,48 @@ window.handleStatementUpload = handleStatementUpload;
 // -------------------------------------------------------------
 
 /**
- * Проверяет, есть ли уже такая операция в Cache.transactions
+ * Проверяет, есть ли уже такая операция в базе данных (Cache.transactions)
+ * Сверяет дату (с нормализацией DD.MM.YYYY и YYYY-MM-DD), сумму (с учетом копеек) и тип операции
  */
 function isTransactionDuplicate(tx) {
-  if (!window.Cache || !window.Cache.transactions) return false;
+  if (!window.Cache) return false;
 
-  for (const month of window.Cache.transactions) {
-    for (const item of month.items) {
-      if (
-        item.rawDate === tx.date &&
-        Math.abs(item.amount - tx.amount) < 0.01 &&
-        item.type === tx.type
-      ) {
-        return true;
-      }
+  const allExisting = typeof getAllCachedTransactionsFlat === 'function'
+    ? getAllCachedTransactionsFlat()
+    : ((window.Cache.transactions || []).flatMap(m => Array.isArray(m.items) ? m.items : (m.amount !== undefined ? [m] : [])));
+
+  if (!allExisting || allExisting.length === 0) return false;
+
+  const txAmount = Math.abs(parseFloat(tx.amount) || 0);
+  const txType = (tx.type === 'Доход' || tx.type === 'income') ? 'Доход' : 'Расход';
+
+  const txParsedDate = typeof parseAnyDate === 'function' ? parseAnyDate(tx.date || tx.rawDate || tx.formattedDate) : null;
+  const txIsoDate = (txParsedDate && !isNaN(txParsedDate.getTime()) && typeof formatDateStr === 'function')
+    ? formatDateStr(txParsedDate, 'yyyy-MM-dd')
+    : String(tx.date || '');
+
+  for (const item of allExisting) {
+    if (!item) continue;
+    const itemAmount = Math.abs(parseFloat(item.amount) || 0);
+    const itemType = (item.type === 'Доход' || item.type === 'income') ? 'Доход' : 'Расход';
+
+    // 1. Проверяем совпадение суммы и типа операции
+    if (Math.abs(itemAmount - txAmount) > 0.05 || itemType !== txType) {
+      continue;
+    }
+
+    // 2. Нормализуем дату существующей операции
+    const itemParsedDate = typeof parseAnyDate === 'function' ? parseAnyDate(item.date || item.rawDate || item.formattedDate) : null;
+    const itemIsoDate = (itemParsedDate && !isNaN(itemParsedDate.getTime()) && typeof formatDateStr === 'function')
+      ? formatDateStr(itemParsedDate, 'yyyy-MM-dd')
+      : String(item.date || item.rawDate || '');
+
+    // Точное совпадение по календарному дню (ISO) — дубликат при том же типе и той же сумме
+    if (itemIsoDate && txIsoDate && itemIsoDate === txIsoDate) {
+      return true;
     }
   }
+
   return false;
 }
 
@@ -726,8 +752,8 @@ function setImportFilter(filter) {
     const btn = document.getElementById(`tab-import-${f}`);
     if (btn) {
       btn.className = f === filter
-        ? 'flex-1 flex flex-col items-center justify-center py-1 px-1 rounded-xl font-semibold bg-[#212430] text-white transition-all cursor-pointer'
-        : 'flex-1 flex flex-col items-center justify-center py-1 px-1 rounded-xl font-medium text-[#848D99] hover:text-white transition-all cursor-pointer';
+        ? 'py-1.5 px-2 rounded-lg font-semibold bg-[#212430] text-white text-xs transition-all cursor-pointer flex items-center justify-center gap-1 text-center truncate'
+        : 'py-1.5 px-2 rounded-lg font-medium text-[#848D99] hover:text-white text-xs transition-all cursor-pointer flex items-center justify-center gap-1 text-center truncate';
     }
   });
 
