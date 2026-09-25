@@ -835,7 +835,6 @@ async function submitCreateFamily() {
   showToast('Создание семейного пространства...', false, true);
 
   try {
-    // Генерируем 6-значный криптостойкий буквенно-цифровой код без лишних приставок (более 1 млрд комбинаций)
     const code = generateFamilyInviteCode(6);
     const userProfile = (typeof getCurrentUserProfile === 'function') ? getCurrentUserProfile() : { displayName: 'Пользователь', avatarId: 'user' };
 
@@ -856,27 +855,38 @@ async function submitCreateFamily() {
       ]
     };
 
-    // 1. Создаем семью
-    await familyRef.set(familyData);
-
-    // 2. Копируем существующие личные данные пользователя в семейное пространство
     const tables = ['Transactions', 'Deposits', 'Broker', 'Goals', 'Categories', 'CategoryRules', 'BudgetPlan', 'CalendarBills'];
-    for (const table of tables) {
-      const snap = await db.collection('users').doc(user.uid).collection(table).get();
-      if (!snap.empty) {
-        const batch = db.batch();
+
+    // Параллельное выполнение: создаем документ семьи и запрашиваем 8 личных коллекций одновременно
+    const [_, ...snaps] = await Promise.all([
+      familyRef.set(familyData),
+      ...tables.map(tbl => db.collection('users').doc(user.uid).collection(tbl).get())
+    ]);
+
+    // Копируем все личные записи в единый пакетный запрос (Batch Write)
+    const batch = db.batch();
+    let pendingWrites = 0;
+
+    snaps.forEach((snap, idx) => {
+      if (snap && !snap.empty) {
+        const table = tables[idx];
         snap.docs.forEach(d => {
           const newDocRef = familyRef.collection(table).doc(d.id);
           batch.set(newDocRef, d.data());
+          pendingWrites++;
         });
-        await batch.commit();
       }
+    });
+
+    // Параллельно коммитим пакетное копирование и обновляем привязку пользователя
+    const tasks = [
+      db.collection('users').doc(user.uid).set({ familyId: familyRef.id }, { merge: true })
+    ];
+    if (pendingWrites > 0) {
+      tasks.push(batch.commit());
     }
 
-    // 3. Привязываем пользователя к семье
-    await db.collection('users').doc(user.uid).set({
-      familyId: familyRef.id
-    }, { merge: true });
+    await Promise.all(tasks);
 
     Cache.family = { id: familyRef.id, ...familyData };
 
@@ -885,7 +895,7 @@ async function submitCreateFamily() {
     showToast(`Семейный бюджет создан! Код: ${code}`);
 
     renderFamilySettingsUI();
-    await fetchAllData();
+    await fetchAllData(true);
   } catch (err) {
     document.getElementById('toast-container')?.classList.add('hidden');
     console.error('Ошибка создания семьи:', err);
@@ -963,34 +973,38 @@ function getRecordDeduplicationSignature(table, item) {
 async function mergePersonalDataIntoFamily(user, familyRef, userProfile) {
   const tables = ['Transactions', 'Deposits', 'Broker', 'Goals', 'CalendarBills', 'Categories', 'CategoryRules'];
 
-  for (const table of tables) {
-    try {
-      const userSnap = await db.collection('users').doc(user.uid).collection(table).get();
-      if (userSnap.empty) continue;
+  try {
+    const userProms = tables.map(tbl => db.collection('users').doc(user.uid).collection(tbl).get());
+    const famProms = tables.map(tbl => familyRef.collection(tbl).get());
 
-      const famSnap = await familyRef.collection(table).get();
-      const famDocs = famSnap.docs.map(d => d.data());
+    const allSnaps = await Promise.all([...userProms, ...famProms]);
+    const userSnaps = allSnaps.slice(0, tables.length);
+    const famSnaps = allSnaps.slice(tables.length);
 
-      // Формируем сигнатуры существующих записей в семье для дедупликации
+    const batch = db.batch();
+    let writeCount = 0;
+
+    tables.forEach((table, idx) => {
+      const userSnap = userSnaps[idx];
+      const famSnap = famSnaps[idx];
+
+      if (!userSnap || userSnap.empty) return;
+
+      const famDocs = famSnap ? famSnap.docs.map(d => d.data()) : [];
       const existingSignatures = new Set();
       famDocs.forEach(item => {
         const sig = getRecordDeduplicationSignature(table, item);
         if (sig) existingSignatures.add(sig);
       });
 
-      const batch = db.batch();
-      let writeCount = 0;
-
       userSnap.docs.forEach(doc => {
         const data = doc.data();
         const sig = getRecordDeduplicationSignature(table, data);
 
-        // Если в семье уже есть точно такая же запись — пропускаем (дедупликация)
         if (sig && existingSignatures.has(sig)) {
           return;
         }
 
-        // Прикрепляем авторство нового участника, если это транзакция
         if (table === 'Transactions') {
           data.author = data.author || {
             uid: user.uid,
@@ -1004,13 +1018,13 @@ async function mergePersonalDataIntoFamily(user, familyRef, userProfile) {
         if (sig) existingSignatures.add(sig);
         writeCount++;
       });
+    });
 
-      if (writeCount > 0) {
-        await batch.commit();
-      }
-    } catch (tblErr) {
-      console.warn(`Ошибка объединения таблицы ${table} в семейный бюджет:`, tblErr);
+    if (writeCount > 0) {
+      await batch.commit();
     }
+  } catch (tblErr) {
+    console.warn(`Ошибка объединения таблиц в семейный бюджет:`, tblErr);
   }
 }
 
@@ -1142,14 +1156,22 @@ function leaveFamilyGroup() {
         const members = (famData.members || []).filter(m => m && m.uid !== user.uid);
 
         if (members.length === 0) {
-          // Если участников не осталось — удаляем все подколлекции и документ семьи
-          for (const table of tables) {
-            const snap = await db.collection('families').doc(famId).collection(table).get();
-            if (!snap.empty) {
-              const batch = db.batch();
-              snap.docs.forEach(doc => batch.delete(doc.ref));
-              await batch.commit();
+          // Если участников не осталось — удаляем все подколлекции и документ семьи параллельно
+          const snaps = await Promise.all(
+            tables.map(table => db.collection('families').doc(famId).collection(table).get())
+          );
+          const batch = db.batch();
+          let deleteCount = 0;
+          snaps.forEach(snap => {
+            if (snap && !snap.empty) {
+              snap.docs.forEach(doc => {
+                batch.delete(doc.ref);
+                deleteCount++;
+              });
             }
+          });
+          if (deleteCount > 0) {
+            await batch.commit();
           }
           await db.collection('families').doc(famId).delete();
         } else {
