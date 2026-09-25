@@ -3931,7 +3931,7 @@ function renderWizAvgTxList() {
             ${it.category ? `<span class="text-[9px] text-[#848D99] truncate max-w-[120px]">${escapeHtml(it.category)}</span>` : ''}
           </div>
           <div class="flex items-center gap-1 flex-shrink-0">
-            ${it.isBill ? `<span class="text-[9px] font-bold text-indigo-300 bg-indigo-950/60 border border-indigo-500/30 px-1.5 py-0.5 rounded flex items-center gap-0.5"><i data-lucide="calendar" class="w-2.5 h-2.5"></i>Счет</span>` : ''}
+            ${it.isBill ? `<span class="text-[9px] font-bold text-[#8C7DFF] bg-[#6C5DD3]/15 border border-[#6C5DD3]/30 px-1.5 py-0.5 rounded flex items-center gap-0.5"><i data-lucide="calendar" class="w-2.5 h-2.5"></i>Счет</span>` : ''}
             ${it.isOneTime ? `<span class="text-[9px] font-bold text-amber-300 bg-amber-950/60 border border-amber-500/30 px-1.5 py-0.5 rounded flex items-center gap-0.5"><i data-lucide="clock" class="w-2.5 h-2.5"></i>Разовой выплатой</span>` : ''}
             ${isLarge && !it.isBill && !it.isOneTime && ctx.type === 'expense' ? `<span class="text-[9px] font-bold text-amber-300 bg-amber-950/40 border-amber-900/40 border px-1.5 py-0.5 rounded flex items-center gap-0.5">Крупная трата</span>` : ''}
           </div>
@@ -5463,7 +5463,7 @@ function playGoalFlowAnimation(amount, goalIncrements = []) {
     card.className = "bg-[#181B24]/95 border border-[rgba(255,255,255,0.1)] rounded-3xl p-5 shadow-2xl backdrop-blur-xl flex flex-col items-center text-center max-w-sm w-full mx-4 transform scale-100 transition-all duration-300 pointer-events-auto";
     card.innerHTML = `
       <div class="w-14 h-14 rounded-2xl bg-[#212430] border border-[rgba(255,255,255,0.08)] flex items-center justify-center text-gray-300 mb-2 shadow-lg">
-        <i data-lucide="check-circle-2" class="w-7 h-7 text-blue-400"></i>
+        <i data-lucide="check-circle-2" class="w-7 h-7 text-[#30D158]"></i>
       </div>
       <h3 class="text-base font-black text-white tracking-tight">Месяц успешно закрыт!</h3>
       <p class="text-[11px] text-[#848D99] my-2">Все расходы в точности сошлись с доходами.</p>

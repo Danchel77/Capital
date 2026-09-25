@@ -338,32 +338,35 @@ function hideAllChartTooltips(e) {
   if (!isTargetInside('#brokerChart') && !isTargetInside('#broker-point-popup')) {
     if (typeof closeBrokerPointPopup === 'function') closeBrokerPointPopup();
   }
-  if (brokerChartObj && !isTargetInside('#brokerChart') && brokerChartObj.tooltip && brokerChartObj.tooltip.getActiveElements().length > 0) {
-    brokerChartObj.setActiveElements([]);
-    brokerChartObj.tooltip.setActiveElements([], { x: 0, y: 0 });
-    brokerChartObj.update('none');
+  const brokerChart = window.brokerChartObj;
+  if (brokerChart && !isTargetInside('#brokerChart') && brokerChart.tooltip && brokerChart.tooltip.getActiveElements().length > 0) {
+    brokerChart.setActiveElements([]);
+    brokerChart.tooltip.setActiveElements([], { x: 0, y: 0 });
+    brokerChart.update('none');
   }
 
   // 2. Столбчатый график динамики трат
-  if (monthlyChartObj && !isTargetInside('#monthlyExpensesChart')) {
-    if (monthlyChartObj.getActiveElements().length > 0 || monthlyChartObj._activeElementKey) {
-      monthlyChartObj._activeElementKey = null;
-      monthlyChartObj._activeMonthIndex = -1;
-      monthlyChartObj.setActiveElements([]);
-      monthlyChartObj.tooltip.setActiveElements([], { x: 0, y: 0 });
-      monthlyChartObj.update();
+  const monthlyChart = window.monthlyChartObj;
+  if (monthlyChart && !isTargetInside('#monthlyExpensesChart')) {
+    if (monthlyChart.getActiveElements().length > 0 || monthlyChart._activeElementKey) {
+      monthlyChart._activeElementKey = null;
+      monthlyChart._activeMonthIndex = -1;
+      monthlyChart.setActiveElements([]);
+      monthlyChart.tooltip.setActiveElements([], { x: 0, y: 0 });
+      monthlyChart.update();
     }
   }
 
   // 3. Круговая диаграмма структуры категорий
-  if (categoryChartObj && !isTargetInside('#categoryExpensesChart') && !isTargetInside('#category-legend') && !isTargetInside('.donut-center')) {
-    if (categoryChartObj.getActiveElements().length > 0 || categoryChartObj._activeSliceIdx >= 0) {
+  const catChart = window.categoryChartObj;
+  if (catChart && !isTargetInside('#categoryExpensesChart') && !isTargetInside('#category-legend') && !isTargetInside('.donut-center')) {
+    if (catChart.getActiveElements().length > 0 || catChart._activeSliceIdx >= 0) {
       if (typeof window.resetCategoryDonutCenter === 'function') {
         window.resetCategoryDonutCenter();
       } else {
-        categoryChartObj._activeSliceIdx = -1;
-        categoryChartObj.setActiveElements([]);
-        categoryChartObj.update();
+        catChart._activeSliceIdx = -1;
+        catChart.setActiveElements([]);
+        catChart.update();
       }
     }
   }

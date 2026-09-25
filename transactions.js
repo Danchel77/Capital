@@ -16,11 +16,6 @@ let currentCategoryType = 'Расход';
 let currentCategorySelect = null;
 let selectedCategoryIcon = 'package';
 
-const DEFAULT_SYSTEM_CATEGORIES = [
-  'Продукты', 'Кафе и рестораны', 'Маркетплейсы', 'Транспорт', 'Жилье',
-  'Одежда', 'Здоровье', 'Развлечения', 'Другое', 'Зарплата', 'Возврат', 'Кэшбек'
-];
-
 const availableIcons = [
   'shopping-cart', 'utensils', 'car', 'home', 'film', 'package', 'briefcase', 'baby', 'paw-print', 'pill',
   'shopping-bag', 'plane', 'dumbbell', 'gamepad-2', 'book', 'music', 'gift', 'coffee', 'pizza', 'shirt',
@@ -165,13 +160,16 @@ function processCategories(cats) {
 // 2. Category Management UI
 // ==========================================
 function showAddCategoryDialog(type, selectEl) {
-  currentCategoryType = type;
-  currentCategorySelect = selectEl;
+  currentCategoryType = (type === 'Доход' || type === 'income') ? 'Доход' : 'Расход';
+  currentCategorySelect = selectEl || null;
   selectedCategoryIcon = 'package';
   const title = document.getElementById('category-dialog-title');
-  if (title) title.innerText = `Новая категория (${type})`;
+  if (title) title.innerText = `Новая категория (${currentCategoryType})`;
   const inp = document.getElementById('category-name-input');
-  if (inp) inp.value = '';
+  if (inp) {
+    inp.value = '';
+    setTimeout(() => inp.focus(), 80);
+  }
   renderIconGrid();
   const dlg = document.getElementById('category-dialog');
   if (dlg) dlg.classList.remove('hidden');
@@ -274,9 +272,11 @@ async function deleteCategory(name, type) {
 }
 
 function updateCategorySelect(containerOrRow, type) {
-  if (!Cache || !Cache.categories) return;
+  if (!containerOrRow || !Cache || !Cache.categories) return;
   
-  const row = containerOrRow.closest ? (containerOrRow.closest('.tx-item') || containerOrRow) : containerOrRow;
+  const row = typeof containerOrRow.closest === 'function' ? (containerOrRow.closest('.tx-item') || containerOrRow) : containerOrRow;
+  if (!row || typeof row.querySelector !== 'function') return;
+
   const menu = row.querySelector('.tx-category-menu');
   const input = row.querySelector('.tx-category');
   const btn = row.querySelector('.tx-category-btn');
@@ -304,8 +304,9 @@ function updateCategorySelect(containerOrRow, type) {
 
   itemsHtml += `
     <div class="border-t border-[rgba(255,255,255,0.06)] pt-1 mt-1">
-      <button type="button" class="btn-add-cat-in-menu w-full text-left px-2.5 py-1.5 text-xs text-[#6C5DD3] hover:bg-[#6C5DD3]/10 rounded-lg flex items-center gap-1.5 font-semibold cursor-pointer transition-colors">
-        <span>+</span> <span>Добавить категорию</span>
+      <button type="button" class="btn-add-cat-in-menu w-full text-left px-2.5 py-1.5 text-xs text-[#8C7DFF] hover:text-white hover:bg-[#6C5DD3]/15 rounded-lg flex items-center gap-1.5 font-semibold cursor-pointer transition-colors">
+        <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+        <span>Добавить категорию</span>
       </button>
     </div>
   `;
@@ -580,7 +581,7 @@ function handleTxRowCommentInput(inputEl) {
       const icon = (match && typeof match === 'object' && match.icon && match.icon !== '📦') 
         ? match.icon 
         : (typeof getCategoryIcon === 'function' ? getCategoryIcon(guessed) : 'tag');
-      catLabel.innerHTML = `<span class="inline-flex items-center gap-1.5 text-xs text-gray-200 font-normal truncate min-w-0"><i data-lucide="${icon}" class="w-3.5 h-3.5 text-[#727cff] flex-shrink-0"></i><span class="truncate">${escapeHtml(guessed)}</span></span>`;
+      catLabel.innerHTML = `<span class="inline-flex items-center gap-1.5 text-xs text-gray-200 font-normal truncate min-w-0"><i data-lucide="${icon}" class="w-3.5 h-3.5 text-[#8C7DFF] flex-shrink-0"></i><span class="truncate">${escapeHtml(guessed)}</span></span>`;
       catLabel.classList.remove('text-gray-400', 'text-white');
       catLabel.classList.add('text-gray-200');
       if (typeof lucide !== 'undefined') lucide.createIcons();
@@ -659,7 +660,7 @@ function openRememberRuleForTxRow(btn) {
         const catLabel = row.querySelector('.tx-category-label');
         if (catLabel) {
           const icon = (typeof getCategoryIcon === 'function') ? getCategoryIcon(savedCategory) : 'tag';
-          catLabel.innerHTML = `<span class="inline-flex items-center gap-1.5 text-xs text-gray-200 font-normal truncate min-w-0"><i data-lucide="${icon}" class="w-3.5 h-3.5 text-[#727cff] flex-shrink-0"></i><span class="truncate">${escapeHtml(savedCategory)}</span></span>`;
+          catLabel.innerHTML = `<span class="inline-flex items-center gap-1.5 text-xs text-gray-200 font-normal truncate min-w-0"><i data-lucide="${icon}" class="w-3.5 h-3.5 text-[#8C7DFF] flex-shrink-0"></i><span class="truncate">${escapeHtml(savedCategory)}</span></span>`;
           catLabel.classList.remove('text-gray-400', 'text-white');
           catLabel.classList.add('text-gray-200');
           if (typeof lucide !== 'undefined') lucide.createIcons();
@@ -966,8 +967,9 @@ function renderEditTxCategories() {
 
   itemsHtml += `
     <div class="border-t border-[rgba(255,255,255,0.06)] pt-1 mt-1">
-      <button type="button" class="btn-add-cat-in-edit-modal w-full text-left px-2.5 py-1.5 text-xs text-[#6C5DD3] hover:bg-[#6C5DD3]/10 rounded-lg flex items-center gap-1.5 font-semibold cursor-pointer transition-colors">
-        <span>+</span> <span>Добавить категорию</span>
+      <button type="button" class="btn-add-cat-in-edit-modal w-full text-left px-2.5 py-1.5 text-xs text-[#8C7DFF] hover:text-white hover:bg-[#6C5DD3]/15 rounded-lg flex items-center gap-1.5 font-semibold cursor-pointer transition-colors">
+        <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+        <span>Добавить категорию</span>
       </button>
     </div>
   `;
@@ -1586,7 +1588,7 @@ function toggleTxSearchBar() {
   if (isHidden) {
     container.classList.remove('hidden');
     if (btn) {
-      btn.classList.add('bg-[#6C5DD3]/25', 'text-[#727cff]', 'border-[#6C5DD3]/50');
+      btn.classList.add('bg-[#6C5DD3]/25', 'text-[#8C7DFF]', 'border-[#6C5DD3]/50');
       btn.classList.remove('bg-gray-800', 'text-gray-400');
     }
     if (input) {
@@ -1596,14 +1598,14 @@ function toggleTxSearchBar() {
     if (!currentFilterSearch) {
       container.classList.add('hidden');
       if (btn) {
-        btn.classList.remove('bg-[#6C5DD3]/25', 'text-[#727cff]', 'border-[#6C5DD3]/50');
+        btn.classList.remove('bg-[#6C5DD3]/25', 'text-[#8C7DFF]', 'border-[#6C5DD3]/50');
         btn.classList.add('bg-gray-800', 'text-gray-400');
       }
     } else {
       clearTxSearch();
       container.classList.add('hidden');
       if (btn) {
-        btn.classList.remove('bg-[#6C5DD3]/25', 'text-[#727cff]', 'border-[#6C5DD3]/50');
+        btn.classList.remove('bg-[#6C5DD3]/25', 'text-[#8C7DFF]', 'border-[#6C5DD3]/50');
         btn.classList.add('bg-gray-800', 'text-gray-400');
       }
     }
@@ -1623,10 +1625,10 @@ function handleTxSearchInput(event) {
   const toggleBtn = document.getElementById('tx-search-toggle-btn');
   if (toggleBtn) {
     if (query) {
-      toggleBtn.classList.add('bg-[#6C5DD3]/25', 'text-[#727cff]', 'border-[#6C5DD3]/50');
+      toggleBtn.classList.add('bg-[#6C5DD3]/25', 'text-[#8C7DFF]', 'border-[#6C5DD3]/50');
       toggleBtn.classList.remove('bg-gray-800', 'text-gray-400');
     } else {
-      toggleBtn.classList.remove('bg-[#6C5DD3]/25', 'text-[#727cff]', 'border-[#6C5DD3]/50');
+      toggleBtn.classList.remove('bg-[#6C5DD3]/25', 'text-[#8C7DFF]', 'border-[#6C5DD3]/50');
       toggleBtn.classList.add('bg-gray-800', 'text-gray-400');
     }
   }
@@ -1645,7 +1647,7 @@ function clearTxSearch() {
   if (clearBtn) clearBtn.classList.add('hidden');
   const toggleBtn = document.getElementById('tx-search-toggle-btn');
   if (toggleBtn) {
-    toggleBtn.classList.remove('bg-[#6C5DD3]/25', 'text-[#727cff]', 'border-[#6C5DD3]/50');
+    toggleBtn.classList.remove('bg-[#6C5DD3]/25', 'text-[#8C7DFF]', 'border-[#6C5DD3]/50');
     toggleBtn.classList.add('bg-gray-800', 'text-gray-400');
   }
   renderTransactions();
@@ -1661,7 +1663,7 @@ function resetAllTxFilters() {
   if (searchContainer) searchContainer.classList.add('hidden');
   const toggleBtn = document.getElementById('tx-search-toggle-btn');
   if (toggleBtn) {
-    toggleBtn.classList.remove('bg-[#6C5DD3]/25', 'text-[#727cff]', 'border-[#6C5DD3]/50');
+    toggleBtn.classList.remove('bg-[#6C5DD3]/25', 'text-[#8C7DFF]', 'border-[#6C5DD3]/50');
     toggleBtn.classList.add('bg-gray-800', 'text-gray-400');
   }
 
@@ -1756,7 +1758,7 @@ function renderTxRowHtml(tx, largeThreshold, hasDynamicThreshold) {
   }
 
   if (authorInfo && (Cache?.family || familyMembers.length > 0 || tx.author)) {
-    const authorPreset = (window.AVATAR_PRESETS && window.AVATAR_PRESETS[authorInfo.avatarId]) || window.AVATAR_PRESETS?.user || { bg: 'bg-blue-600', icon: 'user' };
+    const authorPreset = (window.AVATAR_PRESETS && window.AVATAR_PRESETS[authorInfo.avatarId]) || window.AVATAR_PRESETS?.user || { bg: 'bg-[#6C5DD3]', icon: 'user' };
     authorBadgeHtml = `
       <div class="absolute top-2 right-2.5 flex items-center justify-center w-[18px] h-[18px] rounded-full ${authorPreset.bg} text-white ring-2 ring-[#181B24] shadow-sm select-none pointer-events-none" title="Добавил(а): ${escapeHtml(authorInfo.name)}">
         <i data-lucide="${authorPreset.icon}" class="w-2.5 h-2.5 stroke-[2.5]"></i>
@@ -2024,7 +2026,7 @@ function renderTransactions() {
     if (isTotallyEmpty) {
       listEl.innerHTML = `
         <div class="card rounded-2xl p-6 text-center flex flex-col items-center justify-center gap-3 mt-4 border border-[rgba(255,255,255,0.06)] bg-[#181B24]">
-          <div class="w-12 h-12 rounded-2xl bg-[#6C5DD3]/15 text-[#727cff] flex items-center justify-center">
+          <div class="w-12 h-12 rounded-2xl bg-[#6C5DD3]/15 text-[#8C7DFF] flex items-center justify-center">
             <i data-lucide="receipt" class="w-6 h-6"></i>
           </div>
           <div>
@@ -2037,7 +2039,7 @@ function renderTransactions() {
               <span>Добавить операцию</span>
             </button>
             <button type="button" onclick="openPdfInfoModal()" class="py-2.5 px-4 rounded-xl bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 text-xs font-semibold transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-1.5 border border-[rgba(255,255,255,0.06)]">
-              <i data-lucide="file-up" class="w-3.5 h-3.5 text-[#727cff]"></i>
+              <i data-lucide="file-up" class="w-3.5 h-3.5 text-[#8C7DFF]"></i>
               <span>Импорт PDF</span>
             </button>
           </div>
@@ -2053,7 +2055,7 @@ function renderTransactions() {
             <p class="text-sm font-semibold text-gray-200">Ничего не найдено</p>
             <p class="text-xs text-[#848D99] mt-1 max-w-[280px]">По выбранным фильтрам и поисковому запросу нет подходящих операций</p>
           </div>
-          <button type="button" onclick="resetAllTxFilters()" class="mt-1 px-4 py-2 rounded-xl bg-[#212430] hover:bg-[#2A2D3C] text-[#727cff] hover:text-white text-xs font-semibold transition-all active:scale-95 cursor-pointer border border-[rgba(255,255,255,0.08)] flex items-center gap-1.5">
+          <button type="button" onclick="resetAllTxFilters()" class="mt-1 px-4 py-2 rounded-xl bg-[#212430] hover:bg-[#2A2D3C] text-[#8C7DFF] hover:text-white text-xs font-semibold transition-all active:scale-95 cursor-pointer border border-[rgba(255,255,255,0.08)] flex items-center gap-1.5">
             <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
             <span>Сбросить фильтры и поиск</span>
           </button>
@@ -2584,41 +2586,124 @@ document.addEventListener('click', (e) => {
   }
 });
 
-// Слушатели кнопок внутри модальных окон категорий
+// ==========================================
+// Модальные окна управления категориями
+// ==========================================
+function closeAddCategoryDialog() {
+  document.getElementById('category-dialog')?.classList.add('hidden');
+  currentCategorySelect = null;
+}
+
+function closeManageCategoriesDialog() {
+  document.getElementById('manage-categories-dialog')?.classList.add('hidden');
+  if (window._returnToProfile) {
+    window._returnToProfile = false;
+    if (typeof openProfileModal === 'function') openProfileModal();
+  }
+}
+
+async function submitAddCategoryDialog() {
+  const btn = document.getElementById('category-save-btn');
+  const inp = document.getElementById('category-name-input');
+  const name = inp ? inp.value.trim() : '';
+  if (!name) {
+    if (typeof showToast === 'function') showToast('Введите название категории', true);
+    inp?.focus();
+    return;
+  }
+
+  const type = currentCategoryType || 'Расход';
+  const icon = selectedCategoryIcon || 'package';
+
+  if (btn) btn.disabled = true;
+
+  try {
+    if (typeof showToast === 'function') showToast('Сохранение категории...', false, true);
+
+    await getUserCol('Categories').add({
+      name: name,
+      type: type,
+      icon: icon
+    });
+
+    // Обновляем локальный Cache в памяти
+    if (!Cache) Cache = window.Cache = {};
+    if (!Cache.categories) Cache.categories = { expense: [], income: [] };
+    const targetArr = type === 'Доход' ? Cache.categories.income : Cache.categories.expense;
+    if (!targetArr.some(c => c.name === name)) {
+      targetArr.push({ name, icon });
+    }
+
+    // Если открыто добавление операции — обновляем селект строки
+    if (currentCategorySelect) {
+      updateCategorySelect(currentCategorySelect, type);
+    }
+
+    // Если открыто окно редактирования операции — выбираем новую категорию
+    if (document.getElementById('edit-tx-dialog') && !document.getElementById('edit-tx-dialog').classList.contains('hidden')) {
+      if (typeof selectEditTxCategory === 'function') {
+        selectEditTxCategory(name, icon);
+      }
+      if (typeof renderEditTxCategories === 'function') {
+        renderEditTxCategories();
+      }
+    }
+
+    // Если открыт парсер выписок (statement-parser)
+    if (window._lastParsedTransactions && Array.isArray(window._lastParsedTransactions)) {
+      if (typeof window.refreshStatementImportCategories === 'function') {
+        window.refreshStatementImportCategories(name, icon, window._importActiveTxId);
+      } else if (typeof window.renderFilteredRows === 'function') {
+        if (window._importActiveTxId) {
+          const tx = window._lastParsedTransactions.find(t => t && t._id === window._importActiveTxId);
+          if (tx) {
+            tx.category = name;
+            tx.categoryIcon = icon;
+          }
+        }
+        window.renderFilteredRows(window._lastParsedTransactions);
+      }
+      window._importActiveTxId = null;
+    }
+
+    // Если открыт визард лимитов бюджета
+    if (typeof renderCategoryLimitsManagerList === 'function') {
+      renderCategoryLimitsManagerList();
+    }
+    if (typeof openAddCategoryLimitPicker === 'function' && document.getElementById('add-cat-limit-picker-dialog') && !document.getElementById('add-cat-limit-picker-dialog').classList.contains('hidden')) {
+      openAddCategoryLimitPicker();
+    }
+
+    closeAddCategoryDialog();
+    if (typeof showToast === 'function') showToast(`Категория «${name}» добавлена`);
+
+    // Фоновая синхронизация
+    if (typeof fetchCollection === 'function') {
+      fetchCollection('Categories').catch(() => {});
+    }
+  } catch (err) {
+    console.error('Ошибка сохранения категории:', err);
+    if (typeof showToast === 'function') showToast('Ошибка: ' + (err.message || 'Сбой записи'), true);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+// Fallback слушатели на случай прямого вызова
 document.addEventListener('DOMContentLoaded', () => {
   const cancelCatBtn = document.getElementById('category-cancel-btn');
-  if (cancelCatBtn) {
-    cancelCatBtn.addEventListener('click', () => {
-      document.getElementById('category-dialog')?.classList.add('hidden');
-    });
+  if (cancelCatBtn && !cancelCatBtn.hasAttribute('onclick')) {
+    cancelCatBtn.addEventListener('click', closeAddCategoryDialog);
   }
 
   const saveCatBtn = document.getElementById('category-save-btn');
-  if (saveCatBtn) {
-    saveCatBtn.addEventListener('click', async () => {
-      const name = document.getElementById('category-name-input').value.trim();
-      if (!name) return showToast('Введите название', true);
-      try {
-        await getUserCol('Categories').add({ name, type: currentCategoryType, icon: selectedCategoryIcon });
-        const arr = currentCategoryType === 'Доход' ? Cache.categories.income : Cache.categories.expense;
-        arr.push({ name, icon: selectedCategoryIcon });
-        updateCategorySelect(currentCategorySelect, currentCategoryType);
-        document.getElementById('category-dialog').classList.add('hidden');
-      } catch (e) {
-        showToast('Ошибка', true);
-      }
-    });
+  if (saveCatBtn && !saveCatBtn.hasAttribute('onclick')) {
+    saveCatBtn.addEventListener('click', submitAddCategoryDialog);
   }
 
   const closeManageBtn = document.getElementById('close-manage-categories');
-  if (closeManageBtn) {
-    closeManageBtn.addEventListener('click', () => {
-      document.getElementById('manage-categories-dialog')?.classList.add('hidden');
-      if (window._returnToProfile) {
-        window._returnToProfile = false;
-        openProfileModal();
-      }
-    });
+  if (closeManageBtn && !closeManageBtn.hasAttribute('onclick')) {
+    closeManageBtn.addEventListener('click', closeManageCategoriesDialog);
   }
 });
 
@@ -2629,6 +2714,9 @@ window.processTransactions = processTransactions;
 window.processCategories = processCategories;
 
 window.showAddCategoryDialog = showAddCategoryDialog;
+window.submitAddCategoryDialog = submitAddCategoryDialog;
+window.closeAddCategoryDialog = closeAddCategoryDialog;
+window.closeManageCategoriesDialog = closeManageCategoriesDialog;
 window.renderIconGrid = renderIconGrid;
 window.showManageCategoriesDialog = showManageCategoriesDialog;
 window.renderManageCategories = renderManageCategories;

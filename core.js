@@ -128,6 +128,11 @@ function resetGlobalCache() {
   return Cache;
 }
 
+// Global chart references
+window.monthlyChartObj = null;
+window.categoryChartObj = null;
+window.brokerChartObj = null;
+
 function getCurrentUserProfile() {
   const user = typeof auth !== 'undefined' ? auth.currentUser : null;
   const defName = user ? (user.displayName || (user.email?.includes('@budget.local') ? user.email.replace('@budget.local', '') : user.email?.split('@')[0]) || 'Пользователь') : 'Пользователь';
@@ -279,11 +284,28 @@ async function fetchCollection(table) {
         if (typeof renderBroker === 'function') renderBroker();
         if (typeof updateGoalDropdowns === 'function') updateGoalDropdowns();
         break;
-      case 'Categories':
-        Cache.categories = processCategories(data);
+      case 'Categories': {
+        const prevCats = Cache.categories || { expense: [], income: [] };
+        const fetchedCats = (typeof processCategories === 'function') ? processCategories(data) : { expense: [], income: [] };
+        // Сохраняем локально созданные категории, если они еще не успели синхронизироваться в ответе БД
+        (prevCats.expense || []).forEach(e => {
+          if (e && e.name && !fetchedCats.expense.some(item => item && item.name === e.name)) {
+            fetchedCats.expense.push(e);
+          }
+        });
+        (prevCats.income || []).forEach(i => {
+          if (i && i.name && !fetchedCats.income.some(item => item && item.name === i.name)) {
+            fetchedCats.income.push(i);
+          }
+        });
+        Cache.categories = fetchedCats;
         if (typeof renderTransactions === 'function') renderTransactions();
         if (typeof renderBudgetTab === 'function') renderBudgetTab();
+        if (window._lastParsedTransactions && typeof window.renderFilteredRows === 'function') {
+          window.renderFilteredRows(window._lastParsedTransactions);
+        }
         break;
+      }
       case 'CategoryRules':
         Cache.categoryRules = await processOrSeedRules(querySnapshot);
         break;

@@ -2,7 +2,7 @@
    Семейный Бюджет — Service Worker (Offline-First)
    ========================================== */
 
-const CACHE_NAME = 'budget-pwa-v20';
+const CACHE_NAME = 'budget-pwa-v22';
 
 const STATIC_SHELL = [
   './',

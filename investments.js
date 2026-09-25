@@ -117,7 +117,7 @@ function renderDeposits() {
   if (data.length === 0) {
     listEl.innerHTML = `
       <div class="card rounded-2xl p-6 text-center flex flex-col items-center justify-center gap-3 mt-4 border border-[rgba(255,255,255,0.06)] bg-[#181B24]">
-        <div class="w-12 h-12 rounded-2xl bg-[#6C5DD3]/15 text-[#727cff] flex items-center justify-center">
+        <div class="w-12 h-12 rounded-2xl bg-[#6C5DD3]/15 text-[#8C7DFF] flex items-center justify-center">
           <i data-lucide="piggy-bank" class="w-6 h-6"></i>
         </div>
         <div>

@@ -70,7 +70,8 @@ function getActiveCategories(type = 'Расход') {
     return type === 'Доход' ? ['Зарплата', 'Другое'] : ['Продукты', 'Другое'];
   }
   const list = type === 'Доход' ? (cats.income || []) : (cats.expense || []);
-  return list.map(c => c.name);
+  const names = list.map(c => (typeof c === 'string' ? c : c?.name)).filter(Boolean);
+  return [...new Set(names)];
 }
 
 /**
@@ -198,10 +199,13 @@ const UNIVERSAL_TRANSFER_KEYWORDS = [
 // Общие служебные строки (шапки, подвалы документов)
 const COMMON_SERVICE_LINES = [
   'страница', 'выписка по', 'справка о движении', 'входящий остаток',
-  'исходящий остаток', 'итого зачислений', 'итого списаний', 'с уважением',
-  'руководитель департамента', 'лицензия банка россии', 'номер лицевого счёта',
+  'исходящий остаток', 'итого зачислений', 'итого списаний', 'итого оборотов',
+  'с уважением', 'руководитель департамента', 'начальник отдела', 'сопровождения кредитов',
+  'кредитов и депозитов', 'е.в. самохвалова', 'самохвалова',
+  'лицензия банка россии', 'генеральная лицензия', 'номер лицевого счёта',
   'продолжение на', 'продолжение следующей', 'продолжение выписки', 'продолжение таблицы',
-  'продолжение на следующей', 'окончание таблицы'
+  'продолжение на следующей', 'окончание таблицы', 'ао «яндекс банк»', 'яндекс банк',
+  'ул. садовническая', 'yabank.yandex.ru', 'welcome@bank.yandex.ru'
 ];
 
 // Утилита очистки суммы из строки в число
@@ -214,7 +218,7 @@ function cleanAmount(str) {
 }
 
 /**
- * Очищает название операции/магазина от служебных фраз разбиения страниц в PDF (например, "Продолжение на следующей странице")
+ * Очищает название операции/магазина от служебных фраз разбиения страниц и подписей в PDF
  */
 function cleanMerchantTitle(str) {
   if (!str) return '';
@@ -222,6 +226,7 @@ function cleanMerchantTitle(str) {
     .replace(/продолжение\s*(на\s*)?(след(ующей|ующем|ующих|\.))?\s*(страниц[еаы]|листе|стр\.?|таблицы|выписки)?(\.{3})?/gi, '')
     .replace(/окончание\s+таблицы/gi, '')
     .replace(/(страница|стр\.?|лист)\s*\d+(\s*из\s*\d+)?/gi, '')
+    .replace(/\b(с уважением|начальник отдела|руководитель|главный бухгалтер|исходящий остаток|итого списаний|итого зачислений|яндекс банк|ао «яндекс банк»|ул\.\s*садовническая|yabank\.yandex\.ru).*$/gi, '')
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -237,7 +242,18 @@ class UniversalStatementParser {
 
     for (let line of rawLines) {
       line = line.trim();
-      if (!line || this._isServiceLine(line, config)) continue;
+      if (!line) continue;
+
+      // Если встретили признак завершения таблицы или подвала документа — закрываем текущий блок транзакции
+      if (this._isTableEndOrFooter(line, config)) {
+        if (currentBlock) {
+          rawBlocks.push(currentBlock);
+          currentBlock = null;
+        }
+        continue;
+      }
+
+      if (this._isServiceLine(line, config)) continue;
 
       if (config.isTxStart(line)) {
         if (currentBlock) rawBlocks.push(currentBlock);
@@ -293,6 +309,45 @@ class UniversalStatementParser {
     return hasUniversal || hasCustom;
   }
 
+  static _isTableEndOrFooter(line, config) {
+    if (!line) return false;
+    const l = line.toLowerCase();
+    const markers = [
+      'исходящий остаток',
+      'входящий остаток',
+      'итого списаний',
+      'итого зачислений',
+      'итого операций',
+      'итого оборотов',
+      'всего списано',
+      'всего зачислено',
+      'всего поступлений',
+      'всего операций',
+      'остаток на конец',
+      'остаток на начало',
+      'обороты за период',
+      'с уважением',
+      'начальник отдела',
+      'начальник управления',
+      'руководитель',
+      'главный бухгалтер',
+      'генеральный директор',
+      'е.в. самохвалова',
+      'самохвалова',
+      'сопровождения кредитов',
+      'акционерное общество «яндекс банк»',
+      'ао «яндекс банк»',
+      'ул. садовническая',
+      'yabank.yandex.ru',
+      'welcome@bank.yandex.ru',
+      'лицензия банка россии',
+      'генеральная лицензия',
+      'оттиск печати',
+      'подпись'
+    ];
+    return markers.some(m => l.includes(m));
+  }
+
   static _isServiceLine(line, config) {
     const l = line.toLowerCase();
     const isCommon = Array.isArray(COMMON_SERVICE_LINES) && COMMON_SERVICE_LINES.some(kw => l.includes(kw));
@@ -333,7 +388,19 @@ const BANK_REGISTRY = [
     },
     detect: function(p) { return this.getScore(p) >= 5; },
     isTxStart: (l) => /\d{2}\.\d{2}\.\d{4}/.test(l) && /[\d\s\xa0]+[.,]\d{2}\s*₽/.test(l),
-    isServiceLine: (l) => (l.includes('операции') && l.includes('мск')) || (l.includes('обработки') && l.includes('договора')),
+    isServiceLine: (l) => {
+      const lower = l.toLowerCase();
+      return (lower.includes('операции') && lower.includes('мск')) ||
+             (lower.includes('обработки') && lower.includes('договора')) ||
+             lower.includes('исходящий остаток') ||
+             lower.includes('итого списаний') ||
+             lower.includes('итого зачислений') ||
+             lower.includes('с уважением') ||
+             lower.includes('начальник отдела') ||
+             lower.includes('самохвалова') ||
+             lower.includes('садовническая') ||
+             lower.includes('yabank.yandex.ru');
+    },
     extract: (lines) => {
       const first = lines[0];
       const dMatch = first.match(/\d{2}\.\d{2}\.\d{4}/);
@@ -342,7 +409,11 @@ const BANK_REGISTRY = [
       const type = raw.includes('+') ? 'Доход' : 'Расход';
 
       let part1 = first.split(/\d{2}\.\d{2}\.\d{4}/)[0].replace(/^Оплата товаров и услуг\s*/i, '').trim();
-      let part2 = lines.slice(1).map(l => l.replace(/в\s+\d{2}:\d{2}/i, '').replace(/\d{2}\.\d{2}\.\d{4}/g, '').replace(/\*\d{4}/g, '').replace(/[\d\s\xa0]+[.,]\d{2}\s*₽/g, '').trim()).filter(Boolean).join(' ');
+      let part2 = lines.slice(1)
+        .filter(l => !UniversalStatementParser._isTableEndOrFooter(l, null))
+        .map(l => l.replace(/в\s+\d{2}:\d{2}/i, '').replace(/\d{2}\.\d{2}\.\d{4}/g, '').replace(/\*\d{4}/g, '').replace(/[\d\s\xa0]+[.,]\d{2}\s*₽/g, '').trim())
+        .filter(Boolean)
+        .join(' ');
       let merchant = `${part1} ${part2}`.replace(/^Оплата товаров и услуг\s*/i, '').replace(/\b(операции|обработки|договора|мск|карты|валюте)\b/gi, '').replace(/\s+/g, ' ').trim() || 'Операция Яндекс Банк';
 
       return { date: dMatch[0], amount: cleanAmount(raw), type, merchant };
@@ -915,9 +986,9 @@ function renderFilteredRows(transactions) {
                 }).join('')}
 
                 <div class="border-t border-[rgba(255,255,255,0.06)] pt-1 mt-1">
-                  <button type="button" onclick="event.stopPropagation(); addCategoryFromImport('${tx.type}')" class="w-full text-left px-2 py-1.5 text-[12px] text-blue-400 hover:bg-[#2A2D3C] rounded-lg flex items-center gap-1.5 font-medium cursor-pointer transition-colors">
+                  <button type="button" onclick="event.stopPropagation(); addCategoryFromImport('${tx.type}', '${tx._id}')" class="w-full text-left px-2 py-1.5 text-[12px] text-[#8C7DFF] hover:text-white hover:bg-[#6C5DD3]/15 rounded-lg flex items-center gap-1.5 font-semibold cursor-pointer transition-colors">
                     <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-                    <span>Добавить</span>
+                    <span>Добавить категорию</span>
                   </button>
                 </div>
               </div>
@@ -926,7 +997,7 @@ function renderFilteredRows(transactions) {
             <!-- Кнопка булавка закрепления правила с тактильным эффектом -->
             <button type="button" 
                     onclick="openRememberRuleModal('${tx._id}')" 
-                    class="w-7 h-7 rounded-xl bg-[#6C5DD3]/15 hover:bg-[#6C5DD3]/25 active:scale-90 text-[#9E86FF] hover:text-white border border-[#6C5DD3]/25 flex items-center justify-center flex-shrink-0 cursor-pointer transition-all shadow-sm group" 
+                    class="w-7 h-7 rounded-xl bg-[#6C5DD3]/15 hover:bg-[#6C5DD3]/25 active:scale-90 text-[#8C7DFF] hover:text-white border border-[#6C5DD3]/25 flex items-center justify-center flex-shrink-0 cursor-pointer transition-all shadow-sm group" 
                     title="Запомнить в словарь категорий">
               <i data-lucide="pin" class="w-3.5 h-3.5 transition-transform group-hover:scale-110"></i>
             </button>
@@ -956,6 +1027,8 @@ function renderParsedTransactionsView(loadedStatementsOrFileName, transactions, 
 
   window._loadedStatements = loadedStatements;
   window._lastActiveBank = loadedStatements[0]?.bank || bankConfig;
+  window._lastParsedFileName = loadedStatements[0]?.fileName || (typeof loadedStatementsOrFileName === 'string' ? loadedStatementsOrFileName : 'Выписка');
+  window._lastParsedBankName = window._lastActiveBank;
   currentBankFilter = 'all';
 
   // Сортировка по убыванию даты
@@ -1039,7 +1112,7 @@ function renderParsedTransactionsView(loadedStatementsOrFileName, transactions, 
         const uniqueBankNames = [...new Set(loadedStatements.map(s => s.bank?.name || 'Банк'))];
         const filesTooltip = loadedStatements.map(s => `${s.fileName} (${s.bank?.name}): ${s.count} оп.`).join('\n');
         info.innerHTML = `
-          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-semibold border bg-indigo-900/40 text-indigo-300 border-indigo-700/40 cursor-help" title="${escapeHtml(filesTooltip)}">
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-semibold border bg-[#6C5DD3]/15 text-[#8C7DFF] border-[#6C5DD3]/25 cursor-help" title="${escapeHtml(filesTooltip)}">
             <i data-lucide="layers" class="w-3 h-3"></i>
             <span>${loadedStatements.length} выписок (${escapeHtml(uniqueBankNames.join(', '))})</span>
           </span>
@@ -1177,20 +1250,37 @@ function selectImportCat(txId, newCat, icon) {
 async function deleteCategoryFromImport(catName, type) {
   if (typeof deleteCategory === 'function') {
     await deleteCategory(catName, type);
-    // Перерисовываем список импорта с обновленными категориями
-    if (window._lastParsedTransactions && window._lastParsedFileName) {
-      renderParsedTransactionsView(window._lastParsedFileName, window._lastParsedTransactions, window._lastParsedBankName);
-    }
+    // Мгновенно перерисовываем список импорта с актуальными категориями
+    const txs = window._lastParsedTransactions || [];
+    renderFilteredRows(txs);
+    if (window._updateHeaderSummary) window._updateHeaderSummary();
   }
 }
 
 // Добавление категории прямо из окна импорта
-function addCategoryFromImport(type) {
+function addCategoryFromImport(type, txId = null) {
+  window._importActiveTxId = txId;
   document.querySelectorAll('.custom-dropdown-menu').forEach(m => m.classList.add('hidden'));
   if (typeof showAddCategoryDialog === 'function') {
     showAddCategoryDialog(type);
   }
 }
+window.addCategoryFromImport = addCategoryFromImport;
+
+// Мгновенное обновление выпадающих списков категорий и выбор созданной категории
+function refreshStatementImportCategories(newCategoryName, newCategoryIcon, targetTxId = null) {
+  const txs = window._lastParsedTransactions || [];
+  if (targetTxId && newCategoryName) {
+    const tx = txs.find(t => t && t._id === targetTxId);
+    if (tx) {
+      tx.category = newCategoryName;
+      if (newCategoryIcon) tx.categoryIcon = newCategoryIcon;
+    }
+  }
+  renderFilteredRows(txs);
+  if (window._updateHeaderSummary) window._updateHeaderSummary();
+}
+window.refreshStatementImportCategories = refreshStatementImportCategories;
 
 /**
  * Переключение чекбокса операции
@@ -1683,6 +1773,8 @@ document.addEventListener('click', (e) => {
 });
 
 window.renderParsedTransactionsView = renderParsedTransactionsView;
+window.renderFilteredRows = renderFilteredRows;
+window.refreshStatementImportCategories = refreshStatementImportCategories;
 window.setBankFilter = setBankFilter;
 window.openRememberRuleModal = openRememberRuleModal;
 window.openRememberRuleCustom = openRememberRuleCustom;

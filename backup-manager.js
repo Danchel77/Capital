@@ -357,7 +357,7 @@ function handleBackupFileDrop(event) {
   event.stopPropagation();
   
   const zone = document.getElementById('backup-dropzone');
-  if (zone) zone.classList.remove('border-blue-500', 'bg-blue-500/10');
+  if (zone) zone.classList.remove('border-[#6C5DD3]', 'bg-[#6C5DD3]/10');
 
   if (event.dataTransfer?.files?.length > 0) {
     processSelectedBackupFile(event.dataTransfer.files[0]);
@@ -368,14 +368,14 @@ function handleBackupDragOver(event) {
   event.preventDefault();
   event.stopPropagation();
   const zone = document.getElementById('backup-dropzone');
-  if (zone) zone.classList.add('border-blue-500', 'bg-blue-500/10');
+  if (zone) zone.classList.add('border-[#6C5DD3]', 'bg-[#6C5DD3]/10');
 }
 
 function handleBackupDragLeave(event) {
   event.preventDefault();
   event.stopPropagation();
   const zone = document.getElementById('backup-dropzone');
-  if (zone) zone.classList.remove('border-blue-500', 'bg-blue-500/10');
+  if (zone) zone.classList.remove('border-[#6C5DD3]', 'bg-[#6C5DD3]/10');
 }
 
 /**
@@ -641,7 +641,7 @@ const SECTION_CONFIGS = {
     title: 'Просмотр операций',
     subtitle: 'Выберите транзакции для импорта в историю',
     icon: 'arrow-left-right',
-    iconWrapClass: 'bg-blue-500/15 text-blue-400'
+    iconWrapClass: 'bg-[#6C5DD3]/15 text-[#8C7DFF]'
   },
   dep: {
     title: 'Просмотр вкладов и счетов',
@@ -653,7 +653,7 @@ const SECTION_CONFIGS = {
     title: 'Просмотр операций брокера',
     subtitle: 'Выберите движения средств брокерского портфеля',
     icon: 'trending-up',
-    iconWrapClass: 'bg-[#6C5DD3]/15 text-[#727cff]'
+    iconWrapClass: 'bg-cyan-500/15 text-cyan-400'
   },
   goals: {
     title: 'Просмотр финансовых целей',
@@ -671,7 +671,7 @@ const SECTION_CONFIGS = {
     title: 'Просмотр словаря категорий',
     subtitle: 'Выберите ключевые фразы и правила автокатегоризации',
     icon: 'book-open-check',
-    iconWrapClass: 'bg-purple-500/15 text-purple-400'
+    iconWrapClass: 'bg-fuchsia-500/15 text-fuchsia-400'
   }
 };
 
@@ -907,8 +907,8 @@ function renderInspectItemRow(secKey, item, actualIndex) {
     }
 
     case 'rules': {
-      topRowLeft = `<span class="text-xs font-semibold text-purple-200 break-words">«${escapeHtml(raw.pattern || '')}»</span>`;
-      topRowRight = `<span class="text-[11px] font-medium text-purple-300 bg-purple-500/15 border border-purple-500/20 px-2 py-0.5 rounded-lg flex-shrink-0">${escapeHtml(raw.category || 'Категория')}</span>`;
+      topRowLeft = `<span class="text-xs font-semibold text-gray-200 break-words">«${escapeHtml(raw.pattern || '')}»</span>`;
+      topRowRight = `<span class="text-[11px] font-medium text-[#8C7DFF] bg-[#6C5DD3]/15 border border-[#6C5DD3]/25 px-2 py-0.5 rounded-lg flex-shrink-0">${escapeHtml(raw.category || 'Категория')}</span>`;
       bottomRowLeft = `<span class="text-[11px] text-[#848D99]">Правило автокатегоризации</span>`;
       break;
     }
@@ -920,11 +920,11 @@ function renderInspectItemRow(secKey, item, actualIndex) {
   }
 
   return `
-    <div class="flex items-center gap-3 p-3 rounded-2xl bg-[#12151C] border ${item.selected ? 'border-blue-500/30 bg-blue-500/[0.03]' : 'border-[rgba(255,255,255,0.05)]'} hover:border-white/10 transition-colors">
+    <div class="flex items-center gap-3 p-3 rounded-2xl bg-[#12151C] border ${item.selected ? 'border-[#6C5DD3]/30 bg-[#6C5DD3]/[0.04]' : 'border-[rgba(255,255,255,0.05)]'} hover:border-white/10 transition-colors">
       <input type="checkbox" 
              ${isChecked} 
              onchange="onInspectItemCheckboxChange(${actualIndex}, this.checked)" 
-             class="w-4 h-4 rounded border-gray-600 text-blue-600 focus:ring-0 focus:ring-offset-0 bg-[#212430] cursor-pointer flex-shrink-0">
+             class="w-4 h-4 rounded border-gray-600 accent-[#6C5DD3] bg-[#212430] cursor-pointer flex-shrink-0">
       <div class="flex-1 min-w-0 flex flex-col gap-1 cursor-pointer" onclick="toggleInspectItemByRowClick(${actualIndex})">
         <div class="flex items-center justify-between gap-2 min-w-0">
           <div class="min-w-0 flex-1 pr-1">${topRowLeft}</div>

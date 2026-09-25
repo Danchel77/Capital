@@ -250,6 +250,12 @@ const DEFAULT_CATEGORY_RULES = [
   { pattern: "возврат", category: "Возврат" }
 ];
 
+const DEFAULT_SYSTEM_CATEGORIES = [
+  'Продукты', 'Кафе и рестораны', 'Маркетплейсы', 'Транспорт', 'Жилье',
+  'Одежда', 'Здоровье', 'Развлечения', 'Другое', 'Зарплата', 'Возврат', 'Кэшбек'
+];
+
 if (typeof window !== 'undefined') {
   window.DEFAULT_CATEGORY_RULES = DEFAULT_CATEGORY_RULES;
+  window.DEFAULT_SYSTEM_CATEGORIES = DEFAULT_SYSTEM_CATEGORIES;
 }

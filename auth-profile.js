@@ -303,7 +303,7 @@ function openProfileModal() {
   if (editNameRow) editNameRow.classList.add('hidden');
 
   if (avatarContainer && typeof getAvatarHtml === 'function') {
-    avatarContainer.innerHTML = getAvatarHtml(profile.avatarId, 'w-14 h-14', 'w-7 h-7', 'ring-2 ring-white/10 shadow-lg cursor-pointer hover:ring-blue-500/50 transition-all active:scale-95');
+    avatarContainer.innerHTML = getAvatarHtml(profile.avatarId, 'w-14 h-14', 'w-7 h-7', 'ring-2 ring-white/10 shadow-lg cursor-pointer hover:ring-[#6C5DD3]/50 transition-all active:scale-95');
   }
 
   if (typeEl) {
@@ -387,7 +387,7 @@ function openAvatarPickerModal() {
     html += `
       <button type="button" 
               onclick="selectAvatarPreset('${p.id}')"
-              class="avatar-preset-btn p-2.5 rounded-2xl flex items-center justify-center border transition-all cursor-pointer ${isSelected ? 'border-blue-500 bg-blue-500/20 scale-105 shadow-lg ring-2 ring-blue-500/40' : 'border-white/5 bg-[#181B24] hover:bg-[#212430] hover:border-white/15'}"
+              class="avatar-preset-btn p-2.5 rounded-2xl flex items-center justify-center border transition-all cursor-pointer ${isSelected ? 'border-[#6C5DD3] bg-[#6C5DD3]/25 scale-105 shadow-lg ring-2 ring-[#6C5DD3]/40' : 'border-white/5 bg-[#181B24] hover:bg-[#212430] hover:border-white/15'}"
               data-preset-id="${p.id}"
               title="${escapeHtml(p.label)}">
         <div class="w-12 h-12 rounded-full ${p.bg} text-white flex items-center justify-center shadow-md select-none pointer-events-none">
@@ -413,7 +413,7 @@ function selectAvatarPreset(avatarId) {
   if (grid) {
     grid.querySelectorAll('.avatar-preset-btn').forEach(btn => {
       const isSelected = btn.dataset.presetId === avatarId;
-      btn.className = `avatar-preset-btn p-2.5 rounded-2xl flex items-center justify-center border transition-all cursor-pointer ${isSelected ? 'border-blue-500 bg-blue-500/20 scale-105 shadow-lg ring-2 ring-blue-500/40' : 'border-white/5 bg-[#181B24] hover:bg-[#212430] hover:border-white/15'}`;
+      btn.className = `avatar-preset-btn p-2.5 rounded-2xl flex items-center justify-center border transition-all cursor-pointer ${isSelected ? 'border-[#6C5DD3] bg-[#6C5DD3]/25 scale-105 shadow-lg ring-2 ring-[#6C5DD3]/40' : 'border-white/5 bg-[#181B24] hover:bg-[#212430] hover:border-white/15'}`;
     });
   }
 }
@@ -699,7 +699,7 @@ function renderFamilySettingsUI() {
             <div class="min-w-0">
               <span class="text-sm font-medium text-white flex items-center gap-1.5 truncate">
                 ${escapeHtml(m.name || 'Пользователь')}
-                ${isMe ? '<span class="text-[10px] text-blue-400 font-semibold bg-blue-500/15 px-1.5 py-0.2 rounded">Вы</span>' : ''}
+                ${isMe ? '<span class="text-[10px] text-[#8C7DFF] font-semibold bg-[#6C5DD3]/15 px-1.5 py-0.2 rounded">Вы</span>' : ''}
               </span>
               <span class="text-[11px] text-gray-400 block truncate">${isMemOwner ? 'Владелец бюджета' : 'Участник семьи'}</span>
             </div>
