@@ -1,7 +1,7 @@
 {
   "appId": "com.budget.family",
   "appName": "Бюджет",
-  "webDir": ".",
+  "webDir": "www",
   "bundledWebRuntime": false,
   "server": {
     "androidScheme": "https"

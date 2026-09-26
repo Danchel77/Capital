@@ -32,6 +32,9 @@ jobs:
 
       - name: 5. Инициализация и синхронизация Android платформы
         run: |
+          mkdir -p www
+          cp -r *.html *.js *.css *.json *.svg www/ 2>/dev/null || true
+          if [ -d "public" ]; then cp -r public/* www/ 2>/dev/null || true; fi
           if [ ! -d "android" ]; then
             npx cap add android
           fi
