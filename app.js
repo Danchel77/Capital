@@ -30,6 +30,12 @@ if (currentAuth && typeof currentAuth.onAuthStateChanged === 'function') {
       return;
     }
 
+    if (currentAuthedUid !== user.uid) {
+      if (typeof window.resetGlobalCache === 'function') {
+        window.resetGlobalCache();
+      }
+    }
+
     currentAuthedUid = user.uid;
 
     // Обновляем никнейм в шапке
@@ -371,7 +377,7 @@ function switchTab(tab) {
   
   // Умный кэшированный рендер вкладок
   if (tab === 'budget') {
-    if (window._budgetTabDirty !== false || !window._budgetTabRendered) {
+    if (window._budgetTabDirty !== false || !window._budgetTabRendered || window._budgetNeedsExpenseAnimation) {
       if (typeof renderBudgetTab === 'function') renderBudgetTab();
       window._budgetTabDirty = false;
       window._budgetTabRendered = true;

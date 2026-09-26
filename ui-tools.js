@@ -109,6 +109,11 @@ async function deleteSelectedItems() {
         await handleTransactionsDeleted(deletedTxIds, deletedTxs, batch);
       }
 
+      if (deletedTxIds.length > 0) {
+        if (typeof triggerBudgetExpenseAnimation === 'function') triggerBudgetExpenseAnimation();
+        if (typeof markTabsDirty === 'function') markTabsDirty();
+      }
+
       await batch.commit();
       disableSelectionMode();
       await fetchAllData();

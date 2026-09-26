@@ -766,49 +766,186 @@ window.handleStatementUpload = handleStatementUpload;
 // -------------------------------------------------------------
 
 /**
- * Проверяет, есть ли уже такая операция в базе данных (Cache.transactions)
- * Сверяет дату (с нормализацией DD.MM.YYYY и YYYY-MM-DD), сумму (с учетом копеек) и тип операции
+ * Надежно преобразует любое значение даты в чистую ISO-строку 'YYYY-MM-DD'
+ * без искажений часовых поясов.
  */
-function isTransactionDuplicate(tx) {
-  if (!window.Cache) return false;
+function extractIsoDate(val) {
+  if (!val) return '';
+  if (val instanceof Date) {
+    if (isNaN(val.getTime())) return '';
+    const y = val.getFullYear();
+    const m = String(val.getMonth() + 1).padStart(2, '0');
+    const d = String(val.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+  if (typeof val === 'object') {
+    if (typeof val.toDate === 'function') {
+      try { return extractIsoDate(val.toDate()); } catch (e) {}
+    }
+    if (typeof val.seconds === 'number') {
+      return extractIsoDate(new Date(val.seconds * 1000));
+    }
+    if (typeof val._seconds === 'number') {
+      return extractIsoDate(new Date(val._seconds * 1000));
+    }
+  }
+  if (typeof val === 'number') {
+    return extractIsoDate(new Date(val));
+  }
+  const str = String(val).trim();
+  if (!str) return '';
 
-  const allExisting = typeof getAllCachedTransactionsFlat === 'function'
-    ? getAllCachedTransactionsFlat()
-    : ((window.Cache.transactions || []).flatMap(m => Array.isArray(m.items) ? m.items : (m.amount !== undefined ? [m] : [])));
+  // 1. Формат DD.MM.YYYY, DD/MM/YYYY, DD-MM-YYYY
+  const ruMatch = str.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{2,4})/);
+  if (ruMatch) {
+    const day = ruMatch[1].padStart(2, '0');
+    const month = ruMatch[2].padStart(2, '0');
+    let year = ruMatch[3];
+    if (year.length === 2) year = '20' + year;
+    return `${year}-${month}-${day}`;
+  }
 
-  if (!allExisting || allExisting.length === 0) return false;
+  // 2. Формат YYYY-MM-DD, YYYY/MM/DD
+  const isoMatch = str.match(/^(\d{4})[./-](\d{1,2})[./-](\d{1,2})/);
+  if (isoMatch) {
+    const year = isoMatch[1];
+    const month = isoMatch[2].padStart(2, '0');
+    const day = isoMatch[3].padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
 
-  const txAmount = Math.abs(parseFloat(tx.amount) || 0);
-  const txType = (tx.type === 'Доход' || tx.type === 'income') ? 'Доход' : 'Расход';
+  // 3. Резерв через parseAnyDate
+  const parsed = (typeof parseAnyDate === 'function') ? parseAnyDate(str) : new Date(str);
+  if (parsed && !isNaN(parsed.getTime())) {
+    const y = parsed.getFullYear();
+    const m = String(parsed.getMonth() + 1).padStart(2, '0');
+    const d = String(parsed.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+  return '';
+}
 
-  const txParsedDate = typeof parseAnyDate === 'function' ? parseAnyDate(tx.date || tx.rawDate || tx.formattedDate) : null;
-  const txIsoDate = (txParsedDate && !isNaN(txParsedDate.getTime()) && typeof formatDateStr === 'function')
-    ? formatDateStr(txParsedDate, 'yyyy-MM-dd')
-    : String(tx.date || '');
+/**
+ * Нормализует строку описания/мерчанта для сравнения
+ */
+function cleanMerchantForCompare(str) {
+  if (!str) return '';
+  if (typeof StatementCategorizer !== 'undefined' && typeof StatementCategorizer.normalize === 'function') {
+    return StatementCategorizer.normalize(str);
+  }
+  return String(str).toLowerCase().replace(/[^a-zа-я0-9]/gi, '').trim();
+}
 
-  for (const item of allExisting) {
+function isGenericMerchant(normStr) {
+  if (!normStr) return true;
+  const generics = ['rashod', 'dohod', 'pokupka', 'trata', 'operatsiya', 'perevod', 'drugoe', 'oplatatovarov'];
+  return generics.some(g => normStr.includes(g));
+}
+
+/**
+ * Проверяет, является ли операция дубликатом с подробной информацией.
+ * Поддерживает:
+ * - проверку относительно базы данных (Cache.transactions) по строгому совпадению календарного дня, суммы и типа
+ * - проверку относительно ранее встреченных операций в текущем пакете файлов (seenInBatch)
+ * - учет уже сопоставленных записей (matchedDbIds), чтобы 1 запись в базе не помечала 2 разные операции
+ */
+function checkTransactionDuplicateWithDetails(tx, options = {}) {
+  if (!tx) return { isDuplicate: false };
+
+  const matchedDbIds = options.matchedDbIds || new Set();
+  const seenInBatch = options.seenInBatch || [];
+  const customList = Array.isArray(options) ? options : (options.existingList || null);
+
+  const txAmount = (typeof parseAmount === 'function')
+    ? Math.abs(parseAmount(tx.amount))
+    : Math.abs(parseFloat(String(tx.amount || 0).replace(/\s/g, '').replace(/,/g, '.')) || 0);
+
+  const rawTxType = String(tx.type || '').trim().toLowerCase();
+  const txType = (rawTxType === 'доход' || rawTxType === 'income') ? 'Доход' : 'Расход';
+
+  const txIsoDate = extractIsoDate(tx.date || tx.displayDate || tx.rawDate || tx.formattedDate);
+  const txMerchant = String(tx.merchant || tx.comment || tx.description || '').trim();
+  const normTxMerchant = cleanMerchantForCompare(txMerchant);
+
+  // 1. Проверка на дубликат внутри текущего пакета импортируемых файлов (например, повторные или пересекающиеся выписки)
+  if (seenInBatch && seenInBatch.length > 0) {
+    for (const prevTx of seenInBatch) {
+      if (!prevTx || prevTx._id === tx._id) continue;
+      const prevAmount = (typeof parseAmount === 'function')
+        ? Math.abs(parseAmount(prevTx.amount))
+        : Math.abs(parseFloat(String(prevTx.amount || 0).replace(/\s/g, '').replace(/,/g, '.')) || 0);
+      const rawPrevType = String(prevTx.type || '').trim().toLowerCase();
+      const prevType = (rawPrevType === 'доход' || rawPrevType === 'income') ? 'Доход' : 'Расход';
+
+      if (Math.abs(prevAmount - txAmount) > 0.05 || prevType !== txType) continue;
+
+      const prevIsoDate = extractIsoDate(prevTx.date || prevTx.displayDate || prevTx.rawDate || prevTx.formattedDate);
+      if (prevIsoDate && txIsoDate && prevIsoDate === txIsoDate) {
+        const prevNormMerchant = cleanMerchantForCompare(prevTx.merchant || prevTx.comment || prevTx.description || '');
+        if (!normTxMerchant || !prevNormMerchant || normTxMerchant === prevNormMerchant || normTxMerchant.includes(prevNormMerchant) || prevNormMerchant.includes(normTxMerchant)) {
+          return { isDuplicate: true, reason: 'Повтор в файле' };
+        }
+      }
+    }
+  }
+
+  // 2. Проверка относительно базы данных (Cache.transactions)
+  const allExisting = customList || (
+    typeof getAllCachedTransactionsFlat === 'function'
+      ? getAllCachedTransactionsFlat()
+      : ((window.Cache?.transactions || []).flatMap(m => Array.isArray(m.items) ? m.items : (m.amount !== undefined ? [m] : [])))
+  );
+
+  if (!allExisting || allExisting.length === 0) {
+    return { isDuplicate: false };
+  }
+
+  for (let i = 0; i < allExisting.length; i++) {
+    const item = allExisting[i];
     if (!item) continue;
-    const itemAmount = Math.abs(parseFloat(item.amount) || 0);
-    const itemType = (item.type === 'Доход' || item.type === 'income') ? 'Доход' : 'Расход';
 
-    // 1. Проверяем совпадение суммы и типа операции
+    const itemId = item.id || `idx_${i}`;
+    if (matchedDbIds.has(itemId)) continue;
+
+    const itemAmount = (typeof parseAmount === 'function')
+      ? Math.abs(parseAmount(item.amount))
+      : Math.abs(parseFloat(String(item.amount || 0).replace(/\s/g, '').replace(/,/g, '.')) || 0);
+
+    const rawItemType = String(item.type || '').trim().toLowerCase();
+    const itemType = (rawItemType === 'доход' || rawItemType === 'income') ? 'Доход' : 'Расход';
+
     if (Math.abs(itemAmount - txAmount) > 0.05 || itemType !== txType) {
       continue;
     }
 
-    // 2. Нормализуем дату существующей операции
-    const itemParsedDate = typeof parseAnyDate === 'function' ? parseAnyDate(item.date || item.rawDate || item.formattedDate) : null;
-    const itemIsoDate = (itemParsedDate && !isNaN(itemParsedDate.getTime()) && typeof formatDateStr === 'function')
-      ? formatDateStr(itemParsedDate, 'yyyy-MM-dd')
-      : String(item.date || item.rawDate || '');
+    const itemIsoDate = extractIsoDate(item.date || item.rawDate || item.formattedDate || item.displayDate);
+    const itemComment = (typeof getTxComment === 'function' ? getTxComment(item) : String(item.comment || item.description || item.merchant || '')).trim();
+    const normItemComment = cleanMerchantForCompare(itemComment);
 
-    // Точное совпадение по календарному дню (ISO) — дубликат при том же типе и той же сумме
+    // Строгое совпадение по точному календарному дню (ISO)
     if (itemIsoDate && txIsoDate && itemIsoDate === txIsoDate) {
-      return true;
+      // Если у обеих записей есть мерчант, и они абсолютно разные и длинные — это могут быть разные покупки в один день
+      const areBothDistinctMerchants = normTxMerchant && normItemComment &&
+        normTxMerchant.length >= 4 && normItemComment.length >= 4 &&
+        !normTxMerchant.includes(normItemComment) && !normItemComment.includes(normTxMerchant) &&
+        !isGenericMerchant(normTxMerchant) && !isGenericMerchant(normItemComment);
+
+      if (!areBothDistinctMerchants) {
+        return { isDuplicate: true, reason: 'В базе', matchedDbId: itemId };
+      }
     }
   }
 
-  return false;
+  return { isDuplicate: false };
+}
+
+/**
+ * Проверяет, есть ли уже такая операция в базе данных (Cache.transactions)
+ * Универсальная точка входа: совместима с вызовами с 1 или 2 аргументами
+ */
+function isTransactionDuplicate(tx, optionsOrList) {
+  const res = checkTransactionDuplicateWithDetails(tx, optionsOrList);
+  return res.isDuplicate;
 }
 
 // -------------------------------------------------------------
@@ -823,8 +960,8 @@ function setImportFilter(filter) {
     const btn = document.getElementById(`tab-import-${f}`);
     if (btn) {
       btn.className = f === filter
-        ? 'py-1.5 px-2 rounded-lg font-semibold bg-[#212430] text-white text-xs transition-all cursor-pointer flex items-center justify-center gap-1 text-center truncate'
-        : 'py-1.5 px-2 rounded-lg font-medium text-[#848D99] hover:text-white text-xs transition-all cursor-pointer flex items-center justify-center gap-1 text-center truncate';
+        ? 'py-1 px-1.5 rounded-lg font-semibold bg-[#212430] text-white text-xs transition-all cursor-pointer flex flex-col items-center justify-center leading-tight text-center'
+        : 'py-1 px-1.5 rounded-lg font-medium text-[#848D99] hover:text-white text-xs transition-all cursor-pointer flex flex-col items-center justify-center leading-tight text-center';
     }
   });
 
@@ -912,31 +1049,38 @@ function renderFilteredRows(transactions) {
 
     html += `
       <!-- Просторная 2-уровневая строка (мерчант на всю строку, дата, банк и чипс снизу) -->
-      <div class="card-parsed-row bg-[#181B24] border border-[rgba(255,255,255,0.06)] px-3.5 py-2.5 rounded-2xl flex flex-col gap-1.5 transition-all relative ${isInactive ? 'bg-[#12151C]' : 'hover:border-[rgba(255,255,255,0.12)]'}" 
+      <div class="card-parsed-row bg-[#181B24] border border-[rgba(255,255,255,0.06)] px-3.5 py-2.5 rounded-2xl flex flex-col gap-1.5 transition-all relative cursor-pointer ${isInactive ? 'bg-[#12151C]' : 'hover:border-[rgba(255,255,255,0.12)]'}" 
            id="card-tx-${tx._id}" 
            data-is-inactive="${isInactive}"
+           onclick="handleCardRowClick(event, '${tx._id}')"
            style="${isInactive ? 'opacity: 0.55;' : ''}">
         
-        <!-- СТРОКА 1: Чекбокс, Название мерчанта и Сумма -->
+        <!-- СТРОКА 1: Чекбокс, Название мерчанта, Бейджи и Сумма -->
         <div class="flex items-center justify-between gap-2.5 min-w-0">
           <div class="flex items-center gap-2.5 min-w-0 flex-1">
             <input type="checkbox" 
                    class="w-4 h-4 rounded accent-[#6C5DD3] bg-[#212430] border-gray-700 flex-shrink-0 cursor-pointer"
+                   id="chk-tx-${tx._id}"
                    data-tx-id="${tx._id}"
                    ${tx.selected ? 'checked' : ''}
+                   onclick="event.stopPropagation()"
                    onchange="toggleTxSelection('${tx._id}', this.checked)">
 
-            <span class="text-[13px] ${isInactive ? 'text-gray-400 font-normal' : 'text-gray-100 font-semibold'} truncate leading-tight" title="${escapeHtml(tx.merchant)}">
-              ${escapeHtml(tx.merchant)}
-            </span>
+            <div class="flex items-center gap-1.5 min-w-0 flex-1">
+              <span class="text-[13px] ${isInactive ? 'text-gray-400 font-normal' : 'text-gray-100 font-semibold'} truncate leading-tight" title="${escapeHtml(tx.merchant)}">
+                ${escapeHtml(tx.merchant)}
+              </span>
+              ${tx.isTransfer ? '<span class="text-[9px] font-bold text-amber-400 bg-amber-950/40 px-1.5 py-0.5 rounded border border-amber-900/40 flex-shrink-0 whitespace-nowrap ml-auto">Перевод</span>' : ''}
+              ${tx.isDuplicate ? `<span class="text-[9px] font-bold text-gray-400 bg-gray-800/80 px-1.5 py-0.5 rounded border border-gray-700/60 flex-shrink-0 whitespace-nowrap ml-auto" title="${escapeHtml(tx.duplicateReason || 'В базе')}">${escapeHtml(tx.duplicateReason || 'В базе')}</span>` : ''}
+            </div>
           </div>
 
-          <span class="text-[14px] ${amountColor} font-mono font-semibold flex-shrink-0 ml-2">
+          <span class="text-[14px] ${amountColor} font-mono font-semibold flex-shrink-0 ml-2 whitespace-nowrap">
             ${amountSign}${formatMoney(tx.amount)}
           </span>
         </div>
 
-        <!-- СТРОКА 2: Банк, Дата/Статус слева, Категория-чипс и Пин справа -->
+        <!-- СТРОКА 2: Банк и Дата слева, Категория-чипс и Пин справа -->
         <div class="flex items-center justify-between gap-2 pt-1 border-t border-[rgba(255,255,255,0.03)]">
           <div class="flex items-center gap-1.5 text-[11px] text-[#848D99] min-w-0">
             <!-- Иконка банка (без фона, 24x24 px, размером с флажок) -->
@@ -947,8 +1091,6 @@ function renderFilteredRows(transactions) {
             </span>
 
             <span class="font-mono flex-shrink-0">${tx.displayDate}</span>
-            ${tx.isTransfer ? '<span class="text-[9px] font-bold text-amber-400 bg-amber-950/40 px-1.5 py-0.5 rounded border border-amber-900/40 flex-shrink-0">Перевод</span>' : ''}
-            ${tx.isDuplicate ? '<span class="text-[9px] font-bold text-gray-400 bg-gray-800/80 px-1.5 py-0.5 rounded border border-gray-700/60 flex-shrink-0">В базе</span>' : ''}
           </div>
 
           <div class="flex items-center gap-2 flex-shrink-0">
@@ -1037,12 +1179,21 @@ function renderParsedTransactionsView(loadedStatementsOrFileName, transactions, 
   const dialog = document.getElementById('pdf-debug-dialog');
   const info = document.getElementById('pdf-debug-info');
 
+  const matchedDbIds = new Set();
+  const seenInBatch = [];
+
   transactions.forEach((tx, idx) => {
     if (!tx._id) tx._id = 'tx_parsed_' + idx;
     if (!tx.category || tx.category === 'Не определено') {
       tx.category = StatementCategorizer.categorize(tx.merchant, tx.rawDetails, tx.type);
     }
-    tx.isDuplicate = isTransactionDuplicate(tx);
+    const dupCheck = checkTransactionDuplicateWithDetails(tx, { matchedDbIds, seenInBatch });
+    tx.isDuplicate = dupCheck.isDuplicate;
+    tx.duplicateReason = dupCheck.reason || 'В базе';
+    if (dupCheck.matchedDbId) {
+      matchedDbIds.add(dupCheck.matchedDbId);
+    }
+
     if (typeof tx.selected === 'undefined') {
       tx.selected = !tx.isDuplicate && !tx.isTransfer;
     }
@@ -1052,6 +1203,8 @@ function renderParsedTransactionsView(loadedStatementsOrFileName, transactions, 
     }
     if (!tx.bank) tx.bank = window._lastActiveBank?.name || 'Банк';
     if (!tx.bankIconKey) tx.bankIconKey = window._lastActiveBank?.iconKey || window._lastActiveBank?.slug || 'generic';
+
+    seenInBatch.push(tx);
   });
 
   window._lastParsedTransactions = transactions;
@@ -1112,11 +1265,11 @@ function renderParsedTransactionsView(loadedStatementsOrFileName, transactions, 
         const uniqueBankNames = [...new Set(loadedStatements.map(s => s.bank?.name || 'Банк'))];
         const filesTooltip = loadedStatements.map(s => `${s.fileName} (${s.bank?.name}): ${s.count} оп.`).join('\n');
         info.innerHTML = `
-          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-semibold border bg-[#6C5DD3]/15 text-[#8C7DFF] border-[#6C5DD3]/25 cursor-help" title="${escapeHtml(filesTooltip)}">
-            <i data-lucide="layers" class="w-3 h-3"></i>
-            <span>${loadedStatements.length} выписок (${escapeHtml(uniqueBankNames.join(', '))})</span>
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-semibold border bg-[#6C5DD3]/15 text-[#8C7DFF] border-[#6C5DD3]/25 cursor-help min-w-0 max-w-[170px] sm:max-w-[280px]" title="${escapeHtml(filesTooltip)}">
+            <i data-lucide="layers" class="w-3 h-3 flex-shrink-0"></i>
+            <span class="truncate">${loadedStatements.length} выписок (${escapeHtml(uniqueBankNames.join(', '))})</span>
           </span>
-          <span class="text-[11px] text-[#848D99] font-mono">
+          <span class="text-[11px] text-[#848D99] font-mono flex-shrink-0">
             ${transactions.length} оп.
           </span>
         `;
@@ -1127,11 +1280,11 @@ function renderParsedTransactionsView(loadedStatementsOrFileName, transactions, 
         const iconKey = bConfig.iconKey || bConfig.slug || 'generic';
         const badgeColor = bConfig.badgeColor || 'bg-blue-900/60 text-blue-300 border-blue-700/60';
         info.innerHTML = `
-          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-semibold border ${badgeColor}">
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-semibold border ${badgeColor} min-w-0 max-w-[120px] sm:max-w-[200px]">
             <span data-bank-icon="${iconKey}" class="w-3.5 h-3.5 flex items-center justify-center flex-shrink-0"></span>
-            <span>${escapeHtml(bankName)}</span>
+            <span class="truncate">${escapeHtml(bankName)}</span>
           </span>
-          <span class="text-[11px] text-[#848D99] truncate font-normal" title="${escapeHtml(single.fileName)}">
+          <span class="text-[11px] text-[#848D99] truncate font-normal min-w-0 flex-1" title="${escapeHtml(single.fileName)}">
             ${escapeHtml(single.fileName)}
           </span>
         `;
@@ -1283,6 +1436,32 @@ function refreshStatementImportCategories(newCategoryName, newCategoryIcon, targ
 window.refreshStatementImportCategories = refreshStatementImportCategories;
 
 /**
+ * Клик по карточке транзакции (переключает выбор, игнорируя клики по кнопкам, чипсу категории и меню)
+ */
+function handleCardRowClick(event, txId) {
+  const target = (event?.target?.nodeType === 3) ? event.target.parentElement : event?.target;
+  if (!target) return;
+
+  // Игнорируем клики по интерактивным элементам внутри карточки:
+  // кнопкам, ссылкам, инпутам, дропдаунам и кнопке пина
+  if (target.closest('button') || target.closest('input') || target.closest('.custom-dropdown-wrap') || target.closest('.custom-dropdown-menu')) {
+    return;
+  }
+
+  const tx = window._lastParsedTransactions?.find(t => t._id === txId);
+  if (!tx) return;
+
+  const nextState = !tx.selected;
+  tx.selected = nextState;
+
+  const chk = document.getElementById(`chk-tx-${txId}`);
+  if (chk) chk.checked = nextState;
+
+  if (window._updateHeaderSummary) window._updateHeaderSummary();
+}
+window.handleCardRowClick = handleCardRowClick;
+
+/**
  * Переключение чекбокса операции
  */
 function toggleTxSelection(txId, isSelected) {
@@ -1292,6 +1471,7 @@ function toggleTxSelection(txId, isSelected) {
     if (window._updateHeaderSummary) window._updateHeaderSummary();
   }
 }
+window.toggleTxSelection = toggleTxSelection;
 
 /**
  * Сохранение всех выбранных операций в Firebase
@@ -1324,6 +1504,7 @@ async function importSelectedTransactions() {
 
       chunk.forEach(tx => {
         const docRef = (window.getUserCol ? getUserCol('Transactions') : db.collection('Transactions')).doc();
+        tx.id = docRef.id;
         batch.set(docRef, {
           type: tx.type,
           amount: tx.amount,
@@ -1341,13 +1522,27 @@ async function importSelectedTransactions() {
     showToast(`Успешно добавлено ${selected.length} операций!`);
     document.getElementById('pdf-debug-dialog').classList.add('hidden');
 
+    const hasExpensesInImport = selected.some(s => s.type === 'expense' || s.amount < 0 || (s.type !== 'income'));
+    if (hasExpensesInImport) {
+      if (typeof triggerBudgetExpenseAnimation === 'function') {
+        triggerBudgetExpenseAnimation();
+      } else {
+        window._budgetNeedsExpenseAnimation = true;
+        window._budgetTabDirty = true;
+      }
+    }
+
     // Обновляем список транзакций и графики
     if (typeof fetchCollection === 'function') {
       await fetchCollection('Transactions');
     }
 
-    // Если импорт вызывался из мастера бюджета — возвращаем ровно на Шаг 2
-    if (window._returnToWizardStep) {
+    // Проверяем наличие крупных трат среди импортированных операций (не входящих в закрытые месяца)
+    const largeTxs = getImportedLargeExpenses(selected);
+    if (largeTxs.length > 0) {
+      openStatementLargeExpensesModal(largeTxs);
+    } else if (window._returnToWizardStep) {
+      // Если импорт вызывался из мастера бюджета — возвращаем ровно на Шаг 2
       const returnStep = window._returnToWizardStep;
       window._returnToWizardStep = null;
       if (typeof switchTab === 'function') switchTab('budget');
@@ -1358,6 +1553,298 @@ async function importSelectedTransactions() {
     showToast('Ошибка при импорте: ' + err.message, true);
     btn.disabled = false;
     btn.innerText = 'Попробовать снова';
+  }
+}
+
+// ============================================================
+// МОДУЛЬ РАСПРЕДЕЛЕНИЯ КРУПНЫХ ТРАТ ИЗ ВЫПИСКИ В КАЛЕНДАРЬ
+// ============================================================
+function getImportedLargeExpenses(transactions) {
+  const threshold = (typeof getLargeExpenseThreshold === 'function') ? getLargeExpenseThreshold() : Infinity;
+  if (!isFinite(threshold) || threshold <= 0) return [];
+
+  return (transactions || []).filter(tx => {
+    // Только расходы
+    const isExp = (tx.type === 'expense' || tx.type === 'Расход' || (tx.type !== 'income' && tx.type !== 'Доход' && tx.amount < 0));
+    if (!isExp) return false;
+
+    const amt = Math.abs(parseFloat(tx.amount) || 0);
+    if (amt < threshold) return false;
+
+    // Исключаем транзакции за уже закрытые месяца
+    const pDate = (typeof parseAnyDate === 'function') ? parseAnyDate(tx.date) : new Date(tx.date);
+    if (pDate && typeof isBudgetMonthClosed === 'function') {
+      if (isBudgetMonthClosed(pDate.getFullYear(), pDate.getMonth())) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+}
+
+window._statementLargeTxs = [];
+
+function openStatementLargeExpensesModal(largeTxs) {
+  if (!largeTxs || largeTxs.length === 0) return;
+
+  const threshold = (typeof getLargeExpenseThreshold === 'function') ? getLargeExpenseThreshold() : 0;
+  window._statementLargeTxs = largeTxs.map(tx => ({
+    ...tx,
+    selectedForAmortize: true,
+    spreadMonths: 3
+  }));
+
+  const dlg = document.getElementById('statement-large-expenses-modal');
+  if (!dlg) return;
+
+  const subtitleEl = document.getElementById('statement-large-subtitle');
+  if (subtitleEl) {
+    const count = window._statementLargeTxs.length;
+    subtitleEl.innerText = `Найдено крупных трат: ${count} (порог от ${formatMoney(threshold)})`;
+  }
+
+  renderStatementLargeList();
+  updateStmtLargeSummary();
+
+  if (typeof lockBodyScroll === 'function') lockBodyScroll();
+  dlg.classList.remove('hidden');
+  if (typeof lucide !== 'undefined') lucide.createIcons({ root: dlg });
+}
+
+function renderStatementLargeList() {
+  const listEl = document.getElementById('statement-large-list');
+  if (!listEl) return;
+
+  const expCats = Cache?.categories?.expense || [];
+
+  listEl.innerHTML = (window._statementLargeTxs || []).map((item, idx) => {
+    const amt = Math.abs(parseFloat(item.amount) || 0);
+    const pDate = (typeof parseAnyDate === 'function') ? parseAnyDate(item.date) : new Date(item.date);
+    const dateFormatted = (typeof formatDateStr === 'function' && pDate) ? formatDateStr(pDate, 'dd.MM.yyyy') : item.date;
+    const catObj = expCats.find(c => c.name === item.category);
+    const icon = catObj?.icon && catObj.icon !== '📦' ? catObj.icon : 'tag';
+    const monthlyVal = Math.round(amt / (item.spreadMonths || 3));
+    const title = item.merchant || item.comment || item.category || 'Расход';
+
+    return `
+      <div id="stmt-large-card-${idx}" class="p-3 rounded-2xl bg-[#12151C] border border-[rgba(255,255,255,0.06)] flex flex-col gap-2.5 transition-all ${item.selectedForAmortize ? 'border-violet-500/30' : 'opacity-60'}">
+        <div class="flex items-center justify-between gap-2.5">
+          <label class="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer select-none">
+            <input type="checkbox" 
+                   id="stmt-large-cb-${idx}" 
+                   onchange="toggleStmtLargeItem(${idx}, this.checked)" 
+                   class="w-4 h-4 rounded accent-[#6C5DD3] bg-[#212430] border-gray-700 cursor-pointer flex-shrink-0" 
+                   ${item.selectedForAmortize ? 'checked' : ''}>
+            <div class="w-8 h-8 rounded-xl bg-violet-500/10 text-violet-300 border border-violet-500/20 flex items-center justify-center flex-shrink-0">
+              <i data-lucide="${icon}" class="w-4 h-4"></i>
+            </div>
+            <div class="min-w-0 flex-1">
+              <span class="text-xs font-semibold text-gray-200 truncate block leading-snug">${escapeHtml(title)}</span>
+              <div class="flex items-center gap-1.5 text-[10px] text-[#848D99] mt-0.5">
+                <span class="font-mono text-gray-400">${dateFormatted}</span>
+                <span>•</span>
+                <span class="truncate">${escapeHtml(item.category || 'Без категории')}</span>
+              </div>
+            </div>
+          </label>
+          <div class="text-right flex-shrink-0">
+            <span class="text-xs font-bold font-mono text-gray-100 block">-${formatMoney(amt)}</span>
+          </div>
+        </div>
+
+        <!-- Настройка месяцев и нагрузки -->
+        <div class="flex items-center justify-between pt-2 border-t border-[rgba(255,255,255,0.04)] text-[11px]">
+          <div class="flex items-center gap-1.5">
+            <span class="text-[#848D99]">Срок:</span>
+            <div class="flex items-center bg-[#181B24] border border-[rgba(255,255,255,0.08)] rounded-lg p-0.5">
+              <button type="button" onclick="changeStmtLargeMonths(${idx}, -1)" class="w-5 h-5 rounded text-gray-300 hover:text-white hover:bg-[#212430] flex items-center justify-center font-bold cursor-pointer transition-colors active:scale-90">-</button>
+              <span id="stmt-large-months-${idx}" class="px-1.5 text-[11px] font-bold font-mono text-amber-300 min-w-[42px] text-center">${item.spreadMonths} мес.</span>
+              <button type="button" onclick="changeStmtLargeMonths(${idx}, 1)" class="w-5 h-5 rounded text-gray-300 hover:text-white hover:bg-[#212430] flex items-center justify-center font-bold cursor-pointer transition-colors active:scale-90">+</button>
+            </div>
+          </div>
+          <div class="text-[11px] font-mono text-amber-300 font-semibold">
+            <span class="text-[10px] text-[#848D99] font-normal mr-1">В месяц:</span>
+            <span id="stmt-large-calc-${idx}">+${formatMoney(monthlyVal)}/мес</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  if (typeof lucide !== 'undefined') lucide.createIcons({ root: listEl });
+}
+
+function toggleStmtLargeItem(idx, checked) {
+  if (!window._statementLargeTxs || !window._statementLargeTxs[idx]) return;
+  window._statementLargeTxs[idx].selectedForAmortize = checked;
+  const card = document.getElementById(`stmt-large-card-${idx}`);
+  if (card) {
+    if (checked) {
+      card.classList.remove('opacity-60');
+      card.classList.add('border-violet-500/30');
+    } else {
+      card.classList.add('opacity-60');
+      card.classList.remove('border-violet-500/30');
+    }
+  }
+  updateStmtLargeSummary();
+}
+
+function changeStmtLargeMonths(idx, delta) {
+  if (!window._statementLargeTxs || !window._statementLargeTxs[idx]) return;
+  const item = window._statementLargeTxs[idx];
+  let val = parseInt(item.spreadMonths, 10) || 3;
+  val = Math.max(1, Math.min(12, val + delta));
+  item.spreadMonths = val;
+
+  const label = document.getElementById(`stmt-large-months-${idx}`);
+  if (label) label.innerText = `${val} мес.`;
+
+  const calc = document.getElementById(`stmt-large-calc-${idx}`);
+  if (calc) {
+    const amt = Math.abs(parseFloat(item.amount) || 0);
+    calc.innerText = `+${formatMoney(Math.round(amt / val))}/мес`;
+  }
+
+  updateStmtLargeSummary();
+}
+
+function updateStmtLargeSummary() {
+  const items = (window._statementLargeTxs || []).filter(t => t.selectedForAmortize);
+  const summaryEl = document.getElementById('statement-large-summary');
+  const submitBtn = document.getElementById('stmt-large-submit-btn');
+
+  if (summaryEl) {
+    const totalSelectedSum = items.reduce((s, it) => s + Math.abs(parseFloat(it.amount) || 0), 0);
+    summaryEl.innerText = `Выбрано к распределению: ${items.length} из ${(window._statementLargeTxs || []).length} трат на сумму ${formatMoney(totalSelectedSum)}`;
+  }
+
+  if (submitBtn) {
+    if (items.length === 0) {
+      submitBtn.innerHTML = `<span>Пропустить</span>`;
+    } else {
+      submitBtn.innerHTML = `<i data-lucide="split" class="w-4 h-4"></i><span>Распределить (${items.length})</span>`;
+      if (typeof lucide !== 'undefined') lucide.createIcons({ root: submitBtn });
+    }
+  }
+}
+
+function closeStatementLargeExpensesModal() {
+  const dlg = document.getElementById('statement-large-expenses-modal');
+  if (dlg && !dlg.classList.contains('hidden')) {
+    dlg.classList.add('hidden');
+    if (typeof unlockBodyScroll === 'function') unlockBodyScroll();
+  }
+  window._statementLargeTxs = [];
+
+  // Если импорт вызывался из мастера бюджета — возвращаем в мастер
+  if (window._returnToWizardStep) {
+    const returnStep = window._returnToWizardStep;
+    window._returnToWizardStep = null;
+    if (typeof switchTab === 'function') switchTab('budget');
+    if (typeof goToWizardStep === 'function') goToWizardStep(returnStep);
+  }
+}
+
+async function submitStatementLargeExpenses() {
+  const items = (window._statementLargeTxs || []).filter(t => t.selectedForAmortize);
+  if (items.length === 0) {
+    closeStatementLargeExpensesModal();
+    return;
+  }
+
+  const btn = document.getElementById('stmt-large-submit-btn');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerText = 'Сохранение...';
+  }
+
+  try {
+    const billCol = getUserCol('CalendarBills');
+    if (!Cache.calendarBills) Cache.calendarBills = [];
+
+    for (const item of items) {
+      const spreadMonths = parseInt(item.spreadMonths, 10) || 3;
+      const amount = Math.abs(parseFloat(item.amount) || 0);
+      const pDate = (typeof parseAnyDate === 'function' ? parseAnyDate(item.date) : new Date(item.date)) || new Date();
+      const monthStr = (typeof formatDateStr === 'function') ? formatDateStr(pDate, 'yyyy-MM') : pDate.toISOString().slice(0, 7);
+
+      // 1. Обновляем транзакцию в Firestore
+      if (item.id) {
+        await getUserCol('Transactions').doc(item.id).update({
+          excludeFromBudget: true,
+          spreadMonths: spreadMonths,
+          updatedAt: Date.now()
+        });
+      }
+
+      // 2. Создаем запись в CalendarBills
+      const billData = {
+        name: item.merchant || item.comment || item.category || 'Разовая трата',
+        totalAmount: amount,
+        spreadMonths: spreadMonths,
+        amount: Math.round(amount / spreadMonths),
+        day: pDate.getDate(),
+        month: monthStr,
+        startMonth: monthStr,
+        type: 'onetime',
+        linkedTxId: item.id || null,
+        isPaid: true,
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      };
+
+      const billRef = await billCol.add(billData);
+      billData.id = billRef.id;
+      Cache.calendarBills.push(billData);
+
+      // 3. Обновляем кэш транзакций в памяти
+      const flat = typeof getAllCachedTransactionsFlat === 'function' ? getAllCachedTransactionsFlat() : [];
+      const cachedTx = flat.find(t => t.id === item.id);
+      if (cachedTx) {
+        cachedTx.excludeFromBudget = true;
+        cachedTx.spreadMonths = spreadMonths;
+      }
+    }
+
+    // Пересчитываем структуру транзакций
+    if (typeof getAllCachedTransactionsFlat === 'function' && typeof processTransactions === 'function') {
+      Cache.transactions = processTransactions(getAllCachedTransactionsFlat());
+    }
+
+    closeStatementLargeExpensesModal();
+
+    if (typeof triggerBudgetExpenseAnimation === 'function') triggerBudgetExpenseAnimation();
+    if (typeof markTabsDirty === 'function') markTabsDirty();
+    if (typeof renderBudgetTab === 'function') renderBudgetTab();
+    if (typeof renderTransactions === 'function') renderTransactions();
+    if (typeof renderBudgetCalendar === 'function') {
+      const today = (typeof getSelectedBudgetDate === 'function') ? getSelectedBudgetDate() : new Date();
+      const currentMonthStr = (typeof formatDateStr === 'function') ? formatDateStr(today, 'yyyy-MM') : today.toISOString().slice(0, 7);
+      const monthItems = (Cache.transactions || []).find(m => m.month === currentMonthStr)?.items || [];
+      renderBudgetCalendar(Cache.calendarBills || [], today, monthItems);
+      if (typeof updatePlanForecast === 'function') updatePlanForecast();
+      if (typeof renderBudgetMonthProgress === 'function') renderBudgetMonthProgress(Cache.budgetPlan || {}, monthItems);
+      if (typeof renderWeeklyPulse === 'function') renderWeeklyPulse(Cache.budgetPlan || {}, monthItems);
+    }
+
+    showToast(`Успешно распределено ${items.length} ${items.length === 1 ? 'крупная трата' : 'крупных трат'} в календаре!`);
+
+    // Если был возврат в мастер
+    if (window._returnToWizardStep) {
+      const returnStep = window._returnToWizardStep;
+      window._returnToWizardStep = null;
+      if (typeof switchTab === 'function') switchTab('budget');
+      if (typeof goToWizardStep === 'function') goToWizardStep(returnStep);
+    }
+  } catch (err) {
+    console.error('Error submitting statement large expenses:', err);
+    showToast('Ошибка при сохранении распределения: ' + (err.message || ''), true);
+    if (btn) {
+      btn.disabled = false;
+      btn.innerText = 'Распределить';
+    }
   }
 }
 
@@ -1782,4 +2269,14 @@ window.closeRememberRuleModal = closeRememberRuleModal;
 window.saveCategoryRuleFromModal = saveCategoryRuleFromModal;
 window.toggleModalCatMenu = toggleModalCatMenu;
 window.selectModalCat = selectModalCat;
+window.isTransactionDuplicate = isTransactionDuplicate;
+window.checkTransactionDuplicateWithDetails = checkTransactionDuplicateWithDetails;
+window.getImportedLargeExpenses = getImportedLargeExpenses;
+window.openStatementLargeExpensesModal = openStatementLargeExpensesModal;
+window.closeStatementLargeExpensesModal = closeStatementLargeExpensesModal;
+window.renderStatementLargeList = renderStatementLargeList;
+window.toggleStmtLargeItem = toggleStmtLargeItem;
+window.changeStmtLargeMonths = changeStmtLargeMonths;
+window.updateStmtLargeSummary = updateStmtLargeSummary;
+window.submitStatementLargeExpenses = submitStatementLargeExpenses;
 

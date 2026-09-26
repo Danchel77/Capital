@@ -230,26 +230,6 @@ function renderBudgetTab() {
   const weekCircleBar = document.getElementById('budget-week-circle-bar');
   const weekCirclePct = document.getElementById('budget-week-circle-pct');
 
-  if (weekAvailEl) {
-    if (weeklyBaseLimit > 0 && weeklySpent > weeklyBaseLimit) {
-      weekAvailEl.innerHTML = `<span class="text-white">${formatMoney(0)}</span> <span class="text-xs font-semibold text-[#FF453A] ml-2 block sm:inline">Лимит превышен на ${formatMoney(weeklySpent - weeklyBaseLimit)}</span>`;
-      weekAvailEl.dataset.animVal = "0";
-    } else if (typeof animateNumber === 'function') {
-      animateNumber(weekAvailEl, weeklyAvailable);
-    } else {
-      weekAvailEl.innerText = formatMoney(weeklyAvailable);
-    }
-  }
-
-  if (weekSpentText) {
-    if (typeof animateNumber === 'function') animateNumber(weekSpentText, weeklySpent);
-    else weekSpentText.innerText = formatMoney(weeklySpent);
-  }
-  if (weekLimitText) {
-    if (typeof animateNumber === 'function') animateNumber(weekLimitText, weeklyBaseLimit);
-    else weekLimitText.innerText = formatMoney(weeklyBaseLimit);
-  }
-
   const weekPct = weeklyBaseLimit > 0 ? (weeklySpent / weeklyBaseLimit) * 100 : 0;
   const clampedWeekPct = Math.min(100, Math.max(0, weekPct));
   const circleCircumference = 238.76;
@@ -262,66 +242,192 @@ function renderBudgetTab() {
     strokeColor = '#FF9F0A';
   }
 
-  if (weekCircleBar) {
-    weekCircleBar.style.strokeDashoffset = `${circleOffset}`;
-    weekCircleBar.style.stroke = strokeColor;
-  }
-  if (weekCirclePct) {
-    weekCirclePct.innerText = `${Math.round(weekPct)}%`;
-    weekCirclePct.style.color = strokeColor;
-  }
-
-  // 4-сегментный прогресс-бар месяца
+  // Истинная шкала трат за месяц (непрерывный прогресс-бар)
   const monthStatEl = document.getElementById('budget-month-stat');
   const monthPctEl = document.getElementById('budget-month-pct');
+  const monthBar = document.getElementById('budget-month-bar');
   const mPct = monthlyLimit > 0 ? (monthlySpent / monthlyLimit) * 100 : 0;
-  if (monthStatEl) {
-    monthStatEl.innerHTML = `<span id="budget-month-spent-val">${formatMoney(monthlySpent)}</span> <span class="text-[#848D99] font-normal">из</span> ${formatMoney(monthlyLimit)}`;
-    const spentEl = document.getElementById('budget-month-spent-val');
-    if (spentEl && typeof animateNumber === 'function') {
-      animateNumber(spentEl, monthlySpent);
+  const mClampedPct = Math.min(100, Math.max(0, mPct));
+
+  let monthColor = 'bg-[#30D158]';
+  let monthTextColor = '#30D158';
+  if (monthlySpent > monthlyLimit && monthlyLimit > 0) {
+    monthColor = 'bg-[#FF453A]';
+    monthTextColor = '#FF453A';
+  } else if (mPct >= 80) {
+    monthColor = 'bg-[#FF9F0A]';
+    monthTextColor = '#FF9F0A';
+  } else {
+    monthTextColor = '#848D99';
+  }
+
+  // Проверяем, видна ли сейчас вкладка бюджета, и нужно ли проиграть анимацию после внесения трат
+  const budgetTabEl = document.getElementById('budget-tab');
+  const isBudgetTabVisible = !!(budgetTabEl && !budgetTabEl.classList.contains('hidden'));
+  const currentMonthKey = `${targetYear}-${String(targetMonth + 1).padStart(2, '0')}`;
+  const shouldPlayExpenseAnimation = !!(window._budgetNeedsExpenseAnimation && isBudgetTabVisible);
+  const EXPENSE_ANIM_DURATION = 3000; // Размеренная благородная скорость наполнения/уменьшения (3.0 сек)
+
+  // Базовые значения до внесения трат для анимации изменений от предыдущей точки
+  const baseline = (window._budgetBaselineState && window._budgetBaselineState.targetMonthKey === currentMonthKey)
+    ? window._budgetBaselineState
+    : ((window._budgetLastRenderedState && window._budgetLastRenderedState.targetMonthKey === currentMonthKey) ? window._budgetLastRenderedState : null);
+
+  const baseWeeklySpent = baseline && baseline.weeklySpent !== undefined ? baseline.weeklySpent : weeklySpent;
+  const baseMonthlySpent = baseline && baseline.monthlySpent !== undefined ? baseline.monthlySpent : monthlySpent;
+  const baseWeeklyAvailable = baseline && baseline.weeklyAvailable !== undefined ? baseline.weeklyAvailable : weeklyAvailable;
+  const baseWeekPct = baseline && baseline.weekPct !== undefined ? baseline.weekPct : weekPct;
+  const baseMonthPct = baseline && baseline.monthPct !== undefined ? baseline.monthPct : mPct;
+  const baseCircleOffset = baseline && baseline.circleOffset !== undefined ? baseline.circleOffset : circleOffset;
+  const baseClampedMonthPct = baseline && baseline.clampedMonthPct !== undefined ? baseline.clampedMonthPct : mClampedPct;
+
+  if (shouldPlayExpenseAnimation) {
+    // Сбрасываем флаги: анимация изменений проигрывается строго один раз после внесения трат
+    window._budgetNeedsExpenseAnimation = false;
+    window._budgetBaselineState = null;
+
+    // 1. Анимация метрик недели: стартуем от точки ДО внесения трат
+    if (weekAvailEl) {
+      if (weeklyBaseLimit > 0 && weeklySpent > weeklyBaseLimit) {
+        weekAvailEl.innerHTML = `<span class="text-white">${formatMoney(0)}</span> <span class="text-xs font-semibold text-[#FF453A] ml-2 block sm:inline">Лимит превышен на ${formatMoney(weeklySpent - weeklyBaseLimit)}</span>`;
+        weekAvailEl.dataset.animVal = "0";
+      } else if (typeof animateNumber === 'function') {
+        weekAvailEl.dataset.animVal = String(baseWeeklyAvailable);
+        weekAvailEl.innerText = formatMoney(baseWeeklyAvailable);
+        animateNumber(weekAvailEl, weeklyAvailable, true, EXPENSE_ANIM_DURATION);
+      } else {
+        weekAvailEl.innerText = formatMoney(weeklyAvailable);
+      }
+    }
+
+    if (weekSpentText) {
+      weekSpentText.dataset.animVal = String(baseWeeklySpent);
+      weekSpentText.innerText = formatMoney(baseWeeklySpent);
+      if (typeof animateNumber === 'function') animateNumber(weekSpentText, weeklySpent, true, EXPENSE_ANIM_DURATION);
+      else weekSpentText.innerText = formatMoney(weeklySpent);
+    }
+
+    if (weekLimitText) {
+      if (typeof animateNumber === 'function') animateNumber(weekLimitText, weeklyBaseLimit);
+      else weekLimitText.innerText = formatMoney(weeklyBaseLimit);
+    }
+
+    // Исходное состояние кольцевой шкалы (точка до добавления трат)
+    if (weekCircleBar) {
+      weekCircleBar.style.transition = 'none';
+      weekCircleBar.style.strokeDashoffset = `${baseCircleOffset}`;
+      weekCircleBar.style.stroke = strokeColor;
+    }
+
+    // Нарастание процентов недели от предыдущего значения
+    if (typeof animatePercentage === 'function') {
+      animatePercentage(weekCirclePct, weekPct, strokeColor, EXPENSE_ANIM_DURATION, baseWeekPct);
+    } else if (weekCirclePct) {
+      weekCirclePct.innerText = `${Math.round(weekPct)}%`;
+      weekCirclePct.style.color = strokeColor;
+    }
+
+    // 2. Анимация метрик месяца: стартуем от точки ДО внесения трат
+    if (monthStatEl) {
+      monthStatEl.innerHTML = `<span id="budget-month-spent-val">${formatMoney(baseMonthlySpent)}</span> <span class="text-[#848D99] font-normal">из</span> ${formatMoney(monthlyLimit)}`;
+      const spentEl = document.getElementById('budget-month-spent-val');
+      if (spentEl && typeof animateNumber === 'function') {
+        spentEl.dataset.animVal = String(baseMonthlySpent);
+        animateNumber(spentEl, monthlySpent, true, EXPENSE_ANIM_DURATION);
+      }
+    }
+
+    // Нарастание процентов месяца от предыдущего значения
+    if (typeof animatePercentage === 'function') {
+      animatePercentage(monthPctEl, mPct, monthTextColor, EXPENSE_ANIM_DURATION, baseMonthPct);
+    } else if (monthPctEl) {
+      monthPctEl.innerText = `${Math.round(mPct)}%`;
+      monthPctEl.style.color = monthTextColor;
+    }
+
+    // Исходное состояние шкалы месяца (ширина до добавления трат)
+    if (monthBar) {
+      monthBar.style.transition = 'none';
+      monthBar.style.width = `${monthlyLimit > 0 ? baseClampedMonthPct : (baseMonthlySpent > 0 ? 100 : 0)}%`;
+      monthBar.className = `h-full ${monthColor} rounded-full shadow-sm`;
+    }
+
+    // Запускаем плавное наполнение шкал от предыдущей точки до новой
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (weekCircleBar) {
+          weekCircleBar.style.transition = `stroke-dashoffset ${EXPENSE_ANIM_DURATION}ms cubic-bezier(0.16, 1, 0.3, 1), stroke 0.4s ease`;
+          weekCircleBar.style.strokeDashoffset = `${circleOffset}`;
+        }
+        if (monthBar) {
+          monthBar.style.transition = `width ${EXPENSE_ANIM_DURATION}ms cubic-bezier(0.16, 1, 0.3, 1), background-color 0.4s ease`;
+          monthBar.style.width = `${monthlyLimit > 0 ? mClampedPct : (monthlySpent > 0 ? 100 : 0)}%`;
+        }
+      });
+    });
+  } else {
+    // Обычный рендер без анимации с нуля (быстрое обновление или стабильное отображение)
+    if (weekAvailEl) {
+      if (weeklyBaseLimit > 0 && weeklySpent > weeklyBaseLimit) {
+        weekAvailEl.innerHTML = `<span class="text-white">${formatMoney(0)}</span> <span class="text-xs font-semibold text-[#FF453A] ml-2 block sm:inline">Лимит превышен на ${formatMoney(weeklySpent - weeklyBaseLimit)}</span>`;
+        weekAvailEl.dataset.animVal = "0";
+      } else if (typeof animateNumber === 'function') {
+        animateNumber(weekAvailEl, weeklyAvailable);
+      } else {
+        weekAvailEl.innerText = formatMoney(weeklyAvailable);
+      }
+    }
+
+    if (weekSpentText) {
+      if (typeof animateNumber === 'function') animateNumber(weekSpentText, weeklySpent);
+      else weekSpentText.innerText = formatMoney(weeklySpent);
+    }
+    if (weekLimitText) {
+      if (typeof animateNumber === 'function') animateNumber(weekLimitText, weeklyBaseLimit);
+      else weekLimitText.innerText = formatMoney(weeklyBaseLimit);
+    }
+
+    if (weekCircleBar) {
+      weekCircleBar.style.transition = 'stroke-dashoffset 0.5s ease-out, stroke 0.4s ease';
+      weekCircleBar.style.strokeDashoffset = `${circleOffset}`;
+      weekCircleBar.style.stroke = strokeColor;
+    }
+    if (weekCirclePct) {
+      weekCirclePct.innerText = `${Math.round(weekPct)}%`;
+      weekCirclePct.style.color = strokeColor;
+    }
+
+    if (monthStatEl) {
+      monthStatEl.innerHTML = `<span id="budget-month-spent-val">${formatMoney(monthlySpent)}</span> <span class="text-[#848D99] font-normal">из</span> ${formatMoney(monthlyLimit)}`;
+      const spentEl = document.getElementById('budget-month-spent-val');
+      if (spentEl && typeof animateNumber === 'function') {
+        animateNumber(spentEl, monthlySpent);
+      }
+    }
+
+    if (monthPctEl) {
+      monthPctEl.innerText = `${Math.round(mPct)}%`;
+      monthPctEl.style.color = monthTextColor;
+    }
+
+    if (monthBar) {
+      monthBar.style.transition = 'width 0.5s ease-out, background-color 0.4s ease';
+      monthBar.style.width = `${monthlyLimit > 0 ? mClampedPct : (monthlySpent > 0 ? 100 : 0)}%`;
+      monthBar.className = `h-full ${monthColor} rounded-full shadow-sm`;
     }
   }
-  if (monthPctEl) {
-    monthPctEl.innerText = `${Math.round(mPct)}%`;
-    monthPctEl.style.color = (monthlySpent > monthlyLimit && monthlyLimit > 0) ? '#FF453A' : (mPct >= 80 ? '#FF9F0A' : '#848D99');
-  }
 
-  const weekSegmentLimit = monthlyLimit > 0 ? monthlyLimit / 4 : 0;
-  const segSpent = [0, 0, 0, 0];
-
-  currentMonthItems.forEach(tx => {
-    const val = parseFloat(tx.amount) || 0;
-    if (val <= 0) return;
-    const txDate = (typeof window.parseAnyDate === 'function')
-      ? window.parseAnyDate(tx.timestamp || tx.rawDate || tx.date)
-      : (tx.timestamp ? new Date(tx.timestamp) : new Date(tx.rawDate || tx.date));
-    if (!txDate || isNaN(txDate.getTime())) return;
-    const d = txDate.getDate();
-    if (d <= 7) segSpent[0] += val;
-    else if (d <= 14) segSpent[1] += val;
-    else if (d <= 21) segSpent[2] += val;
-    else segSpent[3] += val;
-  });
-
-  for (let i = 0; i < 4; i++) {
-    const segBar = document.getElementById(`budget-seg-${i + 1}`);
-    const sSpent = segSpent[i];
-    const sPct = weekSegmentLimit > 0 ? (sSpent / weekSegmentLimit) * 100 : 0;
-    const sClamped = Math.min(100, Math.max(0, sPct));
-
-    let segColor = 'bg-[#30D158]';
-    if (sSpent > weekSegmentLimit && weekSegmentLimit > 0) {
-      segColor = 'bg-[#FF453A]';
-    } else if (sPct >= 80) {
-      segColor = 'bg-[#FF9F0A]';
-    }
-
-    if (segBar) {
-      segBar.style.width = `${sClamped}%`;
-      segBar.className = `h-full ${segColor} rounded-full transition-all duration-300`;
-    }
-  }
+  // Фиксируем текущее актуальное состояние для следующей анимации изменений
+  window._budgetLastRenderedState = {
+    weeklySpent,
+    monthlySpent,
+    weeklyAvailable,
+    weekPct,
+    monthPct: mPct,
+    circleOffset,
+    clampedMonthPct: mClampedPct,
+    targetMonthKey: currentMonthKey
+  };
 
   // Кнопка закрытия месяца на одной строке с процентом заполнения шкалы
   const closeMonthContainer = document.getElementById('budget-close-month-container');
@@ -1800,7 +1906,7 @@ function initBudgetWizard(forceReset = false) {
   const hasExistingGoal = Cache?.goals && Cache.goals.length > 0;
   const existingPlan = Cache?.budgetPlan || {};
 
-  if (forceReset) {
+  if (forceReset || !existingPlan.isConfigured) {
     currentWizardStep = 1;
     localStorage.setItem('budget_wizard_step', '1');
   } else {
@@ -2430,11 +2536,15 @@ function renderWizLimitsEditor() {
   const accountedNames = list.map(c => c.name);
   let othersAvg = 0;
   Object.keys(avgMap).forEach(cat => {
-    if (!accountedNames.includes(cat)) {
+    if (!accountedNames.includes(cat) && cat !== 'Прочие расходы' && cat !== 'Прочие траты') {
       othersAvg += avgMap[cat] || 0;
     }
   });
-  avgMap['Прочие расходы'] = othersAvg;
+  if (window._customCategoryAverages && (window._customCategoryAverages['Прочие расходы'] !== undefined || window._customCategoryAverages['Прочие траты'] !== undefined)) {
+    avgMap['Прочие расходы'] = window._customCategoryAverages['Прочие расходы'] !== undefined ? window._customCategoryAverages['Прочие расходы'] : window._customCategoryAverages['Прочие траты'];
+  } else {
+    avgMap['Прочие расходы'] = othersAvg;
+  }
   list.push({ name: 'Прочие расходы', icon: 'package' });
 
   container.innerHTML = list.map(cat => {
@@ -2570,6 +2680,19 @@ function isBillOrOneTimeTx(tx) {
 }
 window.isBillOrOneTimeTx = isBillOrOneTimeTx;
 
+function getTxEffectiveTimestamp(tx) {
+  if (!tx) return null;
+  if (tx.dayTimestamp && typeof tx.dayTimestamp === 'number') return tx.dayTimestamp;
+  const raw = tx.date || tx.rawDate || tx.formattedDate;
+  if (raw) {
+    const d = (typeof parseAnyDate === 'function') ? parseAnyDate(raw) : new Date(raw);
+    if (d && !isNaN(d.getTime())) return d.getTime();
+  }
+  if (tx.timestamp && typeof tx.timestamp === 'number') return tx.timestamp;
+  return null;
+}
+window.getTxEffectiveTimestamp = getTxEffectiveTimestamp;
+
 // Вспомогательный расчет истории трат из выписок (строго за последние 90 дней)
 function calculateHistoricalCategoryAverages() {
   const map = {};
@@ -2580,7 +2703,7 @@ function calculateHistoricalCategoryAverages() {
   let maxTime = -Infinity;
   txMonths.forEach(m => {
     (m.items || []).forEach(tx => {
-      const t = tx.timestamp || (tx.rawDate ? new Date(tx.rawDate).getTime() : null);
+      const t = getTxEffectiveTimestamp(tx);
       if (t && t > maxTime) maxTime = t;
     });
   });
@@ -2596,13 +2719,13 @@ function calculateHistoricalCategoryAverages() {
 
   txMonths.forEach(m => {
     (m.items || []).forEach(tx => {
-      const t = tx.timestamp || (tx.rawDate ? new Date(tx.rawDate).getTime() : null);
+      const t = getTxEffectiveTimestamp(tx);
       if (!t || t < cutoffTime || t > maxTime) return;
 
       if (t < minTimeInWindow) minTimeInWindow = t;
 
       if (tx.type === 'Расход' && tx.category) {
-        const uid = tx.id || tx._id || `${tx.timestamp || tx.rawDate || ''}_${tx.amount}_${tx.merchant || tx.title || ''}`;
+        const uid = tx.id || tx._id || `${t}_${tx.amount}_${tx.merchant || tx.title || ''}`;
         
         // Пропускаем вручную исключенные операции
         if (window.wizardExcludedTxIds && window.wizardExcludedTxIds.has(uid)) return;
@@ -2625,6 +2748,10 @@ function calculateHistoricalCategoryAverages() {
   Object.keys(catTotals).forEach(cat => {
     map[cat] = Math.round(catTotals[cat] * monthFactor);
   });
+
+  if (window._customCategoryAverages) {
+    Object.assign(map, window._customCategoryAverages);
+  }
 
   return map;
 }
@@ -3123,11 +3250,15 @@ function renderCategoryLimitsManager() {
   const accountedNames = list.map(c => c.name);
   let othersAvg = 0;
   Object.keys(avgMap).forEach(cat => {
-    if (!accountedNames.includes(cat)) {
+    if (!accountedNames.includes(cat) && cat !== 'Прочие расходы' && cat !== 'Прочие траты') {
       othersAvg += avgMap[cat] || 0;
     }
   });
-  avgMap['Прочие расходы'] = othersAvg;
+  if (window._customCategoryAverages && (window._customCategoryAverages['Прочие расходы'] !== undefined || window._customCategoryAverages['Прочие траты'] !== undefined)) {
+    avgMap['Прочие расходы'] = window._customCategoryAverages['Прочие расходы'] !== undefined ? window._customCategoryAverages['Прочие расходы'] : window._customCategoryAverages['Прочие траты'];
+  } else {
+    avgMap['Прочие расходы'] = othersAvg;
+  }
   list.push({ name: 'Прочие расходы', icon: 'package', isCustom: false });
 
   container.innerHTML = list.map(cat => {
@@ -3575,7 +3706,7 @@ function openWizAvgDetailsModal(type, categoryName, isInitialOpen = true) {
   let maxTime = -Infinity;
   txMonths.forEach(m => {
     (m.items || []).forEach(tx => {
-      const t = tx.timestamp || (tx.rawDate ? new Date(tx.rawDate).getTime() : null);
+      const t = getTxEffectiveTimestamp(tx);
       if (t && t > maxTime) maxTime = t;
     });
   });
@@ -3587,7 +3718,7 @@ function openWizAvgDetailsModal(type, categoryName, isInitialOpen = true) {
   let minTimeInWindow = Infinity;
   txMonths.forEach(m => {
     (m.items || []).forEach(tx => {
-      const t = tx.timestamp || (tx.rawDate ? new Date(tx.rawDate).getTime() : null);
+      const t = getTxEffectiveTimestamp(tx);
       if (t && t >= cutoffTime && t <= maxTime) {
         if (t < minTimeInWindow) minTimeInWindow = t;
       }
@@ -3607,7 +3738,7 @@ function openWizAvgDetailsModal(type, categoryName, isInitialOpen = true) {
 
   relevantMonths.forEach(m => {
     (m.items || []).forEach(tx => {
-      const t = tx.timestamp || (tx.rawDate ? new Date(tx.rawDate).getTime() : null);
+      const t = getTxEffectiveTimestamp(tx);
       if (!t) return;
 
       if (type === 'income') {
@@ -3651,10 +3782,11 @@ function openWizAvgDetailsModal(type, categoryName, isInitialOpen = true) {
 
   // 2. Формируем карточки операций
   const items = rawTxs.map(tx => {
-    const uid = tx.id || tx._id || `${tx.timestamp || tx.rawDate || ''}_${tx.amount}_${tx.merchant || tx.title || ''}`;
+    const effectiveTime = getTxEffectiveTimestamp(tx);
+    const uid = tx.id || tx._id || `${effectiveTime || ''}_${tx.amount}_${tx.merchant || tx.title || ''}`;
     const amount = parseFloat(tx.amount) || 0;
-    const dateObj = tx.timestamp ? new Date(tx.timestamp) : (tx.rawDate ? new Date(tx.rawDate) : null);
-    const dateStr = dateObj ? dateObj.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }) : (tx.displayDate || '—');
+    const dateObj = effectiveTime ? new Date(effectiveTime) : (tx.date ? (typeof parseAnyDate === 'function' ? parseAnyDate(tx.date) : new Date(tx.date)) : null);
+    const dateStr = dateObj ? dateObj.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }) : (tx.formattedDate || tx.displayDate || '—');
     const isOneTime = (tx.billType === 'onetime') || (tx.spreadMonths && parseInt(tx.spreadMonths, 10) > 1) || (!tx.isBillPayment && !!tx.excludeFromBudget) || !!tx.isExcludedFromBudget;
     const isBill = !isOneTime && (!!tx.isBillPayment || (!!tx.billId && tx.billType !== 'onetime'));
     const isBillOrOneTime = isOneTime || isBill;
@@ -3663,7 +3795,7 @@ function openWizAvgDetailsModal(type, categoryName, isInitialOpen = true) {
       uid,
       amount,
       dateStr,
-      timestamp: dateObj ? dateObj.getTime() : 0,
+      timestamp: dateObj ? dateObj.getTime() : (effectiveTime || 0),
       bank: tx.bank || '',
       category: tx.category || '',
       title: typeof cleanMerchantTitle === 'function' 
@@ -3933,7 +4065,7 @@ function renderWizAvgTxList() {
           <div class="flex items-center gap-1 flex-shrink-0">
             ${it.isBill ? `<span class="text-[9px] font-bold text-[#8C7DFF] bg-[#6C5DD3]/15 border border-[#6C5DD3]/30 px-1.5 py-0.5 rounded flex items-center gap-0.5"><i data-lucide="calendar" class="w-2.5 h-2.5"></i>Счет</span>` : ''}
             ${it.isOneTime ? `<span class="text-[9px] font-bold text-amber-300 bg-amber-950/60 border border-amber-500/30 px-1.5 py-0.5 rounded flex items-center gap-0.5"><i data-lucide="clock" class="w-2.5 h-2.5"></i>Разовой выплатой</span>` : ''}
-            ${isLarge && !it.isBill && !it.isOneTime && ctx.type === 'expense' ? `<span class="text-[9px] font-bold text-amber-300 bg-amber-950/40 border-amber-900/40 border px-1.5 py-0.5 rounded flex items-center gap-0.5">Крупная трата</span>` : ''}
+            ${isLarge && !it.isBill && !it.isOneTime && ctx.type === 'expense' ? `<span class="text-[9px] font-bold text-violet-300 bg-violet-950/40 border-violet-800/40 border px-1.5 py-0.5 rounded flex items-center gap-1"><i data-lucide="gem" class="w-2.5 h-2.5 stroke-[2]"></i>Крупная трата</span>` : ''}
           </div>
         </div>
       </div>
@@ -4135,6 +4267,15 @@ function applyWizAvgDetailsResult() {
   const avg = Math.round(selectedSum * ctx.monthFactor);
 
   if (ctx.type === 'expense') {
+    // 1. Сохраняем рассчитанное пользователем среднее в кэше средних
+    window._customCategoryAverages = window._customCategoryAverages || {};
+    window._customCategoryAverages[ctx.categoryName] = avg;
+
+    // 2. Сразу записываем новое рассчитанное среднее значение в лимит категории плана
+    if (!Cache.budgetPlan) Cache.budgetPlan = {};
+    if (!Cache.budgetPlan.categoryLimits) Cache.budgetPlan.categoryLimits = {};
+    Cache.budgetPlan.categoryLimits[ctx.categoryName] = avg;
+
     const inp = document.querySelector(`input[data-wiz-cat="${ctx.categoryName}"]`);
     if (inp) {
       inp.value = avg > 0 ? formatMoney(avg) : '';
@@ -4154,7 +4295,10 @@ function applyWizAvgDetailsResult() {
     }
 
     if (activeMonthCloseData) {
-      activeMonthCloseData.averages = calculate3MonthAverages(activeMonthCloseData.year, activeMonthCloseData.month);
+      if (!activeMonthCloseData.averages) activeMonthCloseData.averages = {};
+      activeMonthCloseData.averages[ctx.categoryName] = avg;
+      if (!activeMonthCloseData.categoryLimits) activeMonthCloseData.categoryLimits = {};
+      activeMonthCloseData.categoryLimits[ctx.categoryName] = avg;
       if (typeof renderAdjustCategoriesList === 'function') renderAdjustCategoriesList();
       if (typeof updateMonthCloseForecast === 'function') updateMonthCloseForecast();
     }

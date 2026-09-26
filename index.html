@@ -310,20 +310,20 @@
   <!-- PDF.js для чтения выписок в браузере (отложенная загрузка, не блокирует старт) -->
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" crossorigin="anonymous"></script>
 
-  <link rel="stylesheet" href="style.css?v=22">
-  <script defer src="iconsSVG.js?v=22"></script>
-  <script defer src="default-rules.js?v=22"></script>
-  <script defer src="statement-parser.js?v=22"></script>
+  <link rel="stylesheet" href="style.css?v=37">
+  <script defer src="iconsSVG.js?v=37"></script>
+  <script defer src="default-rules.js?v=37"></script>
+  <script defer src="statement-parser.js?v=37"></script>
   
   <!-- Модули приложения -->
-  <script defer src="core.js?v=22"></script>
-  <script defer src="auth-profile.js?v=22"></script>
-  <script defer src="backup-manager.js?v=22"></script>
-  <script defer src="ui-tools.js?v=22"></script>
-  <script defer src="transactions.js?v=22"></script>
-  <script defer src="investments.js?v=22"></script>
-  <script defer src="budget.js?v=22"></script>
-  <script defer src="app.js?v=22"></script>
+  <script defer src="core.js?v=37"></script>
+  <script defer src="auth-profile.js?v=37"></script>
+  <script defer src="backup-manager.js?v=37"></script>
+  <script defer src="ui-tools.js?v=37"></script>
+  <script defer src="transactions.js?v=37"></script>
+  <script defer src="investments.js?v=37"></script>
+  <script defer src="budget.js?v=37"></script>
+  <script defer src="app.js?v=37"></script>
 </head>
 <body class="bg-[#0F1117] text-[#F2F4F7]" ontouchstart="">
 
@@ -666,12 +666,12 @@
               <i data-lucide="info" class="w-3 h-3 text-[#727cff]/70 flex-shrink-0"></i>
               <span>Все данные можно изменить в любой момент в настройках бюджета</span>
             </div>
-          </div>
 
-          <div class="wiz-step-actions">
-            <button type="button" onclick="goToWizardStep(2)" class="w-full h-11 bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white rounded-2xl text-xs font-bold shadow-lg shadow-[#6C5DD3]/20 active:scale-95 transition-all cursor-pointer flex items-center justify-center">
-              Продолжить: Доход →
-            </button>
+            <div class="pt-2">
+              <button type="button" onclick="goToWizardStep(2)" class="w-full h-11 bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white rounded-2xl text-xs font-bold shadow-lg shadow-[#6C5DD3]/20 active:scale-95 transition-all cursor-pointer flex items-center justify-center">
+                Продолжить: Доход →
+              </button>
+            </div>
           </div>
         </div>
 
@@ -725,12 +725,12 @@
               <i data-lucide="info" class="w-3 h-3 text-[#727cff]/70 flex-shrink-0"></i>
               <span>Сумму дохода можно скорректировать в любое время</span>
             </div>
-          </div>
 
-          <div class="wiz-step-actions">
-            <div class="flex gap-2">
-              <button type="button" onclick="goToWizardStep(1)" class="w-1/3 h-11 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 rounded-2xl text-xs font-semibold cursor-pointer transition-colors flex items-center justify-center">Назад</button>
-              <button type="button" onclick="goToWizardStep(3)" class="w-2/3 h-11 bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white rounded-2xl text-xs font-bold shadow-lg shadow-[#6C5DD3]/20 active:scale-95 cursor-pointer transition-all flex items-center justify-center">Продолжить: Счета →</button>
+            <div class="pt-2">
+              <div class="flex gap-2">
+                <button type="button" onclick="goToWizardStep(1)" class="w-1/3 h-11 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 rounded-2xl text-xs font-semibold cursor-pointer transition-colors flex items-center justify-center">Назад</button>
+                <button type="button" onclick="goToWizardStep(3)" class="w-2/3 h-11 bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white rounded-2xl text-xs font-bold shadow-lg shadow-[#6C5DD3]/20 active:scale-95 cursor-pointer transition-all flex items-center justify-center">Продолжить: Счета →</button>
+              </div>
             </div>
           </div>
         </div>
@@ -784,12 +784,12 @@
               <i data-lucide="info" class="w-3 h-3 text-[#727cff]/70 flex-shrink-0"></i>
               <span>Счета и подписки можно добавлять и удалять в календаре в любое время</span>
             </div>
-          </div>
 
-          <div class="wiz-step-actions">
-            <div class="flex gap-2">
-              <button type="button" onclick="goToWizardStep(2)" class="w-1/3 h-11 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 rounded-2xl text-xs font-semibold cursor-pointer transition-colors flex items-center justify-center">Назад</button>
-              <button type="button" onclick="goToWizardStep(4)" class="w-2/3 h-11 bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white rounded-2xl text-xs font-bold shadow-lg shadow-[#6C5DD3]/20 active:scale-95 cursor-pointer transition-all flex items-center justify-center">Продолжить: Лимиты →</button>
+            <div class="pt-2">
+              <div class="flex gap-2">
+                <button type="button" onclick="goToWizardStep(2)" class="w-1/3 h-11 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 rounded-2xl text-xs font-semibold cursor-pointer transition-colors flex items-center justify-center">Назад</button>
+                <button type="button" onclick="goToWizardStep(4)" class="w-2/3 h-11 bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white rounded-2xl text-xs font-bold shadow-lg shadow-[#6C5DD3]/20 active:scale-95 cursor-pointer transition-all flex items-center justify-center">Продолжить: Лимиты →</button>
+              </div>
             </div>
           </div>
         </div>
@@ -839,12 +839,12 @@
               <i data-lucide="info" class="w-3 h-3 text-[#8C7DFF]/70 flex-shrink-0"></i>
               <span>Лимиты можно гибко менять или отключать в процессе месяца</span>
             </div>
-          </div>
 
-          <div class="wiz-step-actions">
-            <div class="flex gap-2">
-              <button type="button" onclick="goToWizardStep(3)" class="w-1/3 h-11 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 rounded-2xl text-xs font-semibold cursor-pointer transition-colors flex items-center justify-center">Назад</button>
-              <button type="button" onclick="goToWizardStep(5)" class="w-2/3 h-11 bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white rounded-2xl text-xs font-bold shadow-lg shadow-[#6C5DD3]/20 active:scale-95 cursor-pointer transition-all flex items-center justify-center">Итог плана →</button>
+            <div class="pt-2">
+              <div class="flex gap-2">
+                <button type="button" onclick="goToWizardStep(3)" class="w-1/3 h-11 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 rounded-2xl text-xs font-semibold cursor-pointer transition-colors flex items-center justify-center">Назад</button>
+                <button type="button" onclick="goToWizardStep(5)" class="w-2/3 h-11 bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white rounded-2xl text-xs font-bold shadow-lg shadow-[#6C5DD3]/20 active:scale-95 cursor-pointer transition-all flex items-center justify-center">Итог плана →</button>
+              </div>
             </div>
           </div>
         </div>
@@ -895,15 +895,15 @@
               <i data-lucide="check-circle" class="w-3 h-3 text-[#30D158] flex-shrink-0"></i>
               <span>Готово! План сформирован, его можно перенастроить в любой день</span>
             </div>
-          </div>
 
-          <div class="wiz-step-actions">
-            <div class="flex gap-2">
-              <button type="button" onclick="goToWizardStep(4)" class="w-1/3 h-11 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 rounded-2xl text-xs font-semibold cursor-pointer transition-colors flex items-center justify-center">Назад</button>
-              <button type="button" onclick="finishBudgetOnboarding()" class="w-2/3 h-11 bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white rounded-2xl text-xs font-bold shadow-lg shadow-[#6C5DD3]/25 border border-[rgba(255,255,255,0.08)] transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-1.5">
-                <i data-lucide="zap" class="w-4 h-4 fill-current"></i>
-                <span>Запустить бюджет</span>
-              </button>
+            <div class="pt-2">
+              <div class="flex gap-2">
+                <button type="button" onclick="goToWizardStep(4)" class="w-1/3 h-11 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 rounded-2xl text-xs font-semibold cursor-pointer transition-colors flex items-center justify-center">Назад</button>
+                <button type="button" onclick="finishBudgetOnboarding()" class="w-2/3 h-11 bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white rounded-2xl text-xs font-bold shadow-lg shadow-[#6C5DD3]/25 border border-[rgba(255,255,255,0.08)] transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-1.5">
+                  <i data-lucide="zap" class="w-4 h-4 fill-current"></i>
+                  <span>Запустить бюджет</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -942,7 +942,7 @@
           </button>
         </div>
 
-        <!-- 1. Карточка «Недельный пульс» с круговым прогресс-баром и 4-сегментной шкалой месяца -->
+        <!-- 1. Карточка «Недельный пульс» с круговым прогресс-баром и истинной шкалой месяца -->
         <div class="bg-[#181B24] border border-[rgba(255,255,255,0.06)] rounded-3xl p-5 shadow-sm relative overflow-hidden">
           <div class="flex items-center justify-between gap-3">
             <!-- Левая колонка: Текстовые метрики недели выровнены строго по левому краю -->
@@ -977,20 +977,9 @@
               <span id="budget-month-stat" class="font-mono text-gray-200">0 из 0 ₽</span>
             </div>
 
-            <!-- 4 сегмента шкалы месяца -->
-            <div class="grid grid-cols-4 gap-1.5" id="budget-month-segments">
-              <div class="h-2 rounded-full bg-[#12151C] overflow-hidden border border-[rgba(255,255,255,0.04)]">
-                <div id="budget-seg-1" class="h-full bg-[#30D158] rounded-full transition-all duration-300" style="width: 0%"></div>
-              </div>
-              <div class="h-2 rounded-full bg-[#12151C] overflow-hidden border border-[rgba(255,255,255,0.04)]">
-                <div id="budget-seg-2" class="h-full bg-[#30D158] rounded-full transition-all duration-300" style="width: 0%"></div>
-              </div>
-              <div class="h-2 rounded-full bg-[#12151C] overflow-hidden border border-[rgba(255,255,255,0.04)]">
-                <div id="budget-seg-3" class="h-full bg-[#30D158] rounded-full transition-all duration-300" style="width: 0%"></div>
-              </div>
-              <div class="h-2 rounded-full bg-[#12151C] overflow-hidden border border-[rgba(255,255,255,0.04)]">
-                <div id="budget-seg-4" class="h-full bg-[#30D158] rounded-full transition-all duration-300" style="width: 0%"></div>
-              </div>
+            <!-- Истинная непрерывная шкала трат за месяц -->
+            <div class="h-2.5 rounded-full bg-[#12151C] overflow-hidden border border-[rgba(255,255,255,0.06)] relative p-0.5">
+              <div id="budget-month-bar" class="h-full bg-[#30D158] rounded-full transition-all duration-500 ease-out shadow-sm" style="width: 0%"></div>
             </div>
 
             <!-- Процент заполнения и кнопка закрытия месяца на одной строке под шкалой -->
@@ -1537,7 +1526,7 @@
     </div>
 
     <div class="mb-2">
-      <input type="text" inputmode="decimal" oninput="formatSumInput(this)" required class="tx-amount w-full text-lg font-bold bg-[#181B24] border border-[rgba(255,255,255,0.1)] focus:border-[#6C5DD3] text-white rounded-lg px-3 py-1.5 outline-none placeholder-gray-500 transition-colors" placeholder="0 ₽">
+      <input type="text" inputmode="decimal" oninput="formatSumInput(this); handleInlineTxAmountChange(this);" required class="tx-amount w-full text-lg font-bold bg-[#181B24] border border-[rgba(255,255,255,0.1)] focus:border-[#6C5DD3] text-white rounded-lg px-3 py-1.5 outline-none placeholder-gray-500 transition-colors" placeholder="0 ₽">
     </div>
 
     <div class="grid grid-cols-[142px_1fr] gap-2 mb-2">
@@ -1556,7 +1545,7 @@
       </div>
     </div>
 
-    <div class="flex items-center gap-2">
+    <div class="flex items-center gap-2 mb-1.5">
       <input type="text" placeholder="Магазин или назначение платежа" oninput="handleTxRowCommentInput(this)" class="tx-comment flex-1 min-w-0 bg-[#181B24] border border-[rgba(255,255,255,0.1)] text-white placeholder-gray-500 rounded-lg px-2.5 py-1.5 outline-none text-xs focus:border-[#6C5DD3] transition-colors">
       <!-- Кнопка булавка для добавления в словарь -->
       <button type="button" 
@@ -1565,6 +1554,58 @@
               title="Запомнить в словарь категорий">
         <i data-lucide="pin" class="w-4 h-4 transition-transform group-hover:scale-110"></i>
       </button>
+    </div>
+
+    <!-- Блок разовой / крупной траты -->
+    <div class="inline-tx-amortize-wrap hidden bg-[#181B24] p-2.5 rounded-xl border border-[rgba(255,255,255,0.06)] space-y-1.5 mt-1.5 transition-all">
+      <div class="inline-tx-large-notice hidden items-center justify-between pb-1.5 border-b border-[rgba(255,255,255,0.06)]">
+        <div class="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-violet-500/15 border border-violet-500/30 text-violet-300 text-[10px] font-semibold">
+          <i data-lucide="gem" class="w-2.5 h-2.5 stroke-[2]"></i>
+          <span class="inline-tx-large-badge">Крупная трата</span>
+        </div>
+        <button type="button" onclick="toggleInlineTxAmortizeHelp(this)" class="text-[9px] text-[#8C7DFF] hover:text-white flex items-center gap-1 font-semibold cursor-pointer select-none transition-colors" title="Зачем делать трату разовой?">
+          <i data-lucide="help-circle" class="w-2.5 h-2.5"></i>
+          <span>Зачем это?</span>
+        </button>
+      </div>
+
+      <!-- Подсказка-пояснение для строки добавления операции -->
+      <div class="inline-tx-amortize-help hidden p-2 rounded-lg bg-[#12151C] border border-[#6C5DD3]/25 text-[10px] text-[#A0AEC0] space-y-1 select-none">
+        <div class="flex items-center justify-between font-bold text-gray-200">
+          <span class="flex items-center gap-1 text-[#a594fd]">
+            <i data-lucide="info" class="w-3 h-3"></i>
+            <span>Что такое разовая трата?</span>
+          </span>
+          <button type="button" onclick="toggleInlineTxAmortizeHelp(this)" class="text-gray-400 hover:text-white cursor-pointer">✕</button>
+        </div>
+        <p class="leading-relaxed">
+          Крупные нерегулярные покупки искажают ваш недельный бюджет. «Разовая трата» исключается из ежедневного лимита и равномерно распределяется в календаре на выбранные месяцы.
+        </p>
+      </div>
+
+      <label class="flex items-center justify-between cursor-pointer select-none py-0.5">
+        <div class="flex items-center gap-1.5 min-w-0 pr-2">
+          <i data-lucide="split" class="w-3.5 h-3.5 text-amber-400 flex-shrink-0"></i>
+          <span class="inline-tx-amortize-title text-[11px] font-semibold text-white truncate">Сделать разовой тратой</span>
+        </div>
+        <input type="checkbox" class="tx-exclude-budget w-3.5 h-3.5 rounded bg-[#12151C] border-gray-600 text-[#6C5DD3] focus:ring-0 cursor-pointer accent-[#6C5DD3] flex-shrink-0" onchange="toggleInlineTxAmortize(this)">
+      </label>
+
+      <div class="inline-tx-amortize-details hidden pt-1.5 border-t border-[rgba(255,255,255,0.06)] space-y-1.5">
+        <div class="flex items-center justify-between text-[11px]">
+          <span class="text-[10px] text-gray-300">Распределить на:</span>
+          <div class="flex items-center bg-[#12151C] border border-[rgba(255,255,255,0.08)] rounded-lg p-0.5">
+            <button type="button" onclick="changeInlineTxSpreadMonths(this, -1)" class="w-5 h-5 rounded text-gray-300 hover:text-white hover:bg-[#212430] flex items-center justify-center font-bold cursor-pointer transition-colors">-</button>
+            <span class="inline-tx-spread-label px-1.5 text-[11px] font-bold font-mono text-amber-300 min-w-[42px] text-center">3 мес.</span>
+            <button type="button" onclick="changeInlineTxSpreadMonths(this, 1)" class="w-5 h-5 rounded text-gray-300 hover:text-white hover:bg-[#212430] flex items-center justify-center font-bold cursor-pointer transition-colors">+</button>
+          </div>
+          <input type="hidden" class="tx-spread-months" value="3">
+        </div>
+        <div class="flex items-center justify-between text-[10px] bg-[#12151C] px-2 py-1 rounded-lg">
+          <span class="text-[#848D99]">Нагрузка в месяц:</span>
+          <span class="inline-tx-spread-calc font-mono font-bold text-amber-300">0 ₽/мес</span>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -2365,21 +2406,21 @@
         <!-- Панель управления фильтрами и выделением: равномерный сегментный переключатель + кнопка действия -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 w-full pt-0.5">
           <div class="flex-1 grid grid-cols-4 bg-[#12151C] p-1 rounded-xl border border-[rgba(255,255,255,0.04)] gap-1">
-            <button type="button" id="tab-import-new" onclick="setImportFilter('new')" class="py-1.5 px-2 rounded-lg font-semibold bg-[#212430] text-white text-xs transition-all cursor-pointer flex items-center justify-center gap-1 text-center truncate">
-              <span>Новые</span>
-              <span id="tab-count-new" class="opacity-75 font-mono font-normal text-[11px]">0</span>
+            <button type="button" id="tab-import-new" onclick="setImportFilter('new')" class="py-1 px-1.5 rounded-lg font-semibold bg-[#212430] text-white text-xs transition-all cursor-pointer flex flex-col items-center justify-center leading-tight text-center">
+              <span class="text-[11px] sm:text-xs">Новые</span>
+              <span id="tab-count-new" class="opacity-75 font-mono font-normal text-[10px] sm:text-[11px]">0</span>
             </button>
-            <button type="button" id="tab-import-transfers" onclick="setImportFilter('transfers')" class="py-1.5 px-2 rounded-lg font-medium text-[#848D99] hover:text-white text-xs transition-all cursor-pointer flex items-center justify-center gap-1 text-center truncate">
-              <span>Переводы</span>
-              <span id="tab-count-transfers" class="opacity-75 font-mono font-normal text-[11px]">0</span>
+            <button type="button" id="tab-import-transfers" onclick="setImportFilter('transfers')" class="py-1 px-1.5 rounded-lg font-medium text-[#848D99] hover:text-white text-xs transition-all cursor-pointer flex flex-col items-center justify-center leading-tight text-center">
+              <span class="text-[11px] sm:text-xs">Переводы</span>
+              <span id="tab-count-transfers" class="opacity-75 font-mono font-normal text-[10px] sm:text-[11px]">0</span>
             </button>
-            <button type="button" id="tab-import-dupes" onclick="setImportFilter('dupes')" class="py-1.5 px-2 rounded-lg font-medium text-[#848D99] hover:text-white text-xs transition-all cursor-pointer flex items-center justify-center gap-1 text-center truncate">
-              <span>В базе</span>
-              <span id="tab-count-dupes" class="opacity-75 font-mono font-normal text-[11px]">0</span>
+            <button type="button" id="tab-import-dupes" onclick="setImportFilter('dupes')" class="py-1 px-1.5 rounded-lg font-medium text-[#848D99] hover:text-white text-xs transition-all cursor-pointer flex flex-col items-center justify-center leading-tight text-center">
+              <span class="text-[11px] sm:text-xs">В базе</span>
+              <span id="tab-count-dupes" class="opacity-75 font-mono font-normal text-[10px] sm:text-[11px]">0</span>
             </button>
-            <button type="button" id="tab-import-all" onclick="setImportFilter('all')" class="py-1.5 px-2 rounded-lg font-medium text-[#848D99] hover:text-white text-xs transition-all cursor-pointer flex items-center justify-center gap-1 text-center truncate">
-              <span>Все</span>
-              <span id="tab-count-all" class="opacity-75 font-mono font-normal text-[11px]">0</span>
+            <button type="button" id="tab-import-all" onclick="setImportFilter('all')" class="py-1 px-1.5 rounded-lg font-medium text-[#848D99] hover:text-white text-xs transition-all cursor-pointer flex flex-col items-center justify-center leading-tight text-center">
+              <span class="text-[11px] sm:text-xs">Все</span>
+              <span id="tab-count-all" class="opacity-75 font-mono font-normal text-[10px] sm:text-[11px]">0</span>
             </button>
           </div>
 
@@ -2393,21 +2434,21 @@
         <div id="pdf-debug-output" class="space-y-1.5 select-text pb-2">
           <!-- Сюда динамически выводятся компактные строки высотой ~52px -->
         </div>
+      </div>
 
-        <!-- Нижняя панель действий (внутри скроллируемой области) -->
-        <div class="pt-3 pb-1 border-t border-[rgba(255,255,255,0.06)] flex justify-between items-center gap-2 flex-shrink-0">
-          <button type="button" onclick="downloadParsedJSON()" class="bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 border border-[rgba(255,255,255,0.06)] px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer active:scale-95">
-            JSON
+      <!-- Фиксированная нижняя панель действий (вне скроллируемой области) -->
+      <div class="p-3.5 sm:p-4 border-t border-[rgba(255,255,255,0.06)] bg-[#181B24] z-20 flex justify-between items-center gap-2 flex-shrink-0">
+        <button type="button" onclick="downloadParsedJSON()" class="bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 border border-[rgba(255,255,255,0.06)] px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer active:scale-95">
+          JSON
+        </button>
+
+        <div class="flex gap-2">
+          <button type="button" onclick="document.getElementById('pdf-debug-dialog').classList.add('hidden')" class="bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 px-4 py-2.5 rounded-xl text-xs font-medium transition-colors cursor-pointer active:scale-95">
+            Отмена
           </button>
-
-          <div class="flex gap-2">
-            <button type="button" onclick="document.getElementById('pdf-debug-dialog').classList.add('hidden')" class="bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 px-4 py-2.5 rounded-xl text-xs font-medium transition-colors cursor-pointer active:scale-95">
-              Отмена
-            </button>
-            <button type="button" id="btn-import-transactions" onclick="importSelectedTransactions()" class="bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white px-5 py-2.5 rounded-xl text-xs font-semibold shadow-md transition-all active:scale-95 cursor-pointer disabled:opacity-50">
-              Импортировать
-            </button>
-          </div>
+          <button type="button" id="btn-import-transactions" onclick="importSelectedTransactions()" class="bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white px-5 py-2.5 rounded-xl text-xs font-semibold shadow-md transition-all active:scale-95 cursor-pointer disabled:opacity-50">
+            Импортировать
+          </button>
         </div>
       </div>
     </div>
@@ -3480,7 +3521,7 @@
 
         <!-- Поле ввода суммы без лишней надписи -->
         <div class="mb-3">
-          <input type="text" inputmode="decimal" oninput="formatSumInput(this)" id="edit-tx-amount" placeholder="0 ₽" required class="w-full h-12 bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white text-xl font-bold rounded-xl px-3.5 outline-none tracking-wide transition-colors placeholder-gray-500">
+          <input type="text" inputmode="decimal" oninput="formatSumInput(this); handleEditTxAmountChange();" id="edit-tx-amount" placeholder="0 ₽" required class="w-full h-12 bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white text-xl font-bold rounded-xl px-3.5 outline-none tracking-wide transition-colors placeholder-gray-500">
         </div>
 
         <!-- Компактная строка в 2 колонки: Дата + Категория -->
@@ -3521,15 +3562,44 @@
           </div>
         </div>
 
-        <!-- Опция: сделать разовой тратой -->
-        <div id="wrap-edit-tx-amortize" class="mb-3.5 bg-[#12151C] p-3 rounded-2xl border border-[rgba(255,255,255,0.06)] space-y-2.5">
+        <!-- Опция: сделать разовой тратой (динамически подсказывается при крупной трате) -->
+        <div id="wrap-edit-tx-amortize" class="mb-3.5 bg-[#12151C] p-3 rounded-2xl border border-[rgba(255,255,255,0.06)] space-y-2.5 transition-all duration-200">
+          <!-- Индикатор крупной траты -->
+          <div id="edit-tx-large-notice" class="hidden items-center justify-between pb-2 border-b border-[rgba(255,255,255,0.06)]">
+            <div class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-violet-500/15 border border-violet-500/30 text-violet-300 text-[10px] font-semibold">
+              <i data-lucide="gem" class="w-3 h-3 stroke-[2]"></i>
+              <span id="edit-tx-large-threshold-badge">Крупная трата</span>
+            </div>
+            <button type="button" onclick="toggleTxAmortizeHelp()" class="text-[10px] text-[#8C7DFF] hover:text-white flex items-center gap-1 font-semibold cursor-pointer select-none transition-colors" title="Зачем делать трату разовой?">
+              <i data-lucide="help-circle" class="w-3 h-3"></i>
+              <span>Зачем это?</span>
+            </button>
+          </div>
+
+          <!-- Подсказка-пояснение для новичков -->
+          <div id="edit-tx-amortize-help" class="hidden p-2.5 rounded-xl bg-[#181B24] border border-[#6C5DD3]/25 text-[11px] text-[#A0AEC0] space-y-1.5 animate-fade-in select-none">
+            <div class="flex items-center justify-between font-bold text-gray-200 text-xs">
+              <span class="flex items-center gap-1.5 text-[#a594fd]">
+                <i data-lucide="info" class="w-3.5 h-3.5"></i>
+                <span>Что такое «Разовая трата»?</span>
+              </span>
+              <button type="button" onclick="toggleTxAmortizeHelp()" class="text-gray-400 hover:text-white text-xs cursor-pointer">✕</button>
+            </div>
+            <p class="leading-relaxed">
+              Крупные нерегулярные покупки (техника, отпуск, ремонт, страховка) могут мгновенно увести ваш <b>недельный бюджет</b> в глубокий минус.
+            </p>
+            <p class="leading-relaxed text-gray-300">
+              Если сделать покупку <b>«Разовой»</b>, она исключится из ежедневного лимита и равномерно распределится в календаре платежей на выбранное количество месяцев. Недельный лимит останется чистым и реалистичным.
+            </p>
+          </div>
+
           <label class="flex items-center justify-between cursor-pointer select-none">
             <div class="min-w-0 pr-2">
               <div class="flex items-center gap-2 mb-0.5">
                 <i data-lucide="split" class="w-4 h-4 text-amber-400 flex-shrink-0"></i>
-                <span class="text-xs font-semibold text-white">Сделать разовой тратой</span>
+                <span id="edit-tx-amortize-title" class="text-xs font-semibold text-white">Сделать разовой тратой</span>
               </div>
-              <p class="text-[11px] text-[#848D99] leading-tight pl-6 truncate">Распределит нагрузку на несколько месяцев</p>
+              <p id="edit-tx-amortize-desc" class="text-[11px] text-[#848D99] leading-tight pl-6">Распределит нагрузку на несколько месяцев</p>
             </div>
             <input type="checkbox" id="edit-tx-exclude-budget" onchange="toggleTxAmortizeSection(this.checked)" class="w-4 h-4 rounded bg-[#181B24] border-gray-600 text-[#6C5DD3] focus:ring-0 cursor-pointer accent-[#6C5DD3] flex-shrink-0">
           </label>
@@ -3615,6 +3685,60 @@
       <div class="flex items-center gap-2">
         <button type="button" onclick="closeQuickAmortizeModal()" class="flex-1 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 py-2.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer">Отмена</button>
         <button type="button" onclick="submitQuickAmortize()" class="flex-1 bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white py-2.5 rounded-xl text-xs font-semibold shadow-md transition-all active:scale-95 cursor-pointer">Распределить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- МОДАЛЬНОЕ ОКНО ПРЕДЛОЖЕНИЯ РАСПРЕДЕЛЕНИЯ КРУПНЫХ ТРАТ ИЗ ВЫПИСКИ -->
+  <div id="statement-large-expenses-modal" onclick="if(event.target === this) closeStatementLargeExpensesModal()" class="fixed inset-0 bg-black/80 z-[155] hidden flex flex-col justify-center items-center p-4 animate-fade-in select-none">
+    <div class="bg-[#181B24] border border-[rgba(255,255,255,0.08)] w-full max-w-md rounded-3xl p-5 shadow-2xl flex flex-col max-h-[90vh]">
+      <!-- Шапка -->
+      <div class="flex items-center justify-between mb-3 pb-3 border-b border-[rgba(255,255,255,0.06)] flex-shrink-0">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-2xl bg-violet-500/15 text-violet-300 border border-violet-500/25 flex items-center justify-center flex-shrink-0 shadow-sm">
+            <i data-lucide="gem" class="w-5 h-5 stroke-[2]"></i>
+          </div>
+          <div class="min-w-0">
+            <h3 class="font-bold text-white text-base leading-snug">Крупные траты в выписке</h3>
+            <p id="statement-large-subtitle" class="text-xs text-[#848D99] mt-0.5">Найдено операций: 0</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeStatementLargeExpensesModal()" class="text-gray-400 hover:text-white p-1.5 rounded-xl hover:bg-[#212430] cursor-pointer transition-colors active:scale-90">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Скроллируемый контент (пояснение скроллится вместе со списком операций) -->
+      <div class="overflow-y-auto space-y-3 flex-1 pr-1 custom-scrollbar min-h-0 mb-3.5">
+        <!-- Дружелюбное пояснение -->
+        <div class="bg-gradient-to-br from-violet-950/40 via-[#181B24] to-[#12151C] border border-violet-500/20 rounded-2xl p-3 text-xs text-gray-300 leading-relaxed space-y-1.5">
+          <div class="flex items-center gap-1.5 font-semibold text-violet-300 text-xs">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5 flex-shrink-0"></i>
+            <span>Сделайте их разовыми расходами</span>
+          </div>
+          <p class="text-[11px] text-[#A1AAB7] leading-normal">
+            Крупные траты не будут списываться из текущего недельного лимита. Их сумма распределится равными долями в календаре платежей на выбранное количество месяцев, защитив бюджет от резкого перерасхода.
+          </p>
+        </div>
+
+        <!-- Список крупных трат с настройкой месяцев -->
+        <div id="statement-large-list" class="space-y-2.5">
+          <!-- Генерируется динамически -->
+        </div>
+      </div>
+
+      <!-- Подвал: Сводка и кнопки действий -->
+      <div class="pt-3 border-t border-[rgba(255,255,255,0.06)] flex-shrink-0 space-y-2.5">
+        <div class="flex items-center justify-between text-xs text-[#848D99]">
+          <span id="statement-large-summary">Выбрано к распределению: 0</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="closeStatementLargeExpensesModal()" class="flex-1 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 py-2.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer active:scale-95">Оставить в бюджете</button>
+          <button type="button" id="stmt-large-submit-btn" onclick="submitStatementLargeExpenses()" class="flex-1 bg-[#6C5DD3] hover:bg-[#5E4FC9] text-white py-2.5 rounded-xl text-xs font-semibold shadow-md shadow-[#6C5DD3]/25 transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-1.5">
+            <i data-lucide="split" class="w-4 h-4"></i>
+            <span>Распределить</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>

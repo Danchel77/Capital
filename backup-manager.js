@@ -462,7 +462,7 @@ function analyzeAndDisplayBackup(parsed) {
 
   // Анализируем каждую секцию в структурированный список элементов с признаком дубликата и дефолтным чекбоксом
   const processedSections = {
-    tx: prepareAnalyzedItems(rawSections.transactions, (item) => isTransactionDuplicate(item, existingTxs), 'Совпадает дата, сумма и категория'),
+    tx: prepareAnalyzedItems(rawSections.transactions, (item) => isBackupTransactionDuplicate(item, existingTxs), 'Совпадает дата, сумма и категория'),
     dep: prepareAnalyzedItems(rawSections.deposits, (item) => isDepositDuplicate(item, existingDeps), 'Уже есть вклад с таким названием и суммой'),
     broker: prepareAnalyzedItems(rawSections.broker, (item) => isBrokerPointDuplicate(item, existingBroker), 'Совпадает дата, сумма и операция'),
     goals: prepareAnalyzedItems(rawSections.goals, (item) => isGoalDuplicate(item, existingGoals), 'Цель с таким названием и суммой уже существует'),
@@ -1054,7 +1054,7 @@ function escapeHtml(str) {
 // ДЕДУПЛИКАЦИЯ
 // =========================================================================
 
-function isTransactionDuplicate(tx, existingList) {
+function isBackupTransactionDuplicate(tx, existingList) {
   if (!tx || !Array.isArray(existingList) || existingList.length === 0) return false;
   const txDate = String(tx.date || tx.rawDate || '').slice(0, 10);
   const txAmount = Math.round(Math.abs(Number(tx.amount || 0)) * 100) / 100;
@@ -1441,3 +1441,4 @@ window.toggleInspectItemByRowClick = toggleInspectItemByRowClick;
 window.toggleBackupInspectAll = toggleBackupInspectAll;
 window.executeBackupImport = executeBackupImport;
 window.resetImportState = resetImportState;
+window.isBackupTransactionDuplicate = isBackupTransactionDuplicate;

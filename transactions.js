@@ -99,7 +99,7 @@ function processTransactions(txs) {
       formattedDate: ruDateStr,
       dayTimestamp: txDate.getTime(),
       createdAt: createdTime || txDate.getTime(),
-      timestamp: createdTime || txDate.getTime()
+      timestamp: txDate.getTime()
     });
   });
 
@@ -474,6 +474,8 @@ function addTxRow() {
     input.addEventListener('change', (e) => {
       const select = row.querySelector('.tx-category');
       updateCategorySelect(select, e.target.value);
+      const amountInp = row.querySelector('.tx-amount');
+      if (amountInp) handleInlineTxAmountChange(amountInp);
     });
   });
 
@@ -533,6 +535,119 @@ function addTxRow() {
   }
 }
 
+function handleInlineTxAmountChange(inputEl) {
+  if (!inputEl) return;
+  const row = inputEl.closest('.tx-item');
+  if (!row) return;
+
+  const amount = getUnformattedVal(inputEl) || 0;
+  const type = row.querySelector('.tx-type:checked')?.value || 'Расход';
+  const isExp = (type === 'Расход');
+
+  const amortizeWrap = row.querySelector('.inline-tx-amortize-wrap');
+  const noticeEl = row.querySelector('.inline-tx-large-notice');
+  const badgeEl = row.querySelector('.inline-tx-large-badge');
+  const titleEl = row.querySelector('.inline-tx-amortize-title');
+  const cb = row.querySelector('.tx-exclude-budget');
+
+  if (!amortizeWrap) return;
+
+  if (!isExp) {
+    amortizeWrap.classList.add('hidden');
+    return;
+  }
+
+  const details = (typeof getLargeExpenseThresholdDetails === 'function')
+    ? getLargeExpenseThresholdDetails()
+    : { threshold: 10000, isDynamic: false, reason: 'базовый порог' };
+  const threshold = details.threshold;
+  const isLarge = isFinite(threshold) && threshold > 0 && amount >= threshold;
+  const isChecked = cb && cb.checked;
+
+  if (amount > 0 || isChecked) {
+    amortizeWrap.classList.remove('hidden');
+
+    if (isLarge) {
+      if (noticeEl) {
+        noticeEl.classList.remove('hidden');
+        noticeEl.classList.add('flex');
+      }
+      if (badgeEl && typeof formatMoney === 'function') {
+        badgeEl.innerText = `Крупная трата (от ${formatMoney(threshold)})`;
+      }
+      if (titleEl) titleEl.innerText = 'Сделать разовой тратой?';
+      amortizeWrap.classList.add('border-violet-500/35', 'bg-violet-950/20');
+      amortizeWrap.classList.remove('border-[rgba(255,255,255,0.06)]', 'bg-[#181B24]');
+    } else {
+      if (noticeEl) {
+        noticeEl.classList.add('hidden');
+        noticeEl.classList.remove('flex');
+      }
+      if (titleEl) titleEl.innerText = 'Сделать разовой тратой';
+      amortizeWrap.classList.remove('border-violet-500/35', 'bg-violet-950/20');
+      amortizeWrap.classList.add('border-[rgba(255,255,255,0.06)]', 'bg-[#181B24]');
+    }
+    if (typeof lucide !== 'undefined') lucide.createIcons({ root: amortizeWrap });
+  } else {
+    amortizeWrap.classList.add('hidden');
+  }
+
+  updateInlineTxSpreadPreview(row);
+}
+window.handleInlineTxAmountChange = handleInlineTxAmountChange;
+
+function toggleInlineTxAmortizeHelp(btn) {
+  if (!btn) return;
+  const row = btn.closest('.tx-item');
+  if (!row) return;
+  const helpEl = row.querySelector('.inline-tx-amortize-help');
+  if (helpEl) {
+    helpEl.classList.toggle('hidden');
+  }
+}
+window.toggleInlineTxAmortizeHelp = toggleInlineTxAmortizeHelp;
+
+function toggleInlineTxAmortize(cb) {
+  if (!cb) return;
+  const row = cb.closest('.tx-item');
+  if (!row) return;
+  const details = row.querySelector('.inline-tx-amortize-details');
+  if (details) {
+    if (cb.checked) {
+      details.classList.remove('hidden');
+      updateInlineTxSpreadPreview(row);
+    } else {
+      details.classList.add('hidden');
+    }
+  }
+}
+window.toggleInlineTxAmortize = toggleInlineTxAmortize;
+
+function changeInlineTxSpreadMonths(btn, delta) {
+  if (!btn) return;
+  const row = btn.closest('.tx-item');
+  if (!row) return;
+  const input = row.querySelector('.tx-spread-months');
+  const label = row.querySelector('.inline-tx-spread-label');
+  if (!input) return;
+  let val = parseInt(input.value, 10) || 1;
+  val = Math.max(1, Math.min(12, val + delta));
+  input.value = val;
+  if (label) label.innerText = `${val} мес.`;
+  updateInlineTxSpreadPreview(row);
+}
+window.changeInlineTxSpreadMonths = changeInlineTxSpreadMonths;
+
+function updateInlineTxSpreadPreview(row) {
+  if (!row) return;
+  const amount = getUnformattedVal(row.querySelector('.tx-amount')) || 0;
+  const spreadMonths = parseInt(row.querySelector('.tx-spread-months')?.value, 10) || 3;
+  const monthlyVal = spreadMonths > 0 ? Math.round(amount / spreadMonths) : amount;
+  const calcEl = row.querySelector('.inline-tx-spread-calc');
+  if (calcEl) calcEl.innerText = `+${formatMoney(monthlyVal)}/мес`;
+}
+window.updateInlineTxSpreadPreview = updateInlineTxSpreadPreview;
+
 function submitTransactions(e) {
   e.preventDefault();
   const rows = document.querySelectorAll('.tx-item');
@@ -551,7 +666,21 @@ function submitTransactions(e) {
     const date = row.querySelector('.tx-date').value;
     const category = row.querySelector('.tx-category').value;
     const comment = row.querySelector('.tx-comment').value;
-    return { type, amount, date, category, comment, author: authorInfo };
+    const amortizeCb = row.querySelector('.tx-exclude-budget');
+    const isExcluded = (type === 'Расход') && (amortizeCb ? amortizeCb.checked : false);
+    const spreadInput = row.querySelector('.tx-spread-months');
+    const spreadMonths = isExcluded ? (parseInt(spreadInput?.value, 10) || 3) : 1;
+    return {
+      type,
+      amount,
+      date,
+      category,
+      comment,
+      author: authorInfo,
+      excludeFromBudget: isExcluded,
+      billType: isExcluded ? 'onetime' : '',
+      spreadMonths: isExcluded ? spreadMonths : 1
+    };
   });
   submitAction('tx-submit-btn', 'Transactions', txData);
 }
@@ -790,6 +919,7 @@ function openCreateTxModal(initData = {}) {
   if (spreadInput) spreadInput.value = spreadMonths;
   if (spreadLabel) spreadLabel.innerText = `${spreadMonths} мес.`;
   updateTxSpreadPreview();
+  handleEditTxAmountChange();
 
   if (deleteBtn) deleteBtn.classList.add('hidden');
   if (saveBtn) saveBtn.innerText = 'Создать';
@@ -893,6 +1023,7 @@ function openEditTxModal(id) {
   if (spreadInput) spreadInput.value = spreadMonths;
   if (spreadLabel) spreadLabel.innerText = `${spreadMonths} мес.`;
   updateTxSpreadPreview();
+  handleEditTxAmountChange();
 
   if (typeof lockBodyScroll === 'function') lockBodyScroll();
   dlg.classList.remove('hidden');
@@ -919,7 +1050,7 @@ function setEditTxType(type) {
   if (type === 'Расход') {
     btnExp.className = 'flex-1 py-2 text-xs font-semibold rounded-xl transition-all text-white bg-[#FF453A]/20 border border-[#FF453A]/30 cursor-pointer shadow-sm';
     btnInc.className = 'flex-1 py-2 text-xs font-semibold rounded-xl transition-all text-gray-400 hover:text-white border border-transparent cursor-pointer';
-    document.getElementById('wrap-edit-tx-amortize')?.classList.remove('hidden');
+    handleEditTxAmountChange();
   } else {
     btnExp.className = 'flex-1 py-2 text-xs font-semibold rounded-xl transition-all text-gray-400 hover:text-white border border-transparent cursor-pointer';
     btnInc.className = 'flex-1 py-2 text-xs font-semibold rounded-xl transition-all text-white bg-[#30D158]/20 border border-[#30D158]/30 cursor-pointer shadow-sm';
@@ -1026,6 +1157,79 @@ function toggleEditTxCategoryMenu(e) {
     menu.classList.remove('hidden');
     if (typeof lucide !== 'undefined') lucide.createIcons();
   }
+}
+
+function toggleTxAmortizeHelp() {
+  const helpEl = document.getElementById('edit-tx-amortize-help');
+  if (helpEl) {
+    helpEl.classList.toggle('hidden');
+  }
+}
+window.toggleTxAmortizeHelp = toggleTxAmortizeHelp;
+
+function handleEditTxAmountChange() {
+  const amount = getUnformattedVal(document.getElementById('edit-tx-amount')) || 0;
+  const type = document.getElementById('edit-tx-type')?.value || 'Расход';
+  const isExp = (type === 'Расход' || type === 'expense');
+  const isBill = (document.getElementById('edit-tx-is-bill-payment')?.value === 'true') || !!document.getElementById('edit-tx-bill-id')?.value;
+  const amortizeWrap = document.getElementById('wrap-edit-tx-amortize');
+  const noticeEl = document.getElementById('edit-tx-large-notice');
+  const badgeEl = document.getElementById('edit-tx-large-threshold-badge');
+  const titleEl = document.getElementById('edit-tx-amortize-title');
+  const descEl = document.getElementById('edit-tx-amortize-desc');
+  const cb = document.getElementById('edit-tx-exclude-budget');
+  const hasExistingId = !!document.getElementById('edit-tx-id')?.value;
+
+  if (!amortizeWrap) return;
+
+  if (!isExp || isBill) {
+    amortizeWrap.classList.add('hidden');
+    return;
+  }
+
+  const details = (typeof getLargeExpenseThresholdDetails === 'function')
+    ? getLargeExpenseThresholdDetails()
+    : { threshold: 10000, isDynamic: false, reason: 'базовый порог' };
+  const threshold = details.threshold;
+  const isLarge = isFinite(threshold) && threshold > 0 && amount >= threshold;
+  const isAlreadyAmortized = cb && cb.checked;
+
+  if (amount > 0 || isAlreadyAmortized || hasExistingId) {
+    amortizeWrap.classList.remove('hidden');
+
+    if (isLarge) {
+      if (noticeEl) {
+        noticeEl.classList.remove('hidden');
+        noticeEl.classList.add('flex');
+      }
+      if (badgeEl && typeof formatMoney === 'function') {
+        badgeEl.innerText = `Крупная трата (от ${formatMoney(threshold)})`;
+      }
+      if (titleEl) titleEl.innerText = 'Сделать разовой тратой?';
+      if (descEl) descEl.innerText = 'Крупная покупка не будет искажать недельный бюджет и распределится частями в календаре';
+      amortizeWrap.classList.add('border-violet-500/35', 'bg-gradient-to-b', 'from-violet-950/25', 'to-[#12151C]');
+      amortizeWrap.classList.remove('border-[rgba(255,255,255,0.06)]', 'bg-[#12151C]');
+    } else {
+      if (noticeEl) {
+        noticeEl.classList.add('hidden');
+        noticeEl.classList.remove('flex');
+      }
+      if (titleEl) titleEl.innerText = 'Сделать разовой тратой';
+      if (descEl) descEl.innerText = 'Распределит нагрузку покупки на несколько месяцев в календаре';
+      amortizeWrap.classList.remove('border-violet-500/35', 'bg-gradient-to-b', 'from-violet-950/25');
+      amortizeWrap.classList.add('border-[rgba(255,255,255,0.06)]', 'bg-[#12151C]');
+    }
+
+    if (typeof lucide !== 'undefined') lucide.createIcons({ root: amortizeWrap });
+  } else {
+    amortizeWrap.classList.add('hidden');
+    if (noticeEl) {
+      noticeEl.classList.add('hidden');
+      noticeEl.classList.remove('flex');
+    }
+  }
+
+  updateTxSpreadPreview();
 }
 
 function toggleTxAmortizeSection(enabled) {
@@ -1161,6 +1365,15 @@ async function submitEditTxModal(e) {
 
   // 3. Мгновенно закрываем модалку и перерисовываем интерфейс (0мс)
   closeEditTxModal();
+  const isExpenseTx = type === 'Расход' || type === 'expense' || String(type || '').trim().toLowerCase() === 'расход' || !!isBillPayment;
+  if (isExpenseTx) {
+    if (typeof triggerBudgetExpenseAnimation === 'function') {
+      triggerBudgetExpenseAnimation();
+    } else {
+      window._budgetNeedsExpenseAnimation = true;
+      window._budgetTabDirty = true;
+    }
+  }
   if (typeof markTabsDirty === 'function') markTabsDirty();
   if (typeof renderBudgetTab === 'function') renderBudgetTab();
   if (typeof renderTransactions === 'function') renderTransactions();
@@ -1270,12 +1483,33 @@ async function submitEditTxModal(e) {
           });
           bill.linkedTxId = newTxId;
         }
+      } else if (excludeFromBudget && !effectiveIsBillPayment) {
+        const billCol = getUserCol('CalendarBills');
+        const startMonth = (typeof formatDateStr === 'function') ? formatDateStr(parsedDate, 'yyyy-MM') : parsedDate.toISOString().slice(0, 7);
+        const billData = {
+          name: comment || billName || category || 'Разовая трата',
+          totalAmount: amount,
+          spreadMonths,
+          amount: Math.round(amount / spreadMonths),
+          day: parsedDate.getDate(),
+          month: startMonth,
+          startMonth: startMonth,
+          type: 'onetime',
+          linkedTxId: newTxId,
+          isPaid: true,
+          createdAt: Date.now(),
+          updatedAt: Date.now()
+        };
+        const docRef = await billCol.add(billData);
+        billData.id = docRef.id;
+        if (!Cache.calendarBills) Cache.calendarBills = [];
+        Cache.calendarBills.push(billData);
       }
     }
 
     if (typeof fetchCollection === 'function') {
       fetchCollection('Transactions').catch(() => {});
-      if (billId) fetchCollection('CalendarBills').catch(() => {});
+      if (billId || excludeFromBudget) fetchCollection('CalendarBills').catch(() => {});
     }
   } catch (err) {
     console.error('Ошибка при сохранении операции:', err);
@@ -1308,6 +1542,10 @@ function deleteTxFromModal() {
         await handleTransactionsDeleted([id], deletedTx ? [deletedTx] : []);
       }
 
+      if (typeof triggerBudgetExpenseAnimation === 'function') {
+        triggerBudgetExpenseAnimation();
+      }
+      if (typeof markTabsDirty === 'function') markTabsDirty();
       if (typeof renderBudgetTab === 'function') renderBudgetTab();
       if (typeof renderTransactions === 'function') renderTransactions();
       showToast('Операция удалена');
@@ -1485,6 +1723,9 @@ async function submitQuickAmortize() {
     tx.spreadMonths = spreadMonths;
 
     closeQuickAmortizeModal();
+    if (typeof triggerBudgetExpenseAnimation === 'function') triggerBudgetExpenseAnimation();
+    if (typeof markTabsDirty === 'function') markTabsDirty();
+    if (typeof renderBudgetTab === 'function') renderBudgetTab();
     renderTransactions();
     if (typeof renderBudgetCalendar === 'function') {
       const today = (typeof getSelectedBudgetDate === 'function') ? getSelectedBudgetDate() : new Date();
@@ -1531,6 +1772,9 @@ async function returnTxToBudget(id) {
     tx.excludeFromBudget = false;
     tx.spreadMonths = 1;
 
+    if (typeof triggerBudgetExpenseAnimation === 'function') triggerBudgetExpenseAnimation();
+    if (typeof markTabsDirty === 'function') markTabsDirty();
+    if (typeof renderBudgetTab === 'function') renderBudgetTab();
     renderTransactions();
     if (typeof renderBudgetCalendar === 'function') {
       const today = (typeof getSelectedBudgetDate === 'function') ? getSelectedBudgetDate() : new Date();
@@ -1682,20 +1926,39 @@ function resetAllTxFilters() {
   renderTransactions();
 }
 
-function getLargeExpenseThreshold() {
+function getLargeExpenseThresholdDetails() {
   const plan = Cache?.budgetPlan;
-  if (!plan) return Infinity;
+  const monthlyLimit = parseFloat(plan?.monthlyVariableLimit) || 0;
+  if (monthlyLimit > 0) {
+    const weeklyBaseLimit = monthlyLimit / 4.33;
+    if (weeklyBaseLimit > 0) {
+      const val = Math.round((weeklyBaseLimit * 2) / 3);
+      return {
+        threshold: val,
+        isDynamic: true,
+        reason: 'порог бюджета (~65% недели)'
+      };
+    }
+  }
+  const monthlyIncome = parseFloat(plan?.monthlyIncome) || 0;
+  if (monthlyIncome > 0) {
+    const val = Math.round((monthlyIncome / 4.33) * 0.5);
+    return {
+      threshold: val,
+      isDynamic: true,
+      reason: 'порог дохода (~50% недели)'
+    };
+  }
+  return {
+    threshold: 10000,
+    isDynamic: false,
+    reason: 'базовый порог (до настройки плана)'
+  };
+}
+window.getLargeExpenseThresholdDetails = getLargeExpenseThresholdDetails;
 
-  // Проверяем, настроен ли бюджет: должен быть задан лимит переменных расходов больше 0
-  const monthlyLimit = parseFloat(plan.monthlyVariableLimit) || 0;
-  if (monthlyLimit <= 0) return Infinity;
-
-  // Недельный лимит = monthlyLimit / 4.33
-  const weeklyBaseLimit = monthlyLimit / 4.33;
-  if (weeklyBaseLimit <= 0) return Infinity;
-
-  // Крупная трата: 2/3 от недельного лимита расходов
-  return Math.round((weeklyBaseLimit * 2) / 3);
+function getLargeExpenseThreshold() {
+  return getLargeExpenseThresholdDetails().threshold;
 }
 
 let _txInfiniteObserver = null;
@@ -1731,39 +1994,42 @@ function renderTxRowHtml(tx, largeThreshold, hasDynamicThreshold) {
     : (hasComment ? rawComment : (tx.category || (isExp ? 'Расход' : 'Доход')));
   const subCategory = hasComment ? (tx.category || '') : '';
 
+  const isFamilyConnected = !!(Cache?.family?.id || (Cache?.family?.members && Cache.family.members.length > 1));
   let authorBadgeHtml = '';
-  let authorInfo = null;
-  const familyMembers = Cache?.family?.members || [];
 
-  if (tx.author && (tx.author.avatarId || tx.author.uid)) {
-    const matched = tx.author.uid ? familyMembers.find(m => m.uid === tx.author.uid) : null;
-    authorInfo = {
-      name: matched?.name || tx.author.name || 'Член семьи',
-      avatarId: matched?.avatarId || tx.author.avatarId || 'user'
-    };
-  } else if (tx.authorUid || tx.userId) {
-    const uid = tx.authorUid || tx.userId;
-    const matched = familyMembers.find(m => m.uid === uid);
-    if (matched) {
-      authorInfo = { name: matched.name, avatarId: matched.avatarId };
+  if (isFamilyConnected) {
+    let authorInfo = null;
+    const familyMembers = Cache?.family?.members || [];
+
+    if (tx.author && (tx.author.avatarId || tx.author.uid)) {
+      const matched = tx.author.uid ? familyMembers.find(m => m.uid === tx.author.uid) : null;
+      authorInfo = {
+        name: matched?.name || tx.author.name || 'Член семьи',
+        avatarId: matched?.avatarId || tx.author.avatarId || 'user'
+      };
+    } else if (tx.authorUid || tx.userId) {
+      const uid = tx.authorUid || tx.userId;
+      const matched = familyMembers.find(m => m.uid === uid);
+      if (matched) {
+        authorInfo = { name: matched.name, avatarId: matched.avatarId };
+      }
     }
-  }
 
-  // Если семейный режим активен, а у старой записи не был сохранен автор — привязываем к владельцу семьи
-  if (!authorInfo && Cache?.family && familyMembers.length > 0) {
-    const owner = familyMembers.find(m => m.role === 'owner' || m.uid === Cache.family.ownerUid) || familyMembers[0];
-    if (owner) {
-      authorInfo = { name: owner.name, avatarId: owner.avatarId };
+    if (!authorInfo && familyMembers.length > 0) {
+      const owner = familyMembers.find(m => m.role === 'owner' || m.uid === Cache.family.ownerUid) || familyMembers[0];
+      if (owner) {
+        authorInfo = { name: owner.name, avatarId: owner.avatarId };
+      }
     }
-  }
 
-  if (authorInfo && (Cache?.family || familyMembers.length > 0 || tx.author)) {
-    const authorPreset = (window.AVATAR_PRESETS && window.AVATAR_PRESETS[authorInfo.avatarId]) || window.AVATAR_PRESETS?.user || { bg: 'bg-[#6C5DD3]', icon: 'user' };
-    authorBadgeHtml = `
-      <div class="absolute top-2 right-2.5 flex items-center justify-center w-[18px] h-[18px] rounded-full ${authorPreset.bg} text-white ring-2 ring-[#181B24] shadow-sm select-none pointer-events-none" title="Добавил(а): ${escapeHtml(authorInfo.name)}">
-        <i data-lucide="${authorPreset.icon}" class="w-2.5 h-2.5 stroke-[2.5]"></i>
-      </div>
-    `;
+    if (authorInfo) {
+      const authorPreset = (window.AVATAR_PRESETS && window.AVATAR_PRESETS[authorInfo.avatarId]) || window.AVATAR_PRESETS?.user || { bg: 'bg-[#6C5DD3]', icon: 'user' };
+      authorBadgeHtml = `
+        <div class="tx-author-badge absolute top-2 right-2.5 flex items-center justify-center w-[18px] h-[18px] rounded-full ${authorPreset.bg} text-white ring-2 ring-[#181B24] shadow-sm select-none pointer-events-none z-10" title="Добавил(а): ${escapeHtml(authorInfo.name)}">
+          <i data-lucide="${authorPreset.icon}" class="w-2.5 h-2.5 stroke-[2.5]"></i>
+        </div>
+      `;
+    }
   }
 
   return `
@@ -1773,6 +2039,7 @@ function renderTxRowHtml(tx, largeThreshold, hasDynamicThreshold) {
          onclick="openTxContextMenu(event, '${tx.id}')">
       
       <input type="checkbox" class="select-checkbox hidden" data-id="${tx.id}">
+      ${authorBadgeHtml}
 
       <div class="flex items-center gap-3.5 min-w-0">
          <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${iconBg}">
@@ -1790,8 +2057,8 @@ function renderTxRowHtml(tx, largeThreshold, hasDynamicThreshold) {
                  <i data-lucide="split" class="w-2.5 h-2.5"></i>${tx.spreadMonths || 1} мес
                </span>
              ` : (isLarge ? `
-               <span class="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center justify-center flex-shrink-0 leading-none" title="Крупная трата (от ${formatMoney(largeThreshold)})">
-                 <i data-lucide="flame" class="w-3 h-3 stroke-[2]"></i>
+               <span class="px-1.5 py-0.5 rounded bg-violet-500/15 text-violet-300 border border-violet-500/25 flex items-center justify-center flex-shrink-0 leading-none shadow-sm" title="Крупная трата (от ${formatMoney(largeThreshold)})">
+                 <i data-lucide="gem" class="w-3 h-3 stroke-[2]"></i>
                </span>
              ` : ''))}
            </div>
@@ -1799,11 +2066,9 @@ function renderTxRowHtml(tx, largeThreshold, hasDynamicThreshold) {
          </div>
       </div>
 
-     <div class="tx-amount flex-shrink-0 text-right font-medium ml-2 ${authorBadgeHtml ? 'pr-4' : ''} ${isExp ? 'text-gray-200' : 'text-[#30D158]'} text-[16px]">
+      <div class="tx-amount text-right font-medium ${isExp ? 'text-gray-200' : 'text-[#30D158]'} text-[16px] flex-shrink-0 ml-2">
         ${window.isPrivacyModeEnabled ? '•••• ₽' : (isExp ? '-' : '+') + formatMoney(tx.amount)}
-     </div>
-
-     ${authorBadgeHtml}
+      </div>
     </div>
   `;
 }
@@ -2748,6 +3013,7 @@ window.closeEditTxModal = closeEditTxModal;
 window.submitEditTxModal = submitEditTxModal;
 window.deleteTxFromModal = deleteTxFromModal;
 window.toggleTxAmortizeSection = toggleTxAmortizeSection;
+window.handleEditTxAmountChange = handleEditTxAmountChange;
 window.changeTxSpreadMonths = changeTxSpreadMonths;
 window.updateTxSpreadPreview = updateTxSpreadPreview;
 window.setEditTxType = setEditTxType;

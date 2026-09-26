@@ -484,17 +484,33 @@ body.selection-mode .select-checkbox {
   height: 18px !important;
 }
 
-/* При мультивыборе скрываем кнопкой оплаты и кнопку "Пополнить" на карточке цели */
+/* При мультивыборе скрываем кнопку оплаты и кнопку "Пополнить" на карточке цели */
 body.selection-mode .bill-pay-status,
 body.selection-mode .goal-topup-btn {
   display: none !important;
 }
 
-/* При мультивыборе транзакций НЕ скрываем сумму, а сдвигаем ее чуть левее, чтобы справа уместился флажок */
+/* Бейдж автора транзакции: по умолчанию в правом верхнем углу карточки */
+.tx-author-badge {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* При мультивыборе: аватар перемещается на одну строку с суммой, вставая справа от нее */
+body.selection-mode .tx-author-badge {
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  right: 36px !important;
+}
+
+/* При мультивыборе транзакций сдвигаем сумму левее, чтобы справа аккуратно уместились аватар и флажок */
 body.selection-mode .tx-amount,
-body.selection-mode #transactions-list .tx-amount {
+body.selection-mode #transactions-list .tx-amount,
+body.selection-mode .card[data-table="Transactions"] .tx-amount {
   display: block !important;
-  margin-right: 28px !important;
+  margin-right: 58px !important;
   transition: margin-right 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -1233,12 +1249,12 @@ body.selection-mode .selection-panel {
   background: rgba(108, 93, 211, 0.18);
 }
 
-/* Унификация высоты и расположения кнопок шагов мастера */
+/* Унификация шагов мастера бюджета */
 .wiz-step-card {
   min-height: auto;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  position: relative;
 }
 
 .wiz-step-content {
@@ -1248,21 +1264,9 @@ body.selection-mode .selection-panel {
   gap: 12px;
 }
 
-.wiz-step-actions {
-  margin-top: auto;
-  padding-top: 12px;
-}
-
-/* Мобильная адаптация экрана смартфона: убираем лишний вертикальный скролл страницы */
 @media (max-width: 640px) {
   #app-content {
-    padding: 12px 14px 96px !important;
-  }
-  
-  #budget-wizard {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+    padding: 12px 14px 80px !important;
   }
 
   .wiz-step-card {
@@ -1272,10 +1276,6 @@ body.selection-mode .selection-panel {
 
   .wiz-step-content {
     gap: 10px;
-  }
-
-  .wiz-step-actions {
-    padding-top: 10px;
   }
 
   .wiz-day-cell {

@@ -122,9 +122,49 @@ function resetGlobalCache() {
     calendarBills: [],
     settings: {},
     userProfile: { displayName: 'Пользователь', avatarId: '' },
-    family: null
+    family: null,
+    isInitialDataLoaded: false,
+    isServerSyncComplete: false
   };
   Cache = window.Cache;
+
+  // Сброс сохраненного шага мастера первого запуска
+  try {
+    localStorage.removeItem('budget_wizard_step');
+  } catch (e) {}
+
+  if (typeof window.currentWizardStep !== 'undefined') {
+    window.currentWizardStep = 1;
+  }
+
+  // Сброс базовых состояний аналитики и анимаций
+  window._budgetBaselineState = null;
+  window._budgetLastRenderedState = null;
+  window._budgetTabDirty = true;
+  window._transactionsTabDirty = true;
+  window._depositsTabDirty = true;
+  window._brokerTabDirty = true;
+  window._initialAnimationDone = false;
+  window.lastAddedTxIds = [];
+
+  // Очистка DOM-списков от данных предыдущего аккаунта
+  const txList = document.getElementById('transactions-list');
+  if (txList) txList.innerHTML = '';
+  const depList = document.getElementById('deposits-list');
+  if (depList) depList.innerHTML = '';
+  const brList = document.getElementById('broker-deposits-list');
+  if (brList) brList.innerHTML = '';
+  const goalsList = document.getElementById('goals-list');
+  if (goalsList) goalsList.innerHTML = '';
+  const calList = document.getElementById('budget-calendar-list');
+  if (calList) calList.innerHTML = '';
+  const catLimitsList = document.getElementById('budget-category-limits-list');
+  if (catLimitsList) catLimitsList.innerHTML = '';
+  const expEl = document.getElementById('month-expense');
+  if (expEl) expEl.innerText = '0 ₽';
+  const incEl = document.getElementById('month-income');
+  if (incEl) incEl.innerText = '0 ₽';
+
   return Cache;
 }
 
@@ -422,6 +462,16 @@ function markTabsDirty() {
 }
 window.markTabsDirty = markTabsDirty;
 
+// Флаг однократного проигрывания анимации шкал и сумм бюджета после внесения трат
+function triggerBudgetExpenseAnimation() {
+  window._budgetNeedsExpenseAnimation = true;
+  window._budgetTabDirty = true;
+  if (!window._budgetBaselineState && window._budgetLastRenderedState) {
+    window._budgetBaselineState = { ...window._budgetLastRenderedState };
+  }
+}
+window.triggerBudgetExpenseAnimation = triggerBudgetExpenseAnimation;
+
 /* Универсальная оптимистичная функция добавления/обновления (0мс отклик) */
 async function submitAction(btnId, table, data) {
   const btn = document.getElementById(btnId);
@@ -497,6 +547,10 @@ async function submitAction(btnId, table, data) {
     if (typeof processTransactions === 'function') {
       Cache.transactions = processTransactions(allFlat);
     }
+    const hasExpensesInSubmit = items.some(d => d.type === 'Расход' || d.type === 'expense' || String(d.type || '').trim().toLowerCase() === 'расход' || d.isBillPayment);
+    if (hasExpensesInSubmit) {
+      triggerBudgetExpenseAnimation();
+    }
     markTabsDirty();
     if (typeof renderTransactions === 'function') renderTransactions();
     if (typeof renderBudgetTab === 'function') renderBudgetTab();
@@ -561,6 +615,9 @@ function deleteRecord(table, id) {
         const filtered = allTxs.filter(t => t.id !== id);
         if (typeof processTransactions === 'function') {
           Cache.transactions = processTransactions(filtered);
+        }
+        if (typeof triggerBudgetExpenseAnimation === 'function') {
+          triggerBudgetExpenseAnimation();
         }
         markTabsDirty();
         if (typeof renderTransactions === 'function') renderTransactions();
@@ -777,6 +834,58 @@ function animateNumber(el, targetNum, duration = 1200, isCurrency = true) {
   }
 
   el._animFrame = requestAnimationFrame(step);
+}
+
+/**
+ * Плавная анимация счетчика процентов от начального значения до целевого.
+ * @param {HTMLElement} el Элемент отображения процента
+ * @param {number} targetPct Целевой процент
+ * @param {string} [color] Цвет текста
+ * @param {number} [duration=3000] Продолжительность анимации в мс
+ * @param {number|null} [fromPct=null] Начальный процент (если null, берется из animPct или 0)
+ */
+function animatePercentage(el, targetPct, color, duration = 3000, fromPct = null) {
+  if (!el) return;
+  if (el._pctFrame) cancelAnimationFrame(el._pctFrame);
+  const target = Math.round(Number(targetPct) || 0);
+  if (color) el.style.color = color;
+
+  let start = target;
+  if (fromPct !== null && fromPct !== undefined && !isNaN(Number(fromPct))) {
+    start = Math.round(Number(fromPct));
+  } else if (el.dataset.animPct !== undefined && !isNaN(Number(el.dataset.animPct))) {
+    start = Math.round(Number(el.dataset.animPct));
+  } else if (!window._initialAnimationDone) {
+    start = 0;
+  }
+
+  if (start === target) {
+    el.innerText = `${target}%`;
+    el.dataset.animPct = String(target);
+    return;
+  }
+
+  const startTime = performance.now();
+  const diff = target - start;
+  el.innerText = `${start}%`;
+  el.dataset.animPct = String(start);
+
+  function step(now) {
+    const elapsed = now - startTime;
+    const progress = Math.min(1, elapsed / duration);
+    const ease = 1 - Math.pow(1 - progress, 3);
+    const currentVal = Math.round(start + diff * ease);
+    el.innerText = `${currentVal}%`;
+    el.dataset.animPct = String(currentVal);
+    if (progress < 1) {
+      el._pctFrame = requestAnimationFrame(step);
+    } else {
+      el.innerText = `${target}%`;
+      el.dataset.animPct = String(target);
+      el._pctFrame = null;
+    }
+  }
+  el._pctFrame = requestAnimationFrame(step);
 }
 
 const getUnformattedVal = (el) => parseFloat(el.value.replace(/\s/g, '')) || 0;
@@ -1228,6 +1337,8 @@ window.submitAction = submitAction;
 window.deleteRecord = deleteRecord;
 window.formatMoney = formatMoney;
 window.animateNumber = animateNumber;
+window.animatePercentage = animatePercentage;
+window.triggerBudgetExpenseAnimation = triggerBudgetExpenseAnimation;
 window.formatSumInput = formatSumInput;
 window.getUnformattedVal = getUnformattedVal;
 window.setFormattedVal = setFormattedVal;
