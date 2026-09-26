@@ -310,20 +310,20 @@
   <!-- PDF.js для чтения выписок в браузере (отложенная загрузка, не блокирует старт) -->
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" crossorigin="anonymous"></script>
 
-  <link rel="stylesheet" href="style.css?v=37">
-  <script defer src="iconsSVG.js?v=37"></script>
-  <script defer src="default-rules.js?v=37"></script>
-  <script defer src="statement-parser.js?v=37"></script>
+  <link rel="stylesheet" href="style.css?v=42">
+  <script defer src="iconsSVG.js?v=42"></script>
+  <script defer src="default-rules.js?v=42"></script>
+  <script defer src="statement-parser.js?v=42"></script>
   
   <!-- Модули приложения -->
-  <script defer src="core.js?v=37"></script>
-  <script defer src="auth-profile.js?v=37"></script>
-  <script defer src="backup-manager.js?v=37"></script>
-  <script defer src="ui-tools.js?v=37"></script>
-  <script defer src="transactions.js?v=37"></script>
-  <script defer src="investments.js?v=37"></script>
-  <script defer src="budget.js?v=37"></script>
-  <script defer src="app.js?v=37"></script>
+  <script defer src="core.js?v=42"></script>
+  <script defer src="auth-profile.js?v=42"></script>
+  <script defer src="backup-manager.js?v=42"></script>
+  <script defer src="ui-tools.js?v=42"></script>
+  <script defer src="transactions.js?v=42"></script>
+  <script defer src="investments.js?v=42"></script>
+  <script defer src="budget.js?v=42"></script>
+  <script defer src="app.js?v=42"></script>
 </head>
 <body class="bg-[#0F1117] text-[#F2F4F7]" ontouchstart="">
 
@@ -2766,10 +2766,10 @@
   </div>
 
   <!-- МОДАЛЬНОЕ ОКНО: РЕЗЕРВНОЕ КОПИРОВАНИЕ И JSON (ЭКСПОРТ / ИМПОРТ) -->
-  <div id="data-backup-dialog" class="fixed inset-0 bg-[#0F1117]/90 sm:bg-black/80 z-[160] hidden flex flex-col items-center justify-start overflow-y-auto backdrop-blur-sm animate-fade-in p-0 sm:py-6 sm:px-4" onclick="if (event.target === this) closeDataBackupModal();">
-    <div class="w-full max-w-[620px] mx-auto min-h-full sm:min-h-0 bg-[#0F1117] sm:bg-[#181B24] sm:border sm:border-[rgba(255,255,255,0.08)] sm:rounded-3xl sm:shadow-2xl flex flex-col relative pb-safe">
-      <!-- Закрепленная верхняя панель (Sticky Header) -->
-      <div class="modal-sticky-header bg-[#0F1117]/95 sm:bg-[#181B24]/95 backdrop-blur-md px-4 sm:px-6 pb-3 sm:pb-3.5 border-b border-[rgba(255,255,255,0.08)] sm:rounded-t-3xl flex items-center justify-between shadow-sm">
+  <div id="data-backup-dialog" class="fixed inset-0 bg-black/80 z-[160] hidden flex flex-col items-center justify-center p-3 sm:p-4 backdrop-blur-sm animate-fade-in" onclick="if (event.target === this) closeDataBackupModal();">
+    <div class="w-full max-w-[620px] bg-[#181B24] border border-[rgba(255,255,255,0.08)] rounded-3xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden my-auto relative">
+      <!-- Закрепленная верхняя панель (Header) -->
+      <div class="bg-[#181B24] px-4 sm:px-6 py-3.5 sm:py-4 border-b border-[rgba(255,255,255,0.08)] flex items-center justify-between shadow-sm flex-shrink-0">
         <div class="flex items-center gap-2.5">
           <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#6C5DD3]/15 text-[#8C7DFF] flex items-center justify-center flex-shrink-0">
             <i data-lucide="database" class="w-4 h-4 sm:w-5 sm:h-5"></i>
@@ -2784,9 +2784,9 @@
         </button>
       </div>
 
-      <div class="flex-1 p-4 sm:p-6 flex flex-col">
+      <div class="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-5 flex flex-col min-h-0">
         <!-- Вкладки: Экспорт / Импорт -->
-        <div class="flex bg-[#12151C] sm:bg-[#12151C] p-1 rounded-2xl border border-[rgba(255,255,255,0.06)] mb-4">
+        <div class="flex bg-[#12151C] sm:bg-[#12151C] p-1 rounded-2xl border border-[rgba(255,255,255,0.06)] mb-3 flex-shrink-0">
           <button id="backup-tab-btn-export" type="button" onclick="switchBackupTab('export')" class="flex-1 py-2 px-3 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 bg-[#6C5DD3] text-white shadow-sm">
             <i data-lucide="download" class="w-4 h-4"></i>
             <span>Экспорт (Скачать)</span>
@@ -2798,7 +2798,7 @@
         </div>
 
       <!-- ================= ВКЛАДКА 1: ЭКСПОРТ ================= -->
-      <div id="backup-pane-export" class="flex-1 flex flex-col space-y-3.5">
+      <div id="backup-pane-export" class="flex-1 flex flex-col space-y-2.5">
         <div class="flex items-center justify-between px-1">
           <span class="text-xs text-[#848D99]">Выберите данные для выгрузки в JSON:</span>
           <button type="button" 
@@ -2813,9 +2813,9 @@
 
         <div class="bg-[#12151C] border border-[rgba(255,255,255,0.06)] rounded-2xl divide-y divide-[rgba(255,255,255,0.03)] overflow-hidden">
           <!-- 1. Транзакции -->
-          <label class="flex items-center justify-between p-3 cursor-pointer hover:bg-white/[0.02] transition-colors">
+          <label class="flex items-center justify-between p-2.5 sm:p-3 cursor-pointer hover:bg-white/[0.02] transition-colors">
             <div class="flex items-center gap-3">
-              <div class="p-2 rounded-xl bg-[#6C5DD3]/15 text-[#8C7DFF]"><i data-lucide="arrow-left-right" class="w-4 h-4"></i></div>
+              <div class="p-1.5 sm:p-2 rounded-xl bg-[#6C5DD3]/15 text-[#8C7DFF]"><i data-lucide="arrow-left-right" class="w-4 h-4"></i></div>
               <div>
                 <span class="text-xs sm:text-sm font-semibold text-gray-200 block">Операции и переводы</span>
                 <span id="export-count-tx" class="text-[11px] text-[#848D99]">0 записей</span>
@@ -2825,9 +2825,9 @@
           </label>
 
           <!-- 2. Вклады -->
-          <label class="flex items-center justify-between p-3 cursor-pointer hover:bg-white/[0.02] transition-colors">
+          <label class="flex items-center justify-between p-2.5 sm:p-3 cursor-pointer hover:bg-white/[0.02] transition-colors">
             <div class="flex items-center gap-3">
-              <div class="p-2 rounded-xl bg-emerald-500/15 text-emerald-400"><i data-lucide="piggy-bank" class="w-4 h-4"></i></div>
+              <div class="p-1.5 sm:p-2 rounded-xl bg-emerald-500/15 text-emerald-400"><i data-lucide="piggy-bank" class="w-4 h-4"></i></div>
               <div>
                 <span class="text-xs sm:text-sm font-semibold text-gray-200 block">Вклады и накопления</span>
                 <span id="export-count-dep" class="text-[11px] text-[#848D99]">0 счетов</span>
@@ -2837,9 +2837,9 @@
           </label>
 
           <!-- 3. Брокер -->
-          <label class="flex items-center justify-between p-3 cursor-pointer hover:bg-white/[0.02] transition-colors">
+          <label class="flex items-center justify-between p-2.5 sm:p-3 cursor-pointer hover:bg-white/[0.02] transition-colors">
             <div class="flex items-center gap-3">
-              <div class="p-2 rounded-xl bg-cyan-500/15 text-cyan-400"><i data-lucide="trending-up" class="w-4 h-4"></i></div>
+              <div class="p-1.5 sm:p-2 rounded-xl bg-cyan-500/15 text-cyan-400"><i data-lucide="trending-up" class="w-4 h-4"></i></div>
               <div>
                 <span class="text-xs sm:text-sm font-semibold text-gray-200 block">Брокерский портфель</span>
                 <span id="export-count-broker" class="text-[11px] text-[#848D99]">0 операций</span>
@@ -2849,9 +2849,9 @@
           </label>
 
           <!-- 4. Цели -->
-          <label class="flex items-center justify-between p-3 cursor-pointer hover:bg-white/[0.02] transition-colors">
+          <label class="flex items-center justify-between p-2.5 sm:p-3 cursor-pointer hover:bg-white/[0.02] transition-colors">
             <div class="flex items-center gap-3">
-              <div class="p-2 rounded-xl bg-amber-500/15 text-amber-400"><i data-lucide="target" class="w-4 h-4"></i></div>
+              <div class="p-1.5 sm:p-2 rounded-xl bg-amber-500/15 text-amber-400"><i data-lucide="target" class="w-4 h-4"></i></div>
               <div>
                 <span class="text-xs sm:text-sm font-semibold text-gray-200 block">Финансовые цели</span>
                 <span id="export-count-goals" class="text-[11px] text-[#848D99]">0 целей</span>
@@ -2861,9 +2861,9 @@
           </label>
 
           <!-- 5. Платежи календаря -->
-          <label class="flex items-center justify-between p-3 cursor-pointer hover:bg-white/[0.02] transition-colors">
+          <label class="flex items-center justify-between p-2.5 sm:p-3 cursor-pointer hover:bg-white/[0.02] transition-colors">
             <div class="flex items-center gap-3">
-              <div class="p-2 rounded-xl bg-rose-500/15 text-rose-400"><i data-lucide="calendar" class="w-4 h-4"></i></div>
+              <div class="p-1.5 sm:p-2 rounded-xl bg-rose-500/15 text-rose-400"><i data-lucide="calendar" class="w-4 h-4"></i></div>
               <div>
                 <span class="text-xs sm:text-sm font-semibold text-gray-200 block">Обязательные счета и подписки</span>
                 <span id="export-count-bills" class="text-[11px] text-[#848D99]">0 счетов</span>
@@ -2873,9 +2873,9 @@
           </label>
 
           <!-- 6. План бюджета -->
-          <label class="flex items-center justify-between p-3 cursor-pointer hover:bg-white/[0.02] transition-colors">
+          <label class="flex items-center justify-between p-2.5 sm:p-3 cursor-pointer hover:bg-white/[0.02] transition-colors">
             <div class="flex items-center gap-3">
-              <div class="p-2 rounded-xl bg-sky-500/15 text-sky-400"><i data-lucide="sliders" class="w-4 h-4"></i></div>
+              <div class="p-1.5 sm:p-2 rounded-xl bg-sky-500/15 text-sky-400"><i data-lucide="sliders" class="w-4 h-4"></i></div>
               <div>
                 <span class="text-xs sm:text-sm font-semibold text-gray-200 block">Планы бюджета и лимиты</span>
                 <span class="text-[11px] text-[#848D99]">Структура расходов и дневной лимит</span>
@@ -2885,9 +2885,9 @@
           </label>
 
           <!-- 7. Словарь правил -->
-          <label class="flex items-center justify-between p-3 cursor-pointer hover:bg-white/[0.02] transition-colors">
+          <label class="flex items-center justify-between p-2.5 sm:p-3 cursor-pointer hover:bg-white/[0.02] transition-colors">
             <div class="flex items-center gap-3">
-              <div class="p-2 rounded-xl bg-fuchsia-500/15 text-fuchsia-400"><i data-lucide="book-open-check" class="w-4 h-4"></i></div>
+              <div class="p-1.5 sm:p-2 rounded-xl bg-fuchsia-500/15 text-fuchsia-400"><i data-lucide="book-open-check" class="w-4 h-4"></i></div>
               <div>
                 <span class="text-xs sm:text-sm font-semibold text-gray-200 block">Словарь категорий</span>
                 <span id="export-count-rules" class="text-[11px] text-[#848D99]">0 правил</span>
@@ -2897,7 +2897,7 @@
           </label>
         </div>
 
-        <button type="button" onclick="downloadBackupJson()" class="w-full py-3 px-4 rounded-xl bg-[#6C5DD3] hover:bg-[#5E4FC9] text-white font-semibold text-sm cursor-pointer transition-all active:scale-[0.98] shadow-md shadow-[#6C5DD3]/25 flex items-center justify-center gap-2 mt-2">
+        <button type="button" onclick="downloadBackupJson()" class="w-full py-3 px-4 rounded-xl bg-[#6C5DD3] hover:bg-[#5E4FC9] text-white font-semibold text-sm cursor-pointer transition-all active:scale-[0.98] shadow-md shadow-[#6C5DD3]/25 flex items-center justify-center gap-2 mt-1 flex-shrink-0">
           <i data-lucide="download" class="w-4 h-4"></i>
           <span>Скачать JSON файл</span>
         </button>
@@ -3099,7 +3099,6 @@
       </div>
     </div>
   </div>
-</div>
 
   <!-- МОДАЛЬНОЕ ОКНО: ДЕТАЛЬНЫЙ ПРОСМОТР И ВЫБОР ЭЛЕМЕНТОВ ДЛЯ ИМПОРТА -->
   <div id="backup-inspect-dialog" class="fixed inset-0 bg-black/80 z-[170] hidden flex flex-col items-center justify-center p-3 sm:p-4 backdrop-blur-md animate-fade-in" onclick="if (event.target === this) closeBackupInspectModal();">

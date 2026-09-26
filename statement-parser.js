@@ -78,13 +78,59 @@ function getActiveCategories(type = 'Расход') {
  * Находит актуальную иконку для любой категории из базы (включая созданные пользователем)
  */
 function getDynamicCategoryIcon(catName) {
+  if (!catName) return 'tag';
   const cats = window.Cache?.categories;
   if (cats) {
     const all = [...(cats.expense || []), ...(cats.income || [])];
-    const found = all.find(c => c.name === catName);
-    if (found && found.icon && found.icon !== '📦') return found.icon;
+    const found = all.find(c => (typeof c === 'string' ? c === catName : c?.name === catName));
+    if (found) {
+      const rawIcon = typeof found === 'object' ? found.icon : null;
+      if (rawIcon && rawIcon !== '📦' && rawIcon !== 'package') return rawIcon;
+    }
   }
-  return 'tag'; // Глобальный вектор-дефолт, вместо эмодзи коробки
+  const defaultIcons = {
+    'Продукты': 'shopping-cart',
+    'Кафе и рестораны': 'utensils',
+    'Маркетплейсы': 'shopping-bag',
+    'Транспорт': 'car',
+    'Жилье': 'home',
+    'ЖКХ': 'home',
+    'Одежда': 'shirt',
+    'Здоровье': 'heart-pulse',
+    'Развлечения': 'film',
+    'Другое': 'tag',
+    'Зарплата': 'wallet',
+    'Возврат': 'rotate-ccw',
+    'Кэшбек': 'sparkles',
+    'Начисление процентов': 'percent',
+    'Проценты': 'percent',
+    'Капитализация': 'percent',
+    'Капитализация процентов': 'percent',
+    'Вклады': 'landmark',
+    'Дивиденды': 'trending-up',
+    'Инвестиции': 'line-chart',
+    'Подписки': 'credit-card',
+    'Связь': 'phone',
+    'Образование': 'graduation-cap',
+    'Подарки': 'gift',
+    'Семья': 'users',
+    'Дети': 'baby',
+    'Красота': 'sparkles',
+    'Спорт': 'dumbbell',
+    'Авто': 'car',
+    'Путешествия': 'plane',
+    'Ремонт': 'hammer',
+    'Техника': 'smartphone',
+    'Перевод': 'arrow-left-right'
+  };
+  if (defaultIcons[catName]) return defaultIcons[catName];
+  const lower = String(catName).toLowerCase();
+  for (const [k, v] of Object.entries(defaultIcons)) {
+    if (k.toLowerCase() === lower || lower.includes(k.toLowerCase()) || k.toLowerCase().includes(lower)) {
+      return v;
+    }
+  }
+  return 'tag';
 }
 
 // -------------------------------------------------------------
@@ -1095,16 +1141,16 @@ function renderFilteredRows(transactions) {
 
           <div class="flex items-center gap-2 flex-shrink-0">
             <!-- Чипс категории с фиксированной шириной 130px -->
-            <div class="relative custom-dropdown-wrap" id="cat-wrap-${tx._id}">
+            <div class="relative custom-dropdown-wrap flex-shrink-0" id="cat-wrap-${tx._id}">
               <button type="button" 
                       onclick="toggleImportCatMenu('${tx._id}')" 
                       id="cat-btn-${tx._id}"
-                      class="w-[130px] bg-[#212430] border border-[rgba(255,255,255,0.06)] hover:border-[rgba(255,255,255,0.15)] text-[#F2F4F7] text-[11px] font-medium rounded-full px-2.5 py-1 flex items-center justify-between outline-none transition-colors cursor-pointer flex-shrink-0">
-                <span id="cat-label-${tx._id}" class="truncate flex items-center gap-1.5 min-w-0 pr-1">
+                      class="w-[130px] bg-[#212430] border border-[rgba(255,255,255,0.06)] hover:border-[rgba(255,255,255,0.15)] text-[#F2F4F7] text-[11px] font-medium rounded-full px-2.5 py-1 flex items-center justify-between outline-none transition-colors cursor-pointer flex-shrink-0 min-w-0">
+                <span id="cat-label-${tx._id}" class="flex items-center gap-1.5 min-w-0 flex-1 pr-1 overflow-hidden">
                   <i data-lucide="${currentIcon}" class="w-3.5 h-3.5 text-[#848D99] flex-shrink-0"></i> 
-                  <span class="truncate">${escapeHtml(tx.category)}</span>
+                  <span class="truncate text-left block w-full">${escapeHtml(tx.category)}</span>
                 </span>
-                <i data-lucide="chevron-down" class="w-3 h-3 text-gray-500 flex-shrink-0"></i>
+                <i data-lucide="chevron-down" class="w-3 h-3 text-gray-500 flex-shrink-0 ml-auto"></i>
               </button> 
               
               <div id="cat-menu-${tx._id}" 
@@ -1385,18 +1431,28 @@ function toggleImportCatMenu(txId) {
 
 function selectImportCat(txId, newCat, icon) {
   const tx = window._lastParsedTransactions?.find(t => t._id === txId);
+  const catIcon = (icon && icon !== 'undefined' && icon !== '') ? icon : getDynamicCategoryIcon(newCat);
   if (tx) {
     tx.category = newCat;
+    tx.categoryIcon = catIcon;
     const labelEl = document.getElementById(`cat-label-${txId}`);
     if (labelEl) {
-      labelEl.innerHTML = `<i data-lucide="${icon}" class="w-[14px] h-[14px]"></i> ${escapeHtml(newCat)}`;
+      labelEl.innerHTML = `
+        <i data-lucide="${catIcon}" class="w-3.5 h-3.5 text-[#848D99] flex-shrink-0"></i> 
+        <span class="truncate text-left block w-full">${escapeHtml(newCat)}</span>
+      `;
       if (typeof lucide !== 'undefined') lucide.createIcons();
     }
   }
   const menu = document.getElementById(`cat-menu-${txId}`);
   if (menu) menu.classList.add('hidden');
   const card = document.getElementById(`card-tx-${txId}`);
-  if (card) card.style.zIndex = '';
+  if (card) {
+    card.style.zIndex = '';
+    if (card.dataset.isInactive === 'true') {
+      card.style.opacity = '0.55';
+    }
+  }
 }
 
 // Удаление категории прямо из окна импорта
@@ -1560,21 +1616,65 @@ async function importSelectedTransactions() {
 // МОДУЛЬ РАСПРЕДЕЛЕНИЯ КРУПНЫХ ТРАТ ИЗ ВЫПИСКИ В КАЛЕНДАРЬ
 // ============================================================
 function getImportedLargeExpenses(transactions) {
+  const plan = window.Cache?.budgetPlan;
   const threshold = (typeof getLargeExpenseThreshold === 'function') ? getLargeExpenseThreshold() : Infinity;
   if (!isFinite(threshold) || threshold <= 0) return [];
+
+  const today = new Date();
+  const currentMonthDate = new Date(today.getFullYear(), today.getMonth(), 1);
+
+  let startMonthDate = null;
+  const isConfigured = !!(plan && plan.isConfigured);
+
+  if (isConfigured) {
+    if (typeof window.getBudgetStartMonthDate === 'function') {
+      startMonthDate = window.getBudgetStartMonthDate();
+    } else if (plan.startMonth) {
+      const parts = String(plan.startMonth).split('-');
+      if (parts.length === 2) {
+        const y = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10) - 1;
+        if (!isNaN(y) && !isNaN(m)) startMonthDate = new Date(y, m, 1);
+      }
+    } else if (plan.createdAt) {
+      const d = new Date(plan.createdAt);
+      if (!isNaN(d.getTime())) startMonthDate = new Date(d.getFullYear(), d.getMonth(), 1);
+    }
+  }
 
   return (transactions || []).filter(tx => {
     // Только расходы
     const isExp = (tx.type === 'expense' || tx.type === 'Расход' || (tx.type !== 'income' && tx.type !== 'Доход' && tx.amount < 0));
     if (!isExp) return false;
 
+    // Уже исключенные / распределенные пропускаем
+    if (tx.excludeFromBudget || tx.isExcludedFromBudget || tx.billType === 'onetime' || (parseInt(tx.spreadMonths, 10) > 1)) {
+      return false;
+    }
+
     const amt = Math.abs(parseFloat(tx.amount) || 0);
     if (amt < threshold) return false;
 
-    // Исключаем транзакции за уже закрытые месяца
     const pDate = (typeof parseAnyDate === 'function') ? parseAnyDate(tx.date) : new Date(tx.date);
-    if (pDate && typeof isBudgetMonthClosed === 'function') {
-      if (isBudgetMonthClosed(pDate.getFullYear(), pDate.getMonth())) {
+    if (!pDate || isNaN(pDate.getTime())) return false;
+
+    const txMonthDate = new Date(pDate.getFullYear(), pDate.getMonth(), 1);
+
+    if (isConfigured) {
+      // 1. Если бюджет настроен: исключаем месяцы ДО начала отслеживания плана бюджета (например, бюджет создан с сентября, а операция за август или ранее)
+      if (startMonthDate && txMonthDate.getTime() < startMonthDate.getTime()) {
+        return false;
+      }
+
+      // 2. Исключаем уже закрытые месяцы бюджета
+      if (typeof isBudgetMonthClosed === 'function') {
+        if (isBudgetMonthClosed(pDate.getFullYear(), pDate.getMonth())) {
+          return false;
+        }
+      }
+    } else {
+      // Если бюджет еще не настроен: показываем крупные траты только за текущий месяц
+      if (txMonthDate.getTime() !== currentMonthDate.getTime()) {
         return false;
       }
     }
@@ -1898,21 +1998,9 @@ function openRememberRuleModal(txId) {
   const keywordInput = document.getElementById('rule-keyword-input');
   if (keywordInput) keywordInput.value = tx.merchant || '';
 
-  let targetCats = [];
-  if (tx.type === 'Доход') {
-    targetCats = window.Cache?.categories?.income?.map(c => c.name) || ['Зарплата', 'Кэшбек', 'Возврат', 'Другое'];
-  } else {
-    targetCats = [
-      'Продукты', 'Кафе и рестораны', 'Маркетплейсы', 'Транспорт', 'Жилье', 'Одежда', 'Здоровье', 'Развлечения', 'Другое'
-    ];
-    if (window.Cache?.categories?.expense) {
-      window.Cache.categories.expense.forEach(c => {
-        if (!targetCats.includes(c.name)) targetCats.push(c.name);
-      });
-    }
-  }
-
-  populateModalCatMenu('rule', targetCats, tx.category || 'Другое');
+  const targetCats = getActiveCategories(tx.type || 'Расход');
+  const selectedCat = (tx.category && targetCats.includes(tx.category)) ? tx.category : (targetCats[0] || 'Другое');
+  populateModalCatMenu('rule', targetCats, selectedCat);
 
   const dlg = document.getElementById('remember-rule-dialog');
   if (dlg) {
@@ -1928,22 +2016,8 @@ function openRememberRuleCustom(keyword, category, type = 'Расход', onSave
   const keywordInput = document.getElementById('rule-keyword-input');
   if (keywordInput) keywordInput.value = keyword || '';
 
-  let targetCats = [];
-  const isIncome = type === 'Доход' || String(type || '').toLowerCase() === 'доход';
-  if (isIncome) {
-    targetCats = window.Cache?.categories?.income?.map(c => c.name) || ['Зарплата', 'Кэшбек', 'Возврат', 'Другое'];
-  } else {
-    targetCats = [
-      'Продукты', 'Кафе и рестораны', 'Маркетплейсы', 'Транспорт', 'Жилье', 'Одежда', 'Здоровье', 'Развлечения', 'Другое'
-    ];
-    if (window.Cache?.categories?.expense) {
-      window.Cache.categories.expense.forEach(c => {
-        if (!targetCats.includes(c.name)) targetCats.push(c.name);
-      });
-    }
-  }
-
-  const selectedCat = (category && category !== 'Категория...' && targetCats.includes(category)) ? category : (targetCats[0] || 'Продукты');
+  const targetCats = getActiveCategories(type || 'Расход');
+  const selectedCat = (category && category !== 'Категория...' && targetCats.includes(category)) ? category : (targetCats[0] || 'Другое');
   populateModalCatMenu('rule', targetCats, selectedCat);
 
   const dlg = document.getElementById('remember-rule-dialog');
@@ -1994,16 +2068,7 @@ async function saveCategoryRuleFromModal() {
       window.Cache.categoryRules.push({ id: newDocRef.id, pattern: keyword, category: category, isSystem: false });
     }
 
-    if (window._lastParsedTransactions) {
-      window._lastParsedTransactions.forEach(t => {
-        const full = `${t.merchant || ''} ${t.rawDetails || ''}`.toLowerCase();
-        if (full.includes(keyword.toLowerCase())) {
-          t.category = category;
-          const sel = document.getElementById(`cat-select-${t._id}`);
-          if (sel) sel.value = category;
-        }
-      });
-    }
+    applyRulesToOpenedStatement(keyword, category);
 
     if (typeof currentRememberCallback === 'function') {
       try {
@@ -2180,15 +2245,22 @@ window.restoreDefaultRules = restoreDefaultRules;
 
 // Пересчитывает категории в открытой выписке при добавлении нового правила
 function applyRulesToOpenedStatement(keyword, category) {
-  if (!window._lastParsedTransactions) return;
+  if (!window._lastParsedTransactions || !Array.isArray(window._lastParsedTransactions) || window._lastParsedTransactions.length === 0) return;
+  const kw = (keyword || '').trim().toLowerCase();
+  if (!kw) return;
+  const normKw = (typeof StatementCategorizer !== 'undefined') ? StatementCategorizer.normalize(kw) : kw;
+  const finalIcon = getDynamicCategoryIcon(category);
+
   window._lastParsedTransactions.forEach(t => {
-    const full = `${t.merchant} ${t.rawDetails}`.toLowerCase();
-    if (full.includes(keyword.toLowerCase())) {
+    const full = `${t.merchant || ''} ${t.rawDetails || ''} ${t.comment || ''} ${t.description || ''}`.toLowerCase();
+    const normFull = (typeof StatementCategorizer !== 'undefined') ? StatementCategorizer.normalize(full) : full;
+    if (full.includes(kw) || (normKw && normFull.includes(normKw)) || (normKw && full.includes(normKw))) {
       t.category = category;
-      const sel = document.getElementById(`cat-select-${t._id}`);
-      if (sel) sel.value = category;
+      t.categoryIcon = finalIcon;
     }
   });
+  renderFilteredRows(window._lastParsedTransactions);
+  if (typeof window._updateHeaderSummary === 'function') window._updateHeaderSummary();
 }
 
 // Функции для кастомных меню в модальных окнах

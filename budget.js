@@ -563,6 +563,9 @@ function getEffectiveBillAmount(bill, targetDate = new Date(), monthItems = null
 window.getEffectiveBillAmount = getEffectiveBillAmount;
 
 function formatCompactBillAmount(amount, hasBadge = false) {
+  if (window.isPrivacyModeEnabled) {
+    return '•••• ₽';
+  }
   const num = parseFloat(amount) || 0;
   if (hasBadge && num >= 10000) {
     const k = (num / 1000).toFixed(num % 1000 === 0 ? 0 : 1).replace('.0', '');

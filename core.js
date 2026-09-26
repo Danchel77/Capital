@@ -752,6 +752,55 @@ function togglePrivacyMode() {
 
   if (typeof markTabsDirty === 'function') markTabsDirty();
 
+  // 1. Мгновенно обновляем все строки в форме добавления операций (бейджи крупных трат и превью распределения)
+  document.querySelectorAll('#tx-items-list .tx-item').forEach(row => {
+    const amountInp = row.querySelector('.tx-amount');
+    if (amountInp && typeof handleInlineTxAmountChange === 'function') {
+      handleInlineTxAmountChange(amountInp);
+    } else if (typeof updateInlineTxSpreadPreview === 'function') {
+      updateInlineTxSpreadPreview(row);
+    }
+  });
+
+  // 2. Обновляем открытую модалку редактирования операции
+  const editModal = document.getElementById('tx-edit-modal') || document.getElementById('edit-tx-modal');
+  if (editModal && !editModal.classList.contains('hidden')) {
+    if (typeof handleEditTxAmountChange === 'function') {
+      handleEditTxAmountChange();
+    }
+  }
+
+  // 3. Обновляем открытую модалку быстрого распределения разовой траты
+  const quickAmortizeModal = document.getElementById('quick-amortize-modal');
+  if (quickAmortizeModal && !quickAmortizeModal.classList.contains('hidden')) {
+    const amountVal = parseFloat(document.getElementById('quick-amortize-amount')?.value) || 0;
+    const totalEl = document.getElementById('quick-amortize-total-display');
+    if (totalEl) totalEl.innerText = formatMoney(amountVal);
+    if (typeof updateQuickSpreadPreview === 'function') {
+      updateQuickSpreadPreview();
+    }
+  }
+
+  // 4. Обновляем модалку крупных трат из выписки
+  const stmtLargeModal = document.getElementById('statement-large-expenses-modal');
+  if (stmtLargeModal && !stmtLargeModal.classList.contains('hidden')) {
+    if (typeof renderStatementLargeList === 'function' && window._statementLargeTxs) {
+      renderStatementLargeList(window._statementLargeTxs);
+    }
+    if (typeof updateStmtLargeSummary === 'function') {
+      updateStmtLargeSummary();
+    }
+  }
+
+  // 5. Обновляем открытый диалог календаря платежей
+  const billDialog = document.getElementById('calendar-bill-dialog');
+  if (billDialog && !billDialog.classList.contains('hidden')) {
+    if (typeof updateBillSpreadPreview === 'function') {
+      updateBillSpreadPreview();
+    }
+  }
+
+  // 6. Перерисовываем активный экран
   const currentTab = typeof getCurrentActiveTab === 'function' ? getCurrentActiveTab() : 'budget';
   if (currentTab === 'budget' && typeof renderBudgetTab === 'function') renderBudgetTab();
   else if (currentTab === 'transactions' && typeof renderTransactions === 'function') renderTransactions();

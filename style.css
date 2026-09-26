@@ -498,6 +498,14 @@ body.selection-mode .goal-topup-btn {
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* Если на карточке есть бейдж автора (в режиме семьи), сдвигаем сумму левее */
+.card:has(.tx-author-badge) .tx-amount,
+.card.tx-has-author .tx-amount,
+.tx-has-author .tx-amount {
+  margin-right: 28px !important;
+  transition: margin-right 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 /* При мультивыборе: аватар перемещается на одну строку с суммой, вставая справа от нее */
 body.selection-mode .tx-author-badge {
   top: 50% !important;
@@ -508,7 +516,9 @@ body.selection-mode .tx-author-badge {
 /* При мультивыборе транзакций сдвигаем сумму левее, чтобы справа аккуратно уместились аватар и флажок */
 body.selection-mode .tx-amount,
 body.selection-mode #transactions-list .tx-amount,
-body.selection-mode .card[data-table="Transactions"] .tx-amount {
+body.selection-mode .card[data-table="Transactions"] .tx-amount,
+body.selection-mode .card:has(.tx-author-badge) .tx-amount,
+body.selection-mode .tx-has-author .tx-amount {
   display: block !important;
   margin-right: 58px !important;
   transition: margin-right 0.2s cubic-bezier(0.16, 1, 0.3, 1);

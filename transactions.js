@@ -1971,7 +1971,28 @@ function renderTxRowHtml(tx, largeThreshold, hasDynamicThreshold) {
   const isOneTime = (tx.billType === 'onetime') || (tx.spreadMonths && parseInt(tx.spreadMonths, 10) > 1) || (!tx.isBillPayment && !!tx.excludeFromBudget);
   const isBill = !isOneTime && (!!tx.isBillPayment || (!!tx.billId && tx.billType !== 'onetime'));
   const isAmortized = isOneTime && !!tx.excludeFromBudget;
-  const isLarge = isExp && !isAmortized && !isBill && hasDynamicThreshold && (parseFloat(tx.amount) >= largeThreshold);
+
+  let isTxMonthTracked = true;
+  const pDate = (typeof parseAnyDate === 'function') ? parseAnyDate(tx.date) : new Date(tx.date);
+  if (pDate && !isNaN(pDate.getTime())) {
+    const txMDate = new Date(pDate.getFullYear(), pDate.getMonth(), 1);
+    if (Cache?.budgetPlan?.isConfigured) {
+      const startMDate = (typeof getBudgetStartMonthDate === 'function') ? getBudgetStartMonthDate() : null;
+      if (startMDate && txMDate.getTime() < startMDate.getTime()) {
+        isTxMonthTracked = false;
+      } else if (typeof isBudgetMonthClosed === 'function' && isBudgetMonthClosed(pDate.getFullYear(), pDate.getMonth())) {
+        isTxMonthTracked = false;
+      }
+    } else {
+      const today = new Date();
+      const currentMDate = new Date(today.getFullYear(), today.getMonth(), 1);
+      if (txMDate.getTime() !== currentMDate.getTime()) {
+        isTxMonthTracked = false;
+      }
+    }
+  }
+
+  const isLarge = isExp && !isAmortized && !isBill && hasDynamicThreshold && isTxMonthTracked && (parseFloat(tx.amount) >= largeThreshold);
 
   const isTxTabVisible = !document.getElementById('transactions-tab')?.classList.contains('hidden');
   const isFresh = (Date.now() - (window.lastAddedTxTime || 0)) < 1800;
@@ -2033,7 +2054,7 @@ function renderTxRowHtml(tx, largeThreshold, hasDynamicThreshold) {
   }
 
   return `
-    <div class="card cursor-pointer w-full py-[13px] px-4 relative flex items-center justify-between ${isJustAdded ? 'tx-row-new' : ''}"
+    <div class="card cursor-pointer w-full py-[13px] px-4 relative flex items-center justify-between ${authorBadgeHtml ? 'tx-has-author' : ''} ${isJustAdded ? 'tx-row-new' : ''}"
          data-id="${tx.id}"
          data-table="Transactions"
          onclick="openTxContextMenu(event, '${tx.id}')">
@@ -2066,7 +2087,7 @@ function renderTxRowHtml(tx, largeThreshold, hasDynamicThreshold) {
          </div>
       </div>
 
-      <div class="tx-amount text-right font-medium ${isExp ? 'text-gray-200' : 'text-[#30D158]'} text-[16px] flex-shrink-0 ml-2">
+      <div class="tx-amount text-right font-medium ${isExp ? 'text-gray-200' : 'text-[#30D158]'} text-[16px] flex-shrink-0 ml-2 ${authorBadgeHtml ? 'mr-7' : ''}">
         ${window.isPrivacyModeEnabled ? '•••• ₽' : (isExp ? '-' : '+') + formatMoney(tx.amount)}
       </div>
     </div>
