@@ -71,6 +71,8 @@ async function loginWithGoogle() {
       const GoogleAuth = window.Capacitor.Plugins.GoogleAuth;
       try {
         await GoogleAuth.initialize({
+          clientId: '129164761119-0collp5th27qd9o4ah8dronfctcfp3pv.apps.googleusercontent.com',
+          serverClientId: '129164761119-0collp5th27qd9o4ah8dronfctcfp3pv.apps.googleusercontent.com',
           scopes: ['profile', 'email'],
           grantOfflineAccess: true
         });
@@ -91,7 +93,7 @@ async function loginWithGoogle() {
           if (typeof showDialog === 'function') {
             showDialog(
               'Настройка Google Входа в APK',
-              'Для того чтобы вход через Google работал внутри установленного APK-файла, необходимо зарегистрировать отпечаток SHA-1 вашего APK в Firebase Console (в разделе «Настройки проекта» -> «Ваше Android приложение»).\n\nВы также можете легко и без настроек войти по Никнейму и Паролю в 1 клик!',
+              'Для завершения настройки Google Входа в APK-файле укажите «Web Client ID» из Firebase Console (раздел Authentication -> Sign-in method -> Google -> Web SDK configuration).\n\nВы также можете легко и без дополнительных настроек войти по Никнейму и Паролю в 1 клик!',
               false
             );
           }
