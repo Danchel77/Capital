@@ -28,7 +28,7 @@ jobs:
       - name: 4. Установка зависимостей проекта и Capacitor
         run: |
           npm install --no-audit --no-fund
-          npm install @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6 @codetrix-studio/capacitor-google-auth@3.4.0 --no-audit --no-fund
+          npm install @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6 @codetrix-studio/capacitor-google-auth --no-audit --no-fund
 
       - name: 5. Генерация иконок и синхронизация Android платформы
         run: |
