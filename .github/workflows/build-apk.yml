@@ -73,7 +73,18 @@ jobs:
 
           npx cap sync android
 
-      - name: 6. Сборка APK через Gradle
+      - name: 6. Подготовка ключа подписи и вывод SHA-1 для Firebase
+        run: |
+          mkdir -p ~/.android
+          if [ ! -f ~/.android/debug.keystore ]; then
+            keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=FamilyBudget Debug,O=App,C=RU"
+          fi
+          echo "============================================================"
+          echo "ОТПЕЧАТОК SHA-1 ДЛЯ ВСТАВКИ В FIREBASE CONSOLE:"
+          keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android | grep "SHA1:" || true
+          echo "============================================================"
+
+      - name: 7. Сборка APK через Gradle
         run: |
           cd android
           chmod +x gradlew

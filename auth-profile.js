@@ -87,7 +87,15 @@ async function loginWithGoogle() {
           return;
         }
         if (rawMsg.includes('Something went wrong') || rawMsg.includes('10') || rawMsg.includes('12500') || rawMsg.includes('DEVELOPER_ERROR')) {
-          throw new Error('Для входа Google в APK приложении нужно добавить SHA-1 ключ вашего APK в Firebase Console (Настройки -> Android приложение), либо войдите по Логину/Паролю.');
+          document.getElementById('toast-container')?.classList.add('hidden');
+          if (typeof showDialog === 'function') {
+            showDialog(
+              'Настройка Google Входа в APK',
+              'Для того чтобы вход через Google работал внутри установленного APK-файла, необходимо зарегистрировать отпечаток SHA-1 вашего APK в Firebase Console (в разделе «Настройки проекта» -> «Ваше Android приложение»).\n\nВы также можете легко и без настроек войти по Никнейму и Паролю в 1 клик!',
+              false
+            );
+          }
+          return;
         }
         throw nativeErr;
       }
@@ -405,13 +413,10 @@ function openProfileModal() {
     if (pwaBtn) pwaBtn.classList.add('hidden');
     if (checkUpdatesBtn) checkUpdatesBtn.classList.remove('hidden');
   } else {
-    if (checkUpdatesBtn) checkUpdatesBtn.classList.remove('hidden');
+    // В PWA / браузере пункт "Проверить обновления" скрыт, так как PWA обновляется автоматически
+    if (checkUpdatesBtn) checkUpdatesBtn.classList.add('hidden');
     if (pwaBtn) {
-      if (typeof isPwaStandalone === 'function' && isPwaStandalone()) {
-        pwaBtn.classList.remove('hidden'); // Позволяет скачать APK прямо из установленного PWA
-      } else {
-        pwaBtn.classList.remove('hidden');
-      }
+      pwaBtn.classList.remove('hidden');
     }
   }
 
