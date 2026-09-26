@@ -9,6 +9,8 @@ jobs:
   build:
     name: Сборка APK (Capacitor Android)
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: 1. Клонирование репозитория
@@ -54,11 +56,25 @@ jobs:
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon --stacktrace
+          cd ..
+          cp android/app/build/outputs/apk/debug/app-debug.apk FamilyBudget.apk
 
       - name: 7. Загрузка готового APK в артефакты GitHub
         uses: actions/upload-artifact@v4
         with:
           name: FamilyBudget-Android-APK
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: FamilyBudget.apk
           if-no-files-found: error
           retention-days: 30
+
+      - name: 8. Публикация APK в GitHub Releases (постоянная ссылка)
+        uses: softprops/action-gh-release@v2
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.event_name == 'workflow_dispatch'
+        with:
+          tag_name: latest
+          name: "Family Budget Android App"
+          body: "Последняя актуальная версия APK приложения «Бюджет» для Android."
+          draft: false
+          prerelease: false
+          files: FamilyBudget.apk
+          token: ${{ secrets.GITHUB_TOKEN }}
