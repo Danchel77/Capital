@@ -352,13 +352,21 @@ function openProfileModal() {
     togglePdf.checked = Cache?.settings?.showPdfInfo !== undefined ? !!Cache.settings.showPdfInfo : true;
   }
 
-  // Обновляем видимость пункта установки приложения
+  // Обновляем видимость пунктов установки и проверки обновлений
   const pwaBtn = document.getElementById('profile-install-app-btn');
-  if (pwaBtn) {
-    if (typeof isPwaStandalone === 'function' && isPwaStandalone()) {
-      pwaBtn.classList.add('hidden');
-    } else {
-      pwaBtn.classList.remove('hidden');
+  const checkUpdatesBtn = document.getElementById('profile-check-updates-btn');
+
+  if (window.Capacitor?.isNativePlatform()) {
+    if (pwaBtn) pwaBtn.classList.add('hidden');
+    if (checkUpdatesBtn) checkUpdatesBtn.classList.remove('hidden');
+  } else {
+    if (checkUpdatesBtn) checkUpdatesBtn.classList.remove('hidden');
+    if (pwaBtn) {
+      if (typeof isPwaStandalone === 'function' && isPwaStandalone()) {
+        pwaBtn.classList.remove('hidden'); // Позволяет скачать APK прямо из установленного PWA
+      } else {
+        pwaBtn.classList.remove('hidden');
+      }
     }
   }
 
