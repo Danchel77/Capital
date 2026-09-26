@@ -39,16 +39,45 @@ function normalizeAuthEmail(input) {
 
 // Вход через Google в 1 клик
 async function loginWithGoogle() {
-  const provider = new firebase.auth.GoogleAuthProvider();
   showToast('Вход через Google...', false, true);
 
   try {
+    if (typeof firebase !== 'undefined' && firebase.auth) {
+      try {
+        await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+      } catch (e) {}
+    }
+
+    // Внутри APK приложения (Native Capacitor)
+    if (window.Capacitor?.isNativePlatform() && window.Capacitor?.Plugins?.GoogleAuth) {
+      const GoogleAuth = window.Capacitor.Plugins.GoogleAuth;
+      try {
+        await GoogleAuth.initialize();
+      } catch (e) {}
+
+      const googleUser = await GoogleAuth.signIn();
+      const idToken = googleUser?.authentication?.idToken || googleUser?.idToken;
+      
+      if (!idToken) {
+        throw new Error('Не удалось получить токен авторизации Google');
+      }
+
+      const credential = firebase.auth.GoogleAuthProvider.credential(idToken);
+      await auth.signInWithCredential(credential);
+      document.getElementById('toast-container')?.classList.add('hidden');
+      return;
+    }
+
+    // В обычном PWA браузере
+    const provider = new firebase.auth.GoogleAuthProvider();
     await auth.signInWithPopup(provider);
     document.getElementById('toast-container')?.classList.add('hidden');
   } catch (err) {
     document.getElementById('toast-container')?.classList.add('hidden');
-    if (err.code !== 'auth/popup-closed-by-user') {
-      showToast('Ошибка авторизации Google: ' + err.message, true);
+    console.warn('Google Auth Error:', err);
+    if (err.code !== 'auth/popup-closed-by-user' && err.message !== 'USER_CANCELLED') {
+      const errMsg = err.message || '';
+      showToast('Ошибка авторизации Google: ' + errMsg, true);
     }
   }
 }

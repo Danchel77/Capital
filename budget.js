@@ -675,16 +675,16 @@ function renderBudgetCalendar(bills, today, monthItems) {
         <input type="checkbox" class="select-checkbox hidden" data-id="${b.id}">
 
         <!-- Верхняя строка: дата / статус -->
-        <div class="flex items-center justify-between gap-1">
+        <div class="flex items-center justify-between gap-1 min-w-0">
           ${isSubsequentPart ? `
-            <span class="text-[10px] font-bold text-amber-400/90 uppercase tracking-tight truncate">Доля ${info.currentStep} из ${info.totalSteps}</span>
+            <span class="text-[9.5px] font-bold text-amber-400/90 uppercase tracking-tight truncate flex-1 min-w-0">Доля ${info.currentStep} из ${info.totalSteps}</span>
             <!-- Для последующих частей — статус всегда оплачено -->
             <div class="bill-pay-status w-4 h-4 rounded-full border border-[#30D158] bg-[#30D158] text-black shadow-sm flex items-center justify-center flex-shrink-0" 
                  title="Оплачено (распределенная часть)">
               <i data-lucide="check" class="w-2.5 h-2.5 opacity-100 stroke-[3]"></i>
             </div>
           ` : `
-            <span class="text-[10px] font-bold text-[#6C5DD3] uppercase tracking-tight truncate">${billDay} ${currentMonthShort} · <span class="text-[#848D99] font-normal">${dayOfWeek}</span></span>
+            <span class="text-[9.5px] font-bold text-[#6C5DD3] uppercase tracking-tight truncate flex-1 min-w-0">${billDay} ${currentMonthShort} · <span class="text-[#848D99] font-normal">${dayOfWeek}</span></span>
             
             <!-- Круглый чекбокс оплаты для регулярных счетов и изначальных разовых трат -->
             <button type="button" 
@@ -702,16 +702,16 @@ function renderBudgetCalendar(bills, today, monthItems) {
         </div>
 
         <!-- Нижняя строка: сумма слева и бейдж справа -->
-        <div class="pt-1 border-t border-[rgba(255,255,255,0.04)] flex items-center justify-between gap-1">
-          <span class="text-[11px] font-bold font-mono text-white tracking-tight truncate min-w-0 flex-shrink-0" title="${isAdjusted ? `Фактическая оплата по привязанной операции: ${formatMoney(effectiveAmount)} (по плану: ${formatMoney(baseAmount)})` : `Сумма: ${formatMoney(effectiveAmount)}`}">-${formatCompactBillAmount(effectiveAmount, info.isOneTime)}</span>
+        <div class="pt-1 border-t border-[rgba(255,255,255,0.04)] flex items-center justify-between gap-1 min-w-0">
+          <span class="text-[10.5px] font-bold font-mono text-white tracking-tight truncate min-w-0 flex-1" title="${isAdjusted ? `Фактическая оплата по привязанной операции: ${formatMoney(effectiveAmount)} (по плану: ${formatMoney(baseAmount)})` : `Сумма: ${formatMoney(effectiveAmount)}`}">-${formatCompactBillAmount(effectiveAmount, info.isOneTime)}</span>
           ${info.isOneTime ? `
             ${info.isSpread ? `
-              <span class="text-[9px] font-mono font-bold text-amber-300 bg-amber-500/15 border border-amber-500/25 px-1.5 py-0.5 rounded-md flex items-center gap-0.5 flex-shrink-0 ml-auto" title="Распределено на ${info.totalSteps} мес. Доля текущего месяца: ${info.currentStep} из ${info.totalSteps}">
-                <i data-lucide="split" class="w-2.5 h-2.5"></i>${info.currentStep}/${info.totalSteps}
+              <span class="text-[8.5px] font-mono font-bold text-amber-300 bg-amber-500/15 border border-amber-500/25 px-1 py-0.2 rounded flex items-center gap-0.5 flex-shrink-0 ml-auto" title="Распределено на ${info.totalSteps} мес. Доля текущего месяца: ${info.currentStep} из ${info.totalSteps}">
+                <i data-lucide="split" class="w-2 h-2"></i>${info.currentStep}/${info.totalSteps}
               </span>
             ` : `
-              <span class="text-[9px] font-mono font-bold text-amber-300 bg-amber-500/15 border border-amber-500/25 px-1.5 py-0.5 rounded-md flex items-center gap-0.5 flex-shrink-0 ml-auto" title="Разовый расход">
-                <i data-lucide="zap" class="w-2.5 h-2.5"></i>Разовый
+              <span class="text-[8.5px] font-mono font-bold text-amber-300 bg-amber-500/15 border border-amber-500/25 px-1 py-0.2 rounded flex items-center gap-0.5 flex-shrink-0 ml-auto" title="Разовый расход">
+                <i data-lucide="zap" class="w-2 h-2"></i>Разовый
               </span>
             `}
           ` : ''}
