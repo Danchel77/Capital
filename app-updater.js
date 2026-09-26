@@ -20,8 +20,19 @@ window.addEventListener('beforeinstallprompt', (e) => {
   }
 });
 
+// Helper to detect native Capacitor app
+function isNativeApp() {
+  return !!(window.Capacitor?.isNativePlatform());
+}
+
 // Проверка наличия доступных обновлений
 async function checkAppUpdates(isManual = false) {
+  const isNative = isNativeApp();
+  // В обычном браузере или PWA фоновое окно ОБНОВЛЕНИЯ APK НЕ ПОКАЗЫВАЕТСЯ НИКОГДА
+  if (!isManual && !isNative) {
+    return;
+  }
+
   if (isManual) {
     showToast('Проверка обновлений...', false, true);
   }
@@ -34,26 +45,41 @@ async function checkAppUpdates(isManual = false) {
     }
 
     const data = await res.json();
-    const latestTag = (data.tag_name || 'latest').replace(/^v/, '');
     const releaseNotes = data.body || 'Улучшения производительности и исправления ошибок.';
     const publishedAt = data.published_at ? new Date(data.published_at).toLocaleDateString('ru-RU') : '';
+    const releaseTimestamp = data.published_at ? new Date(data.published_at).getTime() : 0;
+    const remoteTag = (data.tag_name || '1.0.0').replace(/^v/i, '');
 
-    // Сравниваем локальное сохраненное время релиза или версию
-    const lastSeenRelease = localStorage.getItem('app_last_release_tag') || '';
+    // Если приложение запущено в первый раз, сохраняем текущий релиз как установленный
+    let installedVersion = localStorage.getItem('app_installed_version');
+    let installedTimestamp = parseInt(localStorage.getItem('app_installed_release_timestamp') || '0', 10);
 
-    // Если запущена нативная APK платформа или запрошено вручную
-    const isNewer = latestTag !== window.APP_VERSION || (data.published_at && (!lastSeenRelease || new Date(data.published_at) > new Date(lastSeenRelease)));
+    if (!installedVersion) {
+      installedVersion = window.APP_VERSION || '1.0.0';
+      localStorage.setItem('app_installed_version', installedVersion);
+      if (releaseTimestamp > 0) {
+        localStorage.setItem('app_installed_release_timestamp', releaseTimestamp.toString());
+        installedTimestamp = releaseTimestamp;
+      }
+    }
 
-    if (isManual && !isNewer) {
-      if (document.getElementById('toast-container')) document.getElementById('toast-container').classList.add('hidden');
-      showToast('У вас установлена самая свежая версия!');
+    // Сравнение версий
+    const isNewerTag = (remoteTag !== installedVersion && remoteTag !== (window.APP_VERSION || '1.0.0'));
+    const isNewerTime = releaseTimestamp > 0 && installedTimestamp > 0 && releaseTimestamp > installedTimestamp;
+
+    // Новое обновление доступно только если тег и дата релиза строго новее текущей версии
+    const isNewer = isNewerTag && isNewerTime;
+
+    if (!isNewer) {
+      if (isManual) {
+        if (document.getElementById('toast-container')) document.getElementById('toast-container').classList.add('hidden');
+        showToast('У вас установлена самая свежая версия!');
+      }
       return;
     }
 
-    if (isNewer) {
-      if (document.getElementById('toast-container')) document.getElementById('toast-container').classList.add('hidden');
-      showUpdateAvailableModal(latestTag, releaseNotes, publishedAt, data.published_at);
-    }
+    if (document.getElementById('toast-container')) document.getElementById('toast-container').classList.add('hidden');
+    showUpdateAvailableModal(data.tag_name || 'latest', releaseNotes, publishedAt, releaseTimestamp);
   } catch (err) {
     console.warn('Ошибка проверки обновлений:', err);
     if (isManual) showToast('Ошибка сети при проверке обновлений', true);
@@ -61,7 +87,7 @@ async function checkAppUpdates(isManual = false) {
 }
 
 // Отображение модального окна обновления
-function showUpdateAvailableModal(tag, notes, dateStr, isoDate) {
+function showUpdateAvailableModal(tag, notes, dateStr, releaseTimestamp) {
   let modal = document.getElementById('app-update-modal');
   if (!modal) {
     modal = document.createElement('div');
@@ -79,7 +105,7 @@ function showUpdateAvailableModal(tag, notes, dateStr, isoDate) {
           </div>
           <div>
             <h3 class="text-base font-bold text-white leading-tight">Доступно обновление</h3>
-            <span class="text-xs text-[#6C5DD3] font-semibold">Версия ${escapeHtml(tag)} ${dateStr ? `· ${dateStr}` : ''}</span>
+            <span class="text-xs text-[#6C5DD3] font-semibold">${dateStr ? `Релиз от ${dateStr}` : `Версия ${escapeHtml(tag)}`}</span>
           </div>
         </div>
         <button type="button" onclick="closeUpdateModal()" class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-all">
@@ -93,7 +119,7 @@ function showUpdateAvailableModal(tag, notes, dateStr, isoDate) {
       </div>
 
       <div class="pt-1 flex flex-col gap-2">
-        <button type="button" onclick="downloadApkDirectly('${isoDate}')" class="w-full py-3 px-4 rounded-xl bg-[#6C5DD3] hover:bg-[#5b4eb8] active:scale-98 text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-lg shadow-[#6C5DD3]/20 transition-all cursor-pointer">
+        <button type="button" onclick="downloadApkDirectly(${releaseTimestamp})" class="w-full py-3 px-4 rounded-xl bg-[#6C5DD3] hover:bg-[#5b4eb8] active:scale-98 text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-lg shadow-[#6C5DD3]/20 transition-all cursor-pointer">
           <i data-lucide="download" class="w-4 h-4"></i>
           Обновить сейчас (.APK)
         </button>
@@ -114,17 +140,16 @@ function closeUpdateModal() {
 }
 
 // Прямое скачивание APK
-function downloadApkDirectly(isoDate) {
-  if (isoDate) {
+function downloadApkDirectly(releaseTimestamp) {
+  if (releaseTimestamp) {
     try {
-      localStorage.setItem('app_last_release_tag', isoDate);
+      localStorage.setItem('app_installed_release_timestamp', releaseTimestamp.toString());
     } catch (e) {}
   }
 
   showToast('Загрузка установочного файла...');
   closeUpdateModal();
 
-  // Создаем невидимую ссылку для гарантированного скачивания
   const a = document.createElement('a');
   a.href = window.APK_DOWNLOAD_URL;
   a.download = 'FamilyBudget.apk';
@@ -226,17 +251,18 @@ function closeAppInstallOptionsModal() {
   if (modal) modal.classList.add('hidden');
 }
 
-// Автоматическая фоновая проверка раз в сутки при запуске
+// Автоматическая фоновая проверка раз в сутки при запуске (ТОЛЬКО ДЛЯ APK)
 window.addEventListener('DOMContentLoaded', () => {
-  setTimeout(() => {
-    const lastCheck = localStorage.getItem('app_last_check_time');
-    const now = Date.now();
-    // Раз в 24 часа
-    if (!lastCheck || (now - parseInt(lastCheck, 10)) > 24 * 3600 * 1000) {
-      localStorage.setItem('app_last_check_time', now.toString());
-      checkAppUpdates(false);
-    }
-  }, 4000);
+  if (window.Capacitor?.isNativePlatform()) {
+    setTimeout(() => {
+      const lastCheck = localStorage.getItem('app_last_check_time');
+      const now = Date.now();
+      if (!lastCheck || (now - parseInt(lastCheck, 10)) > 24 * 3600 * 1000) {
+        localStorage.setItem('app_last_check_time', now.toString());
+        checkAppUpdates(false);
+      }
+    }, 4000);
+  }
 });
 
 // Экспорт глобальных функций

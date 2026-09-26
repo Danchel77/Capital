@@ -37,6 +37,24 @@ function normalizeAuthEmail(input) {
   return `${safeNickname || 'user'}@budget.local`;
 }
 
+// Проверка результатов авторизации через Redirect при перезагрузке (для PWA)
+if (typeof firebase !== 'undefined' && firebase.auth) {
+  window.addEventListener('DOMContentLoaded', () => {
+    try {
+      firebase.auth().getRedirectResult().then(result => {
+        if (result && result.user) {
+          if (document.getElementById('toast-container')) document.getElementById('toast-container').classList.add('hidden');
+          showToast('Успешный вход через Google!');
+        }
+      }).catch(err => {
+        if (err && err.code !== 'auth/popup-closed-by-user') {
+          console.warn('Google Auth Redirect error:', err);
+        }
+      });
+    } catch (e) {}
+  });
+}
+
 // Вход через Google в 1 клик
 async function loginWithGoogle() {
   showToast('Вход через Google...', false, true);
@@ -53,8 +71,6 @@ async function loginWithGoogle() {
       const GoogleAuth = window.Capacitor.Plugins.GoogleAuth;
       try {
         await GoogleAuth.initialize({
-          clientId: '129164761119-0303fd6ccd41e071655d2a.apps.googleusercontent.com',
-          serverClientId: '129164761119-0303fd6ccd41e071655d2a.apps.googleusercontent.com',
           scopes: ['profile', 'email'],
           grantOfflineAccess: true
         });
@@ -66,8 +82,12 @@ async function loginWithGoogle() {
       } catch (nativeErr) {
         console.warn('Native GoogleAuth.signIn error:', nativeErr);
         const rawMsg = nativeErr?.message || nativeErr?.errorMessage || String(nativeErr || '');
+        if (rawMsg.includes('cancel') || rawMsg.includes('12501')) {
+          if (document.getElementById('toast-container')) document.getElementById('toast-container').classList.add('hidden');
+          return;
+        }
         if (rawMsg.includes('Something went wrong') || rawMsg.includes('10') || rawMsg.includes('12500') || rawMsg.includes('DEVELOPER_ERROR')) {
-          throw new Error('Требуется добавить SHA-1 ключ APK в Firebase Console (раздел Настройки -> Android приложение) или используйте Вход по Логину');
+          throw new Error('Для входа Google в APK приложении нужно добавить SHA-1 ключ вашего APK в Firebase Console (Настройки -> Android приложение), либо войдите по Логину/Паролю.');
         }
         throw nativeErr;
       }
@@ -84,9 +104,18 @@ async function loginWithGoogle() {
       return;
     }
 
-    // В обычном PWA браузере
+    // В обычном PWA браузере (с авто-фоллбэком на Redirect если всплывающее окно заблокировано)
     const provider = new firebase.auth.GoogleAuthProvider();
-    await auth.signInWithPopup(provider);
+    try {
+      await auth.signInWithPopup(provider);
+    } catch (popupErr) {
+      if (popupErr.code === 'auth/popup-blocked' || popupErr.code === 'auth/popup-closed-by-user' || popupErr.code === 'auth/cancelled-popup-request') {
+        showToast('Перенаправление на вход Google...');
+        await auth.signInWithRedirect(provider);
+        return;
+      }
+      throw popupErr;
+    }
     document.getElementById('toast-container')?.classList.add('hidden');
   } catch (err) {
     document.getElementById('toast-container')?.classList.add('hidden');
