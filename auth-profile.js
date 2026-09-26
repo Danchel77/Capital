@@ -52,10 +52,26 @@ async function loginWithGoogle() {
     if (window.Capacitor?.isNativePlatform() && window.Capacitor?.Plugins?.GoogleAuth) {
       const GoogleAuth = window.Capacitor.Plugins.GoogleAuth;
       try {
-        await GoogleAuth.initialize();
+        await GoogleAuth.initialize({
+          clientId: '129164761119-0303fd6ccd41e071655d2a.apps.googleusercontent.com',
+          serverClientId: '129164761119-0303fd6ccd41e071655d2a.apps.googleusercontent.com',
+          scopes: ['profile', 'email'],
+          grantOfflineAccess: true
+        });
       } catch (e) {}
 
-      const googleUser = await GoogleAuth.signIn();
+      let googleUser;
+      try {
+        googleUser = await GoogleAuth.signIn();
+      } catch (nativeErr) {
+        console.warn('Native GoogleAuth.signIn error:', nativeErr);
+        const rawMsg = nativeErr?.message || nativeErr?.errorMessage || String(nativeErr || '');
+        if (rawMsg.includes('Something went wrong') || rawMsg.includes('10') || rawMsg.includes('12500') || rawMsg.includes('DEVELOPER_ERROR')) {
+          throw new Error('Требуется добавить SHA-1 ключ APK в Firebase Console (раздел Настройки -> Android приложение) или используйте Вход по Логину');
+        }
+        throw nativeErr;
+      }
+
       const idToken = googleUser?.authentication?.idToken || googleUser?.idToken;
       
       if (!idToken) {

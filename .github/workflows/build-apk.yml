@@ -43,11 +43,33 @@ jobs:
           echo "sdk.dir=$ANDROID_HOME" > android/local.properties
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses 2>/dev/null || true
 
-          # Автоматическая генерация фирменной иконки Android из icon.svg
-          npm install -D sharp @capacitor/assets --no-audit --no-fund
-          mkdir -p assets
-          node -e "const sharp=require('sharp'); sharp('icon.svg').resize(1024,1024).toFile('assets/icon.png').then(()=>console.log('Icon PNG generated'));"
-          npx cap-assets generate --android || true
+          # Автоматическая генерация фирменной иконки Android из icon.svg во все папки mipmap
+          npm install -D sharp --no-audit --no-fund
+          node -e "
+            const sharp = require('sharp');
+            const fs = require('fs');
+            const path = require('path');
+            const mipmaps = [
+              { dir: 'mipmap-mdpi', size: 48 },
+              { dir: 'mipmap-hdpi', size: 72 },
+              { dir: 'mipmap-xhdpi', size: 96 },
+              { dir: 'mipmap-xxhdpi', size: 144 },
+              { dir: 'mipmap-xxxhdpi', size: 192 }
+            ];
+            async function run() {
+              const svgBuf = fs.readFileSync('icon.svg');
+              for (const item of mipmaps) {
+                const targetDir = path.join('android/app/src/main/res', item.dir);
+                if (!fs.existsSync(targetDir)) fs.mkdirSync(targetDir, { recursive: true });
+                const imgBuf = await sharp(svgBuf).resize(item.size, item.size).png().toBuffer();
+                fs.writeFileSync(path.join(targetDir, 'ic_launcher.png'), imgBuf);
+                fs.writeFileSync(path.join(targetDir, 'ic_launcher_round.png'), imgBuf);
+                fs.writeFileSync(path.join(targetDir, 'ic_launcher_foreground.png'), imgBuf);
+              }
+              console.log('Фирменная иконка успешно создана для всех разрешений!');
+            }
+            run();
+          "
 
           npx cap sync android
 
