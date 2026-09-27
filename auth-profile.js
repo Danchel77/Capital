@@ -437,31 +437,31 @@ function openProfileModal() {
   const checkUpdatesBtn = document.getElementById('profile-check-updates-btn');
   const widgetsBtn = document.getElementById('profile-widgets-btn');
 
-  const isNative = (typeof window.isNativeAppPlatform === 'function') 
-    ? window.isNativeAppPlatform() 
-    : !!(window.Capacitor?.isNativePlatform?.() || window.isNativeApp);
-  const isPwa = (typeof window.isPwaStandalone === 'function') 
-    ? window.isPwaStandalone() 
-    : (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true);
+  const isNative = typeof window.isNativeAppPlatform === 'function' ? window.isNativeAppPlatform() : false;
+  const isPwa = typeof window.isPwaStandalone === 'function' ? window.isPwaStandalone() : false;
 
   if (isNative) {
-    // Внутри нативного APK-приложения: пункта установки нет, но доступны виджеты
+    // В нативном APK: пункта установки нет, но доступны виджеты и проверка обновлений
     if (pwaBtn) pwaBtn.classList.add('hidden');
     if (checkUpdatesBtn) checkUpdatesBtn.classList.remove('hidden');
     if (widgetsBtn) widgetsBtn.classList.remove('hidden');
   } else if (isPwa) {
-    // В PWA: пункт есть, но только для скачивания APK файла (виджеты скрыты)
+    // В PWA: пункт есть (только для скачивания APK), виджеты и проверка обновлений скрыты
     if (pwaBtn) {
       pwaBtn.classList.remove('hidden');
+      const titleSpan = pwaBtn.querySelector('.profile-install-title');
+      if (titleSpan) titleSpan.textContent = 'Установить приложение';
       const pwaSub = pwaBtn.querySelector('.profile-install-subtitle') || pwaBtn.querySelector('.text-\\[11px\\]');
       if (pwaSub) pwaSub.textContent = 'Скачать .APK для Android';
     }
     if (checkUpdatesBtn) checkUpdatesBtn.classList.add('hidden');
     if (widgetsBtn) widgetsBtn.classList.add('hidden');
   } else {
-    // В обычном браузере: присутствуют варианты установки (APK / ярлык), виджеты скрыты
+    // В обычном браузере: пункт установки (PWA + APK) присутствует, виджеты и обновления скрыты
     if (pwaBtn) {
       pwaBtn.classList.remove('hidden');
+      const titleSpan = pwaBtn.querySelector('.profile-install-title');
+      if (titleSpan) titleSpan.textContent = 'Установить приложение';
       const pwaSub = pwaBtn.querySelector('.profile-install-subtitle') || pwaBtn.querySelector('.text-\\[11px\\]');
       if (pwaSub) pwaSub.textContent = 'Скачать .APK или добавить на рабочий стол';
     }

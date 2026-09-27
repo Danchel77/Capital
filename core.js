@@ -1399,6 +1399,39 @@ function showDialog(title, message, isConfirm, callback, cancelCallback, customO
 }
 
 // ==========================================
+// Определение окружения приложения
+// ==========================================
+function isNativeAppPlatform() {
+  if (typeof window === 'undefined') return false;
+  if (window._forceNativeApp === true) return true;
+  if (window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function') {
+    try {
+      return window.Capacitor.isNativePlatform() === true;
+    } catch (_) {
+      return false;
+    }
+  }
+  if (typeof location !== 'undefined' && (location.protocol === 'capacitor:' || location.protocol === 'ionic:')) {
+    return true;
+  }
+  return false;
+}
+
+function isPwaStandalone() {
+  if (typeof window === 'undefined') return false;
+  try {
+    return !!(
+      window.matchMedia?.('(display-mode: standalone)')?.matches ||
+      window.matchMedia?.('(display-mode: fullscreen)')?.matches ||
+      window.navigator.standalone === true ||
+      (document.referrer && document.referrer.includes('android-app://'))
+    );
+  } catch (_) {
+    return false;
+  }
+}
+
+// ==========================================
 // Global Scope Export
 // ==========================================
 window.db = db;
@@ -1435,3 +1468,5 @@ window.hideLoadingScreen = hideLoadingScreen;
 window.showLoadingScreen = showLoadingScreen;
 window.getCurrentUserProfile = getCurrentUserProfile;
 window.getAllCachedTransactionsFlat = getAllCachedTransactionsFlat;
+window.isNativeAppPlatform = isNativeAppPlatform;
+window.isPwaStandalone = isPwaStandalone;

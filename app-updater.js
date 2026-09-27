@@ -21,13 +21,16 @@ window.addEventListener('beforeinstallprompt', (e) => {
 });
 
 // Helper to detect native Capacitor app
-function isNativeApp() {
-  return !!(window.Capacitor?.isNativePlatform());
+function checkIsNativeApp() {
+  if (typeof window.isNativeAppPlatform === 'function') {
+    return window.isNativeAppPlatform();
+  }
+  return !!(window.Capacitor?.isNativePlatform && window.Capacitor.isNativePlatform() === true);
 }
 
 // Проверка наличия доступных обновлений
 async function checkAppUpdates(isManual = false) {
-  const isNative = isNativeApp();
+  const isNative = checkIsNativeApp();
   // В обычном браузере или PWA фоновое окно ОБНОВЛЕНИЯ APK НЕ ПОКАЗЫВАЕТСЯ НИКОГДА
   if (!isManual && !isNative) {
     return;
@@ -183,7 +186,9 @@ function openAppInstallOptionsModal() {
     document.body.appendChild(modal);
   }
 
-  const isNative = (typeof window.isNativeAppPlatform === 'function') ? window.isNativeAppPlatform() : !!(window.Capacitor?.isNativePlatform?.() || window.isNativeApp);
+  const isNative = (typeof window.isNativeAppPlatform === 'function') 
+    ? window.isNativeAppPlatform() 
+    : !!(window.Capacitor?.isNativePlatform && window.Capacitor.isNativePlatform() === true);
   if (isNative) {
     if (typeof showToast === 'function') showToast('Приложение уже установлено на вашем телефоне');
     return;

@@ -511,7 +511,7 @@ function isIOSDevice() {
 // Проверка условий показа баннера установки приложения
 function shouldShowPwaPrompt() {
   // 0. Внутри нативного APK-приложения баннер установки PWA показывать не нужно
-  if (window.Capacitor?.isNativePlatform()) return false;
+  if (typeof isNativeAppPlatform === 'function' && isNativeAppPlatform()) return false;
 
   // 1. Уже установлено и открыто как PWA (standalone)
   if (isPwaStandalone()) return false;

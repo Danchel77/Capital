@@ -310,22 +310,22 @@
   <!-- PDF.js для чтения выписок в браузере (отложенная загрузка, не блокирует старт) -->
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" crossorigin="anonymous"></script>
 
-  <link rel="stylesheet" href="style.css?v=56">
-  <script defer src="iconsSVG.js?v=56"></script>
-  <script defer src="default-rules.js?v=56"></script>
-  <script defer src="statement-parser.js?v=56"></script>
+  <link rel="stylesheet" href="style.css?v=57">
+  <script defer src="iconsSVG.js?v=57"></script>
+  <script defer src="default-rules.js?v=57"></script>
+  <script defer src="statement-parser.js?v=57"></script>
   
   <!-- Модули приложения -->
-  <script defer src="core.js?v=56"></script>
-  <script defer src="auth-profile.js?v=56"></script>
-  <script defer src="backup-manager.js?v=56"></script>
-  <script defer src="ui-tools.js?v=56"></script>
-  <script defer src="app-updater.js?v=56"></script>
-  <script defer src="apk-features.js?v=56"></script>
-  <script defer src="transactions.js?v=56"></script>
-  <script defer src="investments.js?v=56"></script>
-  <script defer src="budget.js?v=56"></script>
-  <script defer src="app.js?v=56"></script>
+  <script defer src="core.js?v=57"></script>
+  <script defer src="auth-profile.js?v=57"></script>
+  <script defer src="backup-manager.js?v=57"></script>
+  <script defer src="ui-tools.js?v=57"></script>
+  <script defer src="app-updater.js?v=57"></script>
+  <script defer src="apk-features.js?v=57"></script>
+  <script defer src="transactions.js?v=57"></script>
+  <script defer src="investments.js?v=57"></script>
+  <script defer src="budget.js?v=57"></script>
+  <script defer src="app.js?v=57"></script>
 </head>
 <body class="bg-[#0F1117] text-[#F2F4F7]" ontouchstart="">
 
@@ -2746,15 +2746,15 @@
             <div class="flex items-center gap-3">
               <div class="p-2 rounded-xl bg-emerald-500/15 text-emerald-400"><i data-lucide="smartphone" class="w-4 h-4 sm:w-5 sm:h-5"></i></div>
               <div class="text-left">
-                <span class="text-[14px] sm:text-[15px] font-medium text-gray-200 block">Приложение на телефон</span>
+                <span class="profile-install-title text-[14px] sm:text-[15px] font-medium text-gray-200 block">Установить приложение</span>
                 <span class="profile-install-subtitle text-[11px] text-[#848D99] leading-tight block mt-0.5">Скачать .APK или добавить на рабочий стол</span>
               </div>
             </div>
             <i data-lucide="chevron-right" class="w-4 h-4 sm:w-5 sm:h-5 text-gray-600"></i>
           </button>
 
-          <!-- Кнопка настройки виджетов для смартфона (APK фича) -->
-          <button id="profile-widgets-btn" type="button" onclick="openWidgetHubModal()" class="w-full flex items-center justify-between p-3 sm:p-3.5 hover:bg-white/[0.01] transition-colors cursor-pointer">
+          <!-- Кнопка настройки виджетов для смартфона (только для нативного APK приложения) -->
+          <button id="profile-widgets-btn" type="button" onclick="openWidgetHubModal()" class="w-full flex items-center justify-between p-3 sm:p-3.5 hover:bg-white/[0.01] transition-colors cursor-pointer hidden">
             <div class="flex items-center gap-3">
               <div class="p-2 rounded-xl bg-[#6C5DD3]/15 text-[#8C7DFF]"><i data-lucide="layout-grid" class="w-4 h-4 sm:w-5 sm:h-5"></i></div>
               <div class="text-left">
@@ -2768,8 +2768,8 @@
             <i data-lucide="chevron-right" class="w-4 h-4 sm:w-5 sm:h-5 text-gray-600"></i>
           </button>
 
-          <!-- Кнопка проверки обновлений (для установленного APK и PWA) -->
-          <button id="profile-check-updates-btn" type="button" onclick="checkAppUpdates(true)" class="w-full flex items-center justify-between p-3 sm:p-3.5 hover:bg-white/[0.01] transition-colors cursor-pointer">
+          <!-- Кнопка проверки обновлений (только для нативного APK приложения) -->
+          <button id="profile-check-updates-btn" type="button" onclick="checkAppUpdates(true)" class="w-full flex items-center justify-between p-3 sm:p-3.5 hover:bg-white/[0.01] transition-colors cursor-pointer hidden">
             <div class="flex items-center gap-3">
               <div class="p-2 rounded-xl bg-[#6C5DD3]/15 text-[#8C7DFF]"><i data-lucide="refresh-cw" class="w-4 h-4 sm:w-5 sm:h-5"></i></div>
               <div class="text-left">

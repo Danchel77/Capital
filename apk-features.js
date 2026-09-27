@@ -14,14 +14,15 @@
 // 1. Проверка окружения (APK / Native vs PWA vs Браузер)
 function isNativeAppPlatform() {
   if (typeof window === 'undefined') return false;
-  if (window._forceNativeApp || window.isNativeApp) return true;
+  if (window._forceNativeApp === true) return true;
   if (window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function') {
-    return window.Capacitor.isNativePlatform();
+    try {
+      return window.Capacitor.isNativePlatform() === true;
+    } catch (_) {
+      return false;
+    }
   }
-  if (window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform() === 'android') {
-    return true;
-  }
-  if (typeof location !== 'undefined' && location.protocol === 'capacitor:') {
+  if (typeof location !== 'undefined' && (location.protocol === 'capacitor:' || location.protocol === 'ionic:')) {
     return true;
   }
   return false;
