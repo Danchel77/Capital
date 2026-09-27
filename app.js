@@ -86,6 +86,11 @@ if (currentAuth && typeof currentAuth.onAuthStateChanged === 'function') {
 
     // Проверяем и предлагаем установку PWA (только 1 раз в день в обычном браузере)
     checkAndShowPwaInstallPrompt(2500);
+
+    // Для мобильного приложения (APK / PWA): предлагаем вынести виджет на домашний экран
+    if (typeof window.checkAndShowWidgetPrompt === 'function') {
+      window.checkAndShowWidgetPrompt(3500);
+    }
   } else {
     isAppInitialized = false;
     currentAuthedUid = null;
@@ -268,11 +273,13 @@ document.addEventListener('mousedown', (e) => {
 const APP_MAIN_TABS = ['budget', 'transactions', 'deposits', 'broker'];
 
 function getCurrentActiveTab() {
-  return APP_MAIN_TABS.find(t => {
+  const active = APP_MAIN_TABS.find(t => {
     const el = document.getElementById(t + '-tab');
     return el && !el.classList.contains('hidden');
-  }) || 'budget';
+  });
+  return active || localStorage.getItem('budget_active_tab') || 'budget';
 }
+window.getCurrentActiveTab = getCurrentActiveTab;
 
 function switchTab(tab) {
   if (typeof closeCardContextMenu === 'function') closeCardContextMenu();

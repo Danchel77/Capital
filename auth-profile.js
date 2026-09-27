@@ -432,19 +432,41 @@ function openProfileModal() {
     togglePdf.checked = Cache?.settings?.showPdfInfo !== undefined ? !!Cache.settings.showPdfInfo : true;
   }
 
-  // Обновляем видимость пунктов установки и проверки обновлений
+  // Обновляем видимость пунктов установки, виджетов и проверки обновлений
   const pwaBtn = document.getElementById('profile-install-app-btn');
   const checkUpdatesBtn = document.getElementById('profile-check-updates-btn');
+  const widgetsBtn = document.getElementById('profile-widgets-btn');
 
-  if (window.Capacitor?.isNativePlatform()) {
+  const isNative = (typeof window.isNativeAppPlatform === 'function') 
+    ? window.isNativeAppPlatform() 
+    : !!(window.Capacitor?.isNativePlatform?.() || window.isNativeApp);
+  const isPwa = (typeof window.isPwaStandalone === 'function') 
+    ? window.isPwaStandalone() 
+    : (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true);
+
+  if (isNative) {
+    // Внутри нативного APK-приложения: пункта установки нет, но доступны виджеты
     if (pwaBtn) pwaBtn.classList.add('hidden');
     if (checkUpdatesBtn) checkUpdatesBtn.classList.remove('hidden');
-  } else {
-    // В PWA / браузере пункт "Проверить обновления" скрыт, так как PWA обновляется автоматически
-    if (checkUpdatesBtn) checkUpdatesBtn.classList.add('hidden');
+    if (widgetsBtn) widgetsBtn.classList.remove('hidden');
+  } else if (isPwa) {
+    // В PWA: пункт есть, но только для скачивания APK файла (виджеты скрыты)
     if (pwaBtn) {
       pwaBtn.classList.remove('hidden');
+      const pwaSub = pwaBtn.querySelector('.profile-install-subtitle') || pwaBtn.querySelector('.text-\\[11px\\]');
+      if (pwaSub) pwaSub.textContent = 'Скачать .APK для Android';
     }
+    if (checkUpdatesBtn) checkUpdatesBtn.classList.add('hidden');
+    if (widgetsBtn) widgetsBtn.classList.add('hidden');
+  } else {
+    // В обычном браузере: присутствуют варианты установки (APK / ярлык), виджеты скрыты
+    if (pwaBtn) {
+      pwaBtn.classList.remove('hidden');
+      const pwaSub = pwaBtn.querySelector('.profile-install-subtitle') || pwaBtn.querySelector('.text-\\[11px\\]');
+      if (pwaSub) pwaSub.textContent = 'Скачать .APK или добавить на рабочий стол';
+    }
+    if (checkUpdatesBtn) checkUpdatesBtn.classList.add('hidden');
+    if (widgetsBtn) widgetsBtn.classList.add('hidden');
   }
 
   // Обновляем блок семейного доступа
@@ -818,7 +840,7 @@ function renderFamilySettingsUI() {
               <span class="text-[11px] text-gray-400 block truncate">${isMemOwner ? 'Владелец бюджета' : 'Участник семьи'}</span>
             </div>
           </div>
-          <span class="text-xs px-2 py-0.5 rounded-full ${isMemOwner ? 'bg-amber-500/15 text-amber-300 border border-amber-500/25' : 'bg-gray-700/50 text-gray-300'} font-medium">
+          <span class="text-xs px-2 py-0.5 rounded-full ${isMemOwner ? 'bg-amber-500/15 text-amber-300 border border-amber-500/25' : 'bg-gray-700/50 text-gray-300'} font-medium whitespace-nowrap flex-shrink-0">
             ${isMemOwner ? 'Создатель' : 'Доступ'}
           </span>
         </div>
@@ -827,18 +849,18 @@ function renderFamilySettingsUI() {
 
     container.innerHTML = `
       <div class="p-4 rounded-2xl bg-[#181B24] border border-[rgba(255,255,255,0.06)] space-y-4">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-2.5">
-            <div class="w-8 h-8 rounded-xl bg-[#6C5DD3]/15 text-[#8C7DFF] flex items-center justify-center">
+        <div class="flex items-center justify-between gap-3">
+          <div class="flex items-center gap-2.5 min-w-0 flex-1">
+            <div class="w-8 h-8 rounded-xl bg-[#6C5DD3]/15 text-[#8C7DFF] flex items-center justify-center flex-shrink-0">
               <i data-lucide="users" class="w-4 h-4"></i>
             </div>
-            <div>
-              <h4 class="text-sm font-bold text-white">${escapeHtml(family.name || 'Семейный бюджет')}</h4>
-              <p class="text-[11px] text-[#848D99]">Общие транзакции, бюджет и накопления</p>
+            <div class="min-w-0 flex-1">
+              <h4 class="text-sm font-bold text-white truncate">${escapeHtml(family.name || 'Семейный бюджет')}</h4>
+              <p class="text-[11px] text-[#848D99] truncate">Общие транзакции, бюджет и накопления</p>
             </div>
           </div>
-          <span class="px-2 py-0.5 rounded-full bg-[#6C5DD3]/20 text-[#8C7DFF] text-[11px] font-semibold border border-[#6C5DD3]/30">
-            ${members.length} уч.
+          <span class="px-2.5 py-0.5 rounded-full bg-[#6C5DD3]/20 text-[#8C7DFF] text-[11px] font-semibold border border-[#6C5DD3]/30 whitespace-nowrap flex-shrink-0 select-none inline-flex items-center justify-center">
+            ${members.length}&nbsp;уч.
           </span>
         </div>
 

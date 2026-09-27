@@ -76,6 +76,8 @@ function processTransactions(txs) {
       ? getTxComment(tx)
       : (tx.comment || tx.description || tx.merchant || tx.note || tx.notes || tx.title || tx.name || tx.payee || tx.details || '');
 
+    const searchTokens = `${commentVal} ${tx.category || 'Прочее'} ${amount} ${ruDateStr} ${isoDateStr}`.toLowerCase();
+
     grouped[key].items.push({
       ...tx,
       id: tx.id,
@@ -87,6 +89,7 @@ function processTransactions(txs) {
       merchant: commentVal,
       title: commentVal,
       note: commentVal,
+      _searchIndex: searchTokens,
       author: tx.author || null,
       excludeFromBudget: !!(tx.excludeFromBudget || tx.isExcludedFromBudget),
       isBillPayment: !!tx.isBillPayment,
@@ -1880,7 +1883,7 @@ function handleTxSearchInput(event) {
   if (window._txSearchTimeout) clearTimeout(window._txSearchTimeout);
   window._txSearchTimeout = setTimeout(() => {
     renderTransactions();
-  }, 100);
+  }, 180);
 }
 
 function clearTxSearch() {
@@ -2125,7 +2128,7 @@ function appendTxChunk() {
   };
 
   const chunkHtml = nextGroups.map(group => `
-    <div class="mb-5">
+    <div class="mb-5 tx-day-group">
       <h3 class="font-semibold text-[#848D99] text-[13px] mb-2 px-1 tracking-wide">${getRelativeDayName(group.day)}</h3>
       <div class="bg-[#181B24] border border-[rgba(255,255,255,0.06)] rounded-2xl overflow-hidden divide-y divide-[rgba(255,255,255,0.03)] shadow-sm">
         ${group.items.map(tx => renderTxRowHtml(tx, largeThreshold, hasDynamicThreshold)).join('')}
@@ -2249,6 +2252,7 @@ function renderTransactions() {
     }
     if (currentFilterSearch) {
       items = items.filter(tx => {
+        if (tx._searchIndex) return tx._searchIndex.includes(currentFilterSearch);
         const comment = (tx.comment || '').toLowerCase();
         const cat = (tx.category || '').toLowerCase();
         const amountStr = String(tx.amount || '');

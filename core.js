@@ -438,13 +438,38 @@ async function applySnapshotsToUI([txS, depS, brS, goalS, catS, rulesS, planS, b
   window.Cache = Cache;
 
   if (typeof updateGoalDropdowns === 'function') updateGoalDropdowns();
-  renderBudgetTab();
-  renderTransactions();
-  renderDeposits();
-  renderBroker();
+
+  // Умный ленивый рендеринг: мгновенно строим DOM только для АКТИВНОЙ вкладки
+  markTabsDirty();
+  const currentTab = (typeof window.getCurrentActiveTab === 'function') 
+    ? window.getCurrentActiveTab() 
+    : (localStorage.getItem('budget_active_tab') || 'budget');
+
+  if (currentTab === 'transactions') {
+    if (typeof renderTransactions === 'function') renderTransactions();
+    window._transactionsTabDirty = false;
+    window._transactionsTabRendered = true;
+  } else if (currentTab === 'deposits') {
+    if (typeof renderDeposits === 'function') renderDeposits();
+    window._depositsTabDirty = false;
+    window._depositsTabRendered = true;
+  } else if (currentTab === 'broker') {
+    if (typeof renderBroker === 'function') renderBroker();
+    window._brokerTabDirty = false;
+    window._brokerTabRendered = true;
+  } else {
+    if (typeof renderBudgetTab === 'function') renderBudgetTab();
+    window._budgetTabDirty = false;
+    window._budgetTabRendered = true;
+  }
 
   if (typeof checkAndCreditMaturedDeposits === 'function') {
     checkAndCreditMaturedDeposits();
+  }
+
+  // Фоновая синхронизация данных для мобильных виджетов
+  if (typeof window.syncWidgetData === 'function') {
+    window.syncWidgetData();
   }
 
   // Фиксируем завершение первичной анимации счетчиков после их первого появления

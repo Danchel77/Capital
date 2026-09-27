@@ -169,52 +169,62 @@ function renderBudgetTab() {
   // Точный расчет выбранного месяца (с 1 по последний день)
   const startOfMonth = new Date(targetYear, targetMonth, 1, 0, 0, 0, 0);
   const endOfMonth = new Date(targetYear, targetMonth + 1, 0, 23, 59, 59, 999);
+  const startOfMonthTime = startOfMonth.getTime();
+  const endOfMonthTime = endOfMonth.getTime();
+  const startOfWeekTime = startOfWeek.getTime();
+  const endOfWeekTime = endOfWeek.getTime();
 
-  // Собираем ВСЕ расходные операции по всем месяцам из кэша (исключая распределенные в календаре разовые траты)
-  const allExpenseTxs = [];
-  (Cache.transactions || []).forEach(m => {
-    (m.items || []).forEach(tx => {
-      const isExpense = tx.type === 'Расход' || tx.type === 'expense' || String(tx.type || '').trim().toLowerCase() === 'расход';
-      const isExcluded = !!(tx.excludeFromBudget || tx.isExcludedFromBudget);
-      if (isExpense && !isExcluded) {
-        allExpenseTxs.push(tx);
-      }
-    });
-  });
+  const targetMonthKey = `${targetYear}-${String(targetMonth + 1).padStart(2, '0')}`;
 
   let weeklySpent = 0;
   let monthlySpent = 0;
   const currentMonthItems = [];
 
-  allExpenseTxs.forEach(tx => {
-    const val = typeof tx.amount === 'number'
-      ? tx.amount
-      : (parseFloat(String(tx.amount || 0).replace(/\s/g, '').replace(/,/g, '.')) || 0);
-    if (val <= 0) return;
+  // ОПТИМИЗАЦИЯ: Извлекаем операции целевого месяца напрямую за O(1), без обхода всей многолетней истории
+  const targetMonthObj = (Cache.transactions || []).find(m => m.id === targetMonthKey);
+  if (targetMonthObj && Array.isArray(targetMonthObj.items)) {
+    targetMonthObj.items.forEach(tx => {
+      const isExpense = tx.type === 'Расход' || tx.type === 'expense' || String(tx.type || '').trim().toLowerCase() === 'расход';
+      const isExcluded = !!(tx.excludeFromBudget || tx.isExcludedFromBudget);
+      if (!isExpense || isExcluded) return;
 
-    let txDate = null;
-    if (tx.timestamp && typeof tx.timestamp === 'number') {
-      txDate = new Date(tx.timestamp);
-    } else if (tx.rawDate) {
-      txDate = typeof window.parseAnyDate === 'function' ? window.parseAnyDate(tx.rawDate) : new Date(tx.rawDate);
-    } else if (tx.date) {
-      txDate = typeof window.parseAnyDate === 'function' ? window.parseAnyDate(tx.date) : new Date(tx.date);
-    }
+      const val = typeof tx.amount === 'number'
+        ? tx.amount
+        : (parseFloat(String(tx.amount || 0).replace(/\s/g, '').replace(/,/g, '.')) || 0);
+      if (val <= 0) return;
 
-    if (txDate && !isNaN(txDate.getTime())) {
-      const txTime = txDate.getTime();
-      if (isCurrentCalendarMonth && txTime >= startOfWeek.getTime() && txTime <= endOfWeek.getTime()) {
-        weeklySpent += val;
-      }
-      if (txTime >= startOfMonth.getTime() && txTime <= endOfMonth.getTime()) {
+      const txTime = tx.dayTimestamp || tx.timestamp || (tx.rawDate ? (typeof window.parseAnyDate === 'function' ? window.parseAnyDate(tx.rawDate)?.getTime() : new Date(tx.rawDate).getTime()) : 0);
+      if (txTime >= startOfMonthTime && txTime <= endOfMonthTime) {
         monthlySpent += val;
         currentMonthItems.push(tx);
+        if (isCurrentCalendarMonth && txTime >= startOfWeekTime && txTime <= endOfWeekTime) {
+          weeklySpent += val;
+        }
+      }
+    });
+  }
+
+  // Если текущая неделя захватывает дни соседнего месяца (например, конец прошлого месяца)
+  if (isCurrentCalendarMonth) {
+    const startWeekMonthKey = `${startOfWeek.getFullYear()}-${String(startOfWeek.getMonth() + 1).padStart(2, '0')}`;
+    if (startWeekMonthKey !== targetMonthKey) {
+      const prevMonthObj = (Cache.transactions || []).find(m => m.id === startWeekMonthKey);
+      if (prevMonthObj && Array.isArray(prevMonthObj.items)) {
+        prevMonthObj.items.forEach(tx => {
+          const isExpense = tx.type === 'Расход' || tx.type === 'expense' || String(tx.type || '').trim().toLowerCase() === 'расход';
+          const isExcluded = !!(tx.excludeFromBudget || tx.isExcludedFromBudget);
+          if (!isExpense || isExcluded) return;
+          const val = typeof tx.amount === 'number' ? tx.amount : (parseFloat(String(tx.amount || 0).replace(/\s/g, '').replace(/,/g, '.')) || 0);
+          if (val <= 0) return;
+          const txTime = tx.dayTimestamp || tx.timestamp || 0;
+          if (txTime >= startOfWeekTime && txTime <= endOfWeekTime) {
+            weeklySpent += val;
+          }
+        });
       }
     }
-  });
-
-  // Если просматриваем архивный месяц — недельные траты берутся как средненедельные по месяцу
-  if (!isCurrentCalendarMonth) {
+  } else {
+    // Если просматриваем архивный месяц — недельные траты берутся как средненедельные по месяцу
     weeklySpent = Math.round(monthlySpent / 4.33);
   }
 
@@ -2954,8 +2964,13 @@ function getCategoryCurrentMonthTransactions(categoryName, targetDate = getSelec
   });
 
   const txList = [];
-  (Cache.transactions || []).forEach(m => {
-    (m.items || []).forEach(tx => {
+  const startOfMonthTime = startOfMonth.getTime();
+  const endOfMonthTime = endOfMonth.getTime();
+  const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  const monthObj = (Cache.transactions || []).find(m => m.id === monthKey);
+
+  if (monthObj && Array.isArray(monthObj.items)) {
+    monthObj.items.forEach(tx => {
       const isExpense = tx.type === 'Расход' || tx.type === 'expense' || String(tx.type || '').trim().toLowerCase() === 'расход';
       if (!isExpense) return;
       if (tx.isBillPayment) return;
@@ -2967,23 +2982,13 @@ function getCategoryCurrentMonthTransactions(categoryName, targetDate = getSelec
         if (txCat !== categoryName) return;
       }
 
-      let txDate = null;
-      if (tx.timestamp && typeof tx.timestamp === 'number') {
-        txDate = new Date(tx.timestamp);
-      } else if (tx.rawDate) {
-        txDate = typeof window.parseAnyDate === 'function' ? window.parseAnyDate(tx.rawDate) : new Date(tx.rawDate);
-      } else if (tx.date) {
-        txDate = typeof window.parseAnyDate === 'function' ? window.parseAnyDate(tx.date) : new Date(tx.date);
-      }
+      const txTime = tx.dayTimestamp || tx.timestamp || (tx.rawDate ? (typeof window.parseAnyDate === 'function' ? window.parseAnyDate(tx.rawDate)?.getTime() : new Date(tx.rawDate).getTime()) : 0);
 
-      if (txDate && !isNaN(txDate.getTime())) {
-        const txTime = txDate.getTime();
-        if (txTime >= startOfMonth.getTime() && txTime <= endOfMonth.getTime()) {
-          txList.push({ ...tx, dateObj: txDate });
-        }
+      if (txTime >= startOfMonthTime && txTime <= endOfMonthTime) {
+        txList.push({ ...tx, dateObj: new Date(txTime) });
       }
     });
-  });
+  }
 
   // Сортировка от свежих к старым
   txList.sort((a, b) => (b.dateObj?.getTime() || 0) - (a.dateObj?.getTime() || 0));

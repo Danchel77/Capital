@@ -183,7 +183,13 @@ function openAppInstallOptionsModal() {
     document.body.appendChild(modal);
   }
 
-  const isNative = window.Capacitor?.isNativePlatform();
+  const isNative = (typeof window.isNativeAppPlatform === 'function') ? window.isNativeAppPlatform() : !!(window.Capacitor?.isNativePlatform?.() || window.isNativeApp);
+  if (isNative) {
+    if (typeof showToast === 'function') showToast('Приложение уже установлено на вашем телефоне');
+    return;
+  }
+
+  const isPwa = (typeof window.isPwaStandalone === 'function') ? window.isPwaStandalone() : (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true);
 
   modal.innerHTML = `
     <div class="bg-[#181B24] border border-white/10 rounded-3xl p-6 max-w-sm w-full shadow-2xl space-y-4 animate-in fade-in zoom-in duration-200">
@@ -194,10 +200,10 @@ function openAppInstallOptionsModal() {
           </div>
           <div>
             <h3 class="text-base font-bold text-white leading-tight">Приложение для телефона</h3>
-            <span class="text-xs text-gray-400">Установите удобный вариант</span>
+            <span class="text-xs text-gray-400">${isPwa ? 'Скачайте полноценный .APK' : 'Установите удобный вариант'}</span>
           </div>
         </div>
-        <button type="button" onclick="closeAppInstallOptionsModal()" class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-all">
+        <button type="button" onclick="closeAppInstallOptionsModal()" class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-all cursor-pointer">
           <i data-lucide="x" class="w-4 h-4"></i>
         </button>
       </div>
@@ -217,8 +223,8 @@ function openAppInstallOptionsModal() {
           <i data-lucide="download" class="w-4 h-4 text-gray-400 group-hover:text-white transition-colors"></i>
         </button>
 
-        ${!isNative ? `
-        <!-- Вариант 2: Добавить на главный экран -->
+        ${(!isPwa && !isNative) ? `
+        <!-- Вариант 2: Добавить на главный экран (только для обычного браузера) -->
         <button type="button" onclick="triggerPwaInstall(); closeAppInstallOptionsModal();" class="w-full p-4 rounded-2xl bg-[#0F1117] border border-white/10 hover:border-[#6C5DD3]/50 hover:bg-[#1f222e] transition-all text-left group flex items-center justify-between cursor-pointer">
           <div class="flex items-center gap-3">
             <div class="w-9 h-9 rounded-xl bg-[#6C5DD3]/15 border border-[#6C5DD3]/30 flex items-center justify-center text-[#6C5DD3] group-hover:scale-105 transition-transform">

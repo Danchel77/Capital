@@ -21,6 +21,19 @@
       <stop offset="50%" stop-color="rgba(108, 93, 211, 0.18)"/>
       <stop offset="100%" stop-color="rgba(15, 17, 23, 0)"/>
     </radialGradient>
+
+    <!-- Градиент значка интернета (Web / PWA) -->
+    <linearGradient id="maskPwaGlobeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="50%" stop-color="#818CF8"/>
+      <stop offset="100%" stop-color="#6C5DD3"/>
+    </linearGradient>
+
+    <radialGradient id="maskBadgeBgGrad" cx="40%" cy="35%" r="70%">
+      <stop offset="0%" stop-color="#212636"/>
+      <stop offset="70%" stop-color="#12151F"/>
+      <stop offset="100%" stop-color="#0A0C13"/>
+    </radialGradient>
   </defs>
 
   <!-- Full-bleed background для любых масок Android (squircle, circle, teardrop) -->
@@ -37,7 +50,7 @@
            stroke-linejoin="miter"
            stroke-miterlimit="10"/>
 
-  <!-- Основной ромб баланса (вершины на дистанции 136px от центра, гарантированно внутри безопасного круга r=168px) -->
+  <!-- Основной ромб баланса (вершины внутри безопасного круга) -->
   <polygon points="256,120 392,256 256,392 120,256"
            fill="none"
            stroke="url(#maskIconDiamondGrad)"
@@ -47,4 +60,28 @@
 
   <!-- Ослепительная искра в вершине -->
   <circle cx="256" cy="120" r="4.5" fill="#FFFFFF"/>
+
+  <!-- Элегантный бейдж PWA (Значок интернета) внутри безопасной зоны маски (центр 346, 346) -->
+  <g id="maskPwaInternetBadge">
+    <!-- Подложка бейджа с неоновой каймой -->
+    <circle cx="346" cy="346" r="46" fill="url(#maskBadgeBgGrad)" stroke="url(#maskPwaGlobeGrad)" stroke-width="2.8"/>
+
+    <!-- Сфера интернета (Globe) -->
+    <circle cx="346" cy="346" r="24" fill="none" stroke="url(#maskPwaGlobeGrad)" stroke-width="2.8"/>
+
+    <!-- Экватор -->
+    <line x1="322" y1="346" x2="370" y2="346" stroke="url(#maskPwaGlobeGrad)" stroke-width="2.2" stroke-linecap="round"/>
+
+    <!-- Меридиан (эллипс) -->
+    <ellipse cx="346" cy="346" rx="11" ry="24" fill="none" stroke="url(#maskPwaGlobeGrad)" stroke-width="2.2"/>
+
+    <!-- Северная параллель -->
+    <path d="M 326 335 Q 346 341 366 335" fill="none" stroke="url(#maskPwaGlobeGrad)" stroke-width="1.8" stroke-linecap="round" opacity="0.85"/>
+
+    <!-- Южная параллель -->
+    <path d="M 326 357 Q 346 351 366 357" fill="none" stroke="url(#maskPwaGlobeGrad)" stroke-width="1.8" stroke-linecap="round" opacity="0.85"/>
+
+    <!-- Точка-светодиод активности -->
+    <circle cx="368" cy="324" r="3.5" fill="#38BDF8"/>
+  </g>
 </svg>
