@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-console.log('--- Настройка нативных виджетов Android (AppWidgetProvider) ---');
+console.log('--- Настройка нативных виджетов Android (AppWidgetProvider + Configuration) ---');
 
 const baseRes = path.join('android/app/src/main/res');
 const baseJava = path.join('android/app/src/main/java/com/budget/family');
@@ -14,21 +14,49 @@ const stringsPath = path.join(baseRes, 'values/strings.xml');
   path.join(baseRes, 'drawable'),
   path.join(baseRes, 'xml'),
   path.join(baseRes, 'layout'),
+  path.join(baseRes, 'values'),
   baseJava
 ].forEach(dir => {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 });
 
-// 2. Фоны для виджетов (Drawables)
+// 2. Векторные ресурсы и подложки для предпросмотра и кнопок (Drawables)
 const widgetBtnBg = `<?xml version="1.0" encoding="utf-8"?>
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
     <solid android:color="#6C5DD3" />
-    <corners android:radius="12dp" />
+    <corners android:radius="14dp" />
 </shape>`;
 fs.writeFileSync(path.join(baseRes, 'drawable/widget_btn_bg.xml'), widgetBtnBg);
 
-// 3. XML метаданные виджетов (4x1 и 2x1)
+const widgetPreviewBg = `<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#1A1C28" />
+    <stroke android:width="1.2dp" android:color="#363A4D" />
+    <corners android:radius="20dp" />
+</shape>`;
+fs.writeFileSync(path.join(baseRes, 'drawable/widget_preview_bg.xml'), widgetPreviewBg);
+
+const widgetSampleCircle = `<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <solid android:color="#1A2E26" />
+    <stroke android:width="3.5dp" android:color="#30D158" />
+    <size android:width="46dp" android:height="46dp" />
+</shape>`;
+fs.writeFileSync(path.join(baseRes, 'drawable/widget_sample_circle.xml'), widgetSampleCircle);
+
+const widgetSampleBar = `<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#30D158" />
+    <corners android:radius="3dp" />
+    <size android:height="5dp" />
+</shape>`;
+fs.writeFileSync(path.join(baseRes, 'drawable/widget_sample_bar.xml'), widgetSampleBar);
+
+// 3. XML метаданные виджетов (4x1, 2x1, Action 2x1) с android:configure
 const widgetFullInfo = `<?xml version="1.0" encoding="utf-8"?>
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:minWidth="260dp"
@@ -37,7 +65,8 @@ const widgetFullInfo = `<?xml version="1.0" encoding="utf-8"?>
     android:targetCellHeight="1"
     android:updatePeriodMillis="1800000"
     android:initialLayout="@layout/widget_full_layout"
-    android:previewLayout="@layout/widget_full_layout"
+    android:previewLayout="@layout/widget_full_preview"
+    android:configure="com.budget.family.WidgetConfigureActivity"
     android:resizeMode="horizontal"
     android:widgetCategory="home_screen"
     android:description="@string/widget_full_desc">
@@ -52,14 +81,31 @@ const widgetCompactInfo = `<?xml version="1.0" encoding="utf-8"?>
     android:targetCellHeight="1"
     android:updatePeriodMillis="1800000"
     android:initialLayout="@layout/widget_compact_layout"
-    android:previewLayout="@layout/widget_compact_layout"
+    android:previewLayout="@layout/widget_compact_preview"
+    android:configure="com.budget.family.WidgetConfigureActivity"
     android:resizeMode="horizontal"
     android:widgetCategory="home_screen"
     android:description="@string/widget_compact_desc">
 </appwidget-provider>`;
 fs.writeFileSync(path.join(baseRes, 'xml/widget_compact_info.xml'), widgetCompactInfo);
 
-// 4. Макеты RemoteViews (4x1 и 2x1)
+const widgetActionInfo = `<?xml version="1.0" encoding="utf-8"?>
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="130dp"
+    android:minHeight="50dp"
+    android:targetCellWidth="2"
+    android:targetCellHeight="1"
+    android:updatePeriodMillis="86400000"
+    android:initialLayout="@layout/widget_action_layout"
+    android:previewLayout="@layout/widget_action_preview"
+    android:configure="com.budget.family.WidgetConfigureActivity"
+    android:resizeMode="horizontal|vertical"
+    android:widgetCategory="home_screen"
+    android:description="@string/widget_action_desc">
+</appwidget-provider>`;
+fs.writeFileSync(path.join(baseRes, 'xml/widget_action_info.xml'), widgetActionInfo);
+
+// 4. Макет 4x1 (Большой виджет: Неделя + Месяц без лишних кнопок)
 const widgetFullLayout = `<?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_full_root"
@@ -74,138 +120,138 @@ const widgetFullLayout = `<?xml version="1.0" encoding="utf-8"?>
         android:scaleType="fitXY"
         android:contentDescription="@null" />
 
-    <!-- 4x1 контент в одну элегантную строку -->
+    <!-- Контент в 1 строку без тесноты -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:paddingStart="12dp"
-        android:paddingEnd="10dp"
-        android:paddingTop="6dp"
-        android:paddingBottom="6dp">
+        android:paddingStart="14dp"
+        android:paddingEnd="14dp"
+        android:paddingTop="7dp"
+        android:paddingBottom="7dp">
 
-        <!-- 1. Неделя: Круговой индикатор + суммы -->
+        <!-- 1. Слева: Недельные траты -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
+            android:orientation="vertical">
 
-            <ImageView
-                android:id="@+id/iv_full_week_circle"
-                android:layout_width="38dp"
-                android:layout_height="38dp"
-                android:contentDescription="@null"
-                android:layout_marginEnd="8dp" />
-
-            <LinearLayout
+            <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="vertical">
+                android:text="НЕДЕЛЬНЫЕ ТРАТЫ"
+                android:textColor="#9DA8B9"
+                android:textSize="9sp"
+                android:textStyle="bold"
+                android:shadowColor="#000000"
+                android:shadowDx="0"
+                android:shadowDy="1"
+                android:shadowRadius="2" />
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="НЕДЕЛЯ"
-                    android:textColor="#A0AFC2"
-                    android:textSize="9sp"
-                    android:textStyle="bold"
-                    android:shadowColor="#000000"
-                    android:shadowDx="0"
-                    android:shadowDy="1"
-                    android:shadowRadius="2" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="3dp">
 
-                <TextView
-                    android:id="@+id/tv_full_week_spent"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="0 ₽"
-                    android:textColor="#FFFFFF"
-                    android:textSize="13sp"
-                    android:textStyle="bold"
-                    android:maxLines="1"
-                    android:ellipsize="end"
-                    android:shadowColor="#000000"
-                    android:shadowDx="0"
-                    android:shadowDy="1"
-                    android:shadowRadius="3" />
+                <ImageView
+                    android:id="@+id/iv_full_week_circle"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:contentDescription="@null"
+                    android:layout_marginEnd="8dp" />
 
-                <TextView
-                    android:id="@+id/tv_full_week_sub"
-                    android:layout_width="wrap_content"
+                <LinearLayout
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:text="из 0 ₽"
-                    android:textColor="#8898AA"
-                    android:textSize="9sp"
-                    android:maxLines="1"
-                    android:ellipsize="end"
-                    android:shadowColor="#000000"
-                    android:shadowDx="0"
-                    android:shadowDy="1"
-                    android:shadowRadius="2" />
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tv_full_week_spent"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0 ₽"
+                        android:textColor="#FFFFFF"
+                        android:textSize="13.5sp"
+                        android:textStyle="bold"
+                        android:maxLines="1"
+                        android:ellipsize="end"
+                        android:shadowColor="#000000"
+                        android:shadowDx="0"
+                        android:shadowDy="1"
+                        android:shadowRadius="3" />
+
+                    <TextView
+                        android:id="@+id/tv_full_week_sub"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="из 0 ₽"
+                        android:textColor="#8898AA"
+                        android:textSize="9.5sp"
+                        android:maxLines="1"
+                        android:ellipsize="end"
+                        android:shadowColor="#000000"
+                        android:shadowDx="0"
+                        android:shadowDy="1"
+                        android:shadowRadius="2" />
+                </LinearLayout>
             </LinearLayout>
         </LinearLayout>
 
         <!-- Тонкий вертикальный разделитель -->
         <ImageView
             android:layout_width="1dp"
-            android:layout_height="28dp"
+            android:layout_height="36dp"
             android:background="#33384C"
-            android:layout_marginStart="6dp"
-            android:layout_marginEnd="10dp"
+            android:layout_marginStart="10dp"
+            android:layout_marginEnd="12dp"
             android:contentDescription="@null" />
 
-        <!-- 2. Месяц: Траты как на вкладке Бюджет + линейная шкала -->
+        <!-- 2. Справа: Траты за месяц -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1.3"
-            android:orientation="vertical"
-            android:layout_marginEnd="8dp">
+            android:layout_weight="1.35"
+            android:orientation="vertical">
 
-            <LinearLayout
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="ТРАТЫ ЗА МЕСЯЦ"
+                android:textColor="#9DA8B9"
+                android:textSize="9sp"
+                android:textStyle="bold"
+                android:shadowColor="#000000"
+                android:shadowDx="0"
+                android:shadowDy="1"
+                android:shadowRadius="2" />
+
+            <TextView
+                android:id="@+id/tv_full_month_spent"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="МЕСЯЦ:"
-                    android:textColor="#A0AFC2"
-                    android:textSize="9sp"
-                    android:textStyle="bold"
-                    android:layout_marginEnd="4dp"
-                    android:shadowColor="#000000"
-                    android:shadowDx="0"
-                    android:shadowDy="1"
-                    android:shadowRadius="2" />
-
-                <TextView
-                    android:id="@+id/tv_full_month_spent"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="0 ₽ из 0 ₽"
-                    android:textColor="#FFFFFF"
-                    android:textSize="12sp"
-                    android:textStyle="bold"
-                    android:maxLines="1"
-                    android:ellipsize="end"
-                    android:shadowColor="#000000"
-                    android:shadowDx="0"
-                    android:shadowDy="1"
-                    android:shadowRadius="3" />
-            </LinearLayout>
+                android:text="0 ₽ из 0 ₽"
+                android:textColor="#FFFFFF"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:layout_marginTop="2dp"
+                android:shadowColor="#000000"
+                android:shadowDx="0"
+                android:shadowDy="1"
+                android:shadowRadius="3" />
 
             <!-- Линейная шкала месяца -->
             <ImageView
                 android:id="@+id/iv_full_month_bar"
                 android:layout_width="match_parent"
                 android:layout_height="5dp"
-                android:layout_marginTop="3dp"
+                android:layout_marginTop="4dp"
                 android:layout_marginBottom="3dp"
                 android:scaleType="fitXY"
                 android:contentDescription="@null" />
@@ -216,7 +262,7 @@ const widgetFullLayout = `<?xml version="1.0" encoding="utf-8"?>
                 android:layout_height="wrap_content"
                 android:text="Остаток: 0 ₽ • 0%"
                 android:textColor="#8898AA"
-                android:textSize="9sp"
+                android:textSize="9.5sp"
                 android:maxLines="1"
                 android:ellipsize="end"
                 android:shadowColor="#000000"
@@ -224,37 +270,131 @@ const widgetFullLayout = `<?xml version="1.0" encoding="utf-8"?>
                 android:shadowDy="1"
                 android:shadowRadius="2" />
         </LinearLayout>
-
-        <!-- 3. Кнопка "+ Расход" -->
-        <TextView
-            android:id="@+id/btn_full_add_expense"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@drawable/widget_btn_bg"
-            android:paddingStart="10dp"
-            android:paddingEnd="10dp"
-            android:paddingTop="7dp"
-            android:paddingBottom="7dp"
-            android:text="+ Расход"
-            android:textColor="#FFFFFF"
-            android:textSize="11sp"
-            android:textStyle="bold"
-            android:gravity="center"
-            android:shadowColor="#000000"
-            android:shadowDx="0"
-            android:shadowDy="1"
-            android:shadowRadius="2" />
     </LinearLayout>
 </FrameLayout>`;
 fs.writeFileSync(path.join(baseRes, 'layout/widget_full_layout.xml'), widgetFullLayout);
 
+// 5. Макет предпросмотра 4x1 для системного списка One UI / Android Launcher
+const widgetFullPreview = `<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/widget_preview_bg"
+    android:padding="12dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <!-- Неделя -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="НЕДЕЛЬНЫЕ ТРАТЫ"
+                android:textColor="#9DA8B9"
+                android:textSize="9sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="3dp">
+
+                <ImageView
+                    android:layout_width="38dp"
+                    android:layout_height="38dp"
+                    android:src="@drawable/widget_sample_circle"
+                    android:layout_marginEnd="8dp" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="635 ₽"
+                        android:textColor="#FFFFFF"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="из 10 000 ₽"
+                        android:textColor="#8898AA"
+                        android:textSize="9sp" />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+
+        <ImageView
+            android:layout_width="1dp"
+            android:layout_height="34dp"
+            android:background="#33384C"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="10dp" />
+
+        <!-- Месяц -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1.3"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="ТРАТЫ ЗА МЕСЯЦ"
+                android:textColor="#9DA8B9"
+                android:textSize="9sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="36 037 ₽ из 77 972 ₽"
+                android:textColor="#FFFFFF"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:layout_marginTop="2dp" />
+
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="4.5dp"
+                android:src="@drawable/widget_sample_bar"
+                android:layout_marginTop="3dp"
+                android:layout_marginBottom="2dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Остаток: 41 935 ₽ • 46%"
+                android:textColor="#8898AA"
+                android:textSize="9sp" />
+        </LinearLayout>
+    </LinearLayout>
+</FrameLayout>`;
+fs.writeFileSync(path.join(baseRes, 'layout/widget_full_preview.xml'), widgetFullPreview);
+
+// 6. Макет 2x1 (Компактный виджет месяца)
 const widgetCompactLayout = `<?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_compact_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- Динамический полупрозрачный фон -->
     <ImageView
         android:id="@+id/iv_widget_compact_bg"
         android:layout_width="match_parent"
@@ -267,17 +407,17 @@ const widgetCompactLayout = `<?xml version="1.0" encoding="utf-8"?>
         android:layout_height="match_parent"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:paddingStart="10dp"
-        android:paddingEnd="8dp"
-        android:paddingTop="6dp"
-        android:paddingBottom="6dp">
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="7dp"
+        android:paddingBottom="7dp">
 
         <ImageView
             android:id="@+id/iv_compact_circle"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
             android:contentDescription="@null"
-            android:layout_marginEnd="8dp" />
+            android:layout_marginEnd="10dp" />
 
         <LinearLayout
             android:layout_width="0dp"
@@ -288,8 +428,8 @@ const widgetCompactLayout = `<?xml version="1.0" encoding="utf-8"?>
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="МЕСЯЦ"
-                android:textColor="#A0AFC2"
+                android:text="ТРАТЫ ЗА МЕСЯЦ"
+                android:textColor="#9DA8B9"
                 android:textSize="9sp"
                 android:textStyle="bold"
                 android:shadowColor="#000000"
@@ -303,7 +443,7 @@ const widgetCompactLayout = `<?xml version="1.0" encoding="utf-8"?>
                 android:layout_height="wrap_content"
                 android:text="0 ₽"
                 android:textColor="#FFFFFF"
-                android:textSize="12sp"
+                android:textSize="13.5sp"
                 android:textStyle="bold"
                 android:maxLines="1"
                 android:ellipsize="end"
@@ -318,7 +458,7 @@ const widgetCompactLayout = `<?xml version="1.0" encoding="utf-8"?>
                 android:layout_height="wrap_content"
                 android:text="из 0 ₽"
                 android:textColor="#8898AA"
-                android:textSize="9sp"
+                android:textSize="9.5sp"
                 android:maxLines="1"
                 android:ellipsize="end"
                 android:shadowColor="#000000"
@@ -326,23 +466,124 @@ const widgetCompactLayout = `<?xml version="1.0" encoding="utf-8"?>
                 android:shadowDy="1"
                 android:shadowRadius="2" />
         </LinearLayout>
-
-        <TextView
-            android:id="@+id/btn_compact_add_expense"
-            android:layout_width="28dp"
-            android:layout_height="28dp"
-            android:background="@drawable/widget_btn_bg"
-            android:text="+"
-            android:textColor="#FFFFFF"
-            android:textSize="15sp"
-            android:textStyle="bold"
-            android:gravity="center"
-            android:layout_marginStart="4dp" />
     </LinearLayout>
 </FrameLayout>`;
 fs.writeFileSync(path.join(baseRes, 'layout/widget_compact_layout.xml'), widgetCompactLayout);
 
-// 5. Java Providers
+const widgetCompactPreview = `<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/widget_preview_bg"
+    android:padding="12dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <ImageView
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:src="@drawable/widget_sample_circle"
+            android:layout_marginEnd="10dp" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="ТРАТЫ ЗА МЕСЯЦ"
+                android:textColor="#9DA8B9"
+                android:textSize="9sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="36 037 ₽"
+                android:textColor="#FFFFFF"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="из 77 972 ₽"
+                android:textColor="#8898AA"
+                android:textSize="9sp" />
+        </LinearLayout>
+    </LinearLayout>
+</FrameLayout>`;
+fs.writeFileSync(path.join(baseRes, 'layout/widget_compact_preview.xml'), widgetCompactPreview);
+
+// 7. Макет отдельного виджета быстрого расхода (2x1 Action Widget)
+const widgetActionLayout = `<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_action_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ImageView
+        android:id="@+id/iv_widget_action_bg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="fitXY"
+        android:contentDescription="@null" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="6dp"
+        android:paddingBottom="6dp">
+
+        <TextView
+            android:id="@+id/btn_action_main"
+            android:layout_width="0dp"
+            android:layout_height="38dp"
+            android:layout_weight="1"
+            android:background="@drawable/widget_btn_bg"
+            android:text="+ Внести расход"
+            android:textColor="#FFFFFF"
+            android:textSize="12.5sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:shadowColor="#000000"
+            android:shadowDx="0"
+            android:shadowDy="1"
+            android:shadowRadius="2" />
+    </LinearLayout>
+</FrameLayout>`;
+fs.writeFileSync(path.join(baseRes, 'layout/widget_action_layout.xml'), widgetActionLayout);
+
+const widgetActionPreview = `<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/widget_preview_bg"
+    android:padding="12dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="36dp"
+        android:background="@drawable/widget_btn_bg"
+        android:text="+ Внести расход"
+        android:textColor="#FFFFFF"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:gravity="center" />
+</FrameLayout>`;
+fs.writeFileSync(path.join(baseRes, 'layout/widget_action_preview.xml'), widgetActionPreview);
+
+// 8. Java Providers: WidgetFullProvider, WidgetCompactProvider, WidgetActionProvider
 const widgetFullProviderJava = `package com.budget.family;
 
 import android.app.PendingIntent;
@@ -383,11 +624,14 @@ public class WidgetFullProvider extends AppWidgetProvider {
         }
     }
 
-    private static void updateWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId) {
+    public static void updateWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId) {
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_full_layout);
 
         SharedPreferences prefs = context.getSharedPreferences("BudgetWidgetPrefs", Context.MODE_PRIVATE);
         String jsonStr = prefs.getString("widget_data", "{}");
+
+        int customOpacity = prefs.getInt("widget_opacity_" + appWidgetId, -1);
+        int bgOpacity = customOpacity >= 0 ? customOpacity : prefs.getInt("bgOpacity", 75);
 
         try {
             JSONObject obj = new JSONObject(jsonStr);
@@ -399,7 +643,9 @@ public class WidgetFullProvider extends AppWidgetProvider {
             double monthlyLimit = obj.optDouble("monthlyLimit", 0);
             double monthlyAvailable = obj.optDouble("monthlyAvailable", 0);
             int monthlyPct = obj.optInt("monthlyPct", 0);
-            int bgOpacity = obj.optInt("bgOpacity", 75);
+            if (customOpacity < 0 && obj.has("bgOpacity")) {
+                bgOpacity = obj.optInt("bgOpacity", bgOpacity);
+            }
 
             // 1. Недельные данные
             views.setTextViewText(R.id.tv_full_week_spent, formatMoney(weeklySpent));
@@ -409,10 +655,10 @@ public class WidgetFullProvider extends AppWidgetProvider {
             if (weeklyLimit > 0 && weeklySpent > weeklyLimit) weekColorHex = "#FF453A";
             else if (weeklyPct >= 80) weekColorHex = "#FF9F0A";
 
-            Bitmap circleBmp = createCircularProgressBitmap(context, weeklyPct, weekColorHex, 38);
+            Bitmap circleBmp = createCircularProgressBitmap(context, weeklyPct, weekColorHex, 44);
             views.setImageViewBitmap(R.id.iv_full_week_circle, circleBmp);
 
-            // 2. Месячные данные (соответствуют вкладке Бюджет)
+            // 2. Месячные данные
             views.setTextViewText(R.id.tv_full_month_spent, formatMoney(monthlySpent) + " из " + formatMoney(monthlyLimit));
             views.setTextViewText(R.id.tv_full_month_sub, "Остаток: " + formatMoney(monthlyAvailable) + " • " + monthlyPct + "%");
 
@@ -420,16 +666,15 @@ public class WidgetFullProvider extends AppWidgetProvider {
             if (monthlyLimit > 0 && monthlySpent > monthlyLimit) monthColorHex = "#FF453A";
             else if (monthlyPct >= 80) monthColorHex = "#FF9F0A";
 
-            Bitmap barBmp = createHorizontalProgressBarBitmap(context, monthlyPct, monthColorHex, 180, 5);
+            Bitmap barBmp = createHorizontalProgressBarBitmap(context, monthlyPct, monthColorHex, 200, 5);
             views.setImageViewBitmap(R.id.iv_full_month_bar, barBmp);
 
-            // 3. Фон с настраиваемой прозрачностью
+            // 3. Фон
             Bitmap bgBmp = createCardBackgroundBitmap(context, bgOpacity, 360, 65);
             views.setImageViewBitmap(R.id.iv_widget_full_bg, bgBmp);
 
         } catch (Exception ignored) {}
 
-        // Клик на весь виджет открывает приложение
         Intent openAppIntent = new Intent(context, MainActivity.class);
         openAppIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         PendingIntent openAppPending = PendingIntent.getActivity(
@@ -437,25 +682,16 @@ public class WidgetFullProvider extends AppWidgetProvider {
         );
         views.setOnClickPendingIntent(R.id.widget_full_root, openAppPending);
 
-        // Клик на кнопку "+ Расход" открывает приложение с действием new-expense
-        Intent addExpenseIntent = new Intent(context, MainActivity.class);
-        addExpenseIntent.putExtra("action", "new-expense");
-        addExpenseIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        PendingIntent addExpensePending = PendingIntent.getActivity(
-            context, 101, addExpenseIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-        );
-        views.setOnClickPendingIntent(R.id.btn_full_add_expense, addExpensePending);
-
         appWidgetManager.updateAppWidget(appWidgetId, views);
     }
 
-    private static Bitmap createCircularProgressBitmap(Context context, int pct, String strokeColorHex, int sizeDp) {
+    public static Bitmap createCircularProgressBitmap(Context context, int pct, String strokeColorHex, int sizeDp) {
         float density = context.getResources().getDisplayMetrics().density;
         int sizePx = Math.max(1, Math.round(sizeDp * density));
         Bitmap bitmap = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(bitmap);
 
-        float strokeWidth = 3.2f * density;
+        float strokeWidth = 3.6f * density;
         Paint bgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         bgPaint.setStyle(Paint.Style.STROKE);
         bgPaint.setStrokeWidth(strokeWidth);
@@ -476,9 +712,11 @@ public class WidgetFullProvider extends AppWidgetProvider {
 
         Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         textPaint.setColor(Color.WHITE);
-        textPaint.setTextSize(9f * density);
+        textPaint.setTextSize(9.5f * density);
         textPaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
         textPaint.setTextAlign(Paint.Align.CENTER);
+        textPaint.setShadowLayer(3f, 0, 1.5f, Color.BLACK);
+
         String pctStr = clampedPct + "%";
         Rect textBounds = new Rect();
         textPaint.getTextBounds(pctStr, 0, pctStr.length(), textBounds);
@@ -487,7 +725,7 @@ public class WidgetFullProvider extends AppWidgetProvider {
         return bitmap;
     }
 
-    private static Bitmap createHorizontalProgressBarBitmap(Context context, int pct, String colorHex, int widthDp, int heightDp) {
+    public static Bitmap createHorizontalProgressBarBitmap(Context context, int pct, String colorHex, int widthDp, int heightDp) {
         float density = context.getResources().getDisplayMetrics().density;
         int widthPx = Math.max(10, Math.round(widthDp * density));
         int heightPx = Math.max(4, Math.round(heightDp * density));
@@ -511,7 +749,7 @@ public class WidgetFullProvider extends AppWidgetProvider {
         return bitmap;
     }
 
-    private static Bitmap createCardBackgroundBitmap(Context context, int opacityPct, int widthDp, int heightDp) {
+    public static Bitmap createCardBackgroundBitmap(Context context, int opacityPct, int widthDp, int heightDp) {
         float density = context.getResources().getDisplayMetrics().density;
         int widthPx = Math.max(10, Math.round(widthDp * density));
         int heightPx = Math.max(10, Math.round(heightDp * density));
@@ -559,12 +797,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.Rect;
-import android.graphics.RectF;
-import android.graphics.Typeface;
 import android.widget.RemoteViews;
 import org.json.JSONObject;
 import java.text.DecimalFormat;
@@ -589,18 +821,23 @@ public class WidgetCompactProvider extends AppWidgetProvider {
         }
     }
 
-    private static void updateWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId) {
+    public static void updateWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId) {
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_compact_layout);
 
         SharedPreferences prefs = context.getSharedPreferences("BudgetWidgetPrefs", Context.MODE_PRIVATE);
         String jsonStr = prefs.getString("widget_data", "{}");
+
+        int customOpacity = prefs.getInt("widget_opacity_" + appWidgetId, -1);
+        int bgOpacity = customOpacity >= 0 ? customOpacity : prefs.getInt("bgOpacity", 75);
 
         try {
             JSONObject obj = new JSONObject(jsonStr);
             double monthlySpent = obj.optDouble("monthlySpent", 0);
             double monthlyLimit = obj.optDouble("monthlyLimit", 0);
             int monthlyPct = obj.optInt("monthlyPct", 0);
-            int bgOpacity = obj.optInt("bgOpacity", 75);
+            if (customOpacity < 0 && obj.has("bgOpacity")) {
+                bgOpacity = obj.optInt("bgOpacity", bgOpacity);
+            }
 
             views.setTextViewText(R.id.tv_compact_month_spent, formatMoney(monthlySpent));
             views.setTextViewText(R.id.tv_compact_month_sub, "из " + formatMoney(monthlyLimit));
@@ -609,10 +846,10 @@ public class WidgetCompactProvider extends AppWidgetProvider {
             if (monthlyLimit > 0 && monthlySpent > monthlyLimit) monthColorHex = "#FF453A";
             else if (monthlyPct >= 80) monthColorHex = "#FF9F0A";
 
-            Bitmap circleBmp = createCircularProgressBitmap(context, monthlyPct, monthColorHex, 36);
+            Bitmap circleBmp = WidgetFullProvider.createCircularProgressBitmap(context, monthlyPct, monthColorHex, 44);
             views.setImageViewBitmap(R.id.iv_compact_circle, circleBmp);
 
-            Bitmap bgBmp = createCardBackgroundBitmap(context, bgOpacity, 160, 65);
+            Bitmap bgBmp = WidgetFullProvider.createCardBackgroundBitmap(context, bgOpacity, 160, 65);
             views.setImageViewBitmap(R.id.iv_widget_compact_bg, bgBmp);
 
         } catch (Exception ignored) {}
@@ -624,81 +861,7 @@ public class WidgetCompactProvider extends AppWidgetProvider {
         );
         views.setOnClickPendingIntent(R.id.widget_compact_root, openAppPending);
 
-        Intent addExpenseIntent = new Intent(context, MainActivity.class);
-        addExpenseIntent.putExtra("action", "new-expense");
-        addExpenseIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        PendingIntent addExpensePending = PendingIntent.getActivity(
-            context, 201, addExpenseIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-        );
-        views.setOnClickPendingIntent(R.id.btn_compact_add_expense, addExpensePending);
-
         appWidgetManager.updateAppWidget(appWidgetId, views);
-    }
-
-    private static Bitmap createCircularProgressBitmap(Context context, int pct, String strokeColorHex, int sizeDp) {
-        float density = context.getResources().getDisplayMetrics().density;
-        int sizePx = Math.max(1, Math.round(sizeDp * density));
-        Bitmap bitmap = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888);
-        Canvas canvas = new Canvas(bitmap);
-
-        float strokeWidth = 3.2f * density;
-        Paint bgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        bgPaint.setStyle(Paint.Style.STROKE);
-        bgPaint.setStrokeWidth(strokeWidth);
-        bgPaint.setColor(Color.argb(55, 255, 255, 255));
-
-        Paint progressPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        progressPaint.setStyle(Paint.Style.STROKE);
-        progressPaint.setStrokeWidth(strokeWidth);
-        progressPaint.setStrokeCap(Paint.Cap.ROUND);
-        progressPaint.setColor(Color.parseColor(strokeColorHex));
-
-        RectF rect = new RectF(strokeWidth, strokeWidth, sizePx - strokeWidth, sizePx - strokeWidth);
-        canvas.drawArc(rect, 0, 360, false, bgPaint);
-
-        int clampedPct = Math.min(100, Math.max(0, pct));
-        float sweepAngle = (clampedPct / 100f) * 360f;
-        canvas.drawArc(rect, -90, sweepAngle, false, progressPaint);
-
-        Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        textPaint.setColor(Color.WHITE);
-        textPaint.setTextSize(8.5f * density);
-        textPaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
-        textPaint.setTextAlign(Paint.Align.CENTER);
-        String pctStr = clampedPct + "%";
-        Rect textBounds = new Rect();
-        textPaint.getTextBounds(pctStr, 0, pctStr.length(), textBounds);
-        canvas.drawText(pctStr, sizePx / 2f, (sizePx / 2f) + (textBounds.height() / 2f), textPaint);
-
-        return bitmap;
-    }
-
-    private static Bitmap createCardBackgroundBitmap(Context context, int opacityPct, int widthDp, int heightDp) {
-        float density = context.getResources().getDisplayMetrics().density;
-        int widthPx = Math.max(10, Math.round(widthDp * density));
-        int heightPx = Math.max(10, Math.round(heightDp * density));
-
-        Bitmap bitmap = Bitmap.createBitmap(widthPx, heightPx, Bitmap.Config.ARGB_8888);
-        if (opacityPct <= 0) {
-            return bitmap;
-        }
-
-        Canvas canvas = new Canvas(bitmap);
-        float radius = 18f * density;
-        int alpha = Math.min(255, Math.max(0, Math.round(opacityPct * 2.55f)));
-
-        Paint fillPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        fillPaint.setColor(Color.argb(alpha, 22, 24, 36));
-        RectF rect = new RectF(1.5f, 1.5f, widthPx - 1.5f, heightPx - 1.5f);
-        canvas.drawRoundRect(rect, radius, radius, fillPaint);
-
-        Paint strokePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        strokePaint.setStyle(Paint.Style.STROKE);
-        strokePaint.setStrokeWidth(1.2f * density);
-        strokePaint.setColor(Color.argb(Math.min(255, alpha + 35), 65, 75, 100));
-        canvas.drawRoundRect(rect, radius, radius, strokePaint);
-
-        return bitmap;
     }
 
     private static String formatMoney(double val) {
@@ -711,7 +874,387 @@ public class WidgetCompactProvider extends AppWidgetProvider {
 `;
 fs.writeFileSync(path.join(baseJava, 'WidgetCompactProvider.java'), widgetCompactProviderJava);
 
-// 6. Capacitor Plugin для запроса закрепления виджета (requestPinAppWidget) и отправки данных
+const widgetActionProviderJava = `package com.budget.family;
+
+import android.app.PendingIntent;
+import android.appwidget.AppWidgetManager;
+import android.appwidget.AppWidgetProvider;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.widget.RemoteViews;
+
+public class WidgetActionProvider extends AppWidgetProvider {
+
+    @Override
+    public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
+        for (int appWidgetId : appWidgetIds) {
+            updateWidget(context, appWidgetManager, appWidgetId);
+        }
+    }
+
+    public static void updateAllWidgets(Context context) {
+        AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
+        ComponentName thisWidget = new ComponentName(context, WidgetActionProvider.class);
+        int[] appWidgetIds = appWidgetManager.getAppWidgetIds(thisWidget);
+        for (int appWidgetId : appWidgetIds) {
+            updateWidget(context, appWidgetManager, appWidgetId);
+        }
+    }
+
+    public static void updateWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId) {
+        RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_action_layout);
+
+        SharedPreferences prefs = context.getSharedPreferences("BudgetWidgetPrefs", Context.MODE_PRIVATE);
+        int customOpacity = prefs.getInt("widget_opacity_" + appWidgetId, -1);
+        int bgOpacity = customOpacity >= 0 ? customOpacity : prefs.getInt("bgOpacity", 75);
+
+        Bitmap bgBmp = WidgetFullProvider.createCardBackgroundBitmap(context, bgOpacity, 160, 50);
+        views.setImageViewBitmap(R.id.iv_widget_action_bg, bgBmp);
+
+        // Клик открывает сразу форму добавления расхода
+        Intent addExpenseIntent = new Intent(context, MainActivity.class);
+        addExpenseIntent.putExtra("action", "new-expense");
+        addExpenseIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        PendingIntent addExpensePending = PendingIntent.getActivity(
+            context, 301, addExpenseIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+        views.setOnClickPendingIntent(R.id.widget_action_root, addExpensePending);
+        views.setOnClickPendingIntent(R.id.btn_action_main, addExpensePending);
+
+        appWidgetManager.updateAppWidget(appWidgetId, views);
+    }
+}
+`;
+fs.writeFileSync(path.join(baseJava, 'WidgetActionProvider.java'), widgetActionProviderJava);
+
+// 9. Системная Activity настроек виджетов (WidgetConfigureActivity) - аналогично Samsung One UI
+const widgetConfigureLayout = `<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#0C0E14"
+    android:padding="20dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Настройки виджета"
+        android:textColor="#FFFFFF"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="20dp" />
+
+    <!-- Область предпросмотра на обоях -->
+    <FrameLayout
+        android:id="@+id/fl_config_preview_container"
+        android:layout_width="match_parent"
+        android:layout_height="140dp"
+        android:background="@drawable/widget_preview_bg"
+        android:layout_marginBottom="24dp">
+
+        <LinearLayout
+            android:id="@+id/ll_config_preview_card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_margin="12dp"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Семейный бюджет"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Пример отображения прозрачности"
+                android:textColor="#8898AA"
+                android:textSize="11sp"
+                android:layout_marginTop="4dp" />
+        </LinearLayout>
+    </FrameLayout>
+
+    <!-- Слайдер непрозрачности -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="#161924"
+        android:padding="16dp"
+        android:layout_marginBottom="16dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="10dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Непрозрачность фона"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tv_config_opacity_value"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="75%"
+                android:textColor="#6C5DD3"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <SeekBar
+            android:id="@+id/sb_config_opacity"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="100"
+            android:progress="75" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="4dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="0% (Прозрачный)"
+                android:textColor="#6B7280"
+                android:textSize="11sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="100% (Плотный)"
+                android:textColor="#6B7280"
+                android:textSize="11sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <!-- Кнопки Отмена / Сохранить -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/btn_config_cancel"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:text="Отменить"
+            android:textColor="#9DA8B9"
+            android:background="#1C1F2D"
+            android:layout_marginEnd="8dp" />
+
+        <Button
+            android:id="@+id/btn_config_save"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:text="Сохранить"
+            android:textColor="#FFFFFF"
+            android:background="#6C5DD3"
+            android:layout_marginStart="8dp" />
+    </LinearLayout>
+</LinearLayout>`;
+fs.writeFileSync(path.join(baseRes, 'layout/widget_configure_layout.xml'), widgetConfigureLayout);
+
+const widgetConfigureActivityJava = `package com.budget.family;
+
+import android.app.Activity;
+import android.appwidget.AppWidgetManager;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.graphics.Color;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.SeekBar;
+import android.widget.TextView;
+
+public class WidgetConfigureActivity extends Activity {
+
+    private int appWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID;
+    private int currentOpacity = 75;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setResult(RESULT_CANCELED);
+
+        Intent intent = getIntent();
+        Bundle extras = intent.getExtras();
+        if (extras != null) {
+            appWidgetId = extras.getInt(AppWidgetManager.EXTRA_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID);
+        }
+
+        if (appWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID) {
+            finish();
+            return;
+        }
+
+        setContentView(R.layout.widget_configure_layout);
+
+        SharedPreferences prefs = getSharedPreferences("BudgetWidgetPrefs", Context.MODE_PRIVATE);
+        currentOpacity = prefs.getInt("widget_opacity_" + appWidgetId, prefs.getInt("bgOpacity", 75));
+
+        final TextView tvOpacityValue = findViewById(R.id.tv_config_opacity_value);
+        final SeekBar sbOpacity = findViewById(R.id.sb_config_opacity);
+        final LinearLayout previewCard = findViewById(R.id.ll_config_preview_card);
+        final Button btnCancel = findViewById(R.id.btn_config_cancel);
+        final Button btnSave = findViewById(R.id.btn_config_save);
+
+        sbOpacity.setProgress(currentOpacity);
+        tvOpacityValue.setText(currentOpacity + "%");
+        updatePreviewAlpha(previewCard, currentOpacity);
+
+        sbOpacity.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                currentOpacity = progress;
+                tvOpacityValue.setText(progress + "%");
+                updatePreviewAlpha(previewCard, progress);
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {}
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {}
+        });
+
+        btnCancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                finish();
+            }
+        });
+
+        btnSave.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                SharedPreferences.Editor editor = getSharedPreferences("BudgetWidgetPrefs", Context.MODE_PRIVATE).edit();
+                editor.putInt("widget_opacity_" + appWidgetId, currentOpacity);
+                editor.putInt("bgOpacity", currentOpacity);
+                editor.apply();
+
+                AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(WidgetConfigureActivity.this);
+                WidgetFullProvider.updateWidget(WidgetConfigureActivity.this, appWidgetManager, appWidgetId);
+                WidgetCompactProvider.updateWidget(WidgetConfigureActivity.this, appWidgetManager, appWidgetId);
+                WidgetActionProvider.updateWidget(WidgetConfigureActivity.this, appWidgetManager, appWidgetId);
+
+                Intent resultValue = new Intent();
+                resultValue.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId);
+                setResult(RESULT_OK, resultValue);
+                finish();
+            }
+        });
+    }
+
+    private void updatePreviewAlpha(LinearLayout card, int opacity) {
+        if (card == null) return;
+        int alpha = Math.min(255, Math.max(0, Math.round(opacity * 2.55f)));
+        card.setBackgroundColor(Color.argb(alpha, 22, 24, 36));
+    }
+}
+`;
+fs.writeFileSync(path.join(baseJava, 'WidgetConfigureActivity.java'), widgetConfigureActivityJava);
+
+// 10. Обновление strings.xml
+if (fs.existsSync(stringsPath)) {
+  let stringsContent = fs.readFileSync(stringsPath, 'utf8');
+  if (!stringsContent.includes('widget_action_name')) {
+    const stringEntries = [
+      '    <string name="widget_full_name">Бюджет (Неделя и Месяц 4x1)</string>',
+      '    <string name="widget_full_desc">Шкалы трат на неделю и месяц</string>',
+      '    <string name="widget_compact_name">Бюджет (Месяц 2x1)</string>',
+      '    <string name="widget_compact_desc">Траты текущего месяца</string>',
+      '    <string name="widget_action_name">Быстрый расход (2x1)</string>',
+      '    <string name="widget_action_desc">Быстрое внесение операции в 1 клик</string>'
+    ].join('\n');
+    stringsContent = stringsContent.replace('</resources>', stringEntries + '\n</resources>');
+    fs.writeFileSync(stringsPath, stringsContent);
+  }
+}
+
+// 11. Обновление AndroidManifest.xml
+if (fs.existsSync(manifestPath)) {
+  let manifestContent = fs.readFileSync(manifestPath, 'utf8');
+  
+  // Добавляем Activity настроек виджета
+  if (!manifestContent.includes('WidgetConfigureActivity')) {
+    const configActivityEntry = [
+      '        <activity',
+      '            android:name=".WidgetConfigureActivity"',
+      '            android:exported="true"',
+      '            android:theme="@android:style/Theme.DeviceDefault.NoActionBar">',
+      '            <intent-filter>',
+      '                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE"/>',
+      '            </intent-filter>',
+      '        </activity>'
+    ].join('\n');
+    manifestContent = manifestContent.replace('</application>', configActivityEntry + '\n    </application>');
+  }
+
+  // Добавляем ресиверы виджетов
+  if (!manifestContent.includes('WidgetActionProvider')) {
+    const receivers = [
+      '        <receiver android:name=".WidgetFullProvider" android:exported="true" android:label="@string/widget_full_name">',
+      '            <intent-filter>',
+      '                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />',
+      '            </intent-filter>',
+      '            <meta-data',
+      '                android:name="android.appwidget.provider"',
+      '                android:resource="@xml/widget_full_info" />',
+      '        </receiver>',
+      '        <receiver android:name=".WidgetCompactProvider" android:exported="true" android:label="@string/widget_compact_name">',
+      '            <intent-filter>',
+      '                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />',
+      '            </intent-filter>',
+      '            <meta-data',
+      '                android:name="android.appwidget.provider"',
+      '                android:resource="@xml/widget_compact_info" />',
+      '        </receiver>',
+      '        <receiver android:name=".WidgetActionProvider" android:exported="true" android:label="@string/widget_action_name">',
+      '            <intent-filter>',
+      '                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />',
+      '            </intent-filter>',
+      '            <meta-data',
+      '                android:name="android.appwidget.provider"',
+      '                android:resource="@xml/widget_action_info" />',
+      '        </receiver>'
+    ].join('\n');
+    manifestContent = manifestContent.replace('</application>', receivers + '\n    </application>');
+  }
+  fs.writeFileSync(manifestPath, manifestContent);
+}
+
+// 12. Обновление Capacitor Plugin WidgetPinPlugin
 const widgetPinPluginJava = `package com.budget.family;
 
 import android.app.PendingIntent;
@@ -736,7 +1279,12 @@ public class WidgetPinPlugin extends Plugin {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             AppWidgetManager appWidgetManager = getContext().getSystemService(AppWidgetManager.class);
             if (appWidgetManager != null && appWidgetManager.isRequestPinAppWidgetSupported()) {
-                Class<?> providerClass = "compact".equals(variant) ? WidgetCompactProvider.class : WidgetFullProvider.class;
+                Class<?> providerClass = WidgetFullProvider.class;
+                if ("compact".equals(variant)) {
+                    providerClass = WidgetCompactProvider.class;
+                } else if ("action".equals(variant)) {
+                    providerClass = WidgetActionProvider.class;
+                }
                 ComponentName provider = new ComponentName(getContext(), providerClass);
                 boolean pinned = appWidgetManager.requestPinAppWidget(provider, null, null);
                 JSObject ret = new JSObject();
@@ -757,54 +1305,13 @@ public class WidgetPinPlugin extends Plugin {
         prefs.edit().putString("widget_data", jsonStr).apply();
         WidgetFullProvider.updateAllWidgets(getContext());
         WidgetCompactProvider.updateAllWidgets(getContext());
+        WidgetActionProvider.updateAllWidgets(getContext());
         call.resolve();
     }
 }`;
 fs.writeFileSync(path.join(baseJava, 'WidgetPinPlugin.java'), widgetPinPluginJava);
 
-// 7. Обновление strings.xml
-if (fs.existsSync(stringsPath)) {
-  let stringsContent = fs.readFileSync(stringsPath, 'utf8');
-  if (!stringsContent.includes('widget_full_name')) {
-    const stringEntries = [
-      '    <string name="widget_full_name">Бюджет (Неделя и Месяц 4x1)</string>',
-      '    <string name="widget_full_desc">Шкалы трат на неделю и месяц</string>',
-      '    <string name="widget_compact_name">Бюджет (2x1)</string>',
-      '    <string name="widget_compact_desc">Траты текущего месяца</string>'
-    ].join('\n');
-    stringsContent = stringsContent.replace('</resources>', stringEntries + '\n</resources>');
-    fs.writeFileSync(stringsPath, stringsContent);
-  }
-}
-
-// 8. Обновление AndroidManifest.xml
-if (fs.existsSync(manifestPath)) {
-  let manifestContent = fs.readFileSync(manifestPath, 'utf8');
-  if (!manifestContent.includes('WidgetFullProvider')) {
-    const receivers = [
-      '        <receiver android:name=".WidgetFullProvider" android:exported="true" android:label="@string/widget_full_name">',
-      '            <intent-filter>',
-      '                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />',
-      '            </intent-filter>',
-      '            <meta-data',
-      '                android:name="android.appwidget.provider"',
-      '                android:resource="@xml/widget_full_info" />',
-      '        </receiver>',
-      '        <receiver android:name=".WidgetCompactProvider" android:exported="true" android:label="@string/widget_compact_name">',
-      '            <intent-filter>',
-      '                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />',
-      '            </intent-filter>',
-      '            <meta-data',
-      '                android:name="android.appwidget.provider"',
-      '                android:resource="@xml/widget_compact_info" />',
-      '        </receiver>'
-    ].join('\n');
-    manifestContent = manifestContent.replace('</application>', receivers + '\n    </application>');
-    fs.writeFileSync(manifestPath, manifestContent);
-  }
-}
-
-// 9. Обновление MainActivity.java с поддержкой действия new-expense
+// 13. Обновление MainActivity.java для мгновенного раскрытия формы расхода
 if (fs.existsSync(mainActivityPath)) {
   const mainActivityCode = [
     'package com.budget.family;',
@@ -843,7 +1350,7 @@ if (fs.existsSync(mainActivityPath)) {
     '                            null',
     '                        );',
     '                    }',
-    '                }, 400);',
+    '                }, 300);',
     '            }',
     '        }',
     '    }',

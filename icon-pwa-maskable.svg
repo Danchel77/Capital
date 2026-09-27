@@ -43,33 +43,33 @@
   <rect width="512" height="512" fill="url(#maskPwaBgGrad)"/>
 
   <!-- Ореол свечения в безопасной зоне 66% (центр 256, 256) -->
-  <circle cx="256" cy="256" r="140" fill="url(#maskPwaGlow)"/>
+  <circle cx="256" cy="256" r="190" fill="url(#maskPwaGlow)"/>
 
   <!-- Тонкая внутренняя грань -->
-  <polygon points="256,192 320,256 256,320 192,256"
-           fill="rgba(108, 93, 211, 0.05)"
-           stroke="rgba(255, 255, 255, 0.14)"
-           stroke-width="2.5"
+  <polygon points="256,160 352,256 256,352 160,256"
+           fill="rgba(108, 93, 211, 0.06)"
+           stroke="rgba(255, 255, 255, 0.16)"
+           stroke-width="3"
            stroke-linejoin="miter"
            stroke-miterlimit="10"/>
 
-  <!-- Основной ромб баланса (идентичный APK) -->
-  <polygon points="256,156 356,256 256,356 156,256"
+  <!-- Основной ромб баланса (внешне 1 в 1 как на лаунчере APK) -->
+  <polygon points="256,106 406,256 256,406 106,256"
            fill="none"
            stroke="url(#maskPwaDiamondGrad)"
-           stroke-width="18"
+           stroke-width="22"
            stroke-linejoin="miter"
            stroke-miterlimit="10"/>
 
   <!-- Искра в вершине -->
-  <circle cx="256" cy="156" r="4" fill="#FFFFFF"/>
+  <circle cx="256" cy="106" r="5" fill="#FFFFFF"/>
 
   <!-- Лаконичный значок интернета в правом нижнем углу (внутри безопасной маски) -->
   <g id="maskPwaBadge" filter="url(#maskPwaBadgeShadow)">
-    <circle cx="370" cy="370" r="44" fill="url(#maskPwaBadgeBg)" stroke="url(#maskPwaBadgeGrad)" stroke-width="3.5"/>
+    <circle cx="376" cy="376" r="44" fill="url(#maskPwaBadgeBg)" stroke="url(#maskPwaBadgeGrad)" stroke-width="3.5"/>
     
-    <circle cx="370" cy="370" r="23" fill="none" stroke="#38BDF8" stroke-width="4"/>
-    <line x1="347" y1="370" x2="393" y2="370" stroke="#38BDF8" stroke-width="3.5" stroke-linecap="round"/>
-    <ellipse cx="370" cy="370" rx="10.5" ry="23" fill="none" stroke="#38BDF8" stroke-width="3.5"/>
+    <circle cx="376" cy="376" r="23" fill="none" stroke="#38BDF8" stroke-width="4"/>
+    <line x1="353" y1="376" x2="399" y2="376" stroke="#38BDF8" stroke-width="3.5" stroke-linecap="round"/>
+    <ellipse cx="376" cy="376" rx="10.5" ry="23" fill="none" stroke="#38BDF8" stroke-width="3.5"/>
   </g>
 </svg>

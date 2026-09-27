@@ -2,7 +2,7 @@
    Семейный Бюджет — Service Worker (Offline-First)
    ========================================== */
 
-const CACHE_NAME = 'budget-pwa-v23';
+const CACHE_NAME = 'budget-pwa-v24';
 
 const STATIC_SHELL = [
   './',
@@ -21,7 +21,9 @@ const STATIC_SHELL = [
   './app.js',
   './manifest.json',
   './favicon.svg',
-  './icon.svg'
+  './icon.svg',
+  './icon-pwa.svg',
+  './icon-pwa-maskable.svg'
 ];
 
 // Установка: Предзагрузка критического App Shell в Cache Storage

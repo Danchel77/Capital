@@ -43,40 +43,35 @@
   <rect width="512" height="512" fill="url(#pwaIconBgGrad)"/>
 
   <!-- 2. Фоновый рассеянный ореол свечения -->
-  <circle cx="256" cy="256" r="140" fill="url(#pwaIconGlow)"/>
+  <circle cx="256" cy="256" r="190" fill="url(#pwaIconGlow)"/>
 
-  <!-- 3. Тончайшая внутренняя кристаллическая грань -->
-  <polygon points="256,192 320,256 256,320 192,256"
-           fill="rgba(108, 93, 211, 0.05)"
-           stroke="rgba(255, 255, 255, 0.14)"
-           stroke-width="2.5"
+  <!-- 3. Тончайшая внутренняя кристаллическая грань (масштабирована в размер APK) -->
+  <polygon points="256,160 352,256 256,352 160,256"
+           fill="rgba(108, 93, 211, 0.06)"
+           stroke="rgba(255, 255, 255, 0.16)"
+           stroke-width="3"
            stroke-linejoin="miter"
            stroke-miterlimit="10"/>
 
-  <!-- 4. Основной геометрический ромб баланса (идентичный APK) -->
-  <polygon points="256,156 356,256 256,356 156,256"
+  <!-- 4. Основной геометрический ромб баланса (внешне 1 в 1 как на лаунчере APK) -->
+  <polygon points="256,106 406,256 256,406 106,256"
            fill="none"
            stroke="url(#pwaIconDiamondGrad)"
-           stroke-width="18"
+           stroke-width="22"
            stroke-linejoin="miter"
            stroke-miterlimit="10"/>
 
   <!-- 5. Ослепительная вершина-искра -->
-  <circle cx="256" cy="156" r="4" fill="#FFFFFF"/>
+  <circle cx="256" cy="106" r="5" fill="#FFFFFF"/>
 
   <!-- 6. Минималистичный и контрастный бейдж Web / PWA в правом нижнем углу -->
   <g id="pwaBadge" filter="url(#pwaBadgeDropShadow)">
     <!-- Круглая подложка с темным фоном и четким контуром -->
-    <circle cx="390" cy="390" r="46" fill="url(#pwaBadgeBg)" stroke="url(#pwaBadgeGrad)" stroke-width="4"/>
+    <circle cx="396" cy="396" r="46" fill="url(#pwaBadgeBg)" stroke="url(#pwaBadgeGrad)" stroke-width="4"/>
 
-    <!-- Лаконичный, крупный значок интернета (Globe) -->
-    <!-- Внешний круг планеты -->
-    <circle cx="390" cy="390" r="25" fill="none" stroke="#38BDF8" stroke-width="4.5"/>
-    
-    <!-- Четкая экваториальная линия -->
-    <line x1="365" y1="390" x2="415" y2="390" stroke="#38BDF8" stroke-width="4" stroke-linecap="round"/>
-    
-    <!-- Центральный меридиан -->
-    <ellipse cx="390" cy="390" rx="11" ry="25" fill="none" stroke="#38BDF8" stroke-width="4"/>
+    <!-- Лаконичный значок интернета (Globe) -->
+    <circle cx="396" cy="396" r="25" fill="none" stroke="#38BDF8" stroke-width="4.5"/>
+    <line x1="371" y1="396" x2="421" y2="396" stroke="#38BDF8" stroke-width="4" stroke-linecap="round"/>
+    <ellipse cx="396" cy="396" rx="11" ry="25" fill="none" stroke="#38BDF8" stroke-width="4"/>
   </g>
 </svg>
