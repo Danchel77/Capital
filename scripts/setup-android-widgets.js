@@ -42,8 +42,8 @@ const widgetSampleCircle = `<?xml version="1.0" encoding="utf-8"?>
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="oval">
     <solid android:color="#1A2E26" />
-    <stroke android:width="3.5dp" android:color="#30D158" />
-    <size android:width="46dp" android:height="46dp" />
+    <stroke android:width="5.2dp" android:color="#30D158" />
+    <size android:width="52dp" android:height="52dp" />
 </shape>`;
 fs.writeFileSync(path.join(baseRes, 'drawable/widget_sample_circle.xml'), widgetSampleCircle);
 
@@ -51,22 +51,22 @@ const widgetSampleBar = `<?xml version="1.0" encoding="utf-8"?>
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
     <solid android:color="#30D158" />
-    <corners android:radius="3dp" />
-    <size android:height="5dp" />
+    <corners android:radius="4.5dp" />
+    <size android:height="8.5dp" />
 </shape>`;
 fs.writeFileSync(path.join(baseRes, 'drawable/widget_sample_bar.xml'), widgetSampleBar);
 
-// 3. XML метаданные виджетов (4x1, 2x1, Action 2x1) с android:configure
+// 3. XML метаданные виджетов (4x1, 2x1, Action 2x1)
+// Без android:configure, чтобы виджет добавлялся мгновенно на рабочий стол без навязчивых диалогов
 const widgetFullInfo = `<?xml version="1.0" encoding="utf-8"?>
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:minWidth="260dp"
-    android:minHeight="50dp"
+    android:minHeight="55dp"
     android:targetCellWidth="4"
     android:targetCellHeight="1"
     android:updatePeriodMillis="1800000"
     android:initialLayout="@layout/widget_full_layout"
     android:previewLayout="@layout/widget_full_preview"
-    android:configure="com.budget.family.WidgetConfigureActivity"
     android:resizeMode="horizontal"
     android:widgetCategory="home_screen"
     android:description="@string/widget_full_desc">
@@ -76,13 +76,12 @@ fs.writeFileSync(path.join(baseRes, 'xml/widget_full_info.xml'), widgetFullInfo)
 const widgetCompactInfo = `<?xml version="1.0" encoding="utf-8"?>
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:minWidth="130dp"
-    android:minHeight="50dp"
+    android:minHeight="55dp"
     android:targetCellWidth="2"
     android:targetCellHeight="1"
     android:updatePeriodMillis="1800000"
     android:initialLayout="@layout/widget_compact_layout"
     android:previewLayout="@layout/widget_compact_preview"
-    android:configure="com.budget.family.WidgetConfigureActivity"
     android:resizeMode="horizontal"
     android:widgetCategory="home_screen"
     android:description="@string/widget_compact_desc">
@@ -92,20 +91,19 @@ fs.writeFileSync(path.join(baseRes, 'xml/widget_compact_info.xml'), widgetCompac
 const widgetActionInfo = `<?xml version="1.0" encoding="utf-8"?>
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:minWidth="130dp"
-    android:minHeight="50dp"
+    android:minHeight="55dp"
     android:targetCellWidth="2"
     android:targetCellHeight="1"
     android:updatePeriodMillis="86400000"
     android:initialLayout="@layout/widget_action_layout"
     android:previewLayout="@layout/widget_action_preview"
-    android:configure="com.budget.family.WidgetConfigureActivity"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen"
     android:description="@string/widget_action_desc">
 </appwidget-provider>`;
 fs.writeFileSync(path.join(baseRes, 'xml/widget_action_info.xml'), widgetActionInfo);
 
-// 4. Макет 4x1 (Большой виджет: Неделя + Месяц без лишних кнопок)
+// 4. Макет 4x1 (Большой виджет: Недельные траты + Траты за месяц, крупные шрифты и шкалы)
 const widgetFullLayout = `<?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_full_root"
@@ -120,7 +118,7 @@ const widgetFullLayout = `<?xml version="1.0" encoding="utf-8"?>
         android:scaleType="fitXY"
         android:contentDescription="@null" />
 
-    <!-- Контент в 1 строку без тесноты -->
+    <!-- 4x1 контент: крупные шрифты и шкалы -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -128,8 +126,8 @@ const widgetFullLayout = `<?xml version="1.0" encoding="utf-8"?>
         android:gravity="center_vertical"
         android:paddingStart="14dp"
         android:paddingEnd="14dp"
-        android:paddingTop="7dp"
-        android:paddingBottom="7dp">
+        android:paddingTop="6dp"
+        android:paddingBottom="6dp">
 
         <!-- 1. Слева: Недельные траты -->
         <LinearLayout
@@ -141,9 +139,9 @@ const widgetFullLayout = `<?xml version="1.0" encoding="utf-8"?>
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="НЕДЕЛЬНЫЕ ТРАТЫ"
-                android:textColor="#9DA8B9"
-                android:textSize="9sp"
+                android:text="Недельные траты"
+                android:textColor="#BAC7D5"
+                android:textSize="11sp"
                 android:textStyle="bold"
                 android:shadowColor="#000000"
                 android:shadowDx="0"
@@ -159,10 +157,10 @@ const widgetFullLayout = `<?xml version="1.0" encoding="utf-8"?>
 
                 <ImageView
                     android:id="@+id/iv_full_week_circle"
-                    android:layout_width="44dp"
-                    android:layout_height="44dp"
+                    android:layout_width="52dp"
+                    android:layout_height="52dp"
                     android:contentDescription="@null"
-                    android:layout_marginEnd="8dp" />
+                    android:layout_marginEnd="9dp" />
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -176,7 +174,7 @@ const widgetFullLayout = `<?xml version="1.0" encoding="utf-8"?>
                         android:layout_height="wrap_content"
                         android:text="0 ₽"
                         android:textColor="#FFFFFF"
-                        android:textSize="13.5sp"
+                        android:textSize="17.5sp"
                         android:textStyle="bold"
                         android:maxLines="1"
                         android:ellipsize="end"
@@ -190,8 +188,8 @@ const widgetFullLayout = `<?xml version="1.0" encoding="utf-8"?>
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="из 0 ₽"
-                        android:textColor="#8898AA"
-                        android:textSize="9.5sp"
+                        android:textColor="#94A3B8"
+                        android:textSize="12sp"
                         android:maxLines="1"
                         android:ellipsize="end"
                         android:shadowColor="#000000"
@@ -204,9 +202,9 @@ const widgetFullLayout = `<?xml version="1.0" encoding="utf-8"?>
 
         <!-- Тонкий вертикальный разделитель -->
         <ImageView
-            android:layout_width="1dp"
-            android:layout_height="36dp"
-            android:background="#33384C"
+            android:layout_width="1.2dp"
+            android:layout_height="44dp"
+            android:background="#383E52"
             android:layout_marginStart="10dp"
             android:layout_marginEnd="12dp"
             android:contentDescription="@null" />
@@ -221,9 +219,9 @@ const widgetFullLayout = `<?xml version="1.0" encoding="utf-8"?>
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="ТРАТЫ ЗА МЕСЯЦ"
-                android:textColor="#9DA8B9"
-                android:textSize="9sp"
+                android:text="Траты за месяц"
+                android:textColor="#BAC7D5"
+                android:textSize="11sp"
                 android:textStyle="bold"
                 android:shadowColor="#000000"
                 android:shadowDx="0"
@@ -232,11 +230,11 @@ const widgetFullLayout = `<?xml version="1.0" encoding="utf-8"?>
 
             <TextView
                 android:id="@+id/tv_full_month_spent"
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="0 ₽ из 0 ₽"
                 android:textColor="#FFFFFF"
-                android:textSize="13sp"
+                android:textSize="16sp"
                 android:textStyle="bold"
                 android:maxLines="1"
                 android:ellipsize="end"
@@ -246,13 +244,13 @@ const widgetFullLayout = `<?xml version="1.0" encoding="utf-8"?>
                 android:shadowDy="1"
                 android:shadowRadius="3" />
 
-            <!-- Линейная шкала месяца -->
+            <!-- Линейная шкала месяца (увеличенная высота 8.5dp) -->
             <ImageView
                 android:id="@+id/iv_full_month_bar"
                 android:layout_width="match_parent"
-                android:layout_height="5dp"
-                android:layout_marginTop="4dp"
-                android:layout_marginBottom="3dp"
+                android:layout_height="8.5dp"
+                android:layout_marginTop="5dp"
+                android:layout_marginBottom="4dp"
                 android:scaleType="fitXY"
                 android:contentDescription="@null" />
 
@@ -261,8 +259,9 @@ const widgetFullLayout = `<?xml version="1.0" encoding="utf-8"?>
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Остаток: 0 ₽ • 0%"
-                android:textColor="#8898AA"
-                android:textSize="9.5sp"
+                android:textColor="#BAC7D5"
+                android:textSize="12sp"
+                android:textStyle="bold"
                 android:maxLines="1"
                 android:ellipsize="end"
                 android:shadowColor="#000000"
@@ -280,7 +279,7 @@ const widgetFullPreview = `<?xml version="1.0" encoding="utf-8"?>
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="@drawable/widget_preview_bg"
-    android:padding="12dp">
+    android:padding="14dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -298,9 +297,9 @@ const widgetFullPreview = `<?xml version="1.0" encoding="utf-8"?>
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="НЕДЕЛЬНЫЕ ТРАТЫ"
-                android:textColor="#9DA8B9"
-                android:textSize="9sp"
+                android:text="Недельные траты"
+                android:textColor="#BAC7D5"
+                android:textSize="11sp"
                 android:textStyle="bold" />
 
             <LinearLayout
@@ -311,10 +310,10 @@ const widgetFullPreview = `<?xml version="1.0" encoding="utf-8"?>
                 android:layout_marginTop="3dp">
 
                 <ImageView
-                    android:layout_width="38dp"
-                    android:layout_height="38dp"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
                     android:src="@drawable/widget_sample_circle"
-                    android:layout_marginEnd="8dp" />
+                    android:layout_marginEnd="9dp" />
 
                 <LinearLayout
                     android:layout_width="wrap_content"
@@ -326,69 +325,70 @@ const widgetFullPreview = `<?xml version="1.0" encoding="utf-8"?>
                         android:layout_height="wrap_content"
                         android:text="635 ₽"
                         android:textColor="#FFFFFF"
-                        android:textSize="13sp"
+                        android:textSize="17.5sp"
                         android:textStyle="bold" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="из 10 000 ₽"
-                        android:textColor="#8898AA"
-                        android:textSize="9sp" />
+                        android:textColor="#94A3B8"
+                        android:textSize="12sp" />
                 </LinearLayout>
             </LinearLayout>
         </LinearLayout>
 
         <ImageView
-            android:layout_width="1dp"
-            android:layout_height="34dp"
-            android:background="#33384C"
-            android:layout_marginStart="8dp"
-            android:layout_marginEnd="10dp" />
+            android:layout_width="1.2dp"
+            android:layout_height="42dp"
+            android:background="#383E52"
+            android:layout_marginStart="10dp"
+            android:layout_marginEnd="12dp" />
 
         <!-- Месяц -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1.3"
+            android:layout_weight="1.35"
             android:orientation="vertical">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="ТРАТЫ ЗА МЕСЯЦ"
-                android:textColor="#9DA8B9"
-                android:textSize="9sp"
+                android:text="Траты за месяц"
+                android:textColor="#BAC7D5"
+                android:textSize="11sp"
                 android:textStyle="bold" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="36 037 ₽ из 77 972 ₽"
+                android:text="36 037 ₽ из 78 000 ₽"
                 android:textColor="#FFFFFF"
-                android:textSize="12sp"
+                android:textSize="16sp"
                 android:textStyle="bold"
                 android:layout_marginTop="2dp" />
 
             <ImageView
                 android:layout_width="match_parent"
-                android:layout_height="4.5dp"
+                android:layout_height="8.5dp"
                 android:src="@drawable/widget_sample_bar"
-                android:layout_marginTop="3dp"
-                android:layout_marginBottom="2dp" />
+                android:layout_marginTop="5dp"
+                android:layout_marginBottom="4dp" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Остаток: 41 935 ₽ • 46%"
-                android:textColor="#8898AA"
-                android:textSize="9sp" />
+                android:textColor="#BAC7D5"
+                android:textSize="12sp"
+                android:textStyle="bold" />
         </LinearLayout>
     </LinearLayout>
 </FrameLayout>`;
 fs.writeFileSync(path.join(baseRes, 'layout/widget_full_preview.xml'), widgetFullPreview);
 
-// 6. Макет 2x1 (Компактный виджет месяца)
+// 6. Макет 2x1 (Компактный виджет месяца, крупные шрифты)
 const widgetCompactLayout = `<?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_compact_root"
@@ -407,17 +407,17 @@ const widgetCompactLayout = `<?xml version="1.0" encoding="utf-8"?>
         android:layout_height="match_parent"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:paddingStart="12dp"
-        android:paddingEnd="12dp"
-        android:paddingTop="7dp"
-        android:paddingBottom="7dp">
+        android:paddingStart="14dp"
+        android:paddingEnd="14dp"
+        android:paddingTop="6dp"
+        android:paddingBottom="6dp">
 
         <ImageView
             android:id="@+id/iv_compact_circle"
-            android:layout_width="44dp"
-            android:layout_height="44dp"
+            android:layout_width="52dp"
+            android:layout_height="52dp"
             android:contentDescription="@null"
-            android:layout_marginEnd="10dp" />
+            android:layout_marginEnd="12dp" />
 
         <LinearLayout
             android:layout_width="0dp"
@@ -428,9 +428,9 @@ const widgetCompactLayout = `<?xml version="1.0" encoding="utf-8"?>
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="ТРАТЫ ЗА МЕСЯЦ"
-                android:textColor="#9DA8B9"
-                android:textSize="9sp"
+                android:text="Траты за месяц"
+                android:textColor="#BAC7D5"
+                android:textSize="11sp"
                 android:textStyle="bold"
                 android:shadowColor="#000000"
                 android:shadowDx="0"
@@ -443,7 +443,7 @@ const widgetCompactLayout = `<?xml version="1.0" encoding="utf-8"?>
                 android:layout_height="wrap_content"
                 android:text="0 ₽"
                 android:textColor="#FFFFFF"
-                android:textSize="13.5sp"
+                android:textSize="18sp"
                 android:textStyle="bold"
                 android:maxLines="1"
                 android:ellipsize="end"
@@ -457,8 +457,8 @@ const widgetCompactLayout = `<?xml version="1.0" encoding="utf-8"?>
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="из 0 ₽"
-                android:textColor="#8898AA"
-                android:textSize="9.5sp"
+                android:textColor="#94A3B8"
+                android:textSize="12.5sp"
                 android:maxLines="1"
                 android:ellipsize="end"
                 android:shadowColor="#000000"
@@ -475,7 +475,7 @@ const widgetCompactPreview = `<?xml version="1.0" encoding="utf-8"?>
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="@drawable/widget_preview_bg"
-    android:padding="12dp">
+    android:padding="14dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -484,10 +484,10 @@ const widgetCompactPreview = `<?xml version="1.0" encoding="utf-8"?>
         android:gravity="center_vertical">
 
         <ImageView
-            android:layout_width="38dp"
-            android:layout_height="38dp"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
             android:src="@drawable/widget_sample_circle"
-            android:layout_marginEnd="10dp" />
+            android:layout_marginEnd="12dp" />
 
         <LinearLayout
             android:layout_width="wrap_content"
@@ -497,9 +497,9 @@ const widgetCompactPreview = `<?xml version="1.0" encoding="utf-8"?>
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="ТРАТЫ ЗА МЕСЯЦ"
-                android:textColor="#9DA8B9"
-                android:textSize="9sp"
+                android:text="Траты за месяц"
+                android:textColor="#BAC7D5"
+                android:textSize="11sp"
                 android:textStyle="bold" />
 
             <TextView
@@ -507,15 +507,15 @@ const widgetCompactPreview = `<?xml version="1.0" encoding="utf-8"?>
                 android:layout_height="wrap_content"
                 android:text="36 037 ₽"
                 android:textColor="#FFFFFF"
-                android:textSize="13sp"
+                android:textSize="18sp"
                 android:textStyle="bold" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="из 77 972 ₽"
-                android:textColor="#8898AA"
-                android:textSize="9sp" />
+                android:text="из 78 000 ₽"
+                android:textColor="#94A3B8"
+                android:textSize="12.5sp" />
         </LinearLayout>
     </LinearLayout>
 </FrameLayout>`;
@@ -539,21 +539,17 @@ const widgetActionLayout = `<?xml version="1.0" encoding="utf-8"?>
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingStart="12dp"
-        android:paddingEnd="12dp"
-        android:paddingTop="6dp"
-        android:paddingBottom="6dp">
+        android:gravity="center"
+        android:padding="8dp">
 
         <TextView
             android:id="@+id/btn_action_main"
-            android:layout_width="0dp"
-            android:layout_height="38dp"
-            android:layout_weight="1"
+            android:layout_width="match_parent"
+            android:layout_height="42dp"
             android:background="@drawable/widget_btn_bg"
             android:text="+ Внести расход"
             android:textColor="#FFFFFF"
-            android:textSize="12.5sp"
+            android:textSize="14sp"
             android:textStyle="bold"
             android:gravity="center"
             android:shadowColor="#000000"
@@ -573,11 +569,11 @@ const widgetActionPreview = `<?xml version="1.0" encoding="utf-8"?>
 
     <TextView
         android:layout_width="match_parent"
-        android:layout_height="36dp"
+        android:layout_height="42dp"
         android:background="@drawable/widget_btn_bg"
         android:text="+ Внести расход"
         android:textColor="#FFFFFF"
-        android:textSize="12sp"
+        android:textSize="14sp"
         android:textStyle="bold"
         android:gravity="center" />
 </FrameLayout>`;
@@ -655,7 +651,7 @@ public class WidgetFullProvider extends AppWidgetProvider {
             if (weeklyLimit > 0 && weeklySpent > weeklyLimit) weekColorHex = "#FF453A";
             else if (weeklyPct >= 80) weekColorHex = "#FF9F0A";
 
-            Bitmap circleBmp = createCircularProgressBitmap(context, weeklyPct, weekColorHex, 44);
+            Bitmap circleBmp = createCircularProgressBitmap(context, weeklyPct, weekColorHex, 52);
             views.setImageViewBitmap(R.id.iv_full_week_circle, circleBmp);
 
             // 2. Месячные данные
@@ -666,11 +662,11 @@ public class WidgetFullProvider extends AppWidgetProvider {
             if (monthlyLimit > 0 && monthlySpent > monthlyLimit) monthColorHex = "#FF453A";
             else if (monthlyPct >= 80) monthColorHex = "#FF9F0A";
 
-            Bitmap barBmp = createHorizontalProgressBarBitmap(context, monthlyPct, monthColorHex, 200, 5);
+            Bitmap barBmp = createHorizontalProgressBarBitmap(context, monthlyPct, monthColorHex, 220, 9);
             views.setImageViewBitmap(R.id.iv_full_month_bar, barBmp);
 
-            // 3. Фон
-            Bitmap bgBmp = createCardBackgroundBitmap(context, bgOpacity, 360, 65);
+            // 3. Фон с настраиваемой прозрачностью
+            Bitmap bgBmp = createCardBackgroundBitmap(context, bgOpacity, 360, 75);
             views.setImageViewBitmap(R.id.iv_widget_full_bg, bgBmp);
 
         } catch (Exception ignored) {}
@@ -691,7 +687,7 @@ public class WidgetFullProvider extends AppWidgetProvider {
         Bitmap bitmap = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(bitmap);
 
-        float strokeWidth = 3.6f * density;
+        float strokeWidth = 5.2f * density;
         Paint bgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         bgPaint.setStyle(Paint.Style.STROKE);
         bgPaint.setStrokeWidth(strokeWidth);
@@ -712,10 +708,10 @@ public class WidgetFullProvider extends AppWidgetProvider {
 
         Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         textPaint.setColor(Color.WHITE);
-        textPaint.setTextSize(9.5f * density);
+        textPaint.setTextSize(12f * density);
         textPaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
         textPaint.setTextAlign(Paint.Align.CENTER);
-        textPaint.setShadowLayer(3f, 0, 1.5f, Color.BLACK);
+        textPaint.setShadowLayer(3.5f, 0, 1.5f, Color.BLACK);
 
         String pctStr = clampedPct + "%";
         Rect textBounds = new Rect();
@@ -846,10 +842,10 @@ public class WidgetCompactProvider extends AppWidgetProvider {
             if (monthlyLimit > 0 && monthlySpent > monthlyLimit) monthColorHex = "#FF453A";
             else if (monthlyPct >= 80) monthColorHex = "#FF9F0A";
 
-            Bitmap circleBmp = WidgetFullProvider.createCircularProgressBitmap(context, monthlyPct, monthColorHex, 44);
+            Bitmap circleBmp = WidgetFullProvider.createCircularProgressBitmap(context, monthlyPct, monthColorHex, 52);
             views.setImageViewBitmap(R.id.iv_compact_circle, circleBmp);
 
-            Bitmap bgBmp = WidgetFullProvider.createCardBackgroundBitmap(context, bgOpacity, 160, 65);
+            Bitmap bgBmp = WidgetFullProvider.createCardBackgroundBitmap(context, bgOpacity, 160, 75);
             views.setImageViewBitmap(R.id.iv_widget_compact_bg, bgBmp);
 
         } catch (Exception ignored) {}
@@ -930,7 +926,7 @@ public class WidgetActionProvider extends AppWidgetProvider {
 `;
 fs.writeFileSync(path.join(baseJava, 'WidgetActionProvider.java'), widgetActionProviderJava);
 
-// 9. Системная Activity настроек виджетов (WidgetConfigureActivity) - аналогично Samsung One UI
+// 9. Системная Activity настроек виджетов с 5 дискретными шагами (0, 25, 50, 75, 100%)
 const widgetConfigureLayout = `<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
@@ -944,24 +940,24 @@ const widgetConfigureLayout = `<?xml version="1.0" encoding="utf-8"?>
         android:layout_height="wrap_content"
         android:text="Настройки виджета"
         android:textColor="#FFFFFF"
-        android:textSize="22sp"
+        android:textSize="20sp"
         android:textStyle="bold"
-        android:layout_marginBottom="20dp" />
+        android:layout_marginBottom="16dp" />
 
     <!-- Область предпросмотра на обоях -->
     <FrameLayout
         android:id="@+id/fl_config_preview_container"
         android:layout_width="match_parent"
-        android:layout_height="140dp"
+        android:layout_height="120dp"
         android:background="@drawable/widget_preview_bg"
-        android:layout_marginBottom="24dp">
+        android:layout_marginBottom="20dp">
 
         <LinearLayout
             android:id="@+id/ll_config_preview_card"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:layout_margin="12dp"
+            android:layout_margin="14dp"
             android:orientation="vertical"
             android:padding="12dp">
 
@@ -976,14 +972,14 @@ const widgetConfigureLayout = `<?xml version="1.0" encoding="utf-8"?>
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Пример отображения прозрачности"
-                android:textColor="#8898AA"
+                android:text="Пример прозрачности фона виджета"
+                android:textColor="#94A3B8"
                 android:textSize="11sp"
-                android:layout_marginTop="4dp" />
+                android:layout_marginTop="3dp" />
         </LinearLayout>
     </FrameLayout>
 
-    <!-- Слайдер непрозрачности -->
+    <!-- Слайдер 5 фиксированных шагов (0%, 25%, 50%, 75%, 100%) -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -997,13 +993,13 @@ const widgetConfigureLayout = `<?xml version="1.0" encoding="utf-8"?>
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:layout_marginBottom="10dp">
+            android:layout_marginBottom="12dp">
 
             <TextView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Непрозрачность фона"
+                android:text="Прозрачность фона"
                 android:textColor="#FFFFFF"
                 android:textSize="14sp"
                 android:textStyle="bold" />
@@ -1013,38 +1009,69 @@ const widgetConfigureLayout = `<?xml version="1.0" encoding="utf-8"?>
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="75%"
-                android:textColor="#6C5DD3"
+                android:textColor="#8C7DFF"
                 android:textSize="14sp"
                 android:textStyle="bold" />
         </LinearLayout>
 
+        <!-- SeekBar с 4 делениями (0=0%, 1=25%, 2=50%, 3=75%, 4=100%) -->
         <SeekBar
             android:id="@+id/sb_config_opacity"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:max="100"
-            android:progress="75" />
+            android:max="4"
+            android:progress="3" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_marginTop="4dp">
+            android:layout_marginTop="6dp">
 
             <TextView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="0% (Прозрачный)"
-                android:textColor="#6B7280"
-                android:textSize="11sp" />
+                android:text="0%"
+                android:textColor="#64748B"
+                android:textSize="10sp"
+                android:gravity="start" />
 
             <TextView
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="100% (Плотный)"
-                android:textColor="#6B7280"
-                android:textSize="11sp" />
+                android:layout_weight="1"
+                android:text="25%"
+                android:textColor="#64748B"
+                android:textSize="10sp"
+                android:gravity="center" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="50%"
+                android:textColor="#64748B"
+                android:textSize="10sp"
+                android:gravity="center" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="75%"
+                android:textColor="#64748B"
+                android:textSize="10sp"
+                android:gravity="center" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="100%"
+                android:textColor="#64748B"
+                android:textSize="10sp"
+                android:gravity="end" />
         </LinearLayout>
     </LinearLayout>
 
@@ -1086,6 +1113,7 @@ const widgetConfigureActivityJava = `package com.budget.family;
 
 import android.app.Activity;
 import android.appwidget.AppWidgetManager;
+import android.appwidget.AppWidgetProviderInfo;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -1100,7 +1128,8 @@ import android.widget.TextView;
 public class WidgetConfigureActivity extends Activity {
 
     private int appWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID;
-    private int currentOpacity = 75;
+    private final int[] OPACITY_STEPS = {0, 25, 50, 75, 100};
+    private int stepIndex = 3; // 75% по умолчанию
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -1121,7 +1150,15 @@ public class WidgetConfigureActivity extends Activity {
         setContentView(R.layout.widget_configure_layout);
 
         SharedPreferences prefs = getSharedPreferences("BudgetWidgetPrefs", Context.MODE_PRIVATE);
-        currentOpacity = prefs.getInt("widget_opacity_" + appWidgetId, prefs.getInt("bgOpacity", 75));
+        int savedOpacity = prefs.getInt("widget_opacity_" + appWidgetId, prefs.getInt("bgOpacity", 75));
+        
+        stepIndex = 3;
+        for (int i = 0; i < OPACITY_STEPS.length; i++) {
+            if (OPACITY_STEPS[i] == savedOpacity) {
+                stepIndex = i;
+                break;
+            }
+        }
 
         final TextView tvOpacityValue = findViewById(R.id.tv_config_opacity_value);
         final SeekBar sbOpacity = findViewById(R.id.sb_config_opacity);
@@ -1129,16 +1166,17 @@ public class WidgetConfigureActivity extends Activity {
         final Button btnCancel = findViewById(R.id.btn_config_cancel);
         final Button btnSave = findViewById(R.id.btn_config_save);
 
-        sbOpacity.setProgress(currentOpacity);
-        tvOpacityValue.setText(currentOpacity + "%");
-        updatePreviewAlpha(previewCard, currentOpacity);
+        sbOpacity.setProgress(stepIndex);
+        tvOpacityValue.setText(OPACITY_STEPS[stepIndex] + "%");
+        updatePreviewAlpha(previewCard, OPACITY_STEPS[stepIndex]);
 
         sbOpacity.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                currentOpacity = progress;
-                tvOpacityValue.setText(progress + "%");
-                updatePreviewAlpha(previewCard, progress);
+                stepIndex = Math.max(0, Math.min(OPACITY_STEPS.length - 1, progress));
+                int currentOpacity = OPACITY_STEPS[stepIndex];
+                tvOpacityValue.setText(currentOpacity + "%");
+                updatePreviewAlpha(previewCard, currentOpacity);
             }
 
             @Override
@@ -1158,15 +1196,28 @@ public class WidgetConfigureActivity extends Activity {
         btnSave.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                int chosenOpacity = OPACITY_STEPS[stepIndex];
                 SharedPreferences.Editor editor = getSharedPreferences("BudgetWidgetPrefs", Context.MODE_PRIVATE).edit();
-                editor.putInt("widget_opacity_" + appWidgetId, currentOpacity);
-                editor.putInt("bgOpacity", currentOpacity);
+                editor.putInt("widget_opacity_" + appWidgetId, chosenOpacity);
+                editor.putInt("bgOpacity", chosenOpacity);
                 editor.apply();
 
                 AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(WidgetConfigureActivity.this);
-                WidgetFullProvider.updateWidget(WidgetConfigureActivity.this, appWidgetManager, appWidgetId);
-                WidgetCompactProvider.updateWidget(WidgetConfigureActivity.this, appWidgetManager, appWidgetId);
-                WidgetActionProvider.updateWidget(WidgetConfigureActivity.this, appWidgetManager, appWidgetId);
+                AppWidgetProviderInfo info = appWidgetManager.getAppWidgetInfo(appWidgetId);
+                String providerClass = (info != null && info.provider != null) ? info.provider.getClassName() : "";
+
+                // Обновляем ТОЛЬКО тот провайдер, к которому относится этот виджет
+                if (providerClass.contains("WidgetFullProvider")) {
+                    WidgetFullProvider.updateWidget(WidgetConfigureActivity.this, appWidgetManager, appWidgetId);
+                } else if (providerClass.contains("WidgetCompactProvider")) {
+                    WidgetCompactProvider.updateWidget(WidgetConfigureActivity.this, appWidgetManager, appWidgetId);
+                } else if (providerClass.contains("WidgetActionProvider")) {
+                    WidgetActionProvider.updateWidget(WidgetConfigureActivity.this, appWidgetManager, appWidgetId);
+                } else {
+                    WidgetFullProvider.updateAllWidgets(WidgetConfigureActivity.this);
+                    WidgetCompactProvider.updateAllWidgets(WidgetConfigureActivity.this);
+                    WidgetActionProvider.updateAllWidgets(WidgetConfigureActivity.this);
+                }
 
                 Intent resultValue = new Intent();
                 resultValue.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId);
@@ -1176,85 +1227,16 @@ public class WidgetConfigureActivity extends Activity {
         });
     }
 
-    private void updatePreviewAlpha(LinearLayout card, int opacity) {
+    private void updatePreviewAlpha(LinearLayout card, int opacityPct) {
         if (card == null) return;
-        int alpha = Math.min(255, Math.max(0, Math.round(opacity * 2.55f)));
+        int alpha = Math.min(255, Math.max(0, Math.round(opacityPct * 2.55f)));
         card.setBackgroundColor(Color.argb(alpha, 22, 24, 36));
     }
 }
 `;
 fs.writeFileSync(path.join(baseJava, 'WidgetConfigureActivity.java'), widgetConfigureActivityJava);
 
-// 10. Обновление strings.xml
-if (fs.existsSync(stringsPath)) {
-  let stringsContent = fs.readFileSync(stringsPath, 'utf8');
-  if (!stringsContent.includes('widget_action_name')) {
-    const stringEntries = [
-      '    <string name="widget_full_name">Бюджет (Неделя и Месяц 4x1)</string>',
-      '    <string name="widget_full_desc">Шкалы трат на неделю и месяц</string>',
-      '    <string name="widget_compact_name">Бюджет (Месяц 2x1)</string>',
-      '    <string name="widget_compact_desc">Траты текущего месяца</string>',
-      '    <string name="widget_action_name">Быстрый расход (2x1)</string>',
-      '    <string name="widget_action_desc">Быстрое внесение операции в 1 клик</string>'
-    ].join('\n');
-    stringsContent = stringsContent.replace('</resources>', stringEntries + '\n</resources>');
-    fs.writeFileSync(stringsPath, stringsContent);
-  }
-}
-
-// 11. Обновление AndroidManifest.xml
-if (fs.existsSync(manifestPath)) {
-  let manifestContent = fs.readFileSync(manifestPath, 'utf8');
-  
-  // Добавляем Activity настроек виджета
-  if (!manifestContent.includes('WidgetConfigureActivity')) {
-    const configActivityEntry = [
-      '        <activity',
-      '            android:name=".WidgetConfigureActivity"',
-      '            android:exported="true"',
-      '            android:theme="@android:style/Theme.DeviceDefault.NoActionBar">',
-      '            <intent-filter>',
-      '                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE"/>',
-      '            </intent-filter>',
-      '        </activity>'
-    ].join('\n');
-    manifestContent = manifestContent.replace('</application>', configActivityEntry + '\n    </application>');
-  }
-
-  // Добавляем ресиверы виджетов
-  if (!manifestContent.includes('WidgetActionProvider')) {
-    const receivers = [
-      '        <receiver android:name=".WidgetFullProvider" android:exported="true" android:label="@string/widget_full_name">',
-      '            <intent-filter>',
-      '                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />',
-      '            </intent-filter>',
-      '            <meta-data',
-      '                android:name="android.appwidget.provider"',
-      '                android:resource="@xml/widget_full_info" />',
-      '        </receiver>',
-      '        <receiver android:name=".WidgetCompactProvider" android:exported="true" android:label="@string/widget_compact_name">',
-      '            <intent-filter>',
-      '                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />',
-      '            </intent-filter>',
-      '            <meta-data',
-      '                android:name="android.appwidget.provider"',
-      '                android:resource="@xml/widget_compact_info" />',
-      '        </receiver>',
-      '        <receiver android:name=".WidgetActionProvider" android:exported="true" android:label="@string/widget_action_name">',
-      '            <intent-filter>',
-      '                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />',
-      '            </intent-filter>',
-      '            <meta-data',
-      '                android:name="android.appwidget.provider"',
-      '                android:resource="@xml/widget_action_info" />',
-      '        </receiver>'
-    ].join('\n');
-    manifestContent = manifestContent.replace('</application>', receivers + '\n    </application>');
-  }
-  fs.writeFileSync(manifestPath, manifestContent);
-}
-
-// 12. Обновление Capacitor Plugin WidgetPinPlugin
+// 10. Capacitor Plugin для запроса закрепления виджета (requestPinAppWidget) и отправки данных
 const widgetPinPluginJava = `package com.budget.family;
 
 import android.app.PendingIntent;
@@ -1280,11 +1262,9 @@ public class WidgetPinPlugin extends Plugin {
             AppWidgetManager appWidgetManager = getContext().getSystemService(AppWidgetManager.class);
             if (appWidgetManager != null && appWidgetManager.isRequestPinAppWidgetSupported()) {
                 Class<?> providerClass = WidgetFullProvider.class;
-                if ("compact".equals(variant)) {
-                    providerClass = WidgetCompactProvider.class;
-                } else if ("action".equals(variant)) {
-                    providerClass = WidgetActionProvider.class;
-                }
+                if ("compact".equals(variant)) providerClass = WidgetCompactProvider.class;
+                else if ("action".equals(variant)) providerClass = WidgetActionProvider.class;
+
                 ComponentName provider = new ComponentName(getContext(), providerClass);
                 boolean pinned = appWidgetManager.requestPinAppWidget(provider, null, null);
                 JSObject ret = new JSObject();
@@ -1308,10 +1288,68 @@ public class WidgetPinPlugin extends Plugin {
         WidgetActionProvider.updateAllWidgets(getContext());
         call.resolve();
     }
-}`;
+}
+`;
 fs.writeFileSync(path.join(baseJava, 'WidgetPinPlugin.java'), widgetPinPluginJava);
 
-// 13. Обновление MainActivity.java для мгновенного раскрытия формы расхода
+// 11. Обновление strings.xml
+if (fs.existsSync(stringsPath)) {
+  let stringsContent = fs.readFileSync(stringsPath, 'utf8');
+  if (!stringsContent.includes('widget_full_name')) {
+    const stringEntries = [
+      '    <string name="widget_full_name">Бюджет (Неделя и Месяц 4x1)</string>',
+      '    <string name="widget_full_desc">Шкалы трат на неделю и месяц</string>',
+      '    <string name="widget_compact_name">Бюджет (Месяц 2x1)</string>',
+      '    <string name="widget_compact_desc">Траты текущего месяца</string>',
+      '    <string name="widget_action_name">Бюджет (+ Расход 2x1)</string>',
+      '    <string name="widget_action_desc">Быстрое внесение расхода</string>'
+    ].join('\n');
+    stringsContent = stringsContent.replace('</resources>', stringEntries + '\n</resources>');
+    fs.writeFileSync(stringsPath, stringsContent);
+  }
+}
+
+// 12. Обновление AndroidManifest.xml
+if (fs.existsSync(manifestPath)) {
+  let manifestContent = fs.readFileSync(manifestPath, 'utf8');
+  if (!manifestContent.includes('WidgetConfigureActivity')) {
+    const activityAndReceivers = [
+      '        <activity android:name=".WidgetConfigureActivity" android:exported="true">',
+      '            <intent-filter>',
+      '                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE"/>',
+      '            </intent-filter>',
+      '        </activity>',
+      '        <receiver android:name=".WidgetFullProvider" android:exported="true" android:label="@string/widget_full_name">',
+      '            <intent-filter>',
+      '                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />',
+      '            </intent-filter>',
+      '            <meta-data',
+      '                android:name="android.appwidget.provider"',
+      '                android:resource="@xml/widget_full_info" />',
+      '        </receiver>',
+      '        <receiver android:name=".WidgetCompactProvider" android:exported="true" android:label="@string/widget_compact_name">',
+      '            <intent-filter>',
+      '                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />',
+      '            </intent-filter>',
+      '            <meta-data',
+      '                android:name="android.appwidget.provider"',
+      '                android:resource="@xml/widget_compact_info" />',
+      '        </receiver>',
+      '        <receiver android:name=".WidgetActionProvider" android:exported="true" android:label="@string/widget_action_name">',
+      '            <intent-filter>',
+      '                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />',
+      '            </intent-filter>',
+      '            <meta-data',
+      '                android:name="android.appwidget.provider"',
+      '                android:resource="@xml/widget_action_info" />',
+      '        </receiver>'
+    ].join('\n');
+    manifestContent = manifestContent.replace('</application>', activityAndReceivers + '\n    </application>');
+    fs.writeFileSync(manifestPath, manifestContent);
+  }
+}
+
+// 13. MainActivity.java
 if (fs.existsSync(mainActivityPath)) {
   const mainActivityCode = [
     'package com.budget.family;',
@@ -1350,7 +1388,7 @@ if (fs.existsSync(mainActivityPath)) {
     '                            null',
     '                        );',
     '                    }',
-    '                }, 300);',
+    '                }, 350);',
     '            }',
     '        }',
     '    }',

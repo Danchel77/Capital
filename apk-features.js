@@ -178,7 +178,7 @@ function syncWidgetData() {
 }
 
 // 4. Генерация SVG для кругового индикатора
-function renderWidgetCircleSvg(pct, color, size = 42, strokeWidth = 4.2) {
+function renderWidgetCircleSvg(pct, color, size = 52, strokeWidth = 5.2) {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const clampedPct = Math.min(100, Math.max(0, pct));
@@ -196,7 +196,7 @@ function renderWidgetCircleSvg(pct, color, size = 42, strokeWidth = 4.2) {
   `;
 }
 
-// 5. Рендеринг Варианта 1: 4×1 виджет (Недельные траты + Траты за месяц)
+// 5. Рендеринг Варианта 1: 4×1 виджет (Недельные траты + Траты за месяц, крупные шрифты и шкалы)
 function renderFullWidgetPreviewHtml(data) {
   const format = typeof window.formatMoney === 'function' ? window.formatMoney : (n) => `${Math.round(n).toLocaleString('ru-RU')} ₽`;
   const weekColor = data.weeklyOverbudget ? '#FF453A' : (data.weeklyPct >= 80 ? '#FF9F0A' : '#30D158');
@@ -210,35 +210,35 @@ function renderFullWidgetPreviewHtml(data) {
       <div class="p-3.5 flex items-center justify-between gap-3">
         <!-- 1. Слева: Недельные траты -->
         <div class="flex-1 min-w-0">
-          <span class="text-[9px] font-bold text-gray-400 uppercase tracking-wide block leading-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">Недельные траты</span>
-          <div class="flex items-center gap-2 mt-1.5">
+          <span class="text-[11px] font-bold text-[#BAC7D5] block leading-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">Недельные траты</span>
+          <div class="flex items-center gap-2.5 mt-1.5">
             <div class="relative flex items-center justify-center flex-shrink-0">
-              ${renderWidgetCircleSvg(data.weeklyPct, weekColor, 44, 4)}
-              <span class="absolute text-[9.5px] font-black text-white font-mono drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">${data.weeklyPct}%</span>
+              ${renderWidgetCircleSvg(data.weeklyPct, weekColor, 50, 5)}
+              <span class="absolute text-[11px] font-bold text-white font-mono drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">${data.weeklyPct}%</span>
             </div>
             <div class="min-w-0 flex-1">
-              <span class="text-[13.5px] font-bold text-white block leading-tight tracking-tight drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] truncate">${format(data.weeklySpent)}</span>
-              <span class="text-[9.5px] text-[#8898AA] block leading-none truncate drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] mt-0.5">из ${format(data.weeklyLimit)}</span>
+              <span class="text-[17px] font-bold text-white block leading-tight tracking-tight drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] truncate">${format(data.weeklySpent)}</span>
+              <span class="text-[12px] text-[#94A3B8] block leading-none truncate drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] mt-0.5">из ${format(data.weeklyLimit)}</span>
             </div>
           </div>
         </div>
 
         <!-- Разделитель -->
-        <div class="w-[1px] h-9 bg-white/15 flex-shrink-0"></div>
+        <div class="w-[1.2px] h-11 bg-[#383E52] flex-shrink-0"></div>
 
         <!-- 2. Справа: Траты за месяц -->
         <div class="flex-[1.35] min-w-0">
-          <span class="text-[9px] font-bold text-gray-400 uppercase tracking-wide block leading-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">Траты за месяц</span>
-          <span class="text-[13px] font-bold text-white block leading-tight tracking-tight drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] truncate mt-1">${format(data.monthlySpent)} из ${format(data.monthlyLimit)}</span>
+          <span class="text-[11px] font-bold text-[#BAC7D5] block leading-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">Траты за месяц</span>
+          <span class="text-[15.5px] font-bold text-white block leading-tight tracking-tight drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] truncate mt-1">${format(data.monthlySpent)} из ${format(data.monthlyLimit)}</span>
 
-          <!-- Линейный прогресс-бар месяца -->
-          <div class="w-full h-1.5 bg-white/15 rounded-full overflow-hidden my-1.5">
+          <!-- Линейный прогресс-бар месяца (увеличенная толщина 8.5px) -->
+          <div class="w-full h-[8.5px] bg-white/15 rounded-full overflow-hidden my-1.5">
             <div class="h-full rounded-full transition-all duration-700" style="width: ${Math.min(100, Math.max(0, data.monthlyPct))}%; background-color: ${monthColor};"></div>
           </div>
 
-          <div class="flex items-center justify-between text-[9.5px] text-[#8898AA] leading-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+          <div class="flex items-center justify-between text-[11.5px] text-[#BAC7D5] font-bold leading-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
             <span class="truncate">Остаток: ${format(data.monthlyAvailable)}</span>
-            <span class="font-semibold text-gray-300 ml-1">${data.monthlyPct}%</span>
+            <span class="text-white ml-1 font-mono">${data.monthlyPct}%</span>
           </div>
         </div>
       </div>
@@ -256,16 +256,16 @@ function renderCompactWidgetPreviewHtml(data) {
     <div class="relative max-w-[260px] mx-auto rounded-2xl border transition-all duration-300 select-none overflow-hidden" 
          style="background-color: rgba(22, 24, 34, ${bgOpacity}); border-color: rgba(255, 255, 255, ${Math.min(0.2, bgOpacity * 0.25)});">
       
-      <div class="p-3 flex items-center justify-between gap-3">
+      <div class="p-3.5 flex items-center justify-between gap-3">
         <div class="relative flex items-center justify-center flex-shrink-0">
-          ${renderWidgetCircleSvg(data.monthlyPct, monthColor, 44, 4)}
-          <span class="absolute text-[9.5px] font-black text-white font-mono drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">${data.monthlyPct}%</span>
+          ${renderWidgetCircleSvg(data.monthlyPct, monthColor, 50, 5)}
+          <span class="absolute text-[11px] font-bold text-white font-mono drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">${data.monthlyPct}%</span>
         </div>
 
         <div class="flex-1 min-w-0">
-          <span class="text-[9px] font-bold text-gray-400 uppercase tracking-wide block leading-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">Траты за месяц</span>
-          <span class="text-[14px] font-bold text-white block leading-tight mt-1 tracking-tight drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] truncate">${format(data.monthlySpent)}</span>
-          <span class="text-[9.5px] text-[#8898AA] block leading-none truncate drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] mt-0.5">из ${format(data.monthlyLimit)}</span>
+          <span class="text-[11px] font-bold text-[#BAC7D5] block leading-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">Траты за месяц</span>
+          <span class="text-[17.5px] font-bold text-white block leading-tight mt-1 tracking-tight drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] truncate">${format(data.monthlySpent)}</span>
+          <span class="text-[12px] text-[#94A3B8] block leading-none truncate drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] mt-0.5">из ${format(data.monthlyLimit)}</span>
         </div>
       </div>
     </div>
@@ -281,7 +281,7 @@ function renderActionWidgetPreviewHtml(data) {
          style="background-color: rgba(22, 24, 34, ${bgOpacity}); border-color: rgba(255, 255, 255, ${Math.min(0.2, bgOpacity * 0.25)});">
       
       <div class="p-3">
-        <button type="button" onclick="triggerQuickNewExpense()" class="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-[#6C5DD3] to-[#8C7DFF] hover:opacity-95 active:scale-95 text-white text-xs font-bold shadow-md shadow-[#6C5DD3]/30 flex items-center justify-center gap-1.5 cursor-pointer transition-all">
+        <button type="button" onclick="triggerQuickNewExpense()" class="w-full py-3 px-3 rounded-xl bg-gradient-to-r from-[#6C5DD3] to-[#8C7DFF] hover:opacity-95 active:scale-95 text-white text-sm font-bold shadow-md shadow-[#6C5DD3]/30 flex items-center justify-center gap-2 cursor-pointer transition-all">
           <i data-lucide="plus" class="w-4 h-4"></i>
           <span>Внести расход</span>
         </button>
@@ -362,27 +362,15 @@ function setWidgetHubTab(tab) {
   renderWidgetHubContent();
 }
 
+const WIDGET_OPACITY_STEPS = [0, 25, 50, 75, 100];
+
 function handleWidgetOpacityChange(val) {
   const opacity = parseInt(val, 10);
   localStorage.setItem('budget_widget_bg_opacity', opacity);
   
-  const valLabel = document.getElementById('widget-opacity-val-label');
-  if (valLabel) valLabel.textContent = `${opacity}%`;
-
   syncWidgetData();
   
-  const previewContainer = document.getElementById('widget-preview-area');
-  if (previewContainer) {
-    const data = getLiveWidgetData();
-    if (currentWidgetTab === 'full') {
-      previewContainer.innerHTML = renderFullWidgetPreviewHtml(data);
-    } else if (currentWidgetTab === 'compact') {
-      previewContainer.innerHTML = renderCompactWidgetPreviewHtml(data);
-    } else {
-      previewContainer.innerHTML = renderActionWidgetPreviewHtml(data);
-    }
-    if (typeof lucide !== 'undefined') lucide.createIcons({ root: previewContainer });
-  }
+  renderWidgetHubContent();
 }
 
 function renderWidgetHubContent() {
@@ -434,26 +422,23 @@ function renderWidgetHubContent() {
         </div>
       </div>
 
-      <!-- Настройка прозрачности фона виджета -->
-      <div class="bg-[#0F1118] p-3.5 rounded-2xl border border-white/5 space-y-2">
+      <!-- Настройка прозрачности фона виджета с 5 точками (0%, 25%, 50%, 75%, 100%) -->
+      <div class="bg-[#0F1118] p-3.5 rounded-2xl border border-white/5 space-y-2.5">
         <div class="flex items-center justify-between text-xs">
           <div class="flex items-center gap-1.5 text-gray-300 font-semibold">
             <i data-lucide="sliders" class="w-3.5 h-3.5 text-[#8C7DFF]"></i>
             <span>Прозрачность фона</span>
           </div>
-          <span id="widget-opacity-val-label" class="text-xs font-bold text-[#8C7DFF] font-mono">${currentOpacity}%</span>
+          <span class="text-xs font-bold text-[#8C7DFF] font-mono">${currentOpacity}%</span>
         </div>
-        <input type="range" min="0" max="100" step="5" value="${currentOpacity}" 
-               oninput="handleWidgetOpacityChange(this.value)"
-               class="w-full accent-[#6C5DD3] bg-white/10 h-1.5 rounded-lg appearance-none cursor-pointer">
-        <div class="flex justify-between text-[10px] text-gray-500 font-medium">
-          <span>0% (Прозрачный)</span>
-          <span>50%</span>
-          <span>100% (Плотный)</span>
+        <div class="grid grid-cols-5 gap-1.5 pt-0.5">
+          ${WIDGET_OPACITY_STEPS.map(step => `
+            <button type="button" onclick="handleWidgetOpacityChange(${step})" 
+                    class="py-1.5 text-center text-xs font-bold rounded-xl transition-all cursor-pointer ${currentOpacity === step ? 'bg-[#6C5DD3] text-white shadow-md shadow-[#6C5DD3]/30 scale-105' : 'bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white'}">
+              ${step}%
+            </button>
+          `).join('')}
         </div>
-        <p class="text-[10px] text-gray-400 leading-tight pt-1">
-          💡 Прозрачность можно также настроить системно: зажмите виджет на рабочем столе и выберите <strong>«Настройки виджета»</strong>.
-        </p>
       </div>
 
       <!-- Кнопка добавления на экран -->
