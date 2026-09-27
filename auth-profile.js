@@ -97,32 +97,33 @@ async function loginWithGoogle() {
         console.warn('GoogleAuth.initialize info:', initErr);
       }
 
-      let googleUser;
+      let googleUser = null;
+      let nativeFailed = false;
+
       try {
         googleUser = await GoogleAuth.signIn();
       } catch (signErr) {
-        const toast = document.getElementById('toast-container');
-        if (toast) toast.classList.add('hidden');
-        // Если пользователь сам отменил или закрыл окно выбора аккаунта
         const errStr = String(signErr?.message || signErr || '');
+        // Если пользователь сам закрыл окно выбора
         if (errStr.includes('cancel') || errStr.includes('12501') || errStr.includes('closed') || errStr.includes('abort')) {
+          const toast = document.getElementById('toast-container');
+          if (toast) toast.classList.add('hidden');
           return;
         }
-        console.error('GoogleAuth.signIn error details:', signErr);
-        throw signErr;
+        console.warn('Native GoogleAuth.signIn failed, using web fallback:', signErr);
+        nativeFailed = true;
       }
 
       const idToken = googleUser?.authentication?.idToken || googleUser?.idToken;
-      if (!idToken) {
-        throw new Error('Токен авторизации Google не получен от Android');
+      if (idToken && !nativeFailed) {
+        const credential = firebase.auth.GoogleAuthProvider.credential(idToken);
+        await auth.signInWithCredential(credential);
+        const toast = document.getElementById('toast-container');
+        if (toast) toast.classList.add('hidden');
+        showToast('Успешный вход через Google!');
+        return;
       }
-
-      const credential = firebase.auth.GoogleAuthProvider.credential(idToken);
-      await auth.signInWithCredential(credential);
-      const toast = document.getElementById('toast-container');
-      if (toast) toast.classList.add('hidden');
-      showToast('Успешный вход через Google!');
-      return;
+      // Если нативный One Tap вернул ошибку - бесшовно переходим к веб-авторизации ниже
     }
 
     // В веб-браузере / PWA: используем стандартный Google Popup / Redirect
