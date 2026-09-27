@@ -109,21 +109,25 @@ jobs:
           MAIN_ACTIVITY="android/app/src/main/java/com/budget/family/MainActivity.java"
           if [ -f "$MAIN_ACTIVITY" ]; then
             echo "Настройка MainActivity.java для GoogleAuth..."
-            cat << 'EOF' > "$MAIN_ACTIVITY"
-package com.budget.family;
-
-import android.os.Bundle;
-import com.getcapacitor.BridgeActivity;
-import com.codetrixstudio.capacitor.GoogleAuth.GoogleAuth;
-
-public class MainActivity extends BridgeActivity {
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        registerPlugin(GoogleAuth.class);
-        super.onCreate(savedInstanceState);
-    }
-}
-EOF
+            node -e "
+              const fs = require('fs');
+              const code = [
+                'package com.budget.family;',
+                '',
+                'import android.os.Bundle;',
+                'import com.getcapacitor.BridgeActivity;',
+                'import com.codetrixstudio.capacitor.GoogleAuth.GoogleAuth;',
+                '',
+                'public class MainActivity extends BridgeActivity {',
+                '    @Override',
+                '    public void onCreate(Bundle savedInstanceState) {',
+                '        registerPlugin(GoogleAuth.class);',
+                '        super.onCreate(savedInstanceState);',
+                '    }',
+                '}'
+              ].join('\n');
+              fs.writeFileSync('$MAIN_ACTIVITY', code);
+            "
           fi
 
           # Внедряем server_client_id в strings.xml для плагина GoogleAuth на Android
