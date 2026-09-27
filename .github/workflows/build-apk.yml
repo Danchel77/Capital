@@ -30,109 +30,43 @@ jobs:
       - name: 4. Установка зависимостей проекта и Capacitor
         run: |
           npm install --no-audit --no-fund
-          npm install @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6 @codetrix-studio/capacitor-google-auth --no-audit --no-fund
+          npm install @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6 @codetrix-studio/capacitor-google-auth@^3.4.0-rc.4 --no-audit --no-fund
 
-      - name: 5. Генерация иконок, google-services.json и синхронизация Android
+      - name: 5. Синхронизация Android и подготовка постоянного Keystore
         run: |
           mkdir -p www
           cp -r *.html *.js *.css *.json *.svg www/ 2>/dev/null || true
           if [ -d "public" ]; then cp -r public/* www/ 2>/dev/null || true; fi
 
-          # Подготовка постоянного Keystore подписи
+          # Подготовка постоянного Keystore подписи (один постоянный ключ для всего проекта)
           mkdir -p ~/.android
           if [ -f "debug.keystore" ]; then
             echo "Использование постоянного debug.keystore из репозитория..."
             cp debug.keystore ~/.android/debug.keystore
           else
-            keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=FamilyBudget Debug,O=App,C=RU"
+            echo "Внимание: debug.keystore не найден в корне. Создаем постоянный ключ..."
+            keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=FamilyBudget Debug,O=App,C=RU"
+            cp debug.keystore ~/.android/debug.keystore
+            # Автоматически коммитим в репозиторий, чтобы он никогда не менялся
+            git config --global user.name "github-actions[bot]"
+            git config --global user.email "github-actions[bot]@users.noreply.github.com"
+            git add debug.keystore
+            git commit -m "chore: persist permanent debug.keystore" || true
+            git push origin HEAD || true
           fi
 
           if [ ! -d "android" ]; then
             npx cap add android
           fi
 
-          # Создаем google-services.json для нативных сервисов Google
-          cat << 'EOF' > android/app/google-services.json
-          {
-            "project_info": {
-              "project_number": "129164761119",
-              "project_id": "familybudget-4245a",
-              "storage_bucket": "familybudget-4245a.firebasestorage.app"
-            },
-            "client": [
-              {
-                "client_info": {
-                  "mobilesdk_app_id": "1:129164761119:android:faa150210d218fc5655d2a",
-                  "android_client_info": {
-                    "package_name": "com.budget.family"
-                  }
-                },
-                "oauth_client": [
-                  {
-                    "client_id": "129164761119-15vpls8k7ejo2eov8g8ohcs6ckgo8sm1.apps.googleusercontent.com",
-                    "client_type": 1,
-                    "android_info": {
-                      "package_name": "com.budget.family",
-                      "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
-                    }
-                  },
-                  {
-                    "client_id": "129164761119-b2ujsfs8v997edgsn1tusgnrf74vp9f5.apps.googleusercontent.com",
-                    "client_type": 1,
-                    "android_info": {
-                      "package_name": "com.budget.family",
-                      "certificate_hash": "e4aef9b7dcf83b807fe4ec2f59dfcd34902bfd34"
-                    }
-                  },
-                  {
-                    "client_id": "129164761119-fbebdjrt84r7kj2lnikrt5khqr5sosqu.apps.googleusercontent.com",
-                    "client_type": 1,
-                    "android_info": {
-                      "package_name": "com.budget.family",
-                      "certificate_hash": "486f4e17c2354e67e41a519f2908127aac18b4e3"
-                    }
-                  },
-                  {
-                    "client_id": "129164761119-q58s6fl94falkmc5r1rk8foruuuf1371.apps.googleusercontent.com",
-                    "client_type": 1,
-                    "android_info": {
-                      "package_name": "com.budget.family",
-                      "certificate_hash": "8d2e6200c42843e49b289ae65fc6e4d77ddb43d5"
-                    }
-                  },
-                  {
-                    "client_id": "129164761119-vjlf516ig0qhdjb4j9vq8kga3s7nqq7s.apps.googleusercontent.com",
-                    "client_type": 1,
-                    "android_info": {
-                      "package_name": "com.budget.family",
-                      "certificate_hash": "daee4a46f1736f8b377cf6ca7c413cbf4887c36c"
-                    }
-                  },
-                  {
-                    "client_id": "129164761119-0collp5th27qd9o4ah8dronfctcfp3pv.apps.googleusercontent.com",
-                    "client_type": 3
-                  }
-                ],
-                "api_key": [
-                  {
-                    "current_key": "AIzaSyDTUV5e1TW4-P3eLvMktfOfT0Q4WatELcU"
-                  }
-                ],
-                "services": {
-                  "appinvite_service": {
-                    "other_platform_oauth_client": [
-                      {
-                        "client_id": "129164761119-0collp5th27qd9o4ah8dronfctcfp3pv.apps.googleusercontent.com",
-                        "client_type": 3
-                      }
-                    ]
-                  }
-                }
-              }
-            ],
-            "configuration_version": "1"
-          }
-          EOF
+          mkdir -p android/app
+          # Копируем постоянный debug.keystore в каталог приложения Android
+          cp ~/.android/debug.keystore android/app/debug.keystore
+
+          # Копируем google-services.json
+          if [ -f "google-services.json" ]; then
+            cp google-services.json android/app/google-services.json
+          fi
 
           echo "sdk.dir=$ANDROID_HOME" > android/local.properties
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses 2>/dev/null || true
@@ -166,23 +100,26 @@ jobs:
           "
 
           npx cap sync android
-          if [ -f "debug.keystore" ]; then
-            cp debug.keystore android/app/debug.keystore
-            cp debug.keystore ~/.android/debug.keystore
-          fi
 
-          # Прописываем server_client_id в strings.xml для плагина Google Auth
-          STRINGS_FILE="android/app/src/main/res/values/strings.xml"
-          if [ -f "$STRINGS_FILE" ]; then
-            if ! grep -q "server_client_id" "$STRINGS_FILE"; then
-              sed -i 's/<\/resources>/    <string name="server_client_id">129164761119-0collp5th27qd9o4ah8dronfctcfp3pv.apps.googleusercontent.com<\/string>\n<\/resources>/' "$STRINGS_FILE"
+          # Внедряем server_client_id в strings.xml для плагина GoogleAuth на Android
+          STRINGS_XML="android/app/src/main/res/values/strings.xml"
+          if [ -f "$STRINGS_XML" ]; then
+            if ! grep -q "server_client_id" "$STRINGS_XML"; then
+              echo "Добавление server_client_id в strings.xml..."
+              sed -i 's|</resources>|    <string name="server_client_id">129164761119-0collp5th27qd9o4ah8dronfctcfp3pv.apps.googleusercontent.com</string>\n</resources>|' "$STRINGS_XML"
             fi
           fi
 
-      - name: 6. Проверка отпечатков SHA-1 и SHA-256
+          # Гарантируем, что Gradle всегда использует именно наш постоянный debug.keystore
+          if [ -f "android/app/build.gradle" ]; then
+            cp android/app/debug.keystore ~/.android/debug.keystore
+          fi
+
+      - name: 6. Проверка постоянных отпечатков SHA-1 и SHA-256
         run: |
           echo "============================================================"
-          echo "ОТПЕЧАТКИ СЕРТИФИКАТА ДЛЯ FIREBASE:"
+          echo "ПОСТОЯННЫЙ ОТПЕЧАТОК СЕРТИФИКАТА ДЛЯ FIREBASE:"
+          echo "Зарегистрируйте этот SHA-1 в Firebase Console (Настройки проекта -> com.budget.family):"
           keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android | grep -E "SHA1:|SHA256:" || true
           echo "============================================================"
 
@@ -194,7 +131,7 @@ jobs:
           cd ..
           cp android/app/build/outputs/apk/debug/app-debug.apk FamilyBudget.apk
 
-      - name: 7. Загрузка готового APK в артефакты GitHub
+      - name: 8. Загрузка готового APK в артефакты GitHub
         uses: actions/upload-artifact@v4
         with:
           name: FamilyBudget-Android-APK
@@ -202,7 +139,7 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      - name: 8. Публикация APK в GitHub Releases (постоянная ссылка)
+      - name: 9. Публикация APK в GitHub Releases (постоянная ссылка)
         uses: softprops/action-gh-release@v2
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.event_name == 'workflow_dispatch'
         with:

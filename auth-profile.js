@@ -55,14 +55,23 @@ if (typeof firebase !== 'undefined' && firebase.auth) {
     } catch (e) {}
   };
 
-  window.addEventListener('DOMContentLoaded', checkRedirectAuth);
+  const updateAuthUIForEnvironment = () => {
+    checkRedirectAuth();
+    const googleBtn = document.getElementById('google-auth-btn');
+    const divider = document.getElementById('auth-divider');
+
+    if (googleBtn) googleBtn.classList.remove('hidden');
+    if (divider) divider.classList.remove('hidden');
+  };
+
+  window.addEventListener('DOMContentLoaded', updateAuthUIForEnvironment);
   window.addEventListener('focus', checkRedirectAuth);
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') checkRedirectAuth();
   });
 }
 
-// Вход через Google (браузерный OAuth во всех окружениях)
+// Вход через Google (нативная авторизация Android One Tap в APK + Web OAuth в браузере/PWA)
 async function loginWithGoogle() {
   showToast('Открытие авторизации Google...', false, true);
 
@@ -73,6 +82,49 @@ async function loginWithGoogle() {
       } catch (e) {}
     }
 
+    const isNative = !!(window.Capacitor?.isNativePlatform());
+    const GoogleAuth = window.Capacitor?.Plugins?.GoogleAuth;
+
+    // Внутри нативного APK Android: вызываем нативное системное окно Google One Tap
+    if (isNative && GoogleAuth) {
+      try {
+        await GoogleAuth.initialize({
+          clientId: '129164761119-0collp5th27qd9o4ah8dronfctcfp3pv.apps.googleusercontent.com',
+          scopes: ['profile', 'email'],
+          grantOfflineAccess: true
+        });
+      } catch (initErr) {
+        console.warn('GoogleAuth.initialize info:', initErr);
+      }
+
+      let googleUser;
+      try {
+        googleUser = await GoogleAuth.signIn();
+      } catch (signErr) {
+        const toast = document.getElementById('toast-container');
+        if (toast) toast.classList.add('hidden');
+        // Если пользователь сам отменил или закрыл окно выбора аккаунта
+        const errStr = String(signErr?.message || signErr || '');
+        if (errStr.includes('cancel') || errStr.includes('12501') || errStr.includes('closed')) {
+          return;
+        }
+        throw signErr;
+      }
+
+      const idToken = googleUser?.authentication?.idToken || googleUser?.idToken;
+      if (!idToken) {
+        throw new Error('Токен авторизации Google не получен от Android');
+      }
+
+      const credential = firebase.auth.GoogleAuthProvider.credential(idToken);
+      await auth.signInWithCredential(credential);
+      const toast = document.getElementById('toast-container');
+      if (toast) toast.classList.add('hidden');
+      showToast('Успешный вход через Google!');
+      return;
+    }
+
+    // В веб-браузере / PWA: используем стандартный Google Popup / Redirect
     const provider = new firebase.auth.GoogleAuthProvider();
     provider.addScope('profile');
     provider.addScope('email');
