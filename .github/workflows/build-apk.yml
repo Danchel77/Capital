@@ -53,86 +53,86 @@ jobs:
 
           # Создаем google-services.json для нативных сервисов Google
           cat << 'EOF' > android/app/google-services.json
-{
-  "project_info": {
-    "project_number": "129164761119",
-    "project_id": "familybudget-4245a",
-    "storage_bucket": "familybudget-4245a.firebasestorage.app"
-  },
-  "client": [
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:129164761119:android:faa150210d218fc5655d2a",
-        "android_client_info": {
-          "package_name": "com.budget.family"
-        }
-      },
-      "oauth_client": [
-        {
-          "client_id": "129164761119-15vpls8k7ejo2eov8g8ohcs6ckgo8sm1.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.budget.family",
-            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          {
+            "project_info": {
+              "project_number": "129164761119",
+              "project_id": "familybudget-4245a",
+              "storage_bucket": "familybudget-4245a.firebasestorage.app"
+            },
+            "client": [
+              {
+                "client_info": {
+                  "mobilesdk_app_id": "1:129164761119:android:faa150210d218fc5655d2a",
+                  "android_client_info": {
+                    "package_name": "com.budget.family"
+                  }
+                },
+                "oauth_client": [
+                  {
+                    "client_id": "129164761119-15vpls8k7ejo2eov8g8ohcs6ckgo8sm1.apps.googleusercontent.com",
+                    "client_type": 1,
+                    "android_info": {
+                      "package_name": "com.budget.family",
+                      "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+                    }
+                  },
+                  {
+                    "client_id": "129164761119-b2ujsfs8v997edgsn1tusgnrf74vp9f5.apps.googleusercontent.com",
+                    "client_type": 1,
+                    "android_info": {
+                      "package_name": "com.budget.family",
+                      "certificate_hash": "e4aef9b7dcf83b807fe4ec2f59dfcd34902bfd34"
+                    }
+                  },
+                  {
+                    "client_id": "129164761119-fbebdjrt84r7kj2lnikrt5khqr5sosqu.apps.googleusercontent.com",
+                    "client_type": 1,
+                    "android_info": {
+                      "package_name": "com.budget.family",
+                      "certificate_hash": "486f4e17c2354e67e41a519f2908127aac18b4e3"
+                    }
+                  },
+                  {
+                    "client_id": "129164761119-q58s6fl94falkmc5r1rk8foruuuf1371.apps.googleusercontent.com",
+                    "client_type": 1,
+                    "android_info": {
+                      "package_name": "com.budget.family",
+                      "certificate_hash": "8d2e6200c42843e49b289ae65fc6e4d77ddb43d5"
+                    }
+                  },
+                  {
+                    "client_id": "129164761119-vjlf516ig0qhdjb4j9vq8kga3s7nqq7s.apps.googleusercontent.com",
+                    "client_type": 1,
+                    "android_info": {
+                      "package_name": "com.budget.family",
+                      "certificate_hash": "daee4a46f1736f8b377cf6ca7c413cbf4887c36c"
+                    }
+                  },
+                  {
+                    "client_id": "129164761119-0collp5th27qd9o4ah8dronfctcfp3pv.apps.googleusercontent.com",
+                    "client_type": 3
+                  }
+                ],
+                "api_key": [
+                  {
+                    "current_key": "AIzaSyDTUV5e1TW4-P3eLvMktfOfT0Q4WatELcU"
+                  }
+                ],
+                "services": {
+                  "appinvite_service": {
+                    "other_platform_oauth_client": [
+                      {
+                        "client_id": "129164761119-0collp5th27qd9o4ah8dronfctcfp3pv.apps.googleusercontent.com",
+                        "client_type": 3
+                      }
+                    ]
+                  }
+                }
+              }
+            ],
+            "configuration_version": "1"
           }
-        },
-        {
-          "client_id": "129164761119-b2ujsfs8v997edgsn1tusgnrf74vp9f5.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.budget.family",
-            "certificate_hash": "e4aef9b7dcf83b807fe4ec2f59dfcd34902bfd34"
-          }
-        },
-        {
-          "client_id": "129164761119-fbebdjrt84r7kj2lnikrt5khqr5sosqu.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.budget.family",
-            "certificate_hash": "486f4e17c2354e67e41a519f2908127aac18b4e3"
-          }
-        },
-        {
-          "client_id": "129164761119-q58s6fl94falkmc5r1rk8foruuuf1371.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.budget.family",
-            "certificate_hash": "8d2e6200c42843e49b289ae65fc6e4d77ddb43d5"
-          }
-        },
-        {
-          "client_id": "129164761119-vjlf516ig0qhdjb4j9vq8kga3s7nqq7s.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.budget.family",
-            "certificate_hash": "daee4a46f1736f8b377cf6ca7c413cbf4887c36c"
-          }
-        },
-        {
-          "client_id": "129164761119-0collp5th27qd9o4ah8dronfctcfp3pv.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
-      "api_key": [
-        {
-          "current_key": "AIzaSyDTUV5e1TW4-P3eLvMktfOfT0Q4WatELcU"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "129164761119-0collp5th27qd9o4ah8dronfctcfp3pv.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
-        }
-      }
-    }
-  ],
-  "configuration_version": "1"
-}
-EOF
+          EOF
 
           echo "sdk.dir=$ANDROID_HOME" > android/local.properties
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses 2>/dev/null || true
