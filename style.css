@@ -31,12 +31,73 @@ body {
   font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
 }
+html.modal-open {
+  overflow: hidden !important;
+  overflow-y: hidden !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  overscroll-behavior: none !important;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
 body.modal-open {
   position: fixed !important;
   left: 0 !important;
   right: 0 !important;
+  top: 0;
   width: 100% !important;
+  height: 100% !important;
+  max-height: 100% !important;
   overflow: hidden !important;
+  overflow-y: hidden !important;
+  overscroll-behavior: none !important;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+html.modal-open::-webkit-scrollbar,
+html.modal-open body::-webkit-scrollbar,
+body.modal-open::-webkit-scrollbar,
+html.modal-open::-webkit-scrollbar-thumb,
+html.modal-open body::-webkit-scrollbar-thumb,
+body.modal-open::-webkit-scrollbar-thumb,
+html.modal-open::-webkit-scrollbar-track,
+html.modal-open body::-webkit-scrollbar-track,
+body.modal-open::-webkit-scrollbar-track,
+html.modal-open::-webkit-scrollbar-corner,
+body.modal-open::-webkit-scrollbar-corner {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-width: 0 !important;
+  max-height: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+/* Утилита полного скрытия скроллбара */
+.no-scrollbar {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+  overflow: -moz-scrollbars-none !important;
+}
+.no-scrollbar::-webkit-scrollbar,
+.no-scrollbar::-webkit-scrollbar-thumb,
+.no-scrollbar::-webkit-scrollbar-track,
+.no-scrollbar::-webkit-scrollbar-corner {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-width: 0 !important;
+  max-height: 0 !important;
+  background: transparent !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
 }
 body::before { display: none; /* Убираем дешевое фоновое свечение */ }
 
@@ -447,8 +508,41 @@ button { -webkit-appearance:none; }
   background: transparent;
 }
 
-/* Полное снятие мобильной задержки тапа 300 мс для всех элементов и их потомков */
-html, body, * {
+/* Гарантированное сокрытие скроллбаров основного окна браузера при открытых модальных окнах */
+html.modal-open,
+html.modal-open body,
+body.modal-open {
+  scrollbar-width: none !important;
+}
+html.modal-open::-webkit-scrollbar,
+html.modal-open body::-webkit-scrollbar,
+body.modal-open::-webkit-scrollbar,
+html.modal-open::-webkit-scrollbar-thumb,
+html.modal-open body::-webkit-scrollbar-thumb,
+body.modal-open::-webkit-scrollbar-thumb,
+html.modal-open::-webkit-scrollbar-track,
+html.modal-open body::-webkit-scrollbar-track,
+body.modal-open::-webkit-scrollbar-track,
+html.modal-open::-webkit-scrollbar-corner,
+body.modal-open::-webkit-scrollbar-corner {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-width: 0 !important;
+  max-height: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+/* Полное снятие мобильной задержки тапа 300 мс без блокировки аппаратного скролла */
+html, body {
+  touch-action: pan-x pan-y;
+}
+button, a, input, select, textarea, [role="button"], .card, nav button, .btn-press, .nav-tab-btn, .view-switcher__btn, .custom-dropdown-btn, .custom-dropdown-item, .interactive-tap {
   touch-action: manipulation;
 }
 
@@ -1349,18 +1443,40 @@ body.privacy-mode-active canvas:hover {
 }
 
 /* ==========================================
-   Pinned Modal Header (Закрепленная шапка модальных окон)
+   Pinned Modal Header & Hardware Acceleration (60/120 FPS)
    ========================================== */
 .modal-sticky-header {
   position: sticky;
   top: 0;
   z-index: 30;
   padding-top: max(14px, env(safe-area-inset-top));
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  will-change: transform;
 }
 @media (min-width: 640px) {
   .modal-sticky-header {
     padding-top: 18px;
   }
+}
+
+/* Аппаратное ускорение и максимальная плавность (60/120 FPS) для модального окна профиля */
+#profile-dialog {
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior-y: contain !important;
+  transform: translateZ(0);
+  will-change: scroll-position;
+  contain: layout paint;
+}
+
+#profile-dialog > div {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Изоляция слоев карточек в профиле для исключения лагов компоновки */
+#profile-dialog .divide-y > * {
+  contain: content;
 }
 
 

@@ -3,12 +3,12 @@
  * 
  * Включает:
  * 1. Определение нативной платформы (APK Capacitor vs PWA vs Browser).
- * 2. Расчет и синхронизацию данных для виджетов домашнего экрана смартфона.
- * 3. Два интерактивных варианта виджета:
- *    - Полный (4x2): круговые графики недели и месяца + остатки + быстрый расход.
- *    - Компактный (2x2): остаток и круговой прогресс текущего месяца.
- * 4. Интерактивный хаб предпросмотра и закрепления виджетов.
- * 5. Всплывающую шторку-предложение добавить виджет (с правилами как у PWA: 1 раз в сутки, свайп, 10с автоскрытие).
+ * 2. Расчет и фоновую синхронизацию данных для виджетов домашнего экрана смартфона.
+ * 3. Два переработанных варианта виджета:
+ *    - Полный (4x2): единая бесшовная карточка, недельный и месячный остаток без обрезания цифр + быстрый расход.
+ *    - Компактный (2x2): крупный остаток месяца с круговым прогрессом.
+ * 4. Окно добавления виджетов (без лишних кнопок и инструкций) с прямым системным закреплением.
+ * 5. Всплывающая шторка-предложение (только для нативного APK).
  */
 
 // 1. Проверка окружения (APK / Native vs PWA vs Браузер)
@@ -30,12 +30,16 @@ function isNativeAppPlatform() {
 
 function isPwaStandalone() {
   if (typeof window === 'undefined') return false;
-  return (
-    window.matchMedia('(display-mode: standalone)').matches ||
-    window.matchMedia('(display-mode: fullscreen)').matches ||
-    window.navigator.standalone === true ||
-    document.referrer.includes('android-app://')
-  );
+  try {
+    return !!(
+      window.matchMedia?.('(display-mode: standalone)')?.matches ||
+      window.matchMedia?.('(display-mode: fullscreen)')?.matches ||
+      window.navigator.standalone === true ||
+      (document.referrer && document.referrer.includes('android-app://'))
+    );
+  } catch (_) {
+    return false;
+  }
 }
 
 // 2. Расчет живых данных для виджета
@@ -76,7 +80,7 @@ function getLiveWidgetData() {
     });
   }
 
-  // Если начало текущей недели выпало на предшествующий месяц
+  // Если начало недели в прошлом месяце
   const startWeekMonthKey = `${startOfWeek.getFullYear()}-${String(startOfWeek.getMonth() + 1).padStart(2, '0')}`;
   if (startWeekMonthKey !== targetMonthKey) {
     const prevMonthObj = (window.Cache?.transactions || []).find(m => m.id === startWeekMonthKey);
@@ -127,13 +131,18 @@ function getLiveWidgetData() {
   };
 }
 
-// 3. Синхронизация данных виджета в локальное и нативное хранилище
+// 3. Фоновая синхронизация данных для нативных виджетов Android
 function syncWidgetData() {
   try {
     const data = getLiveWidgetData();
     localStorage.setItem('budget_widget_data', JSON.stringify(data));
 
-    // Интеграция с нативным хранилищем Capacitor Preferences
+    // Синхронизация с нативным плагином WidgetPin (Android AppWidgetManager)
+    if (window.Capacitor?.Plugins?.WidgetPin?.updateData) {
+      window.Capacitor.Plugins.WidgetPin.updateData({ data: JSON.stringify(data) }).catch(() => {});
+    }
+
+    // Дополнительное сохранение в Capacitor Preferences
     if (window.Capacitor?.Plugins?.Preferences) {
       window.Capacitor.Plugins.Preferences.set({
         key: 'budget_widget_data',
@@ -149,15 +158,15 @@ function syncWidgetData() {
   }
 }
 
-// 4. Генерация HTML для кругового кольца (SVG)
-function renderWidgetCircleSvg(pct, color, size = 64, strokeWidth = 6) {
+// 4. Генерация SVG для кругового индикатора
+function renderWidgetCircleSvg(pct, color, size = 52, strokeWidth = 5.5) {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const clampedPct = Math.min(100, Math.max(0, pct));
   const offset = circumference - (clampedPct / 100) * circumference;
 
   return `
-    <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" class="transform -rotate-90">
+    <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" class="transform -rotate-90 flex-shrink-0">
       <circle cx="${size / 2}" cy="${size / 2}" r="${radius}" 
               stroke="rgba(255, 255, 255, 0.08)" stroke-width="${strokeWidth}" fill="transparent" />
       <circle cx="${size / 2}" cy="${size / 2}" r="${radius}" 
@@ -168,70 +177,60 @@ function renderWidgetCircleSvg(pct, color, size = 64, strokeWidth = 6) {
   `;
 }
 
-// 5. Рендеринг Варианта 1: Полный виджет (4x2)
+// 5. Рендеринг Варианта 1: Полный виджет (4x2) - цельный, без обрезания цифр
 function renderFullWidgetPreviewHtml(data) {
   const format = typeof window.formatMoney === 'function' ? window.formatMoney : (n) => `${Math.round(n).toLocaleString('ru-RU')} ₽`;
   const weekColor = data.weeklyOverbudget ? '#FF453A' : '#30D158';
   const monthColor = data.monthlyOverbudget ? '#FF453A' : '#6C5DD3';
 
   return `
-    <div class="relative bg-gradient-to-br from-[#181B24] to-[#12151C] border border-[#6C5DD3]/30 rounded-[26px] p-4 sm:p-5 shadow-2xl text-white select-none overflow-hidden group">
-      <!-- Фоновый мягкий ореол -->
+    <div class="relative bg-gradient-to-br from-[#1A1D27] to-[#12151E] border border-white/10 rounded-[28px] p-4 sm:p-5 shadow-2xl text-white select-none overflow-hidden">
+      <!-- Деликатный фоновый свет -->
       <div class="absolute -top-12 -right-12 w-36 h-36 bg-[#6C5DD3]/15 rounded-full blur-2xl pointer-events-none"></div>
 
-      <!-- Шапка виджета -->
-      <div class="flex items-center justify-between mb-3.5 pb-2.5 border-b border-white/5">
-        <div class="flex items-center gap-2">
-          <div class="w-6 h-6 rounded-lg bg-[#6C5DD3]/25 flex items-center justify-center text-[#8C7DFF]">
+      <!-- Верхняя строка: Логотип + Бейдж + Кнопка быстрого расхода -->
+      <div class="flex items-center justify-between gap-2 mb-3.5 pb-2.5 border-b border-white/5">
+        <div class="flex items-center gap-2 min-w-0">
+          <div class="w-6 h-6 rounded-lg bg-[#6C5DD3]/25 flex items-center justify-center text-[#8C7DFF] flex-shrink-0">
             <i data-lucide="wallet" class="w-3.5 h-3.5"></i>
           </div>
-          <span class="text-xs font-bold text-gray-200 tracking-tight">Семейный бюджет</span>
-          <span class="text-[9px] font-semibold bg-[#6C5DD3]/20 text-[#8C7DFF] border border-[#6C5DD3]/30 px-1.5 py-0.2 rounded-full">Виджет 4×2</span>
+          <span class="text-xs font-bold text-gray-200 tracking-tight truncate">Семейный бюджет</span>
+          <span class="text-[9px] font-semibold bg-[#6C5DD3]/20 text-[#8C7DFF] border border-[#6C5DD3]/30 px-1.5 py-0.2 rounded-full flex-shrink-0">4×2</span>
         </div>
-        <div class="flex items-center gap-1.5 text-[10px] text-gray-400 font-mono">
-          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span>${data.updatedAt}</span>
-        </div>
-      </div>
-
-      <!-- Два блока со шкалами: Неделя и Месяц -->
-      <div class="grid grid-cols-2 gap-3 mb-3.5">
-        <!-- Левый блок: Неделя -->
-        <div class="bg-[#0F1117]/80 border border-white/5 rounded-2xl p-3 flex items-center gap-3">
-          <div class="relative flex-shrink-0 flex items-center justify-center">
-            ${renderWidgetCircleSvg(data.weeklyPct, weekColor, 54, 5.5)}
-            <span class="absolute text-[11px] font-black text-white font-mono">${data.weeklyPct}%</span>
-          </div>
-          <div class="min-w-0 flex-1">
-            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Неделя</span>
-            <span class="text-sm sm:text-base font-extrabold text-white block truncate leading-tight mt-0.5">${format(data.weeklyAvailable)}</span>
-            <span class="text-[9px] text-[#848D99] block truncate">из ${format(data.weeklyLimit)}</span>
-          </div>
-        </div>
-
-        <!-- Правый блок: Месяц -->
-        <div class="bg-[#0F1117]/80 border border-white/5 rounded-2xl p-3 flex items-center gap-3">
-          <div class="relative flex-shrink-0 flex items-center justify-center">
-            ${renderWidgetCircleSvg(data.monthlyPct, monthColor, 54, 5.5)}
-            <span class="absolute text-[11px] font-black text-white font-mono">${data.monthlyPct}%</span>
-          </div>
-          <div class="min-w-0 flex-1">
-            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Месяц</span>
-            <span class="text-sm sm:text-base font-extrabold text-white block truncate leading-tight mt-0.5">${format(data.monthlyAvailable)}</span>
-            <span class="text-[9px] text-[#848D99] block truncate">В день: ${format(data.dailyBudget)}</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Нижняя строка: Быстрые действия -->
-      <div class="flex items-center justify-between gap-2 pt-1">
-        <span class="text-[10px] text-gray-400 truncate">
-          Осталось дней: <strong class="text-white">${data.daysRemaining}</strong>
-        </span>
-        <button type="button" onclick="triggerWidgetAddExpense()" class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#6C5DD3] to-[#8C7DFF] hover:opacity-90 active:scale-95 text-white text-[11px] font-bold shadow-md shadow-[#6C5DD3]/20 flex items-center gap-1.5 cursor-pointer transition-all">
-          <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+        
+        <button type="button" onclick="triggerWidgetAddExpense()" class="px-2.5 py-1 rounded-xl bg-gradient-to-r from-[#6C5DD3] to-[#8C7DFF] hover:opacity-95 active:scale-95 text-white text-[11px] font-bold shadow-md shadow-[#6C5DD3]/25 flex items-center gap-1 cursor-pointer transition-all flex-shrink-0">
+          <i data-lucide="plus" class="w-3 h-3"></i>
           <span>Расход</span>
         </button>
+      </div>
+
+      <!-- Центральная область: Единая карточка, разделенная пополам без скученности -->
+      <div class="grid grid-cols-2 gap-4 items-center">
+        <!-- Левая колонка: Неделя -->
+        <div class="flex items-center gap-2.5 min-w-0">
+          <div class="relative flex-shrink-0 flex items-center justify-center">
+            ${renderWidgetCircleSvg(data.weeklyPct, weekColor, 50, 5)}
+            <span class="absolute text-[10px] font-black text-white font-mono">${data.weeklyPct}%</span>
+          </div>
+          <div class="min-w-0 flex-1">
+            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block truncate">Неделя</span>
+            <span class="text-[15px] font-black text-white block leading-tight mt-0.5 tracking-tight">${format(data.weeklyAvailable)}</span>
+            <span class="text-[9px] text-[#848D99] block truncate mt-0.5">из ${format(data.weeklyLimit)}</span>
+          </div>
+        </div>
+
+        <!-- Правая колонка: Месяц -->
+        <div class="flex items-center gap-2.5 min-w-0 border-l border-white/5 pl-3">
+          <div class="relative flex-shrink-0 flex items-center justify-center">
+            ${renderWidgetCircleSvg(data.monthlyPct, monthColor, 50, 5)}
+            <span class="absolute text-[10px] font-black text-white font-mono">${data.monthlyPct}%</span>
+          </div>
+          <div class="min-w-0 flex-1">
+            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block truncate">Месяц</span>
+            <span class="text-[15px] font-black text-white block leading-tight mt-0.5 tracking-tight">${format(data.monthlyAvailable)}</span>
+            <span class="text-[9px] text-[#848D99] block truncate mt-0.5">${format(data.dailyBudget)}/дн. • ${data.daysRemaining}д</span>
+          </div>
+        </div>
       </div>
     </div>
   `;
@@ -243,37 +242,37 @@ function renderCompactWidgetPreviewHtml(data) {
   const monthColor = data.monthlyOverbudget ? '#FF453A' : '#6C5DD3';
 
   return `
-    <div class="relative max-w-[240px] mx-auto bg-gradient-to-br from-[#181B24] to-[#12151C] border border-[#6C5DD3]/30 rounded-[26px] p-4 shadow-2xl text-white select-none overflow-hidden group">
-      <!-- Фоновый ореол -->
+    <div class="relative max-w-[260px] mx-auto bg-gradient-to-br from-[#1A1D27] to-[#12151E] border border-white/10 rounded-[28px] p-4 shadow-2xl text-white select-none overflow-hidden">
+      <!-- Деликатный фоновый свет -->
       <div class="absolute -top-10 -right-10 w-28 h-28 bg-[#6C5DD3]/15 rounded-full blur-xl pointer-events-none"></div>
 
       <!-- Шапка -->
-      <div class="flex items-center justify-between mb-3">
+      <div class="flex items-center justify-between mb-2">
         <div class="flex items-center gap-1.5">
           <div class="w-5 h-5 rounded-md bg-[#6C5DD3]/25 flex items-center justify-center text-[#8C7DFF]">
-            <i data-lucide="calendar" class="w-3 h-3"></i>
+            <i data-lucide="wallet" class="w-3 h-3"></i>
           </div>
-          <span class="text-[11px] font-bold text-gray-200">Остаток месяца</span>
+          <span class="text-xs font-bold text-gray-200">Остаток месяца</span>
         </div>
         <span class="text-[9px] font-semibold bg-[#6C5DD3]/20 text-[#8C7DFF] border border-[#6C5DD3]/30 px-1.5 py-0.2 rounded-full">2×2</span>
       </div>
 
-      <!-- Центральный круговой график -->
-      <div class="flex flex-col items-center justify-center my-1">
+      <!-- Центральный круговой индикатор с суммой -->
+      <div class="flex flex-col items-center justify-center my-2">
         <div class="relative flex items-center justify-center mb-2">
-          ${renderWidgetCircleSvg(data.monthlyPct, monthColor, 80, 7)}
+          ${renderWidgetCircleSvg(data.monthlyPct, monthColor, 78, 7)}
           <div class="absolute flex flex-col items-center justify-center">
             <span class="text-xs font-black text-white font-mono">${data.monthlyPct}%</span>
-            <span class="text-[8px] text-gray-400 uppercase font-bold">исчерпано</span>
+            <span class="text-[8px] text-gray-400 uppercase font-bold">потрачено</span>
           </div>
         </div>
 
-        <span class="text-lg font-black text-white tracking-tight leading-tight">${format(data.monthlyAvailable)}</span>
-        <span class="text-[10px] text-gray-400 mt-0.5">В день: ${format(data.dailyBudget)} • ${data.daysRemaining} дн.</span>
+        <span class="text-[19px] font-black text-white tracking-tight leading-tight">${format(data.monthlyAvailable)}</span>
+        <span class="text-[11px] text-gray-400 mt-0.5">В день: ${format(data.dailyBudget)} • ${data.daysRemaining} дн.</span>
       </div>
 
       <!-- Быстрая кнопка -->
-      <div class="mt-3 pt-2 border-t border-white/5 flex justify-center">
+      <div class="mt-2 pt-2 border-t border-white/5 flex justify-center">
         <button type="button" onclick="triggerWidgetAddExpense()" class="w-full py-1.5 rounded-xl bg-white/5 hover:bg-white/10 active:scale-95 text-xs font-bold text-[#A594FD] border border-white/10 flex items-center justify-center gap-1.5 cursor-pointer transition-all">
           <i data-lucide="plus" class="w-3.5 h-3.5"></i>
           <span>Внести расход</span>
@@ -338,9 +337,9 @@ function renderWidgetHubContent() {
   const data = getLiveWidgetData();
 
   modal.innerHTML = `
-    <div class="relative bg-[#181B24] border border-white/10 rounded-3xl p-5 sm:p-6 max-w-md w-full shadow-2xl space-y-4 my-auto">
+    <div class="relative bg-[#161822] border border-white/10 rounded-3xl p-5 sm:p-6 max-w-sm w-full shadow-2xl space-y-4 my-auto animate-in fade-in zoom-in duration-200">
       <!-- Шапка модалки -->
-      <div class="flex items-center justify-between pb-3 border-b border-white/5">
+      <div class="flex items-center justify-between pb-2 border-b border-white/5">
         <div class="flex items-center gap-3">
           <div class="w-10 h-10 rounded-2xl bg-[#6C5DD3]/20 border border-[#6C5DD3]/40 flex items-center justify-center text-[#8C7DFF]">
             <i data-lucide="layout-grid" class="w-5 h-5"></i>
@@ -356,7 +355,7 @@ function renderWidgetHubContent() {
       </div>
 
       <!-- Переключатель вариантов виджета -->
-      <div class="flex p-1 bg-[#12151C] rounded-2xl border border-white/5">
+      <div class="flex p-1 bg-[#0F1118] rounded-2xl border border-white/5">
         <button type="button" onclick="setWidgetHubTab('full')" class="flex-1 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${currentWidgetTab === 'full' ? 'bg-[#6C5DD3] text-white shadow-md' : 'text-gray-400 hover:text-white'}">
           <i data-lucide="columns-2" class="w-3.5 h-3.5"></i>
           <span>Полный (4×2)</span>
@@ -367,32 +366,16 @@ function renderWidgetHubContent() {
         </button>
       </div>
 
-      <!-- Живой предпросмотр выбранного виджета -->
+      <!-- Предпросмотр выбранного виджета -->
       <div class="pt-1">
         ${currentWidgetTab === 'full' ? renderFullWidgetPreviewHtml(data) : renderCompactWidgetPreviewHtml(data)}
       </div>
 
-      <!-- Инструкция по добавлению на экран смартфона -->
-      <div class="p-3.5 rounded-2xl bg-[#12151C] border border-white/5 space-y-2 text-xs">
-        <div class="flex items-center gap-2 text-[#A594FD] font-semibold text-[11px]">
-          <i data-lucide="sparkles" class="w-4 h-4"></i>
-          <span>Как вынести виджет на экран Android:</span>
-        </div>
-        <ol class="space-y-1.5 text-gray-300 text-[11px] pl-4 list-decimal marker:text-[#6C5DD3] marker:font-bold leading-snug">
-          <li>Удерживайте палец на <strong>свободном месте</strong> экрана телефона.</li>
-          <li>В нижнем системном меню нажмите <strong>«Виджеты»</strong>.</li>
-          <li>Найдите приложение <strong>«Семейный бюджет»</strong> и перетащите виджет на экран.</li>
-        </ol>
-      </div>
-
-      <!-- Кнопки действий -->
-      <div class="flex items-center gap-2 pt-1">
-        <button type="button" onclick="handleWidgetPinRequest('${currentWidgetTab}')" class="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-[#6C5DD3] to-[#8C7DFF] hover:opacity-90 active:scale-95 text-white text-xs font-bold shadow-lg shadow-[#6C5DD3]/25 flex items-center justify-center gap-2 cursor-pointer transition-all">
-          <i data-lucide="pin" class="w-4 h-4"></i>
-          <span>Закрепить на экране</span>
-        </button>
-        <button type="button" onclick="refreshWidgetDataAction()" class="p-3 rounded-xl bg-white/5 hover:bg-white/10 active:scale-95 text-gray-300 hover:text-white border border-white/10 flex items-center justify-center cursor-pointer transition-all" title="Обновить данные виджета">
-          <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+      <!-- Единственная понятная кнопка добавления на экран -->
+      <div class="pt-2">
+        <button type="button" onclick="handleWidgetPinRequest('${currentWidgetTab}')" class="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-[#6C5DD3] to-[#8C7DFF] hover:opacity-95 active:scale-95 text-white text-xs font-bold shadow-lg shadow-[#6C5DD3]/30 flex items-center justify-center gap-2 cursor-pointer transition-all">
+          <i data-lucide="plus-circle" class="w-4 h-4"></i>
+          <span>Добавить виджет на экран</span>
         </button>
       </div>
     </div>
@@ -401,39 +384,36 @@ function renderWidgetHubContent() {
   if (typeof lucide !== 'undefined') lucide.createIcons({ root: modal });
 }
 
-// 9. Закрепление виджета через нативный AppWidgetManager или подсказка
+// 9. Добавление виджета на экран через системный AppWidgetManager
 function handleWidgetPinRequest(variant) {
   syncWidgetData();
 
-  // Если плагин Capacitor поддерживает нативный запрос закрепления виджета (Android 8.0+)
-  if (window.Capacitor?.Plugins?.AppWidget?.requestPin) {
-    window.Capacitor.Plugins.AppWidget.requestPin({ variant })
-      .then(() => {
-        if (typeof showToast === 'function') showToast('Виджет отправлен на главный экран');
+  // Нативное закрепление через Capacitor плагин WidgetPin
+  if (window.Capacitor?.Plugins?.WidgetPin?.requestPin) {
+    window.Capacitor.Plugins.WidgetPin.requestPin({ variant })
+      .then((res) => {
+        if (res && res.success) {
+          if (typeof showToast === 'function') showToast('Подтвердите добавление виджета на экран телефона');
+          closeWidgetHubModal();
+        } else {
+          showWidgetPinFallback();
+        }
       })
       .catch(() => {
-        showManualPinDialog();
+        showWidgetPinFallback();
       });
   } else {
-    showManualPinDialog();
+    showWidgetPinFallback();
   }
 }
 
-function showManualPinDialog() {
+function showWidgetPinFallback() {
   if (typeof showToast === 'function') {
-    showToast('Удерживайте палец на рабочем столе смартфона и выберите «Виджеты»', false);
+    showToast('Виджет доступен в списке виджетов на экране смартфона', false);
   }
 }
 
-function refreshWidgetDataAction() {
-  const data = syncWidgetData();
-  renderWidgetHubContent();
-  if (typeof showToast === 'function') {
-    showToast(`Данные виджета обновлены (${data.updatedAt})`);
-  }
-}
-
-// 10. Всплывающая шторка-предложение добавить виджет (с теми же правилами, что у PWA)
+// 10. Всплывающая шторка-предложение добавить виджет (ТОЛЬКО для нативного APK)
 let widgetPromptTimer = null;
 let widgetAutoDismissTimer = null;
 let widgetProgressInterval = null;
@@ -447,7 +427,6 @@ let widgetIsDragging = false;
 
 function shouldShowWidgetPrompt() {
   // 1. Показываем ТОЛЬКО внутри нативного мобильного приложения (APK)
-  // В PWA и обычном браузере виджеты на рабочий стол смартфонов не поддерживаются системой
   const isNative = isNativeAppPlatform();
   if (!isNative) return false;
 
@@ -616,7 +595,6 @@ function resumeWidgetTimer() {
 
 function initWidgetSwipeGesture() {
   const card = document.getElementById('widget-banner-card');
-  const banner = document.getElementById('widget-install-banner');
   if (!card || card.dataset.swipeBound === 'true') return;
   card.dataset.swipeBound = 'true';
 
@@ -700,4 +678,3 @@ window.pauseWidgetTimer = pauseWidgetTimer;
 window.resumeWidgetTimer = resumeWidgetTimer;
 window.handleWidgetBannerAction = handleWidgetBannerAction;
 window.handleWidgetPinRequest = handleWidgetPinRequest;
-window.refreshWidgetDataAction = refreshWidgetDataAction;

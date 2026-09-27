@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Премиальный глубокий фон темной темы (#0F1117 / #181B24) -->
+    <radialGradient id="maskPwaBgGrad" cx="50%" cy="46%" r="65%">
+      <stop offset="0%" stop-color="#191D28"/>
+      <stop offset="55%" stop-color="#0F1117"/>
+      <stop offset="100%" stop-color="#080A0E"/>
+    </radialGradient>
+
+    <!-- Фирменный неоновый градиент ромба -->
+    <linearGradient id="maskPwaDiamondGrad" x1="20%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="18%" stop-color="#38BDF8"/>
+      <stop offset="60%" stop-color="#818CF8"/>
+      <stop offset="100%" stop-color="#6C5DD3"/>
+    </linearGradient>
+
+    <!-- Мягкое неоновое свечение -->
+    <radialGradient id="maskPwaGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="rgba(56, 189, 248, 0.28)"/>
+      <stop offset="50%" stop-color="rgba(108, 93, 211, 0.18)"/>
+      <stop offset="100%" stop-color="rgba(15, 17, 23, 0)"/>
+    </radialGradient>
+
+    <!-- Градиент бейджа Web / PWA -->
+    <linearGradient id="maskPwaBadgeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="100%" stop-color="#6C5DD3"/>
+    </linearGradient>
+
+    <radialGradient id="maskPwaBadgeBg" cx="40%" cy="35%" r="70%">
+      <stop offset="0%" stop-color="#242B3E"/>
+      <stop offset="70%" stop-color="#111420"/>
+      <stop offset="100%" stop-color="#090B12"/>
+    </radialGradient>
+
+    <filter id="maskPwaBadgeShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#000000" flood-opacity="0.8"/>
+    </filter>
+  </defs>
+
+  <!-- Full-bleed background для адаптивных масок Android -->
+  <rect width="512" height="512" fill="url(#maskPwaBgGrad)"/>
+
+  <!-- Ореол свечения в безопасной зоне 66% (центр 256, 256) -->
+  <circle cx="256" cy="256" r="160" fill="url(#maskPwaGlow)"/>
+
+  <!-- Тонкая внутренняя грань -->
+  <polygon points="256,174 338,256 256,338 174,256"
+           fill="rgba(108, 93, 211, 0.05)"
+           stroke="rgba(255, 255, 255, 0.12)"
+           stroke-width="2.5"
+           stroke-linejoin="miter"
+           stroke-miterlimit="10"/>
+
+  <!-- Основной ромб баланса (умеренный размер, освобождающий нижний правый угол) -->
+  <polygon points="256,136 376,256 256,376 136,256"
+           fill="none"
+           stroke="url(#maskPwaDiamondGrad)"
+           stroke-width="20"
+           stroke-linejoin="miter"
+           stroke-miterlimit="10"/>
+
+  <!-- Искра в вершине -->
+  <circle cx="256" cy="136" r="4.5" fill="#FFFFFF"/>
+
+  <!-- Лаконичный значок интернета в правом нижнем углу (внутри безопасной маски) -->
+  <g id="maskPwaBadge" filter="url(#maskPwaBadgeShadow)">
+    <circle cx="365" cy="365" r="44" fill="url(#maskPwaBadgeBg)" stroke="url(#maskPwaBadgeGrad)" stroke-width="3"/>
+    
+    <circle cx="365" cy="365" r="23" fill="none" stroke="#38BDF8" stroke-width="4"/>
+    <line x1="342" y1="365" x2="388" y2="365" stroke="#38BDF8" stroke-width="3.5" stroke-linecap="round"/>
+    <ellipse cx="365" cy="365" rx="10.5" ry="23" fill="none" stroke="#38BDF8" stroke-width="3.5"/>
+  </g>
+</svg>

@@ -327,6 +327,8 @@ function openCardContextMenu(e, title, onEdit, onDelete, extraAction = null) {
 
 function closeCardContextMenu() {
   const menu = document.getElementById('card-context-menu');
+  const isMenuOpen = menu && !menu.classList.contains('hidden');
+  if (!isMenuOpen && !activeContextCard) return;
   if (menu) menu.classList.add('hidden');
   if (activeContextCard) {
     activeContextCard.classList.remove('context-active');
@@ -337,13 +339,26 @@ function closeCardContextMenu() {
 
 // Скрытие тултипов графиков при клике в пустое место страницы или скролле
 function hideAllChartTooltips(e) {
-  const isTargetInside = (selector) => e && e.target && e.target.closest(selector);
+  const brokerChart = window.brokerChartObj;
+  const monthlyChart = window.monthlyChartObj;
+  const catChart = window.categoryChartObj;
+  const brokerPointPopup = document.getElementById('broker-point-popup');
+
+  const hasBrokerPopup = brokerPointPopup && !brokerPointPopup.classList.contains('hidden');
+  const hasBrokerActive = brokerChart?.tooltip?.getActiveElements()?.length > 0;
+  const hasMonthlyActive = (monthlyChart?.getActiveElements()?.length > 0) || (monthlyChart?._activeElementKey != null);
+  const hasCatActive = (catChart?.getActiveElements()?.length > 0) || (catChart?._activeSliceIdx >= 0);
+
+  if (!hasBrokerPopup && !hasBrokerActive && !hasMonthlyActive && !hasCatActive) {
+    return;
+  }
+
+  const isTargetInside = (selector) => e && e.target && e.target.closest && e.target.closest(selector);
 
   // 1. График брокера и контекстный попап точки
   if (!isTargetInside('#brokerChart') && !isTargetInside('#broker-point-popup')) {
     if (typeof closeBrokerPointPopup === 'function') closeBrokerPointPopup();
   }
-  const brokerChart = window.brokerChartObj;
   if (brokerChart && !isTargetInside('#brokerChart') && brokerChart.tooltip && brokerChart.tooltip.getActiveElements().length > 0) {
     brokerChart.setActiveElements([]);
     brokerChart.tooltip.setActiveElements([], { x: 0, y: 0 });
@@ -351,7 +366,6 @@ function hideAllChartTooltips(e) {
   }
 
   // 2. Столбчатый график динамики трат
-  const monthlyChart = window.monthlyChartObj;
   if (monthlyChart && !isTargetInside('#monthlyExpensesChart')) {
     if (monthlyChart.getActiveElements().length > 0 || monthlyChart._activeElementKey) {
       monthlyChart._activeElementKey = null;
@@ -363,7 +377,6 @@ function hideAllChartTooltips(e) {
   }
 
   // 3. Круговая диаграмма структуры категорий
-  const catChart = window.categoryChartObj;
   if (catChart && !isTargetInside('#categoryExpensesChart') && !isTargetInside('#category-legend') && !isTargetInside('.donut-center')) {
     if (catChart.getActiveElements().length > 0 || catChart._activeSliceIdx >= 0) {
       if (typeof window.resetCategoryDonutCenter === 'function') {
@@ -636,7 +649,7 @@ window.addEventListener('scroll', () => {
   closeCardContextMenu();
   closeCustomDatePicker();
   hideAllChartTooltips();
-}, { passive: true, capture: true });
+}, { passive: true });
 
 // Перехват нативного календаря Android / iOS (Capture phase)
 document.addEventListener('click', (e) => {

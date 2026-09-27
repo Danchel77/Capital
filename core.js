@@ -1316,7 +1316,17 @@ function lockBodyScroll() {
   if (openModalsCount === 0) {
     modalScrollPos = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
     document.body.style.top = `-${modalScrollPos}px`;
+    document.body.style.position = 'fixed';
+    document.body.style.left = '0';
+    document.body.style.right = '0';
+    document.body.style.width = '100%';
+    document.body.style.height = '100%';
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    document.documentElement.style.scrollbarWidth = 'none';
+    document.body.style.scrollbarWidth = 'none';
     document.body.classList.add('modal-open');
+    if (document.documentElement) document.documentElement.classList.add('modal-open');
   }
   openModalsCount++;
 }
@@ -1343,10 +1353,17 @@ function unlockBodyScroll(force = false) {
     openModalsCount = 0;
     const scrollY = document.body.style.top;
     document.body.classList.remove('modal-open');
+    if (document.documentElement) document.documentElement.classList.remove('modal-open');
     document.body.style.top = '';
     document.body.style.position = '';
+    document.body.style.left = '';
+    document.body.style.right = '';
+    document.body.style.width = '';
+    document.body.style.height = '';
     document.body.style.overflow = '';
     document.documentElement.style.overflow = '';
+    document.documentElement.style.scrollbarWidth = '';
+    document.body.style.scrollbarWidth = '';
     const topVal = parseInt(scrollY || '0', 10) * -1;
     const targetY = !isNaN(topVal) && topVal > 0 ? topVal : modalScrollPos;
     window.scrollTo({ top: targetY, left: 0, behavior: 'instant' });

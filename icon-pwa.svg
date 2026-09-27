@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Премиальный глубокий фон темной темы (#0F1117 / #181B24) -->
+    <radialGradient id="pwaIconBgGrad" cx="50%" cy="46%" r="65%">
+      <stop offset="0%" stop-color="#191D28"/>
+      <stop offset="55%" stop-color="#0F1117"/>
+      <stop offset="100%" stop-color="#080A0E"/>
+    </radialGradient>
+
+    <!-- Фирменный неоновый градиент ромба -->
+    <linearGradient id="pwaIconDiamondGrad" x1="20%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="18%" stop-color="#38BDF8"/>
+      <stop offset="60%" stop-color="#818CF8"/>
+      <stop offset="100%" stop-color="#6C5DD3"/>
+    </linearGradient>
+
+    <!-- Мягкое неоновое свечение за ромбом -->
+    <radialGradient id="pwaIconGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="rgba(56, 189, 248, 0.28)"/>
+      <stop offset="50%" stop-color="rgba(108, 93, 211, 0.18)"/>
+      <stop offset="100%" stop-color="rgba(15, 17, 23, 0)"/>
+    </radialGradient>
+
+    <!-- Градиент бейджа Web / PWA -->
+    <linearGradient id="pwaBadgeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="100%" stop-color="#6C5DD3"/>
+    </linearGradient>
+
+    <radialGradient id="pwaBadgeBg" cx="40%" cy="35%" r="70%">
+      <stop offset="0%" stop-color="#242B3E"/>
+      <stop offset="70%" stop-color="#111420"/>
+      <stop offset="100%" stop-color="#090B12"/>
+    </radialGradient>
+
+    <filter id="pwaBadgeDropShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.8"/>
+    </filter>
+  </defs>
+
+  <!-- 1. Полноформатный бесшовный фон -->
+  <rect width="512" height="512" fill="url(#pwaIconBgGrad)"/>
+
+  <!-- 2. Фоновый рассеянный ореол свечения -->
+  <circle cx="256" cy="256" r="140" fill="url(#pwaIconGlow)"/>
+
+  <!-- 3. Тончайшая внутренняя кристаллическая грань -->
+  <polygon points="256,192 320,256 256,320 192,256"
+           fill="rgba(108, 93, 211, 0.05)"
+           stroke="rgba(255, 255, 255, 0.14)"
+           stroke-width="2.5"
+           stroke-linejoin="miter"
+           stroke-miterlimit="10"/>
+
+  <!-- 4. Основной геометрический ромб баланса (свободен от бейджа) -->
+  <polygon points="256,156 356,256 256,356 156,256"
+           fill="none"
+           stroke="url(#pwaIconDiamondGrad)"
+           stroke-width="18"
+           stroke-linejoin="miter"
+           stroke-miterlimit="10"/>
+
+  <!-- 5. Ослепительная вершина-искра -->
+  <circle cx="256" cy="156" r="4" fill="#FFFFFF"/>
+
+  <!-- 6. Минималистичный и контрастный бейдж Web / PWA в правом нижнем углу (без наложения на ромб) -->
+  <g id="pwaBadge" filter="url(#pwaBadgeDropShadow)">
+    <!-- Круглая подложка -->
+    <circle cx="410" cy="410" r="48" fill="url(#pwaBadgeBg)" stroke="url(#pwaBadgeGrad)" stroke-width="3.5"/>
+
+    <!-- Лаконичный, крупный значок интернета (Globe) - легко считывается в любом мелком масштабе -->
+    <!-- Внешний круг планеты -->
+    <circle cx="410" cy="410" r="26" fill="none" stroke="#38BDF8" stroke-width="4.5"/>
+    
+    <!-- Четкая экваториальная линия -->
+    <line x1="384" y1="410" x2="436" y2="410" stroke="#38BDF8" stroke-width="4" stroke-linecap="round"/>
+    
+    <!-- Центральный меридиан -->
+    <ellipse cx="410" cy="410" rx="12" ry="26" fill="none" stroke="#38BDF8" stroke-width="4"/>
+  </g>
+</svg>

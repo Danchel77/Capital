@@ -21,24 +21,6 @@
       <stop offset="50%" stop-color="rgba(108, 93, 211, 0.18)"/>
       <stop offset="100%" stop-color="rgba(15, 17, 23, 0)"/>
     </radialGradient>
-
-    <!-- Градиент для бейджа интернета (Web / PWA) -->
-    <linearGradient id="pwaGlobeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#38BDF8"/>
-      <stop offset="50%" stop-color="#818CF8"/>
-      <stop offset="100%" stop-color="#6C5DD3"/>
-    </linearGradient>
-
-    <radialGradient id="badgeBgGrad" cx="40%" cy="35%" r="70%">
-      <stop offset="0%" stop-color="#212636"/>
-      <stop offset="70%" stop-color="#12151F"/>
-      <stop offset="100%" stop-color="#0A0C13"/>
-    </radialGradient>
-
-    <filter id="badgeShadow" x="-30%" y="-30%" width="160%" height="160%">
-      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#000000" flood-opacity="0.65"/>
-      <feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="#38BDF8" flood-opacity="0.3"/>
-    </filter>
   </defs>
 
   <!-- 1. Полноформатный бесшовный фон -->
@@ -65,29 +47,4 @@
 
   <!-- 5. Ослепительная вершина-искра -->
   <circle cx="256" cy="156" r="4" fill="#FFFFFF"/>
-
-  <!-- 6. Элегантный бейдж PWA (Значок интернета / Web Globe) в правом нижнем углу -->
-  <g id="pwaInternetBadge" filter="url(#badgeShadow)">
-    <!-- Подложка бейджа с неоновой каймой -->
-    <circle cx="384" cy="384" r="52" fill="url(#badgeBgGrad)" stroke="url(#pwaGlobeGrad)" stroke-width="3"/>
-
-    <!-- Символ земного шара / интернета (Globe) -->
-    <!-- Внешняя окружность сферы -->
-    <circle cx="384" cy="384" r="28" fill="none" stroke="url(#pwaGlobeGrad)" stroke-width="3.2"/>
-
-    <!-- Экватор -->
-    <line x1="356" y1="384" x2="412" y2="384" stroke="url(#pwaGlobeGrad)" stroke-width="2.6" stroke-linecap="round"/>
-
-    <!-- Центральный меридиан (вертикальный эллипс) -->
-    <ellipse cx="384" cy="384" rx="13" ry="28" fill="none" stroke="url(#pwaGlobeGrad)" stroke-width="2.6"/>
-
-    <!-- Северная параллель -->
-    <path d="M 360 371 Q 384 378 408 371" fill="none" stroke="url(#pwaGlobeGrad)" stroke-width="2" stroke-linecap="round" opacity="0.85"/>
-
-    <!-- Южная параллель -->
-    <path d="M 360 397 Q 384 390 408 397" fill="none" stroke="url(#pwaGlobeGrad)" stroke-width="2" stroke-linecap="round" opacity="0.85"/>
-
-    <!-- Точка-светодиод активности сети -->
-    <circle cx="410" cy="358" r="4" fill="#38BDF8"/>
-  </g>
 </svg>

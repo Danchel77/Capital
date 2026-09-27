@@ -393,10 +393,18 @@ function openProfileModal() {
   const user = auth.currentUser;
   if (!user) return;
 
+  if (typeof lockBodyScroll === 'function') lockBodyScroll();
+
   const dialog = document.getElementById('profile-dialog');
   if (dialog) {
     dialog.scrollTop = 0;
     dialog.scrollTo({ top: 0, behavior: 'instant' });
+    if (!dialog.dataset.wheelBound) {
+      dialog.dataset.wheelBound = 'true';
+      dialog.addEventListener('wheel', (e) => {
+        e.stopPropagation();
+      }, { passive: true });
+    }
   }
 
   const nameEl = document.getElementById('profile-username-display');
@@ -446,24 +454,24 @@ function openProfileModal() {
     if (checkUpdatesBtn) checkUpdatesBtn.classList.remove('hidden');
     if (widgetsBtn) widgetsBtn.classList.remove('hidden');
   } else if (isPwa) {
-    // В PWA: пункт есть (только для скачивания APK), виджеты и проверка обновлений скрыты
+    // В ярлыке (PWA): доступно скачивание приложения для Android
     if (pwaBtn) {
       pwaBtn.classList.remove('hidden');
       const titleSpan = pwaBtn.querySelector('.profile-install-title');
       if (titleSpan) titleSpan.textContent = 'Установить приложение';
       const pwaSub = pwaBtn.querySelector('.profile-install-subtitle') || pwaBtn.querySelector('.text-\\[11px\\]');
-      if (pwaSub) pwaSub.textContent = 'Скачать .APK для Android';
+      if (pwaSub) pwaSub.textContent = 'Скачать приложение для Android';
     }
     if (checkUpdatesBtn) checkUpdatesBtn.classList.add('hidden');
     if (widgetsBtn) widgetsBtn.classList.add('hidden');
   } else {
-    // В обычном браузере: пункт установки (PWA + APK) присутствует, виджеты и обновления скрыты
+    // В обычном браузере: пункт установки
     if (pwaBtn) {
       pwaBtn.classList.remove('hidden');
       const titleSpan = pwaBtn.querySelector('.profile-install-title');
       if (titleSpan) titleSpan.textContent = 'Установить приложение';
       const pwaSub = pwaBtn.querySelector('.profile-install-subtitle') || pwaBtn.querySelector('.text-\\[11px\\]');
-      if (pwaSub) pwaSub.textContent = 'Скачать .APK или добавить на рабочий стол';
+      if (pwaSub) pwaSub.textContent = 'Скачать или добавить на главный экран';
     }
     if (checkUpdatesBtn) checkUpdatesBtn.classList.add('hidden');
     if (widgetsBtn) widgetsBtn.classList.add('hidden');
@@ -476,12 +484,13 @@ function openProfileModal() {
     dialog.classList.remove('hidden');
     dialog.scrollTop = 0;
   }
-  if (typeof lucide !== 'undefined') lucide.createIcons();
+  if (typeof lucide !== 'undefined' && dialog) lucide.createIcons({ root: dialog });
 }
 
 function closeProfileModal() {
   const dialog = document.getElementById('profile-dialog');
   if (dialog) dialog.classList.add('hidden');
+  if (typeof unlockBodyScroll === 'function') unlockBodyScroll();
 }
 
 // Переключение режима редактирования имени
@@ -512,6 +521,8 @@ function openAvatarPickerModal() {
   const grid = document.getElementById('avatar-picker-grid');
   if (!grid) return;
 
+  if (typeof lockBodyScroll === 'function') lockBodyScroll();
+
   const currentAvatar = Cache?.userProfile?.avatarId || 'user';
   selectedAvatarPresetId = currentAvatar;
 
@@ -541,6 +552,7 @@ function openAvatarPickerModal() {
 function closeAvatarPickerModal() {
   const dialog = document.getElementById('avatar-picker-dialog');
   if (dialog) dialog.classList.add('hidden');
+  if (typeof unlockBodyScroll === 'function') unlockBodyScroll();
 }
 
 function selectAvatarPreset(avatarId) {
@@ -648,6 +660,8 @@ function openChangeLoginModal() {
   const user = auth.currentUser;
   if (!user) return;
 
+  if (typeof lockBodyScroll === 'function') lockBodyScroll();
+
   const dialog = document.getElementById('change-login-dialog');
   const currentLoginEl = document.getElementById('change-login-current');
   const newLoginInput = document.getElementById('change-login-new');
@@ -665,6 +679,7 @@ function openChangeLoginModal() {
 function closeChangeLoginModal() {
   const dialog = document.getElementById('change-login-dialog');
   if (dialog) dialog.classList.add('hidden');
+  if (typeof unlockBodyScroll === 'function') unlockBodyScroll();
 }
 
 async function submitChangeLogin() {
@@ -740,6 +755,8 @@ function openChangePasswordModal() {
   const newPass = document.getElementById('change-pass-new');
   const confPass = document.getElementById('change-pass-confirm');
 
+  if (typeof lockBodyScroll === 'function') lockBodyScroll();
+
   if (curPass) curPass.value = '';
   if (newPass) newPass.value = '';
   if (confPass) confPass.value = '';
@@ -751,6 +768,7 @@ function openChangePasswordModal() {
 function closeChangePasswordModal() {
   const dialog = document.getElementById('change-password-dialog');
   if (dialog) dialog.classList.add('hidden');
+  if (typeof unlockBodyScroll === 'function') unlockBodyScroll();
 }
 
 async function submitChangePassword() {
@@ -932,6 +950,7 @@ function openCreateFamilyModal() {
   const dialog = document.getElementById('create-family-dialog');
   const nameInput = document.getElementById('create-family-name');
   if (nameInput) nameInput.value = 'Семейный бюджет';
+  if (typeof lockBodyScroll === 'function') lockBodyScroll();
   if (dialog) dialog.classList.remove('hidden');
   if (typeof lucide !== 'undefined') lucide.createIcons();
 }
@@ -939,6 +958,7 @@ function openCreateFamilyModal() {
 function closeCreateFamilyModal() {
   const dialog = document.getElementById('create-family-dialog');
   if (dialog) dialog.classList.add('hidden');
+  if (typeof unlockBodyScroll === 'function') unlockBodyScroll();
 }
 
 function generateFamilyInviteCode(length = 6) {
@@ -1045,6 +1065,7 @@ function openJoinFamilyModal() {
   const dialog = document.getElementById('join-family-dialog');
   const codeInput = document.getElementById('join-family-code');
   if (codeInput) codeInput.value = '';
+  if (typeof lockBodyScroll === 'function') lockBodyScroll();
   if (dialog) dialog.classList.remove('hidden');
   if (typeof lucide !== 'undefined') lucide.createIcons();
 }
@@ -1052,6 +1073,7 @@ function openJoinFamilyModal() {
 function closeJoinFamilyModal() {
   const dialog = document.getElementById('join-family-dialog');
   if (dialog) dialog.classList.add('hidden');
+  if (typeof unlockBodyScroll === 'function') unlockBodyScroll();
 }
 
 // Генерация уникальной сигнатуры для проверки дубликатов при слиянии данных
@@ -1414,13 +1436,17 @@ function openDeleteAccountModal() {
     if (passSection) passSection.classList.remove('hidden');
   }
 
-  if (dialog) dialog.classList.remove('hidden');
+  if (dialog) {
+    if (typeof lockBodyScroll === 'function') lockBodyScroll();
+    dialog.classList.remove('hidden');
+  }
   if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
 function closeDeleteAccountModal() {
   const dialog = document.getElementById('delete-account-dialog');
   if (dialog) dialog.classList.add('hidden');
+  if (typeof unlockBodyScroll === 'function') unlockBodyScroll();
   const passInput = document.getElementById('delete-account-password');
   if (passInput) passInput.value = '';
 }

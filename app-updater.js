@@ -95,9 +95,11 @@ function showUpdateAvailableModal(tag, notes, dateStr, releaseTimestamp) {
   if (!modal) {
     modal = document.createElement('div');
     modal.id = 'app-update-modal';
-    modal.className = 'fixed inset-0 z-[1200] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 transition-all duration-300';
+    modal.className = 'fixed inset-0 z-[1200] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 overscroll-contain no-scrollbar transition-all duration-300';
     document.body.appendChild(modal);
   }
+
+  if (typeof lockBodyScroll === 'function') lockBodyScroll();
 
   modal.innerHTML = `
     <div class="bg-[#181B24] border border-white/10 rounded-3xl p-6 max-w-sm w-full shadow-2xl space-y-4 animate-in fade-in zoom-in duration-200">
@@ -140,6 +142,7 @@ function showUpdateAvailableModal(tag, notes, dateStr, releaseTimestamp) {
 function closeUpdateModal() {
   const modal = document.getElementById('app-update-modal');
   if (modal) modal.classList.add('hidden');
+  if (typeof unlockBodyScroll === 'function') unlockBodyScroll();
 }
 
 // Прямое скачивание APK
@@ -150,7 +153,7 @@ function downloadApkDirectly(releaseTimestamp) {
     } catch (e) {}
   }
 
-  showToast('Загрузка установочного файла...');
+  showToast('Загрузка установочного файла началась...');
   closeUpdateModal();
 
   const a = document.createElement('a');
@@ -162,6 +165,30 @@ function downloadApkDirectly(releaseTimestamp) {
   document.body.removeChild(a);
 }
 
+// Запуск скачивания приложения с аккуратным уведомлением в модальном окне
+function startApkDownloadWithHelp() {
+  downloadApkDirectly();
+
+  const container = document.getElementById('apk-action-container');
+  if (container) {
+    container.innerHTML = `
+      <div class="p-3 rounded-xl bg-white/[0.04] border border-white/[0.08] space-y-1.5 animate-in fade-in duration-200">
+        <div class="flex items-center gap-2 text-white text-xs font-medium">
+          <span class="w-2 h-2 rounded-full bg-[#6C5DD3] animate-pulse"></span>
+          <span>Загрузка началась</span>
+        </div>
+        <p class="text-[11px] text-gray-400 leading-snug">
+          Нажмите «Открыть» в уведомлении браузера для завершения установки.
+        </p>
+        <button type="button" onclick="downloadApkDirectly()" class="text-[11px] text-[#8C7DFF] hover:underline cursor-pointer pt-0.5 inline-block">
+          Скачать повторно
+        </button>
+      </div>
+    `;
+    if (typeof lucide !== 'undefined') lucide.createIcons({ root: container });
+  }
+}
+
 // Запуск процесса установки через быструю кнопку на главном экране (PWA)
 async function triggerPwaInstall() {
   if (window.deferredPwaPrompt) {
@@ -170,20 +197,29 @@ async function triggerPwaInstall() {
     if (outcome === 'accepted') {
       showToast('Приложение добавлено на главный экран!');
       window.deferredPwaPrompt = null;
+      closeAppInstallOptionsModal();
     }
   } else {
-    showToast('Нажмите "Поделиться" или меню браузера и выберите "Добавить на главный экран"', false);
+    showToast('Нажмите меню браузера и выберите «Добавить на главный экран»', false);
   }
 }
 
-// Открытие единого красивого модального окна выбора варианта установки
+// Открытие модального окна выбора варианта установки
 function openAppInstallOptionsModal() {
   let modal = document.getElementById('app-install-options-modal');
   if (!modal) {
     modal = document.createElement('div');
     modal.id = 'app-install-options-modal';
-    modal.className = 'fixed inset-0 z-[1200] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 transition-all duration-300';
+    modal.className = 'fixed inset-0 z-[1200] bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-hidden select-none transition-all duration-300';
+    modal.onclick = (e) => {
+      if (e.target === modal) closeAppInstallOptionsModal();
+    };
+    modal.addEventListener('wheel', (e) => {
+      e.stopPropagation();
+    }, { passive: true });
     document.body.appendChild(modal);
+  } else {
+    modal.className = 'fixed inset-0 z-[1200] bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-hidden select-none transition-all duration-300';
   }
 
   const isNative = (typeof window.isNativeAppPlatform === 'function') 
@@ -194,18 +230,23 @@ function openAppInstallOptionsModal() {
     return;
   }
 
-  const isPwa = (typeof window.isPwaStandalone === 'function') ? window.isPwaStandalone() : (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true);
+  if (typeof lockBodyScroll === 'function') lockBodyScroll();
+
+  const isPwa = (typeof window.isPwaStandalone === 'function') 
+    ? window.isPwaStandalone() 
+    : (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true);
 
   modal.innerHTML = `
-    <div class="bg-[#181B24] border border-white/10 rounded-3xl p-6 max-w-sm w-full shadow-2xl space-y-4 animate-in fade-in zoom-in duration-200">
-      <div class="flex items-center justify-between">
+    <div class="relative bg-[#161822] border border-white/10 rounded-[28px] p-5 sm:p-6 max-w-sm w-full shadow-2xl space-y-3.5 animate-in fade-in zoom-in duration-200">
+      <!-- Шапка -->
+      <div class="flex items-center justify-between pb-2.5 border-b border-white/5">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-2xl bg-[#6C5DD3]/20 border border-[#6C5DD3]/40 flex items-center justify-center text-[#6C5DD3]">
+          <div class="w-10 h-10 rounded-2xl bg-white/[0.05] border border-white/10 flex items-center justify-center text-[#8C7DFF]">
             <i data-lucide="smartphone" class="w-5 h-5"></i>
           </div>
           <div>
-            <h3 class="text-base font-bold text-white leading-tight">Приложение для телефона</h3>
-            <span class="text-xs text-gray-400">${isPwa ? 'Скачайте полноценный .APK' : 'Установите удобный вариант'}</span>
+            <h3 class="text-base font-bold text-white leading-tight">Установка приложения</h3>
+            <span class="text-xs text-gray-400">Выберите способ установки</span>
           </div>
         </div>
         <button type="button" onclick="closeAppInstallOptionsModal()" class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-all cursor-pointer">
@@ -213,40 +254,56 @@ function openAppInstallOptionsModal() {
         </button>
       </div>
 
-      <div class="space-y-3 pt-1">
-        <!-- Вариант 1: Скачать APK -->
-        <button type="button" onclick="downloadApkDirectly(); closeAppInstallOptionsModal();" class="w-full p-4 rounded-2xl bg-[#0F1117] border border-white/10 hover:border-[#6C5DD3]/50 hover:bg-[#1f222e] transition-all text-left group flex items-center justify-between cursor-pointer">
-          <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 group-hover:scale-105 transition-transform">
-              <i data-lucide="bot" class="w-5 h-5"></i>
+      <div class="space-y-2.5 pt-0.5">
+        <!-- Вариант 1: Скачать приложение -->
+        <div class="bg-[#1B1E2B] border border-white/[0.08] rounded-2xl p-4 transition-colors">
+          <div class="flex items-start gap-3">
+            <div class="w-8 h-8 rounded-xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center text-[#8C7DFF] flex-shrink-0 mt-0.5">
+              <i data-lucide="download" class="w-4 h-4"></i>
             </div>
-            <div>
-              <div class="text-xs font-bold text-white group-hover:text-[#6C5DD3] transition-colors">Скачать файл (.APK)</div>
-              <div class="text-[11px] text-gray-400">Полноценное приложение для Android</div>
+            <div class="flex-1 min-w-0">
+              <h4 class="text-sm font-semibold text-white">Скачать приложение</h4>
+              <p class="text-xs text-gray-400 leading-relaxed mt-0.5">
+                Полнофункциональная версия для Android с поддержкой системных виджетов на экране
+              </p>
             </div>
           </div>
-          <i data-lucide="download" class="w-4 h-4 text-gray-400 group-hover:text-white transition-colors"></i>
-        </button>
+
+          <div id="apk-action-container" class="mt-3.5">
+            <button type="button" onclick="startApkDownloadWithHelp()" class="w-full py-2.5 px-4 rounded-xl bg-[#6C5DD3] hover:bg-[#5b4ec2] active:scale-[0.98] text-white text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm">
+              <i data-lucide="download" class="w-4 h-4"></i>
+              <span>Скачать</span>
+            </button>
+          </div>
+        </div>
 
         ${(!isPwa && !isNative) ? `
-        <!-- Вариант 2: Добавить на главный экран (только для обычного браузера) -->
-        <button type="button" onclick="triggerPwaInstall(); closeAppInstallOptionsModal();" class="w-full p-4 rounded-2xl bg-[#0F1117] border border-white/10 hover:border-[#6C5DD3]/50 hover:bg-[#1f222e] transition-all text-left group flex items-center justify-between cursor-pointer">
-          <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-xl bg-[#6C5DD3]/15 border border-[#6C5DD3]/30 flex items-center justify-center text-[#6C5DD3] group-hover:scale-105 transition-transform">
-              <i data-lucide="plus-square" class="w-5 h-5"></i>
+        <!-- Вариант 2: Добавить на главный экран -->
+        <div class="bg-[#1B1E2B] border border-white/[0.08] rounded-2xl p-4 transition-colors">
+          <div class="flex items-start gap-3">
+            <div class="w-8 h-8 rounded-xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center text-sky-400 flex-shrink-0 mt-0.5">
+              <i data-lucide="layout-grid" class="w-4 h-4"></i>
             </div>
-            <div>
-              <div class="text-xs font-bold text-white group-hover:text-[#6C5DD3] transition-colors">Добавить ярлык на рабочий стол</div>
-              <div class="text-[11px] text-gray-400">Быстрый доступ без скачивания файла</div>
+            <div class="flex-1 min-w-0">
+              <h4 class="text-sm font-semibold text-white">Добавить на главный экран</h4>
+              <p class="text-xs text-gray-400 leading-relaxed mt-0.5">
+                Быстрый запуск прямо с рабочего стола телефона без загрузки установочного файла
+              </p>
             </div>
           </div>
-          <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 group-hover:text-white transition-colors"></i>
-        </button>
+
+          <div class="mt-3.5">
+            <button type="button" onclick="triggerPwaInstall();" class="w-full py-2.5 px-4 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] active:scale-[0.98] text-white text-xs font-semibold border border-white/[0.08] flex items-center justify-center gap-2 transition-all cursor-pointer">
+              <i data-lucide="plus" class="w-4 h-4"></i>
+              <span>Добавить на экран</span>
+            </button>
+          </div>
+        </div>
         ` : ''}
       </div>
 
       <div class="pt-1">
-        <button type="button" onclick="closeAppInstallOptionsModal()" class="w-full py-2.5 rounded-xl text-gray-400 hover:text-white font-semibold text-xs text-center transition-all cursor-pointer">
+        <button type="button" onclick="closeAppInstallOptionsModal()" class="w-full py-1 text-gray-400 hover:text-white font-medium text-xs text-center transition-colors cursor-pointer">
           Закрыть
         </button>
       </div>
@@ -260,6 +317,7 @@ function openAppInstallOptionsModal() {
 function closeAppInstallOptionsModal() {
   const modal = document.getElementById('app-install-options-modal');
   if (modal) modal.classList.add('hidden');
+  if (typeof unlockBodyScroll === 'function') unlockBodyScroll();
 }
 
 // Автоматическая фоновая проверка раз в сутки при запуске (ТОЛЬКО ДЛЯ APK)
@@ -281,6 +339,7 @@ window.checkAppUpdates = checkAppUpdates;
 window.showUpdateAvailableModal = showUpdateAvailableModal;
 window.closeUpdateModal = closeUpdateModal;
 window.downloadApkDirectly = downloadApkDirectly;
+window.startApkDownloadWithHelp = startApkDownloadWithHelp;
 window.triggerPwaInstall = triggerPwaInstall;
 window.openAppInstallOptionsModal = openAppInstallOptionsModal;
 window.closeAppInstallOptionsModal = closeAppInstallOptionsModal;
