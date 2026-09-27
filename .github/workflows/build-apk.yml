@@ -105,12 +105,50 @@ jobs:
 
           npx cap sync android
 
+          # Внедряем регистрацию GoogleAuth в MainActivity.java (обязательно для Android в Capacitor 6)
+          MAIN_ACTIVITY="android/app/src/main/java/com/budget/family/MainActivity.java"
+          if [ -f "$MAIN_ACTIVITY" ]; then
+            echo "Настройка MainActivity.java для GoogleAuth..."
+            cat << 'EOF' > "$MAIN_ACTIVITY"
+package com.budget.family;
+
+import android.os.Bundle;
+import com.getcapacitor.BridgeActivity;
+import com.codetrixstudio.capacitor.GoogleAuth.GoogleAuth;
+
+public class MainActivity extends BridgeActivity {
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        registerPlugin(GoogleAuth.class);
+        super.onCreate(savedInstanceState);
+    }
+}
+EOF
+          fi
+
           # Внедряем server_client_id в strings.xml для плагина GoogleAuth на Android
           STRINGS_XML="android/app/src/main/res/values/strings.xml"
           if [ -f "$STRINGS_XML" ]; then
             if ! grep -q "server_client_id" "$STRINGS_XML"; then
               echo "Добавление server_client_id в strings.xml..."
               sed -i 's|</resources>|    <string name="server_client_id">129164761119-0collp5th27qd9o4ah8dronfctcfp3pv.apps.googleusercontent.com</string>\n</resources>|' "$STRINGS_XML"
+            fi
+          fi
+
+          # Гарантируем подключение плагина google-services в android/app/build.gradle
+          APP_GRADLE="android/app/build.gradle"
+          if [ -f "$APP_GRADLE" ]; then
+            if ! grep -q "com.google.gms.google-services" "$APP_GRADLE"; then
+              echo "Подключение com.google.gms.google-services в app/build.gradle..."
+              echo "apply plugin: 'com.google.gms.google-services'" >> "$APP_GRADLE"
+            fi
+          fi
+
+          ROOT_GRADLE="android/build.gradle"
+          if [ -f "$ROOT_GRADLE" ]; then
+            if ! grep -q "com.google.gms:google-services" "$ROOT_GRADLE"; then
+              echo "Добавление google-services classpath в корневой build.gradle..."
+              sed -i "/dependencies {/a \        classpath 'com.google.gms:google-services:4.4.2'" "$ROOT_GRADLE"
             fi
           fi
 

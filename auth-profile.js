@@ -105,9 +105,10 @@ async function loginWithGoogle() {
         if (toast) toast.classList.add('hidden');
         // Если пользователь сам отменил или закрыл окно выбора аккаунта
         const errStr = String(signErr?.message || signErr || '');
-        if (errStr.includes('cancel') || errStr.includes('12501') || errStr.includes('closed')) {
+        if (errStr.includes('cancel') || errStr.includes('12501') || errStr.includes('closed') || errStr.includes('abort')) {
           return;
         }
+        console.error('GoogleAuth.signIn error details:', signErr);
         throw signErr;
       }
 
