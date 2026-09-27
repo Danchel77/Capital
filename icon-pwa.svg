@@ -43,26 +43,26 @@
   <rect width="512" height="512" fill="url(#pwaIconBgGrad)"/>
 
   <!-- 2. Фоновый рассеянный ореол свечения -->
-  <circle cx="256" cy="256" r="190" fill="url(#pwaIconGlow)"/>
+  <circle cx="256" cy="256" r="140" fill="url(#pwaIconGlow)"/>
 
   <!-- 3. Тончайшая внутренняя кристаллическая грань -->
-  <polygon points="256,150 362,256 256,362 150,256"
+  <polygon points="256,192 320,256 256,320 192,256"
            fill="rgba(108, 93, 211, 0.05)"
            stroke="rgba(255, 255, 255, 0.14)"
-           stroke-width="3"
+           stroke-width="2.5"
            stroke-linejoin="miter"
            stroke-miterlimit="10"/>
 
-  <!-- 4. Основной геометрический ромб баланса (крупный, идентичный APK) -->
-  <polygon points="256,96 416,256 256,416 96,256"
+  <!-- 4. Основной геометрический ромб баланса (идентичный APK) -->
+  <polygon points="256,156 356,256 256,356 156,256"
            fill="none"
            stroke="url(#pwaIconDiamondGrad)"
-           stroke-width="22"
+           stroke-width="18"
            stroke-linejoin="miter"
            stroke-miterlimit="10"/>
 
   <!-- 5. Ослепительная вершина-искра -->
-  <circle cx="256" cy="96" r="5.5" fill="#FFFFFF"/>
+  <circle cx="256" cy="156" r="4" fill="#FFFFFF"/>
 
   <!-- 6. Минималистичный и контрастный бейдж Web / PWA в правом нижнем углу -->
   <g id="pwaBadge" filter="url(#pwaBadgeDropShadow)">

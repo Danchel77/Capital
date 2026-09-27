@@ -471,6 +471,9 @@ function renderBudgetTab() {
   renderBudgetCategoryLimits(currentMonthItems, plan.categoryLimits || {});
 
   if (typeof lucide !== 'undefined') lucide.createIcons();
+  if (typeof window.syncWidgetData === 'function') {
+    window.syncWidgetData();
+  }
 }
 
 // Вспомогательная функция для расчета статуса разового/распределенного платежа в конкретном месяце

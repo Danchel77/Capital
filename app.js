@@ -55,19 +55,18 @@ if (currentAuth && typeof currentAuth.onAuthStateChanged === 'function') {
       await window.fetchAllData(false);
     }
 
-    // Проверяем вызов через системный ярлык/виджет быстрого добавления (PWA Shortcut)
+    // Проверяем вызов через системный ярлык/виджет быстрого добавления (PWA Shortcut / APK Widget)
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('action') === 'new-expense') {
-      switchTab('transactions');
-      setTimeout(() => {
-        const formContainer = document.getElementById('tx-form-container');
-        if (formContainer && formContainer.classList.contains('hidden')) {
-          if (typeof window.toggleForm === 'function') {
-            window.toggleForm('tx-form-container', 'tx-submit-btn', 'Сохранить', 'tx-form', 'tx');
-          }
-        }
-      }, 250);
-      window.history.replaceState({}, document.title, window.location.pathname);
+    if (urlParams.get('action') === 'new-expense' || window._pendingAction === 'new-expense') {
+      window._pendingAction = null;
+      if (typeof window.triggerQuickNewExpense === 'function') {
+        window.triggerQuickNewExpense();
+      } else {
+        switchTab('transactions');
+      }
+      if (urlParams.has('action')) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
     } else {
       // Восстанавливаем сохраненную вкладку или открываем бюджет по умолчанию
       const savedTab = localStorage.getItem('budget_active_tab') || 'budget';

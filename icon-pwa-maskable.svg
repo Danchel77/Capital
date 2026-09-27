@@ -43,26 +43,26 @@
   <rect width="512" height="512" fill="url(#maskPwaBgGrad)"/>
 
   <!-- Ореол свечения в безопасной зоне 66% (центр 256, 256) -->
-  <circle cx="256" cy="256" r="190" fill="url(#maskPwaGlow)"/>
+  <circle cx="256" cy="256" r="140" fill="url(#maskPwaGlow)"/>
 
   <!-- Тонкая внутренняя грань -->
-  <polygon points="256,150 362,256 256,362 150,256"
+  <polygon points="256,192 320,256 256,320 192,256"
            fill="rgba(108, 93, 211, 0.05)"
-           stroke="rgba(255, 255, 255, 0.12)"
-           stroke-width="3"
+           stroke="rgba(255, 255, 255, 0.14)"
+           stroke-width="2.5"
            stroke-linejoin="miter"
            stroke-miterlimit="10"/>
 
-  <!-- Основной ромб баланса (крупный, идентичный нативной иконке APK) -->
-  <polygon points="256,96 416,256 256,416 96,256"
+  <!-- Основной ромб баланса (идентичный APK) -->
+  <polygon points="256,156 356,256 256,356 156,256"
            fill="none"
            stroke="url(#maskPwaDiamondGrad)"
-           stroke-width="22"
+           stroke-width="18"
            stroke-linejoin="miter"
            stroke-miterlimit="10"/>
 
   <!-- Искра в вершине -->
-  <circle cx="256" cy="96" r="5.5" fill="#FFFFFF"/>
+  <circle cx="256" cy="156" r="4" fill="#FFFFFF"/>
 
   <!-- Лаконичный значок интернета в правом нижнем углу (внутри безопасной маски) -->
   <g id="maskPwaBadge" filter="url(#maskPwaBadgeShadow)">

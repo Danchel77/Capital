@@ -42,7 +42,7 @@ function isPwaStandalone() {
   }
 }
 
-// 2. Расчет живых данных для виджета
+// 2. Расчет живых данных для виджета (строго идентично вкладке «Бюджет»)
 function getLiveWidgetData() {
   const today = new Date();
   const plan = window.Cache?.budgetPlan || {};
@@ -53,34 +53,45 @@ function getLiveWidgetData() {
   const targetMonth = today.getMonth();
   const targetMonthKey = `${targetYear}-${String(targetMonth + 1).padStart(2, '0')}`;
 
+  const startOfMonth = new Date(targetYear, targetMonth, 1, 0, 0, 0, 0);
+  const endOfMonth = new Date(targetYear, targetMonth + 1, 0, 23, 59, 59, 999);
+  const startOfMonthTime = startOfMonth.getTime();
+  const endOfMonthTime = endOfMonth.getTime();
+
   const dayOfWeek = today.getDay();
   const diffToMonday = (dayOfWeek + 6) % 7;
-  const startOfWeek = new Date(targetYear, targetMonth, today.getDate() - diffToMonday, 0, 0, 0, 0);
-  const endOfWeek = new Date(targetYear, targetMonth, today.getDate() - diffToMonday + 6, 23, 59, 59, 999);
+  const startOfWeek = new Date(today.getFullYear(), today.getMonth(), today.getDate() - diffToMonday, 0, 0, 0, 0);
+  const endOfWeek = new Date(today.getFullYear(), today.getMonth(), today.getDate() - diffToMonday + 6, 23, 59, 59, 999);
   const startOfWeekTime = startOfWeek.getTime();
   const endOfWeekTime = endOfWeek.getTime();
 
   let monthlySpent = 0;
   let weeklySpent = 0;
 
+  // Извлекаем операции текущего месяца
   const currentMonthObj = (window.Cache?.transactions || []).find(m => m.id === targetMonthKey);
   if (currentMonthObj && Array.isArray(currentMonthObj.items)) {
     currentMonthObj.items.forEach(tx => {
       const isExpense = tx.type === 'Расход' || tx.type === 'expense' || String(tx.type || '').trim().toLowerCase() === 'расход';
       const isExcluded = !!(tx.excludeFromBudget || tx.isExcludedFromBudget);
       if (!isExpense || isExcluded) return;
-      const val = typeof tx.amount === 'number' ? tx.amount : (parseFloat(String(tx.amount || 0).replace(/\s/g, '').replace(/,/g, '.')) || 0);
-      if (val <= 0) return;
-      monthlySpent += val;
 
-      const txTime = tx.dayTimestamp || tx.timestamp || 0;
-      if (txTime >= startOfWeekTime && txTime <= endOfWeekTime) {
-        weeklySpent += val;
+      const val = typeof tx.amount === 'number'
+        ? tx.amount
+        : (parseFloat(String(tx.amount || 0).replace(/\s/g, '').replace(/,/g, '.')) || 0);
+      if (val <= 0) return;
+
+      const txTime = tx.dayTimestamp || tx.timestamp || (tx.rawDate ? (typeof window.parseAnyDate === 'function' ? window.parseAnyDate(tx.rawDate)?.getTime() : new Date(tx.rawDate).getTime()) : 0);
+      if (txTime >= startOfMonthTime && txTime <= endOfMonthTime) {
+        monthlySpent += val;
+        if (txTime >= startOfWeekTime && txTime <= endOfWeekTime) {
+          weeklySpent += val;
+        }
       }
     });
   }
 
-  // Если начало недели в прошлом месяце
+  // Если текущая неделя началась в прошлом месяце
   const startWeekMonthKey = `${startOfWeek.getFullYear()}-${String(startOfWeek.getMonth() + 1).padStart(2, '0')}`;
   if (startWeekMonthKey !== targetMonthKey) {
     const prevMonthObj = (window.Cache?.transactions || []).find(m => m.id === startWeekMonthKey);
@@ -89,10 +100,15 @@ function getLiveWidgetData() {
         const isExpense = tx.type === 'Расход' || tx.type === 'expense' || String(tx.type || '').trim().toLowerCase() === 'расход';
         const isExcluded = !!(tx.excludeFromBudget || tx.isExcludedFromBudget);
         if (!isExpense || isExcluded) return;
+
+        const val = typeof tx.amount === 'number'
+          ? tx.amount
+          : (parseFloat(String(tx.amount || 0).replace(/\s/g, '').replace(/,/g, '.')) || 0);
+        if (val <= 0) return;
+
         const txTime = tx.dayTimestamp || tx.timestamp || 0;
         if (txTime >= startOfWeekTime && txTime <= endOfWeekTime) {
-          const val = typeof tx.amount === 'number' ? tx.amount : (parseFloat(String(tx.amount || 0).replace(/\s/g, '').replace(/,/g, '.')) || 0);
-          if (val > 0) weeklySpent += val;
+          weeklySpent += val;
         }
       });
     }
@@ -111,6 +127,8 @@ function getLiveWidgetData() {
   const hours = String(today.getHours()).padStart(2, '0');
   const minutes = String(today.getMinutes()).padStart(2, '0');
 
+  const bgOpacity = parseInt(localStorage.getItem('budget_widget_bg_opacity') ?? '75', 10);
+
   return {
     weeklyLimit,
     weeklySpent,
@@ -126,6 +144,7 @@ function getLiveWidgetData() {
     monthlyOverbudget: monthlySpent > monthlyLimit && monthlyLimit > 0,
     dailyBudget,
     daysRemaining,
+    bgOpacity,
     updatedAt: `${hours}:${minutes}`,
     timestamp: Date.now()
   };
@@ -159,7 +178,7 @@ function syncWidgetData() {
 }
 
 // 4. Генерация SVG для кругового индикатора
-function renderWidgetCircleSvg(pct, color, size = 52, strokeWidth = 5.5) {
+function renderWidgetCircleSvg(pct, color, size = 42, strokeWidth = 4.2) {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const clampedPct = Math.min(100, Math.max(0, pct));
@@ -168,7 +187,7 @@ function renderWidgetCircleSvg(pct, color, size = 52, strokeWidth = 5.5) {
   return `
     <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" class="transform -rotate-90 flex-shrink-0">
       <circle cx="${size / 2}" cy="${size / 2}" r="${radius}" 
-              stroke="rgba(255, 255, 255, 0.08)" stroke-width="${strokeWidth}" fill="transparent" />
+              stroke="rgba(255, 255, 255, 0.15)" stroke-width="${strokeWidth}" fill="transparent" />
       <circle cx="${size / 2}" cy="${size / 2}" r="${radius}" 
               stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" fill="transparent"
               stroke-dasharray="${circumference}" stroke-dashoffset="${offset}"
@@ -177,127 +196,132 @@ function renderWidgetCircleSvg(pct, color, size = 52, strokeWidth = 5.5) {
   `;
 }
 
-// 5. Рендеринг Варианта 1: Полный виджет (4x2) - цельный, без обрезания цифр
+// 5. Рендеринг Варианта 1: 4×1 виджет (Недельный пульс + Шкала месяца + Кнопка трат)
 function renderFullWidgetPreviewHtml(data) {
   const format = typeof window.formatMoney === 'function' ? window.formatMoney : (n) => `${Math.round(n).toLocaleString('ru-RU')} ₽`;
-  const weekColor = data.weeklyOverbudget ? '#FF453A' : '#30D158';
-  const monthColor = data.monthlyOverbudget ? '#FF453A' : '#6C5DD3';
+  const weekColor = data.weeklyOverbudget ? '#FF453A' : (data.weeklyPct >= 80 ? '#FF9F0A' : '#30D158');
+  const monthColor = data.monthlyOverbudget ? '#FF453A' : (data.monthlyPct >= 80 ? '#FF9F0A' : '#30D158');
+  const bgOpacity = (data.bgOpacity !== undefined ? data.bgOpacity : 75) / 100;
 
   return `
-    <div class="relative bg-gradient-to-br from-[#1A1D27] to-[#12151E] border border-white/10 rounded-[28px] p-4 sm:p-5 shadow-2xl text-white select-none overflow-hidden">
-      <!-- Деликатный фоновый свет -->
-      <div class="absolute -top-12 -right-12 w-36 h-36 bg-[#6C5DD3]/15 rounded-full blur-2xl pointer-events-none"></div>
-
-      <!-- Верхняя строка: Логотип + Бейдж + Кнопка быстрого расхода -->
-      <div class="flex items-center justify-between gap-2 mb-3.5 pb-2.5 border-b border-white/5">
-        <div class="flex items-center gap-2 min-w-0">
-          <div class="w-6 h-6 rounded-lg bg-[#6C5DD3]/25 flex items-center justify-center text-[#8C7DFF] flex-shrink-0">
-            <i data-lucide="wallet" class="w-3.5 h-3.5"></i>
+    <div class="relative w-full rounded-2xl border transition-all duration-300 select-none overflow-hidden" 
+         style="background-color: rgba(22, 24, 34, ${bgOpacity}); border-color: rgba(255, 255, 255, ${Math.min(0.2, bgOpacity * 0.25)});">
+      
+      <div class="p-3 flex items-center justify-between gap-2.5">
+        <!-- 1. Неделя: Круговой пульс + сумма -->
+        <div class="flex items-center gap-2 min-w-0 flex-shrink-0">
+          <div class="relative flex items-center justify-center flex-shrink-0">
+            ${renderWidgetCircleSvg(data.weeklyPct, weekColor, 38, 3.8)}
+            <span class="absolute text-[9px] font-black text-white font-mono drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">${data.weeklyPct}%</span>
           </div>
-          <span class="text-xs font-bold text-gray-200 tracking-tight truncate">Семейный бюджет</span>
-          <span class="text-[9px] font-semibold bg-[#6C5DD3]/20 text-[#8C7DFF] border border-[#6C5DD3]/30 px-1.5 py-0.2 rounded-full flex-shrink-0">4×2</span>
+          <div class="min-w-0">
+            <span class="text-[9px] font-bold text-gray-400 uppercase tracking-wide block leading-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">Неделя</span>
+            <span class="text-[13px] font-bold text-white block leading-tight mt-0.5 tracking-tight drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] truncate">${format(data.weeklySpent)}</span>
+            <span class="text-[9px] text-[#8898AA] block leading-none truncate drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">из ${format(data.weeklyLimit)}</span>
+          </div>
         </div>
-        
-        <button type="button" onclick="triggerWidgetAddExpense()" class="px-2.5 py-1 rounded-xl bg-gradient-to-r from-[#6C5DD3] to-[#8C7DFF] hover:opacity-95 active:scale-95 text-white text-[11px] font-bold shadow-md shadow-[#6C5DD3]/25 flex items-center gap-1 cursor-pointer transition-all flex-shrink-0">
+
+        <!-- Разделитель -->
+        <div class="w-[1px] h-7 bg-white/15 flex-shrink-0"></div>
+
+        <!-- 2. Месяц: Траты как на вкладке Бюджет + линейная шкала -->
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center justify-between gap-1 leading-none">
+            <span class="text-[9px] font-bold text-gray-400 uppercase tracking-wide drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">Месяц:</span>
+            <span class="text-[11px] font-bold text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] truncate">${format(data.monthlySpent)} из ${format(data.monthlyLimit)}</span>
+          </div>
+
+          <!-- Линейный прогресс-бар месяца -->
+          <div class="w-full h-1.5 bg-white/15 rounded-full overflow-hidden my-1.5">
+            <div class="h-full rounded-full transition-all duration-700" style="width: ${Math.min(100, Math.max(0, data.monthlyPct))}%; background-color: ${monthColor};"></div>
+          </div>
+
+          <div class="flex items-center justify-between text-[9px] text-[#8898AA] leading-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+            <span class="truncate">Остаток: ${format(data.monthlyAvailable)}</span>
+            <span class="font-semibold text-gray-300 ml-1">${data.monthlyPct}%</span>
+          </div>
+        </div>
+
+        <!-- 3. Кнопка быстрого добавления трат -->
+        <button type="button" onclick="triggerQuickNewExpense()" class="px-2.5 py-2 rounded-xl bg-[#6C5DD3] hover:bg-[#5C4DC3] active:scale-95 text-white text-[11px] font-bold shadow-md shadow-[#6C5DD3]/30 flex items-center justify-center gap-1 cursor-pointer transition-all flex-shrink-0">
           <i data-lucide="plus" class="w-3 h-3"></i>
           <span>Расход</span>
         </button>
       </div>
-
-      <!-- Центральная область: Единая карточка, разделенная пополам без скученности -->
-      <div class="grid grid-cols-2 gap-4 items-center">
-        <!-- Левая колонка: Неделя -->
-        <div class="flex items-center gap-2.5 min-w-0">
-          <div class="relative flex-shrink-0 flex items-center justify-center">
-            ${renderWidgetCircleSvg(data.weeklyPct, weekColor, 50, 5)}
-            <span class="absolute text-[10px] font-black text-white font-mono">${data.weeklyPct}%</span>
-          </div>
-          <div class="min-w-0 flex-1">
-            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block truncate">Неделя</span>
-            <span class="text-[15px] font-black text-white block leading-tight mt-0.5 tracking-tight">${format(data.weeklyAvailable)}</span>
-            <span class="text-[9px] text-[#848D99] block truncate mt-0.5">из ${format(data.weeklyLimit)}</span>
-          </div>
-        </div>
-
-        <!-- Правая колонка: Месяц -->
-        <div class="flex items-center gap-2.5 min-w-0 border-l border-white/5 pl-3">
-          <div class="relative flex-shrink-0 flex items-center justify-center">
-            ${renderWidgetCircleSvg(data.monthlyPct, monthColor, 50, 5)}
-            <span class="absolute text-[10px] font-black text-white font-mono">${data.monthlyPct}%</span>
-          </div>
-          <div class="min-w-0 flex-1">
-            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block truncate">Месяц</span>
-            <span class="text-[15px] font-black text-white block leading-tight mt-0.5 tracking-tight">${format(data.monthlyAvailable)}</span>
-            <span class="text-[9px] text-[#848D99] block truncate mt-0.5">${format(data.dailyBudget)}/дн. • ${data.daysRemaining}д</span>
-          </div>
-        </div>
-      </div>
     </div>
   `;
 }
 
-// 6. Рендеринг Варианта 2: Компактный виджет (2x2)
+// 6. Рендеринг Варианта 2: 2×1 компактный виджет
 function renderCompactWidgetPreviewHtml(data) {
   const format = typeof window.formatMoney === 'function' ? window.formatMoney : (n) => `${Math.round(n).toLocaleString('ru-RU')} ₽`;
-  const monthColor = data.monthlyOverbudget ? '#FF453A' : '#6C5DD3';
+  const monthColor = data.monthlyOverbudget ? '#FF453A' : (data.monthlyPct >= 80 ? '#FF9F0A' : '#30D158');
+  const bgOpacity = (data.bgOpacity !== undefined ? data.bgOpacity : 75) / 100;
 
   return `
-    <div class="relative max-w-[260px] mx-auto bg-gradient-to-br from-[#1A1D27] to-[#12151E] border border-white/10 rounded-[28px] p-4 shadow-2xl text-white select-none overflow-hidden">
-      <!-- Деликатный фоновый свет -->
-      <div class="absolute -top-10 -right-10 w-28 h-28 bg-[#6C5DD3]/15 rounded-full blur-xl pointer-events-none"></div>
-
-      <!-- Шапка -->
-      <div class="flex items-center justify-between mb-2">
-        <div class="flex items-center gap-1.5">
-          <div class="w-5 h-5 rounded-md bg-[#6C5DD3]/25 flex items-center justify-center text-[#8C7DFF]">
-            <i data-lucide="wallet" class="w-3 h-3"></i>
-          </div>
-          <span class="text-xs font-bold text-gray-200">Остаток месяца</span>
-        </div>
-        <span class="text-[9px] font-semibold bg-[#6C5DD3]/20 text-[#8C7DFF] border border-[#6C5DD3]/30 px-1.5 py-0.2 rounded-full">2×2</span>
-      </div>
-
-      <!-- Центральный круговой индикатор с суммой -->
-      <div class="flex flex-col items-center justify-center my-2">
-        <div class="relative flex items-center justify-center mb-2">
-          ${renderWidgetCircleSvg(data.monthlyPct, monthColor, 78, 7)}
-          <div class="absolute flex flex-col items-center justify-center">
-            <span class="text-xs font-black text-white font-mono">${data.monthlyPct}%</span>
-            <span class="text-[8px] text-gray-400 uppercase font-bold">потрачено</span>
-          </div>
+    <div class="relative max-w-[260px] mx-auto rounded-2xl border transition-all duration-300 select-none overflow-hidden" 
+         style="background-color: rgba(22, 24, 34, ${bgOpacity}); border-color: rgba(255, 255, 255, ${Math.min(0.2, bgOpacity * 0.25)});">
+      
+      <div class="p-3 flex items-center justify-between gap-2.5">
+        <div class="relative flex items-center justify-center flex-shrink-0">
+          ${renderWidgetCircleSvg(data.monthlyPct, monthColor, 36, 3.6)}
+          <span class="absolute text-[8.5px] font-black text-white font-mono drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">${data.monthlyPct}%</span>
         </div>
 
-        <span class="text-[19px] font-black text-white tracking-tight leading-tight">${format(data.monthlyAvailable)}</span>
-        <span class="text-[11px] text-gray-400 mt-0.5">В день: ${format(data.dailyBudget)} • ${data.daysRemaining} дн.</span>
-      </div>
+        <div class="flex-1 min-w-0">
+          <span class="text-[9px] font-bold text-gray-400 uppercase tracking-wide block leading-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">Месяц</span>
+          <span class="text-[13px] font-bold text-white block leading-tight mt-0.5 tracking-tight drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] truncate">${format(data.monthlySpent)}</span>
+          <span class="text-[9px] text-[#8898AA] block leading-none truncate drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">из ${format(data.monthlyLimit)}</span>
+        </div>
 
-      <!-- Быстрая кнопка -->
-      <div class="mt-2 pt-2 border-t border-white/5 flex justify-center">
-        <button type="button" onclick="triggerWidgetAddExpense()" class="w-full py-1.5 rounded-xl bg-white/5 hover:bg-white/10 active:scale-95 text-xs font-bold text-[#A594FD] border border-white/10 flex items-center justify-center gap-1.5 cursor-pointer transition-all">
-          <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-          <span>Внести расход</span>
+        <button type="button" onclick="triggerQuickNewExpense()" class="w-8 h-8 rounded-xl bg-[#6C5DD3] hover:bg-[#5C4DC3] active:scale-95 text-white text-base font-bold shadow-md shadow-[#6C5DD3]/30 flex items-center justify-center cursor-pointer transition-all flex-shrink-0">
+          <i data-lucide="plus" class="w-4 h-4"></i>
         </button>
       </div>
     </div>
   `;
 }
 
-// 7. Быстрый переход к добавлению расхода
-function triggerWidgetAddExpense() {
+// 7. Быстрый переход к добавлению расхода из виджета или ярлыка
+function triggerQuickNewExpense() {
   if (typeof closeWidgetHubModal === 'function') closeWidgetHubModal();
   if (typeof closeProfileModal === 'function') closeProfileModal();
+  if (typeof closeCustomDatePicker === 'function') closeCustomDatePicker();
 
   if (typeof window.switchTab === 'function') {
     window.switchTab('transactions');
   }
-  setTimeout(() => {
+
+  const openExpenseForm = () => {
     const formContainer = document.getElementById('tx-form-container');
     if (formContainer && formContainer.classList.contains('hidden')) {
       if (typeof window.toggleForm === 'function') {
         window.toggleForm('tx-form-container', 'tx-submit-btn', 'Сохранить', 'tx-form', 'tx');
+      } else {
+        formContainer.classList.remove('hidden');
       }
     }
-  }, 200);
+
+    const typeSelect = document.getElementById('tx-type');
+    if (typeSelect) {
+      typeSelect.value = 'Расход';
+      typeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    const amountInput = document.getElementById('tx-amount');
+    if (amountInput) {
+      amountInput.focus();
+      amountInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  };
+
+  openExpenseForm();
+  setTimeout(openExpenseForm, 180);
+  setTimeout(openExpenseForm, 350);
+}
+
+function triggerWidgetAddExpense() {
+  triggerQuickNewExpense();
 }
 
 // 8. Модальное окно управления и предпросмотра виджетов (Widget Hub)
@@ -330,11 +354,29 @@ function setWidgetHubTab(tab) {
   renderWidgetHubContent();
 }
 
+function handleWidgetOpacityChange(val) {
+  const opacity = parseInt(val, 10);
+  localStorage.setItem('budget_widget_bg_opacity', opacity);
+  
+  const valLabel = document.getElementById('widget-opacity-val-label');
+  if (valLabel) valLabel.textContent = `${opacity}%`;
+
+  syncWidgetData();
+  
+  const previewContainer = document.getElementById('widget-preview-area');
+  if (previewContainer) {
+    const data = getLiveWidgetData();
+    previewContainer.innerHTML = currentWidgetTab === 'full' ? renderFullWidgetPreviewHtml(data) : renderCompactWidgetPreviewHtml(data);
+    if (typeof lucide !== 'undefined') lucide.createIcons({ root: previewContainer });
+  }
+}
+
 function renderWidgetHubContent() {
   const modal = document.getElementById('widget-hub-modal');
   if (!modal) return;
 
   const data = getLiveWidgetData();
+  const currentOpacity = data.bgOpacity !== undefined ? data.bgOpacity : 75;
 
   modal.innerHTML = `
     <div class="relative bg-[#161822] border border-white/10 rounded-3xl p-5 sm:p-6 max-w-sm w-full shadow-2xl space-y-4 my-auto animate-in fade-in zoom-in duration-200">
@@ -346,7 +388,7 @@ function renderWidgetHubContent() {
           </div>
           <div>
             <h3 class="text-base font-bold text-white leading-tight">Виджеты на рабочий стол</h3>
-            <span class="text-xs text-gray-400">Остаток недели и месяца на экране</span>
+            <span class="text-xs text-gray-400">Шкалы недели и месяца на экране</span>
           </div>
         </div>
         <button type="button" onclick="closeWidgetHubModal()" class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-all cursor-pointer">
@@ -354,25 +396,47 @@ function renderWidgetHubContent() {
         </button>
       </div>
 
-      <!-- Переключатель вариантов виджета -->
+      <!-- Переключатель форматов 4x1 и 2x1 -->
       <div class="flex p-1 bg-[#0F1118] rounded-2xl border border-white/5">
         <button type="button" onclick="setWidgetHubTab('full')" class="flex-1 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${currentWidgetTab === 'full' ? 'bg-[#6C5DD3] text-white shadow-md' : 'text-gray-400 hover:text-white'}">
           <i data-lucide="columns-2" class="w-3.5 h-3.5"></i>
-          <span>Полный (4×2)</span>
+          <span>Строка (4×1)</span>
         </button>
         <button type="button" onclick="setWidgetHubTab('compact')" class="flex-1 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${currentWidgetTab === 'compact' ? 'bg-[#6C5DD3] text-white shadow-md' : 'text-gray-400 hover:text-white'}">
           <i data-lucide="square" class="w-3.5 h-3.5"></i>
-          <span>Компактный (2×2)</span>
+          <span>Компактный (2×1)</span>
         </button>
       </div>
 
-      <!-- Предпросмотр выбранного виджета -->
-      <div class="pt-1">
-        ${currentWidgetTab === 'full' ? renderFullWidgetPreviewHtml(data) : renderCompactWidgetPreviewHtml(data)}
+      <!-- Предпросмотр с имитацией обоев рабочего стола для оценки прозрачности -->
+      <div class="relative rounded-2xl p-3 bg-gradient-to-tr from-slate-900 via-indigo-950 to-slate-900 border border-white/10 shadow-inner overflow-hidden">
+        <div class="absolute inset-0 opacity-40 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none"></div>
+        <div id="widget-preview-area" class="relative z-10">
+          ${currentWidgetTab === 'full' ? renderFullWidgetPreviewHtml(data) : renderCompactWidgetPreviewHtml(data)}
+        </div>
       </div>
 
-      <!-- Единственная понятная кнопка добавления на экран -->
-      <div class="pt-2">
+      <!-- Настройка прозрачности фона виджета -->
+      <div class="bg-[#0F1118] p-3.5 rounded-2xl border border-white/5 space-y-2">
+        <div class="flex items-center justify-between text-xs">
+          <div class="flex items-center gap-1.5 text-gray-300 font-semibold">
+            <i data-lucide="sliders" class="w-3.5 h-3.5 text-[#8C7DFF]"></i>
+            <span>Прозрачность фона</span>
+          </div>
+          <span id="widget-opacity-val-label" class="text-xs font-bold text-[#8C7DFF] font-mono">${currentOpacity}%</span>
+        </div>
+        <input type="range" min="0" max="100" step="5" value="${currentOpacity}" 
+               oninput="handleWidgetOpacityChange(this.value)"
+               class="w-full accent-[#6C5DD3] bg-white/10 h-1.5 rounded-lg appearance-none cursor-pointer">
+        <div class="flex justify-between text-[10px] text-gray-500 font-medium">
+          <span>0% (Прозрачный)</span>
+          <span>50%</span>
+          <span>100% (Плотный)</span>
+        </div>
+      </div>
+
+      <!-- Кнопка добавления на экран -->
+      <div class="pt-1">
         <button type="button" onclick="handleWidgetPinRequest('${currentWidgetTab}')" class="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-[#6C5DD3] to-[#8C7DFF] hover:opacity-95 active:scale-95 text-white text-xs font-bold shadow-lg shadow-[#6C5DD3]/30 flex items-center justify-center gap-2 cursor-pointer transition-all">
           <i data-lucide="plus-circle" class="w-4 h-4"></i>
           <span>Добавить виджет на экран</span>
@@ -669,6 +733,8 @@ window.syncWidgetData = syncWidgetData;
 window.openWidgetHubModal = openWidgetHubModal;
 window.closeWidgetHubModal = closeWidgetHubModal;
 window.setWidgetHubTab = setWidgetHubTab;
+window.handleWidgetOpacityChange = handleWidgetOpacityChange;
+window.triggerQuickNewExpense = triggerQuickNewExpense;
 window.triggerWidgetAddExpense = triggerWidgetAddExpense;
 window.checkAndShowWidgetPrompt = checkAndShowWidgetPrompt;
 window.hideWidgetBanner = hideWidgetBanner;
