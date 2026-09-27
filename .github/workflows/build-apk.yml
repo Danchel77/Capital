@@ -40,19 +40,23 @@ jobs:
 
           # Подготовка постоянного Keystore подписи (один постоянный ключ для всего проекта)
           mkdir -p ~/.android
-          if [ -f "debug.keystore" ]; then
+          if [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+            echo "Использование ключа из GitHub Secrets (KEYSTORE_BASE64)..."
+            echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > debug.keystore
+            cp debug.keystore ~/.android/debug.keystore
+          elif [ -f "debug.keystore" ]; then
             echo "Использование постоянного debug.keystore из репозитория..."
             cp debug.keystore ~/.android/debug.keystore
           else
-            echo "Внимание: debug.keystore не найден в корне. Создаем постоянный ключ..."
+            echo "Внимание: debug.keystore не найден в репозитории. Создаем постоянный ключ..."
             keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=FamilyBudget Debug,O=App,C=RU"
             cp debug.keystore ~/.android/debug.keystore
-            # Автоматически коммитим в репозиторий, чтобы он никогда не менялся
+            # Автоматически сохраняем ключ в репозиторий GitHub навсегда
             git config --global user.name "github-actions[bot]"
             git config --global user.email "github-actions[bot]@users.noreply.github.com"
             git add debug.keystore
-            git commit -m "chore: persist permanent debug.keystore" || true
-            git push origin HEAD || true
+            git commit -m "chore: persist permanent debug.keystore for Google Auth" || true
+            git push origin HEAD || echo "Не удалось сделать git push (проверьте права токена), но ключ сохранен в артефакты"
           fi
 
           if [ ! -d "android" ]; then
@@ -139,7 +143,15 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      - name: 9. Публикация APK в GitHub Releases (постоянная ссылка)
+      - name: 9. Сохранение файла ключа подписи (debug.keystore) в артефакты
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-keystore
+          path: debug.keystore
+          if-no-files-found: ignore
+          retention-days: 90
+
+      - name: 10. Публикация APK в GitHub Releases (постоянная ссылка)
         uses: softprops/action-gh-release@v2
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.event_name == 'workflow_dispatch'
         with:
