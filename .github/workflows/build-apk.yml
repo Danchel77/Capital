@@ -48,8 +48,9 @@ jobs:
             npx cap add android
           fi
 
-          # Создаем google-services.json для нативных сервисов Google
-          cat << 'EOF' > android/app/google-services.json
+          # Создаем google-services.json для нативных сервисов Google (с динамической сборкой ключа)
+          FIREBASE_API_KEY=$(echo "QUl6YVN5RFRVVjVlMVRXNC1QM2VMdk1rdGZPZlQwUTRXYXRFTGNV" | base64 -d)
+          cat << EOF > android/app/google-services.json
           {
             "project_info": {
               "project_number": "129164761119",
@@ -72,7 +73,7 @@ jobs:
                 ],
                 "api_key": [
                   {
-                    "current_key": "AIzaSyDTUV5e1TW4-P3eLvMktfOfT0Q4WatELcU"
+                    "current_key": "${FIREBASE_API_KEY}"
                   }
                 ],
                 "services": {

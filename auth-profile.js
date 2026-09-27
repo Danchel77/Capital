@@ -74,27 +74,33 @@ async function loginWithGoogle() {
           clientId: '129164761119-0collp5th27qd9o4ah8dronfctcfp3pv.apps.googleusercontent.com',
           serverClientId: '129164761119-0collp5th27qd9o4ah8dronfctcfp3pv.apps.googleusercontent.com',
           scopes: ['profile', 'email'],
-          grantOfflineAccess: true
+          grantOfflineAccess: false
         });
       } catch (e) {}
 
       try {
         const googleUser = await GoogleAuth.signIn();
-        const idToken = googleUser?.authentication?.idToken || googleUser?.idToken;
+        const idToken = googleUser?.authentication?.idToken || googleUser?.idToken || googleUser?.authentication?.id_token;
+        const accessToken = googleUser?.authentication?.accessToken || googleUser?.accessToken;
         
         if (idToken) {
-          const credential = firebase.auth.GoogleAuthProvider.credential(idToken);
+          const credential = firebase.auth.GoogleAuthProvider.credential(idToken, accessToken);
           await auth.signInWithCredential(credential);
           document.getElementById('toast-container')?.classList.add('hidden');
           return;
+        } else {
+          console.warn('GoogleAuth returned user without idToken:', googleUser);
+          throw new Error('Токен входа не получен от Google Play Services');
         }
       } catch (nativeErr) {
-        console.warn('Native GoogleAuth.signIn error, switching to Web OAuth fallback:', nativeErr);
+        document.getElementById('toast-container')?.classList.add('hidden');
+        console.warn('Native GoogleAuth.signIn error:', nativeErr);
         const rawMsg = nativeErr?.message || nativeErr?.errorMessage || String(nativeErr || '');
         if (rawMsg.includes('cancel') || rawMsg.includes('12501')) {
-          document.getElementById('toast-container')?.classList.add('hidden');
           return;
         }
+        showToast('Ошибка нативного входа Google: ' + (nativeErr.message || rawMsg), true);
+        return; // Внутри нативного APK НЕ вызываем signInWithRedirect, чтобы не открывать браузер с белым экраном
       }
     }
 
