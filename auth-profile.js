@@ -85,45 +85,43 @@ async function loginWithGoogle() {
     const isNative = !!(window.Capacitor?.isNativePlatform());
     const GoogleAuth = window.Capacitor?.Plugins?.GoogleAuth;
 
-    // Внутри нативного APK Android: вызываем нативное системное окно Google One Tap
-    if (isNative && GoogleAuth) {
-      try {
-        await GoogleAuth.initialize({
-          clientId: '129164761119-0collp5th27qd9o4ah8dronfctcfp3pv.apps.googleusercontent.com',
-          scopes: ['profile', 'email'],
-          grantOfflineAccess: true
-        });
-      } catch (initErr) {
-        console.warn('GoogleAuth.initialize info:', initErr);
+    // Внутри нативного APK Android: вызываем исключительно нативное системное окно Google
+    if (isNative) {
+      if (!GoogleAuth) {
+        throw new Error('Плагин GoogleAuth не обнаружен в Capacitor APK');
       }
 
-      let googleUser = null;
-      let nativeFailed = false;
+      await GoogleAuth.initialize({
+        clientId: '129164761119-0collp5th27qd9o4ah8dronfctcfp3pv.apps.googleusercontent.com',
+        scopes: ['profile', 'email'],
+        grantOfflineAccess: true
+      });
 
+      let googleUser;
       try {
         googleUser = await GoogleAuth.signIn();
       } catch (signErr) {
+        const toast = document.getElementById('toast-container');
+        if (toast) toast.classList.add('hidden');
         const errStr = String(signErr?.message || signErr || '');
-        // Если пользователь сам закрыл окно выбора
         if (errStr.includes('cancel') || errStr.includes('12501') || errStr.includes('closed') || errStr.includes('abort')) {
-          const toast = document.getElementById('toast-container');
-          if (toast) toast.classList.add('hidden');
           return;
         }
-        console.warn('Native GoogleAuth.signIn failed, using web fallback:', signErr);
-        nativeFailed = true;
+        console.error('Нативная ошибка GoogleAuth:', signErr);
+        throw signErr;
       }
 
       const idToken = googleUser?.authentication?.idToken || googleUser?.idToken;
-      if (idToken && !nativeFailed) {
-        const credential = firebase.auth.GoogleAuthProvider.credential(idToken);
-        await auth.signInWithCredential(credential);
-        const toast = document.getElementById('toast-container');
-        if (toast) toast.classList.add('hidden');
-        showToast('Успешный вход через Google!');
-        return;
+      if (!idToken) {
+        throw new Error('Android не вернул токен idToken от Google');
       }
-      // Если нативный One Tap вернул ошибку - бесшовно переходим к веб-авторизации ниже
+
+      const credential = firebase.auth.GoogleAuthProvider.credential(idToken);
+      await auth.signInWithCredential(credential);
+      const toast = document.getElementById('toast-container');
+      if (toast) toast.classList.add('hidden');
+      showToast('Успешный вход через Google!');
+      return;
     }
 
     // В веб-браузере / PWA: используем стандартный Google Popup / Redirect

@@ -156,11 +156,35 @@ jobs:
             fi
           fi
 
-          # Гарантируем, что Gradle всегда использует именно наш постоянный debug.keystore
+          # Гарантируем явную привязку debug.keystore в signingConfigs app/build.gradle
           mkdir -p ~/.android
           cp debug.keystore ~/.android/debug.keystore 2>/dev/null || true
           mkdir -p android/app
           cp ~/.android/debug.keystore android/app/debug.keystore
+
+          node -e "
+            const fs = require('fs');
+            const gradlePath = 'android/app/build.gradle';
+            if (fs.existsSync(gradlePath)) {
+              let content = fs.readFileSync(gradlePath, 'utf8');
+              if (!content.includes('signingConfigs.debug.storeFile')) {
+                content = content.replace('buildTypes {', [
+                  'signingConfigs {',
+                  '    debug {',
+                  '        storeFile file(\"debug.keystore\")',
+                  '        storePassword \"android\"',
+                  '        keyAlias \"androiddebugkey\"',
+                  '        keyPassword \"android\"',
+                  '    }',
+                  '}',
+                  'buildTypes {'
+                ].join('\n'));
+                content = content.replace(/signingConfig signingConfigs\.debug/g, 'signingConfig signingConfigs.debug');
+                fs.writeFileSync(gradlePath, content);
+                console.log('Явная подпись signingConfigs.debug успешно внедрена в app/build.gradle');
+              }
+            }
+          "
 
       - name: 6. Проверка постоянных отпечатков SHA-1 и SHA-256
         run: |
@@ -177,6 +201,8 @@ jobs:
           ./gradlew assembleDebug --no-daemon --stacktrace
           cd ..
           cp android/app/build/outputs/apk/debug/app-debug.apk FamilyBudget.apk
+          echo "Отпечаток сертификата РЕАЛЬНОГО собранного APK:"
+          keytool -printcert -jarfile FamilyBudget.apk | grep -E "SHA1:|SHA256:" || true
 
       - name: 8. Загрузка готового APK в артефакты GitHub
         uses: actions/upload-artifact@v4
