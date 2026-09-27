@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "129164761119",
+    "project_id": "familybudget-4245a",
+    "storage_bucket": "familybudget-4245a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:129164761119:android:faa150210d218fc5655d2a",
+        "android_client_info": {
+          "package_name": "com.budget.family"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "129164761119-i7nik3hqli51teuakr0bc9uonvkd8ku9.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.budget.family",
+            "certificate_hash": "6f57ba10e6bde5b455d16a32817510e1eae0ba6c"
+          }
+        },
+        {
+          "client_id": "129164761119-0collp5th27qd9o4ah8dronfctcfp3pv.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDTUV5e1TW4-P3eLvMktfOfT0Q4WatELcU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "129164761119-0collp5th27qd9o4ah8dronfctcfp3pv.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
