@@ -1336,7 +1336,7 @@ function showDialog(title, message, isConfirm, callback, cancelCallback, customO
   if (!dialog) return;
   lockBodyScroll();
   document.getElementById('dialog-title').innerText = title;
-  document.getElementById('dialog-message').innerText = message;
+  document.getElementById('dialog-message').innerHTML = message;
   const btns = document.getElementById('dialog-buttons');
   btns.innerHTML = '';
 

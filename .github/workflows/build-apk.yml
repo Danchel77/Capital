@@ -166,6 +166,18 @@ jobs:
           "
 
           npx cap sync android
+          if [ -f "debug.keystore" ]; then
+            cp debug.keystore android/app/debug.keystore
+            cp debug.keystore ~/.android/debug.keystore
+          fi
+
+          # Прописываем server_client_id в strings.xml для плагина Google Auth
+          STRINGS_FILE="android/app/src/main/res/values/strings.xml"
+          if [ -f "$STRINGS_FILE" ]; then
+            if ! grep -q "server_client_id" "$STRINGS_FILE"; then
+              sed -i 's/<\/resources>/    <string name="server_client_id">129164761119-0collp5th27qd9o4ah8dronfctcfp3pv.apps.googleusercontent.com<\/string>\n<\/resources>/' "$STRINGS_FILE"
+            fi
+          fi
 
       - name: 6. Проверка отпечатка SHA-1
         run: |
