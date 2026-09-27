@@ -37,27 +37,34 @@ function normalizeAuthEmail(input) {
   return `${safeNickname || 'user'}@budget.local`;
 }
 
-// Проверка результатов авторизации через Redirect при перезагрузке (для PWA)
+// Проверка результатов авторизации через Redirect при перезагрузке и возврате в приложение
 if (typeof firebase !== 'undefined' && firebase.auth) {
-  window.addEventListener('DOMContentLoaded', () => {
+  const checkRedirectAuth = () => {
     try {
       firebase.auth().getRedirectResult().then(result => {
         if (result && result.user) {
-          if (document.getElementById('toast-container')) document.getElementById('toast-container').classList.add('hidden');
+          const toast = document.getElementById('toast-container');
+          if (toast) toast.classList.add('hidden');
           showToast('Успешный вход через Google!');
         }
       }).catch(err => {
-        if (err && err.code !== 'auth/popup-closed-by-user') {
+        if (err && err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
           console.warn('Google Auth Redirect error:', err);
         }
       });
     } catch (e) {}
+  };
+
+  window.addEventListener('DOMContentLoaded', checkRedirectAuth);
+  window.addEventListener('focus', checkRedirectAuth);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') checkRedirectAuth();
   });
 }
 
-// Вход через Google в 1 клик
+// Вход через Google (браузерный OAuth во всех окружениях)
 async function loginWithGoogle() {
-  showToast('Вход через Google...', false, true);
+  showToast('Открытие авторизации Google...', false, true);
 
   try {
     if (typeof firebase !== 'undefined' && firebase.auth) {
@@ -66,74 +73,39 @@ async function loginWithGoogle() {
       } catch (e) {}
     }
 
-    // Внутри APK приложения (Native Capacitor)
-    if (window.Capacitor?.isNativePlatform() && window.Capacitor?.Plugins?.GoogleAuth) {
-      const GoogleAuth = window.Capacitor.Plugins.GoogleAuth;
-      try {
-        await GoogleAuth.initialize({
-          clientId: '129164761119-0collp5th27qd9o4ah8dronfctcfp3pv.apps.googleusercontent.com',
-          serverClientId: '129164761119-0collp5th27qd9o4ah8dronfctcfp3pv.apps.googleusercontent.com',
-          scopes: ['profile', 'email'],
-          grantOfflineAccess: false
-        });
-      } catch (e) {}
-
-      try {
-        const googleUser = await GoogleAuth.signIn();
-        const idToken = googleUser?.authentication?.idToken || googleUser?.idToken || googleUser?.authentication?.id_token;
-        const accessToken = googleUser?.authentication?.accessToken || googleUser?.accessToken;
-        
-        if (idToken) {
-          const credential = firebase.auth.GoogleAuthProvider.credential(idToken, accessToken);
-          await auth.signInWithCredential(credential);
-          document.getElementById('toast-container')?.classList.add('hidden');
-          return;
-        } else {
-          console.warn('GoogleAuth returned user without idToken:', googleUser);
-          throw new Error('Токен входа не получен от Google Play Services');
-        }
-      } catch (nativeErr) {
-        document.getElementById('toast-container')?.classList.add('hidden');
-        console.warn('Native GoogleAuth.signIn error:', nativeErr);
-        const rawMsg = nativeErr?.message || nativeErr?.errorMessage || (typeof nativeErr === 'object' ? JSON.stringify(nativeErr) : String(nativeErr || ''));
-        if (rawMsg.includes('cancel') || rawMsg.includes('12501')) {
-          return;
-        }
-
-        if (typeof showDialog === 'function') {
-          showDialog(
-            'Ошибка авторизации Google',
-            '<b>Детали ответа от Google Play Services:</b><br><br>' +
-            '<code style="user-select:all; background:#12151C; padding:8px; border-radius:8px; color:#FF6B6B; font-size:11px; display:block; word-break:break-all;">' + escapeHtml(rawMsg || 'Неизвестная ошибка Google Play Services') + '</code><br>' +
-            '<i>Вы всегда можете войти моментально по Никнейму и Паролю без использования внешних сервисов.</i>',
-            false
-          );
-        } else {
-          showToast('Ошибка Google: ' + rawMsg, true);
-        }
-        return; // Внутри нативного APK НЕ вызываем signInWithRedirect, чтобы не открывать браузер с белым экраном
-      }
-    }
-
-    // Универсальная авторизация Firebase Google (работает в PWA и WebView)
     const provider = new firebase.auth.GoogleAuthProvider();
+    provider.addScope('profile');
+    provider.addScope('email');
+    provider.setCustomParameters({
+      prompt: 'select_account'
+    });
+
     try {
-      await auth.signInWithPopup(provider);
-    } catch (popupErr) {
-      if (popupErr.code === 'auth/popup-blocked' || popupErr.code === 'auth/popup-closed-by-user' || popupErr.code === 'auth/cancelled-popup-request') {
-        showToast('Перенаправление на вход Google...');
-        await auth.signInWithRedirect(provider);
+      const result = await auth.signInWithPopup(provider);
+      if (result && result.user) {
+        const toast = document.getElementById('toast-container');
+        if (toast) toast.classList.add('hidden');
+        showToast('Успешный вход через Google!');
         return;
       }
-      throw popupErr;
+    } catch (popupErr) {
+      console.warn('signInWithPopup blocked or failed, falling back to signInWithRedirect:', popupErr);
+      if (popupErr.code === 'auth/popup-closed-by-user' || popupErr.code === 'auth/cancelled-popup-request') {
+        const toast = document.getElementById('toast-container');
+        if (toast) toast.classList.add('hidden');
+        return;
+      }
+      showToast('Перенаправление на Google...');
+      await auth.signInWithRedirect(provider);
+      return;
     }
-    document.getElementById('toast-container')?.classList.add('hidden');
   } catch (err) {
-    document.getElementById('toast-container')?.classList.add('hidden');
+    const toast = document.getElementById('toast-container');
+    if (toast) toast.classList.add('hidden');
     console.warn('Google Auth Error:', err);
-    if (err.code !== 'auth/popup-closed-by-user' && err.message !== 'USER_CANCELLED') {
-      const errMsg = err.message || '';
-      showToast('Ошибка авторизации Google: ' + errMsg, true);
+    if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
+      const errMsg = err.message || String(err || '');
+      showToast('Ошибка авторизации: ' + errMsg, true);
     }
   }
 }
