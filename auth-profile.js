@@ -99,7 +99,26 @@ async function loginWithGoogle() {
         if (rawMsg.includes('cancel') || rawMsg.includes('12501')) {
           return;
         }
-        showToast('Ошибка нативного входа Google: ' + (nativeErr.message || rawMsg), true);
+
+        if (rawMsg.includes('10') || rawMsg.includes('DEVELOPER_ERROR') || rawMsg.includes('Something went wrong')) {
+          if (typeof showDialog === 'function') {
+            showDialog(
+              'Требуется SHA-1 в Firebase',
+              '<b>Почему возникла ошибка 10 (DEVELOPER_ERROR)?</b><br><br>' +
+              'Google Play Services блокирует вход, если SHA-1 ключ APK-файла не совпадает с добавленным в Firebase.<br><br>' +
+              '<b>Фиксированный SHA-1 ключ вашей сборки:</b><br>' +
+              '<code style="user-select:all; background:#222; padding:4px 8px; border-radius:6px; color:#6C5DD3; font-size:11px; display:inline-block; margin:6px 0;">DA:EE:4A:46:F1:73:6F:8B:37:7C:F6:CA:7C:41:3C:BF:48:87:C3:6C</code><br><br>' +
+              'Добавьте этот SHA-1 ключ в настройках Android-приложения в Firebase Console один раз.<br><br>' +
+              '<i>Также вы всегда можете войти моментально по Никнейму и Паролю без использования Google!</i>',
+              false
+            );
+          } else {
+            showToast('Ошибка Google (10): Добавьте SHA-1 ключ в Firebase Console', true);
+          }
+          return;
+        }
+
+        showToast('Ошибка входа Google: ' + rawMsg, true);
         return; // Внутри нативного APK НЕ вызываем signInWithRedirect, чтобы не открывать браузер с белым экраном
       }
     }
