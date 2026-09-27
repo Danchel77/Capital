@@ -32,14 +32,65 @@ jobs:
           npm install --no-audit --no-fund
           npm install @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6 @codetrix-studio/capacitor-google-auth --no-audit --no-fund
 
-      - name: 5. Генерация иконок и синхронизация Android платформы
+      - name: 5. Генерация иконок, google-services.json и синхронизация Android
         run: |
           mkdir -p www
           cp -r *.html *.js *.css *.json *.svg www/ 2>/dev/null || true
           if [ -d "public" ]; then cp -r public/* www/ 2>/dev/null || true; fi
+
+          # Подготовка постоянного Keystore подписи
+          mkdir -p ~/.android
+          if [ ! -f ~/.android/debug.keystore ]; then
+            keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=FamilyBudget Debug,O=App,C=RU"
+          fi
+
           if [ ! -d "android" ]; then
             npx cap add android
           fi
+
+          # Создаем google-services.json для нативных сервисов Google
+          cat << 'EOF' > android/app/google-services.json
+          {
+            "project_info": {
+              "project_number": "129164761119",
+              "project_id": "familybudget-4245a",
+              "storage_bucket": "familybudget-4245a.firebasestorage.app"
+            },
+            "client": [
+              {
+                "client_info": {
+                  "mobilesdk_app_id": "1:129164761119:android:faa150210d218fc5655d2a",
+                  "android_client_info": {
+                    "package_name": "com.budget.family"
+                  }
+                },
+                "oauth_client": [
+                  {
+                    "client_id": "129164761119-0collp5th27qd9o4ah8dronfctcfp3pv.apps.googleusercontent.com",
+                    "client_type": 3
+                  }
+                ],
+                "api_key": [
+                  {
+                    "current_key": "AIzaSyDTUV5e1TW4-P3eLvMktfOfT0Q4WatELcU"
+                  }
+                ],
+                "services": {
+                  "appinvite_service": {
+                    "other_platform_oauth_client": [
+                      {
+                        "client_id": "129164761119-0collp5th27qd9o4ah8dronfctcfp3pv.apps.googleusercontent.com",
+                        "client_type": 3
+                      }
+                    ]
+                  }
+                }
+              }
+            ],
+            "configuration_version": "1"
+          }
+          EOF
+
           echo "sdk.dir=$ANDROID_HOME" > android/local.properties
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses 2>/dev/null || true
 
@@ -73,14 +124,10 @@ jobs:
 
           npx cap sync android
 
-      - name: 6. Подготовка ключа подписи и вывод SHA-1 для Firebase
+      - name: 6. Проверка отпечатка SHA-1
         run: |
-          mkdir -p ~/.android
-          if [ ! -f ~/.android/debug.keystore ]; then
-            keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=FamilyBudget Debug,O=App,C=RU"
-          fi
           echo "============================================================"
-          echo "ОТПЕЧАТОК SHA-1 ДЛЯ ВСТАВКИ В FIREBASE CONSOLE:"
+          echo "ОТПЕЧАТОК SHA-1 ДЛЯ FIREBASE:"
           keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android | grep "SHA1:" || true
           echo "============================================================"
 

@@ -78,43 +78,27 @@ async function loginWithGoogle() {
         });
       } catch (e) {}
 
-      let googleUser;
       try {
-        googleUser = await GoogleAuth.signIn();
+        const googleUser = await GoogleAuth.signIn();
+        const idToken = googleUser?.authentication?.idToken || googleUser?.idToken;
+        
+        if (idToken) {
+          const credential = firebase.auth.GoogleAuthProvider.credential(idToken);
+          await auth.signInWithCredential(credential);
+          document.getElementById('toast-container')?.classList.add('hidden');
+          return;
+        }
       } catch (nativeErr) {
-        console.warn('Native GoogleAuth.signIn error:', nativeErr);
+        console.warn('Native GoogleAuth.signIn error, switching to Web OAuth fallback:', nativeErr);
         const rawMsg = nativeErr?.message || nativeErr?.errorMessage || String(nativeErr || '');
         if (rawMsg.includes('cancel') || rawMsg.includes('12501')) {
-          if (document.getElementById('toast-container')) document.getElementById('toast-container').classList.add('hidden');
-          return;
-        }
-        if (rawMsg.includes('Something went wrong') || rawMsg.includes('10') || rawMsg.includes('12500') || rawMsg.includes('DEVELOPER_ERROR')) {
           document.getElementById('toast-container')?.classList.add('hidden');
-          if (typeof showDialog === 'function') {
-            showDialog(
-              'Настройка Google Входа в APK',
-              'Для завершения настройки Google Входа в APK-файле укажите «Web Client ID» из Firebase Console (раздел Authentication -> Sign-in method -> Google -> Web SDK configuration).\n\nВы также можете легко и без дополнительных настроек войти по Никнейму и Паролю в 1 клик!',
-              false
-            );
-          }
           return;
         }
-        throw nativeErr;
       }
-
-      const idToken = googleUser?.authentication?.idToken || googleUser?.idToken;
-      
-      if (!idToken) {
-        throw new Error('Не удалось получить токен авторизации Google');
-      }
-
-      const credential = firebase.auth.GoogleAuthProvider.credential(idToken);
-      await auth.signInWithCredential(credential);
-      document.getElementById('toast-container')?.classList.add('hidden');
-      return;
     }
 
-    // В обычном PWA браузере (с авто-фоллбэком на Redirect если всплывающее окно заблокировано)
+    // Универсальная авторизация Firebase Google (работает в PWA и WebView)
     const provider = new firebase.auth.GoogleAuthProvider();
     try {
       await auth.signInWithPopup(provider);
