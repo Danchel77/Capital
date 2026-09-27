@@ -46,6 +46,7 @@ const widgetFullInfo = `<?xml version="1.0" encoding="utf-8"?>
     android:targetCellHeight="2"
     android:updatePeriodMillis="1800000"
     android:initialLayout="@layout/widget_full_layout"
+    android:previewLayout="@layout/widget_full_layout"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen"
     android:description="@string/widget_full_desc">
@@ -60,6 +61,7 @@ const widgetCompactInfo = `<?xml version="1.0" encoding="utf-8"?>
     android:targetCellHeight="2"
     android:updatePeriodMillis="1800000"
     android:initialLayout="@layout/widget_compact_layout"
+    android:previewLayout="@layout/widget_compact_layout"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen"
     android:description="@string/widget_compact_desc">
@@ -138,7 +140,8 @@ const widgetFullLayout = `<?xml version="1.0" encoding="utf-8"?>
                 android:textColor="#FFFFFF"
                 android:textSize="17sp"
                 android:textStyle="bold"
-                android:singleLine="true" />
+                android:maxLines="1"
+                android:ellipsize="end" />
 
             <TextView
                 android:id="@+id/tv_full_week_sub"
@@ -147,16 +150,18 @@ const widgetFullLayout = `<?xml version="1.0" encoding="utf-8"?>
                 android:text="из 0 ₽"
                 android:textColor="#7A8799"
                 android:textSize="10sp"
-                android:singleLine="true" />
+                android:maxLines="1"
+                android:ellipsize="end" />
         </LinearLayout>
 
-        <!-- Разделитель -->
-        <View
+        <!-- Разделитель (ImageView для совместимости с RemoteViews) -->
+        <ImageView
             android:layout_width="1dp"
             android:layout_height="36dp"
             android:background="#242838"
             android:layout_marginStart="8dp"
-            android:layout_marginEnd="12dp" />
+            android:layout_marginEnd="12dp"
+            android:contentDescription="@null" />
 
         <!-- Месяц -->
         <LinearLayout
@@ -181,7 +186,8 @@ const widgetFullLayout = `<?xml version="1.0" encoding="utf-8"?>
                 android:textColor="#FFFFFF"
                 android:textSize="17sp"
                 android:textStyle="bold"
-                android:singleLine="true" />
+                android:maxLines="1"
+                android:ellipsize="end" />
 
             <TextView
                 android:id="@+id/tv_full_month_sub"
@@ -190,7 +196,8 @@ const widgetFullLayout = `<?xml version="1.0" encoding="utf-8"?>
                 android:text="В день: 0 ₽"
                 android:textColor="#7A8799"
                 android:textSize="10sp"
-                android:singleLine="true" />
+                android:maxLines="1"
+                android:ellipsize="end" />
         </LinearLayout>
     </LinearLayout>
 </LinearLayout>`;
@@ -223,7 +230,8 @@ const widgetCompactLayout = `<?xml version="1.0" encoding="utf-8"?>
         android:textSize="21sp"
         android:textStyle="bold"
         android:layout_marginTop="4dp"
-        android:singleLine="true" />
+        android:maxLines="1"
+        android:ellipsize="end" />
 
     <TextView
         android:id="@+id/tv_compact_month_sub"
@@ -233,7 +241,8 @@ const widgetCompactLayout = `<?xml version="1.0" encoding="utf-8"?>
         android:textColor="#7A8799"
         android:textSize="11sp"
         android:layout_marginTop="2dp"
-        android:singleLine="true" />
+        android:maxLines="1"
+        android:ellipsize="end" />
 
     <TextView
         android:id="@+id/btn_compact_add_expense"
@@ -307,6 +316,7 @@ public class WidgetFullProvider extends AppWidgetProvider {
 
         // Клик на весь виджет открывает приложение
         Intent openAppIntent = new Intent(context, MainActivity.class);
+        openAppIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         PendingIntent openAppPending = PendingIntent.getActivity(
             context, 100, openAppIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
@@ -315,6 +325,7 @@ public class WidgetFullProvider extends AppWidgetProvider {
         // Клик на кнопку "+ Расход" открывает приложение с действием new-expense
         Intent addExpenseIntent = new Intent(context, MainActivity.class);
         addExpenseIntent.putExtra("action", "new-expense");
+        addExpenseIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         PendingIntent addExpensePending = PendingIntent.getActivity(
             context, 101, addExpenseIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
@@ -329,7 +340,8 @@ public class WidgetFullProvider extends AppWidgetProvider {
         DecimalFormat df = new DecimalFormat("#,##0", symbols);
         return df.format(Math.round(val)) + " ₽";
     }
-}`;
+}
+`;
 fs.writeFileSync(path.join(baseJava, 'WidgetFullProvider.java'), widgetFullProviderJava);
 
 const widgetCompactProviderJava = `package com.budget.family;
@@ -382,6 +394,7 @@ public class WidgetCompactProvider extends AppWidgetProvider {
         } catch (Exception ignored) {}
 
         Intent openAppIntent = new Intent(context, MainActivity.class);
+        openAppIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         PendingIntent openAppPending = PendingIntent.getActivity(
             context, 200, openAppIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
@@ -389,6 +402,7 @@ public class WidgetCompactProvider extends AppWidgetProvider {
 
         Intent addExpenseIntent = new Intent(context, MainActivity.class);
         addExpenseIntent.putExtra("action", "new-expense");
+        addExpenseIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         PendingIntent addExpensePending = PendingIntent.getActivity(
             context, 201, addExpenseIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
@@ -403,7 +417,8 @@ public class WidgetCompactProvider extends AppWidgetProvider {
         DecimalFormat df = new DecimalFormat("#,##0", symbols);
         return df.format(Math.round(val)) + " ₽";
     }
-}`;
+}
+`;
 fs.writeFileSync(path.join(baseJava, 'WidgetCompactProvider.java'), widgetCompactProviderJava);
 
 // 6. Capacitor Plugin для запроса закрепления виджета (requestPinAppWidget) и отправки данных

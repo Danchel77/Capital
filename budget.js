@@ -3416,6 +3416,7 @@ function toggleGoalPaceTooltip(goalId, event) {
     if (card) card.style.zIndex = '';
   });
   if (current && isHidden) {
+    window._hasOpenGoalPaceTooltips = true;
     current.classList.remove('hidden');
     const card = current.closest('.card');
     if (card) card.style.zIndex = '50';
@@ -3432,11 +3433,14 @@ function toggleGoalPaceTooltip(goalId, event) {
       current.classList.remove('top-full', 'mt-2');
       current.classList.add('bottom-full', 'mb-2');
     }
+  } else {
+    window._hasOpenGoalPaceTooltips = false;
   }
 }
 
 // Функция скрытия всех тултипов темпа целей
 function hideGoalPaceTooltips() {
+  if (!window._hasOpenGoalPaceTooltips) return;
   const visibleTooltips = document.querySelectorAll('.goal-pace-tooltip:not(.hidden)');
   if (visibleTooltips.length > 0) {
     visibleTooltips.forEach(el => {
@@ -3445,6 +3449,7 @@ function hideGoalPaceTooltips() {
       if (card) card.style.zIndex = '';
     });
   }
+  window._hasOpenGoalPaceTooltips = false;
 }
 
 // Глобальное закрытие тултипов темпа целей при клике во внешнюю область

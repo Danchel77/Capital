@@ -118,8 +118,6 @@ body::before { display: none; /* Убираем дешевое фоновое с
 .card {
   position: relative !important;
   contain: layout style;
-  will-change: background-color;
-  transform: translateZ(0);
   transition: background-color 0.06s ease;
 }
 @media (hover: hover) and (pointer: fine) {
@@ -385,13 +383,11 @@ nav button:active,
 }
 
 .fixed.animate-fade-in {
-  animation: modal-fade-in 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
-  will-change: opacity;
+  animation: modal-fade-in 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 .fixed.animate-fade-in > div {
-  animation: modal-content-spring 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
-  will-change: transform, opacity;
+  animation: modal-content-spring 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 /* Стандартная красивая анимация масштабирования окна при переходе по табам */
@@ -1443,16 +1439,13 @@ body.privacy-mode-active canvas:hover {
 }
 
 /* ==========================================
-   Pinned Modal Header & Hardware Acceleration (60/120 FPS)
+   Pinned Modal Header & Native 60/120 FPS Scrolling
    ========================================== */
 .modal-sticky-header {
   position: sticky;
   top: 0;
   z-index: 30;
   padding-top: max(14px, env(safe-area-inset-top));
-  transform: translateZ(0);
-  backface-visibility: hidden;
-  will-change: transform;
 }
 @media (min-width: 640px) {
   .modal-sticky-header {
@@ -1460,23 +1453,10 @@ body.privacy-mode-active canvas:hover {
   }
 }
 
-/* Аппаратное ускорение и максимальная плавность (60/120 FPS) для модального окна профиля */
+/* Нативный плавный аппаратный скролл (60/120 FPS) для модального окна профиля */
 #profile-dialog {
   -webkit-overflow-scrolling: touch !important;
   overscroll-behavior-y: contain !important;
-  transform: translateZ(0);
-  will-change: scroll-position;
-  contain: layout paint;
-}
-
-#profile-dialog > div {
-  transform: translateZ(0);
-  backface-visibility: hidden;
-}
-
-/* Изоляция слоев карточек в профиле для исключения лагов компоновки */
-#profile-dialog .divide-y > * {
-  contain: content;
 }
 
 

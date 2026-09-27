@@ -2,7 +2,7 @@
    Семейный Бюджет — Service Worker (Offline-First)
    ========================================== */
 
-const CACHE_NAME = 'budget-pwa-v22';
+const CACHE_NAME = 'budget-pwa-v23';
 
 const STATIC_SHELL = [
   './',
@@ -107,20 +107,18 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 3. Для локальных статических файлов (JS, CSS, SVG, JSON): Stale-While-Revalidate
+  // 3. Для локальных статических файлов (JS, CSS, SVG, JSON): Network-First с мгновенным переключением на Cache в офлайне
   event.respondWith(
-    caches.match(request).then((cachedResponse) => {
-      const fetchPromise = fetch(request).then((networkResponse) => {
-        if (networkResponse && networkResponse.status === 200) {
-          const responseClone = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, responseClone));
-        }
-        return networkResponse;
-      }).catch(() => {
-        return cachedResponse;
-      });
-
-      return cachedResponse || fetchPromise;
+    fetch(request).then((networkResponse) => {
+      if (networkResponse && networkResponse.status === 200) {
+        const responseClone = networkResponse.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(request, responseClone));
+      }
+      return networkResponse;
+    }).catch(async () => {
+      const cached = await caches.match(request);
+      if (cached) return cached;
+      return (await caches.match(request, { ignoreSearch: true })) || (await caches.match('./index.html'));
     })
   );
 });
