@@ -197,7 +197,7 @@ function renderWidgetCircleSvg(pct, color, size = 52, strokeWidth = 5.2) {
   `;
 }
 
-// 5. Рендеринг Варианта 1: 4×1 виджет (Недельные траты + Траты за месяц, крупные шрифты и шкалы)
+// 5. Рендеринг Варианта 1: 4×1 виджет (Недельные траты + Траты за месяц, компактный масштаб без обрезания)
 function renderFullWidgetPreviewHtml(data) {
   const format = typeof window.formatMoney === 'function' ? window.formatMoney : (n) => `${Math.round(n).toLocaleString('ru-RU')} ₽`;
   const weekColor = data.weeklyOverbudget ? '#FF453A' : (data.weeklyPct >= 80 ? '#FF9F0A' : '#30D158');
@@ -208,33 +208,33 @@ function renderFullWidgetPreviewHtml(data) {
     <div class="relative w-full rounded-2xl border transition-all duration-300 select-none overflow-hidden" 
          style="background-color: rgba(22, 24, 34, ${bgOpacity}); border-color: rgba(255, 255, 255, ${Math.min(0.2, bgOpacity * 0.25)});">
       
-      <div class="p-3.5 flex items-center justify-between gap-3">
+      <div class="p-2.5 sm:p-3 flex items-center justify-between gap-2.5">
         <!-- 1. Слева: Недельные траты -->
         <div class="flex-1 min-w-0 pr-1">
-          <span class="text-[11px] font-bold text-[#BAC7D5] block leading-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">Недельные траты</span>
-          <div class="flex items-center gap-2.5 mt-1.5">
+          <span class="text-[9.5px] font-bold text-[#BAC7D5] block leading-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">Недельные траты</span>
+          <div class="flex items-center gap-2 mt-1">
             <div class="relative flex items-center justify-center flex-shrink-0">
-              ${renderWidgetCircleSvg(data.weeklyPct, weekColor, 50, 5)}
-              <span class="absolute text-[11px] font-bold text-white font-mono drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">${data.weeklyPct}%</span>
+              ${renderWidgetCircleSvg(data.weeklyPct, weekColor, 40, 4.2)}
+              <span class="absolute text-[9.5px] font-bold text-white font-mono drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">${data.weeklyPct}%</span>
             </div>
             <div class="min-w-0 flex-1">
-              <span class="text-[17px] font-bold text-white block leading-tight tracking-tight drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] truncate">${format(data.weeklySpent)}</span>
-              <span class="text-[12px] text-[#94A3B8] block leading-none truncate drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] mt-0.5">из ${format(data.weeklyLimit)}</span>
+              <span class="text-[14px] font-bold text-white block leading-tight tracking-tight drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] truncate">${format(data.weeklySpent)}</span>
+              <span class="text-[10px] text-[#94A3B8] block leading-tight truncate drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] mt-0.5">из ${format(data.weeklyLimit)}</span>
             </div>
           </div>
         </div>
 
         <!-- 2. Справа: Траты за месяц -->
         <div class="flex-[1.35] min-w-0 pl-1">
-          <span class="text-[11px] font-bold text-[#BAC7D5] block leading-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">Траты за месяц</span>
-          <span class="text-[15.5px] font-bold text-white block leading-tight tracking-tight drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] truncate mt-1">${format(data.monthlySpent)} из ${format(data.monthlyLimit)}</span>
+          <span class="text-[9.5px] font-bold text-[#BAC7D5] block leading-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">Траты за месяц</span>
+          <span class="text-[13px] font-bold text-white block leading-tight tracking-tight drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] truncate mt-0.5">${format(data.monthlySpent)} из ${format(data.monthlyLimit)}</span>
 
-          <!-- Линейный прогресс-бар месяца (утолщенная шкала 8.5px) -->
-          <div class="w-full h-[8.5px] bg-white/15 rounded-full overflow-hidden my-1.5">
+          <!-- Линейный прогресс-бар месяца (умеренная шкала 5.5px) -->
+          <div class="w-full h-[5.5px] bg-white/15 rounded-full overflow-hidden my-1">
             <div class="h-full rounded-full transition-all duration-700" style="width: ${Math.min(100, Math.max(0, data.monthlyPct))}%; background-color: ${monthColor};"></div>
           </div>
 
-          <div class="flex items-center justify-between text-[11.5px] text-[#BAC7D5] font-bold leading-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+          <div class="flex items-center justify-between text-[10px] text-[#BAC7D5] font-bold leading-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
             <span class="truncate">Остаток: ${format(data.monthlyAvailable)}</span>
             <span class="text-white ml-1 font-mono">${data.monthlyPct}%</span>
           </div>
@@ -254,16 +254,16 @@ function renderCompactWidgetPreviewHtml(data) {
     <div class="relative max-w-[260px] mx-auto rounded-2xl border transition-all duration-300 select-none overflow-hidden" 
          style="background-color: rgba(22, 24, 34, ${bgOpacity}); border-color: rgba(255, 255, 255, ${Math.min(0.2, bgOpacity * 0.25)});">
       
-      <div class="p-3.5 flex items-center justify-between gap-3">
+      <div class="p-2.5 sm:p-3 flex items-center justify-between gap-2.5">
         <div class="relative flex items-center justify-center flex-shrink-0">
-          ${renderWidgetCircleSvg(data.monthlyPct, monthColor, 50, 5)}
-          <span class="absolute text-[11px] font-bold text-white font-mono drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">${data.monthlyPct}%</span>
+          ${renderWidgetCircleSvg(data.monthlyPct, monthColor, 44, 4.4)}
+          <span class="absolute text-[10px] font-bold text-white font-mono drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">${data.monthlyPct}%</span>
         </div>
 
         <div class="flex-1 min-w-0">
-          <span class="text-[11px] font-bold text-[#BAC7D5] block leading-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">Траты за месяц</span>
-          <span class="text-[17.5px] font-bold text-white block leading-tight mt-1 tracking-tight drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] truncate">${format(data.monthlySpent)}</span>
-          <span class="text-[12px] text-[#94A3B8] block leading-none truncate drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] mt-0.5">из ${format(data.monthlyLimit)}</span>
+          <span class="text-[10px] font-bold text-[#BAC7D5] block leading-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">Траты за месяц</span>
+          <span class="text-[15.5px] font-bold text-white block leading-tight mt-0.5 tracking-tight drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] truncate">${format(data.monthlySpent)}</span>
+          <span class="text-[10.5px] text-[#94A3B8] block leading-none truncate drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] mt-0.5">из ${format(data.monthlyLimit)}</span>
         </div>
       </div>
     </div>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Фоновый темный круг-подложка -->
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="#14261F" />
+            <stroke android:width="4.5dp" android:color="#23352D" />
+            <size android:width="48dp" android:height="48dp" />
+        </shape>
+    </item>
+    <!-- Акцентное кольцо прогресса -->
+    <item>
+        <shape android:shape="oval">
+            <stroke android:width="4.5dp" android:color="#30D158" />
+            <size android:width="48dp" android:height="48dp" />
+        </shape>
+    </item>
+</layer-list>

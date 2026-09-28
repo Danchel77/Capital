@@ -288,16 +288,16 @@ const widgetFullLayout = `<?xml version="1.0" encoding="utf-8"?>
 </FrameLayout>`;
 fs.writeFileSync(path.join(baseRes, 'layout/widget_full_layout.xml'), widgetFullLayout);
 
-// 5. Макет предпросмотра 4x1 для системного списка One UI / Android Launcher
+// 5. Макет предпросмотра 4x1 для системного списка One UI / Android Launcher (компактный масштаб превью)
 const widgetFullPreview = `<?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/widget_preview_bg"
-    android:paddingStart="14dp"
-    android:paddingEnd="14dp"
-    android:paddingTop="8dp"
-    android:paddingBottom="8dp">
+    android:paddingStart="12dp"
+    android:paddingEnd="12dp"
+    android:paddingTop="5dp"
+    android:paddingBottom="5dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -311,14 +311,14 @@ const widgetFullPreview = `<?xml version="1.0" encoding="utf-8"?>
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:orientation="vertical"
-            android:layout_marginEnd="10dp">
+            android:layout_marginEnd="8dp">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Недельные траты"
                 android:textColor="#BAC7D5"
-                android:textSize="11sp"
+                android:textSize="9.5sp"
                 android:textStyle="bold"
                 android:maxLines="1" />
 
@@ -327,15 +327,15 @@ const widgetFullPreview = `<?xml version="1.0" encoding="utf-8"?>
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:layout_marginTop="3dp">
+                android:layout_marginTop="2dp">
 
                 <ImageView
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
+                    android:layout_width="38dp"
+                    android:layout_height="38dp"
                     android:src="@drawable/widget_sample_circle"
                     android:scaleType="fitCenter"
                     android:adjustViewBounds="false"
-                    android:layout_marginEnd="9dp" />
+                    android:layout_marginEnd="7dp" />
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -348,7 +348,7 @@ const widgetFullPreview = `<?xml version="1.0" encoding="utf-8"?>
                         android:layout_height="wrap_content"
                         android:text="635 ₽"
                         android:textColor="#FFFFFF"
-                        android:textSize="17sp"
+                        android:textSize="14sp"
                         android:textStyle="bold"
                         android:maxLines="1" />
 
@@ -357,7 +357,7 @@ const widgetFullPreview = `<?xml version="1.0" encoding="utf-8"?>
                         android:layout_height="wrap_content"
                         android:text="из 10 000 ₽"
                         android:textColor="#94A3B8"
-                        android:textSize="11.5sp"
+                        android:textSize="10sp"
                         android:maxLines="1" />
                 </LinearLayout>
             </LinearLayout>
@@ -375,7 +375,7 @@ const widgetFullPreview = `<?xml version="1.0" encoding="utf-8"?>
                 android:layout_height="wrap_content"
                 android:text="Траты за месяц"
                 android:textColor="#BAC7D5"
-                android:textSize="11sp"
+                android:textSize="9.5sp"
                 android:textStyle="bold"
                 android:maxLines="1" />
 
@@ -384,25 +384,25 @@ const widgetFullPreview = `<?xml version="1.0" encoding="utf-8"?>
                 android:layout_height="wrap_content"
                 android:text="36 037 ₽ из 78 000 ₽"
                 android:textColor="#FFFFFF"
-                android:textSize="15sp"
+                android:textSize="13sp"
                 android:textStyle="bold"
-                android:layout_marginTop="2dp"
+                android:layout_marginTop="1.5dp"
                 android:maxLines="1" />
 
             <ImageView
                 android:layout_width="match_parent"
-                android:layout_height="8dp"
+                android:layout_height="6dp"
                 android:src="@drawable/widget_sample_bar"
                 android:scaleType="fitXY"
-                android:layout_marginTop="5dp"
-                android:layout_marginBottom="4dp" />
+                android:layout_marginTop="3.5dp"
+                android:layout_marginBottom="3dp" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Остаток: 41 935 ₽ • 46%"
                 android:textColor="#BAC7D5"
-                android:textSize="11.5sp"
+                android:textSize="10sp"
                 android:textStyle="bold"
                 android:maxLines="1" />
         </LinearLayout>
