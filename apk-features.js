@@ -1059,7 +1059,6 @@ function initBankPushListener() {
 }
 
 // 12. Модальное окно настроек и симулятора авто-учета по пушам (Bank Push Hub)
-let isCheckingPushPermission = false;
 
 function openBankPushModal() {
   if (typeof closeProfileModal === 'function') closeProfileModal();
@@ -1088,6 +1087,11 @@ async function renderBankPushModalContent() {
   if (!modal) return;
 
   const isAutoEnabled = isBankPushAutoExpenseEnabled();
+  const isNative = isNativeAppPlatform();
+  let isGranted = false;
+  if (isNative) {
+    isGranted = await checkBankPushPermissions();
+  }
 
   modal.innerHTML = `
     <div class="relative bg-[#161822] border border-white/10 rounded-3xl p-5 sm:p-6 max-w-md w-full shadow-2xl space-y-4 my-auto animate-in fade-in zoom-in duration-200">
@@ -1110,6 +1114,41 @@ async function renderBankPushModalContent() {
           <i data-lucide="x" class="w-4 h-4"></i>
         </button>
       </div>
+
+      <!-- Статус разрешения Android (если запущено в APK) -->
+      ${isNative ? `
+        ${isGranted ? `
+          <div class="bg-emerald-500/10 border border-emerald-500/25 rounded-2xl p-3.5 flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <i data-lucide="check-circle-2" class="w-4 h-4 text-[#30D158] flex-shrink-0"></i>
+              <div>
+                <span class="text-xs font-semibold text-emerald-200 block leading-tight">Доступ к уведомлениям активен</span>
+                <span class="text-[10.5px] text-emerald-400/80 block mt-0.5">Android перехватывает пуши банков в фоне</span>
+              </div>
+            </div>
+            <button type="button" onclick="openBankPushPermissionSettings()" class="text-[11px] font-medium text-[#A594FD] hover:text-white underline underline-offset-2 cursor-pointer">Настройки</button>
+          </div>
+        ` : `
+          <div class="bg-amber-500/10 border border-amber-500/25 rounded-2xl p-3.5 space-y-2.5">
+            <div class="flex items-start gap-2.5">
+              <i data-lucide="alert-circle" class="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5"></i>
+              <div>
+                <span class="text-xs font-semibold text-amber-200 block">Требуется разрешение Android</span>
+                <span class="text-[11px] text-amber-300/80 block leading-snug mt-0.5">Разрешите приложению «Доступ к уведомлениям», чтобы оно могло распознавать пуши банков при покупках.</span>
+              </div>
+            </div>
+            <button type="button" onclick="openBankPushPermissionSettings()" class="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-[#6C5DD3] to-[#8C7DFF] hover:opacity-90 active:scale-98 text-white text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-[#6C5DD3]/25">
+              <i data-lucide="settings" class="w-3.5 h-3.5"></i>
+              <span>Открыть настройки Android</span>
+            </button>
+          </div>
+        `}
+      ` : `
+        <div class="bg-white/5 border border-white/5 rounded-2xl p-3 flex items-center gap-2.5 text-xs text-gray-400">
+          <i data-lucide="smartphone" class="w-4 h-4 text-[#8C7DFF] flex-shrink-0"></i>
+          <span class="text-[11.5px] leading-snug">Фоновый перехват пушей работает в <strong>Android APK</strong>. Ниже можно проверить алгоритм на симуляторе.</span>
+        </div>
+      `}
 
       <!-- Главная карточка: переключатель автоматического учета -->
       <div class="bg-[#0F1118] border border-white/5 rounded-2xl p-4">
@@ -1158,6 +1197,7 @@ async function renderBankPushModalContent() {
           <span class="text-[11px] font-bold uppercase tracking-wider text-gray-400">Проверить распознавание пуша</span>
           <span class="text-[10px] text-[#8C7DFF]">Тестовая симуляция</span>
         </div>
+        <p class="text-[11px] text-gray-400 leading-snug">Нажмите на любой банк, чтобы сымитировать получение пуша и проверить моментальное добавление в бюджет:</p>
 
         <div class="grid grid-cols-2 gap-2">
           <button type="button" onclick="simulateBankPush('tinkoff')" class="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 active:scale-95 text-left transition-all cursor-pointer">
@@ -1212,6 +1252,88 @@ async function simulateBankPush(bankPreset) {
   }
 }
 
+// 12.1. Диалог запроса разрешений Android при первом старте приложения
+function openBankPushPermissionPrompt() {
+  let modal = document.getElementById('bank-push-permission-prompt-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'bank-push-permission-prompt-modal';
+    modal.className = 'fixed inset-0 z-[1500] bg-black/85 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto animate-fade-in custom-scrollbar';
+    modal.onclick = (e) => {
+      if (e.target === modal) closeBankPushPermissionPrompt();
+    };
+    document.body.appendChild(modal);
+  }
+
+  modal.innerHTML = `
+    <div class="relative bg-[#161822] border border-white/10 rounded-3xl p-5 sm:p-6 max-w-md w-full shadow-2xl space-y-4 my-auto animate-in fade-in zoom-in duration-200">
+      
+      <div class="text-center space-y-2">
+        <div class="w-14 h-14 mx-auto rounded-3xl bg-gradient-to-br from-[#6C5DD3] to-[#8C7DFF] flex items-center justify-center text-white shadow-xl shadow-[#6C5DD3]/30">
+          <i data-lucide="bell-ring" class="w-7 h-7"></i>
+        </div>
+        <h3 class="text-lg font-bold text-white leading-tight">Авто-учет расходов по пушам</h3>
+        <p class="text-xs text-gray-300 leading-relaxed px-2">
+          Приложение может автоматически вносить траты сразу после оплаты картой или телефоном, считывая push-уведомления банков.
+        </p>
+      </div>
+
+      <div class="bg-[#0F1118] border border-white/5 rounded-2xl p-3.5 space-y-2.5">
+        <div class="text-xs font-bold text-white flex items-center gap-1.5">
+          <i data-lucide="zap" class="w-4 h-4 text-[#A594FD]"></i>
+          <span>Как это настроить за 10 секунд:</span>
+        </div>
+        <ol class="text-[11.5px] text-gray-300 space-y-2 pl-4 list-decimal leading-snug">
+          <li>Нажмите <b>«Включить доступ»</b> ниже.</li>
+          <li>В системных настройках Android найдите <b>«Семейный бюджет»</b> и активируйте тумблер.</li>
+          <li>Убедитесь, что в мобильных банках включены push-уведомления об операциях.</li>
+        </ol>
+      </div>
+
+      <div class="space-y-2 pt-1">
+        <button type="button" onclick="handleAcceptBankPushPrompt()" class="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-[#6C5DD3] to-[#8C7DFF] hover:opacity-90 active:scale-98 text-white text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-[#6C5DD3]/30">
+          <i data-lucide="check" class="w-4 h-4"></i>
+          <span>Включить доступ в Android</span>
+        </button>
+        <button type="button" onclick="closeBankPushPermissionPrompt()" class="w-full py-3 px-4 rounded-2xl bg-white/5 hover:bg-white/10 active:scale-98 text-gray-400 hover:text-white text-xs font-semibold transition-all cursor-pointer">
+          Настроить позже
+        </button>
+      </div>
+    </div>
+  `;
+
+  if (typeof lucide !== 'undefined') lucide.createIcons({ root: modal });
+  modal.classList.remove('hidden');
+}
+
+function closeBankPushPermissionPrompt() {
+  const modal = document.getElementById('bank-push-permission-prompt-modal');
+  if (modal) modal.classList.add('hidden');
+  localStorage.setItem('bank_push_permission_prompt_dismissed_at', Date.now().toString());
+}
+
+function handleAcceptBankPushPrompt() {
+  closeBankPushPermissionPrompt();
+  openBankPushPermissionSettings();
+}
+
+async function checkAndPromptBankPushPermission(delayMs = 4500) {
+  if (!isNativeAppPlatform() || !isBankPushAutoExpenseEnabled()) return;
+  
+  const dismissedAt = parseInt(localStorage.getItem('bank_push_permission_prompt_dismissed_at') || '0', 10);
+  // Не показываем чаще, чем раз в 24 часа, если пользователь закрыл окно
+  if (Date.now() - dismissedAt < 24 * 60 * 60 * 1000) return;
+
+  setTimeout(async () => {
+    try {
+      const isGranted = await checkBankPushPermissions();
+      if (!isGranted) {
+        openBankPushPermissionPrompt();
+      }
+    } catch (_) {}
+  }, delayMs);
+}
+
 // 13. Глобальный экспорт функций
 window.isNativeAppPlatform = isNativeAppPlatform;
 window.getLiveWidgetData = getLiveWidgetData;
@@ -1243,6 +1365,10 @@ window.initBankPushListener = initBankPushListener;
 window.openBankPushModal = openBankPushModal;
 window.closeBankPushModal = closeBankPushModal;
 window.simulateBankPush = simulateBankPush;
+window.openBankPushPermissionPrompt = openBankPushPermissionPrompt;
+window.closeBankPushPermissionPrompt = closeBankPushPermissionPrompt;
+window.handleAcceptBankPushPrompt = handleAcceptBankPushPrompt;
+window.checkAndPromptBankPushPermission = checkAndPromptBankPushPermission;
 
 // Автоматическая инициализация слушателя при загрузке скрипта
 if (typeof window !== 'undefined') {

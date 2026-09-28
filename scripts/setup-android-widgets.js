@@ -39,21 +39,44 @@ const widgetPreviewBg = `<?xml version="1.0" encoding="utf-8"?>
 fs.writeFileSync(path.join(baseRes, 'drawable/widget_preview_bg.xml'), widgetPreviewBg);
 
 const widgetSampleCircle = `<?xml version="1.0" encoding="utf-8"?>
-<shape xmlns:android="http://schemas.android.com/apk/res/android"
-    android:shape="oval">
-    <solid android:color="#1A2E26" />
-    <stroke android:width="5.2dp" android:color="#30D158" />
-    <size android:width="52dp" android:height="52dp" />
-</shape>`;
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Фоновый темный круг-подложка -->
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="#14261F" />
+            <stroke android:width="4.5dp" android:color="#23352D" />
+            <size android:width="48dp" android:height="48dp" />
+        </shape>
+    </item>
+    <!-- Акцентное кольцо прогресса -->
+    <item>
+        <shape android:shape="oval">
+            <stroke android:width="4.5dp" android:color="#30D158" />
+            <size android:width="48dp" android:height="48dp" />
+        </shape>
+    </item>
+</layer-list>`;
 fs.writeFileSync(path.join(baseRes, 'drawable/widget_sample_circle.xml'), widgetSampleCircle);
 
 const widgetSampleBar = `<?xml version="1.0" encoding="utf-8"?>
-<shape xmlns:android="http://schemas.android.com/apk/res/android"
-    android:shape="rectangle">
-    <solid android:color="#30D158" />
-    <corners android:radius="4.5dp" />
-    <size android:height="8.5dp" />
-</shape>`;
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Фоновый трек шкалы -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#242838" />
+            <corners android:radius="4dp" />
+            <size android:height="8dp" />
+        </shape>
+    </item>
+    <!-- Заполненная часть шкалы -->
+    <item android:right="55dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#30D158" />
+            <corners android:radius="4dp" />
+            <size android:height="8dp" />
+        </shape>
+    </item>
+</layer-list>`;
 fs.writeFileSync(path.join(baseRes, 'drawable/widget_sample_bar.xml'), widgetSampleBar);
 
 // 3. XML метаданные виджетов (4x1, 2x1, Action 2x1)
@@ -269,13 +292,16 @@ fs.writeFileSync(path.join(baseRes, 'layout/widget_full_layout.xml'), widgetFull
 const widgetFullPreview = `<?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="match_parent"
     android:background="@drawable/widget_preview_bg"
-    android:padding="14dp">
+    android:paddingStart="14dp"
+    android:paddingEnd="14dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp">
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:orientation="horizontal"
         android:gravity="center_vertical">
 
@@ -293,7 +319,8 @@ const widgetFullPreview = `<?xml version="1.0" encoding="utf-8"?>
                 android:text="Недельные траты"
                 android:textColor="#BAC7D5"
                 android:textSize="11sp"
-                android:textStyle="bold" />
+                android:textStyle="bold"
+                android:maxLines="1" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -303,14 +330,17 @@ const widgetFullPreview = `<?xml version="1.0" encoding="utf-8"?>
                 android:layout_marginTop="3dp">
 
                 <ImageView
-                    android:layout_width="50dp"
-                    android:layout_height="50dp"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
                     android:src="@drawable/widget_sample_circle"
+                    android:scaleType="fitCenter"
+                    android:adjustViewBounds="false"
                     android:layout_marginEnd="9dp" />
 
                 <LinearLayout
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:orientation="vertical">
 
                     <TextView
@@ -318,15 +348,17 @@ const widgetFullPreview = `<?xml version="1.0" encoding="utf-8"?>
                         android:layout_height="wrap_content"
                         android:text="635 ₽"
                         android:textColor="#FFFFFF"
-                        android:textSize="17.5sp"
-                        android:textStyle="bold" />
+                        android:textSize="17sp"
+                        android:textStyle="bold"
+                        android:maxLines="1" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="из 10 000 ₽"
                         android:textColor="#94A3B8"
-                        android:textSize="12sp" />
+                        android:textSize="11.5sp"
+                        android:maxLines="1" />
                 </LinearLayout>
             </LinearLayout>
         </LinearLayout>
@@ -344,21 +376,24 @@ const widgetFullPreview = `<?xml version="1.0" encoding="utf-8"?>
                 android:text="Траты за месяц"
                 android:textColor="#BAC7D5"
                 android:textSize="11sp"
-                android:textStyle="bold" />
+                android:textStyle="bold"
+                android:maxLines="1" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="36 037 ₽ из 78 000 ₽"
                 android:textColor="#FFFFFF"
-                android:textSize="16sp"
+                android:textSize="15sp"
                 android:textStyle="bold"
-                android:layout_marginTop="2dp" />
+                android:layout_marginTop="2dp"
+                android:maxLines="1" />
 
             <ImageView
                 android:layout_width="match_parent"
-                android:layout_height="8.5dp"
+                android:layout_height="8dp"
                 android:src="@drawable/widget_sample_bar"
+                android:scaleType="fitXY"
                 android:layout_marginTop="5dp"
                 android:layout_marginBottom="4dp" />
 
@@ -367,8 +402,9 @@ const widgetFullPreview = `<?xml version="1.0" encoding="utf-8"?>
                 android:layout_height="wrap_content"
                 android:text="Остаток: 41 935 ₽ • 46%"
                 android:textColor="#BAC7D5"
-                android:textSize="12sp"
-                android:textStyle="bold" />
+                android:textSize="11.5sp"
+                android:textStyle="bold"
+                android:maxLines="1" />
         </LinearLayout>
     </LinearLayout>
 </FrameLayout>`;
@@ -459,25 +495,31 @@ fs.writeFileSync(path.join(baseRes, 'layout/widget_compact_layout.xml'), widgetC
 const widgetCompactPreview = `<?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="match_parent"
     android:background="@drawable/widget_preview_bg"
-    android:padding="14dp">
+    android:paddingStart="14dp"
+    android:paddingEnd="14dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp">
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:orientation="horizontal"
         android:gravity="center_vertical">
 
         <ImageView
-            android:layout_width="50dp"
-            android:layout_height="50dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:src="@drawable/widget_sample_circle"
+            android:scaleType="fitCenter"
+            android:adjustViewBounds="false"
             android:layout_marginEnd="12dp" />
 
         <LinearLayout
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_weight="1"
             android:orientation="vertical">
 
             <TextView
@@ -486,7 +528,8 @@ const widgetCompactPreview = `<?xml version="1.0" encoding="utf-8"?>
                 android:text="Траты за месяц"
                 android:textColor="#BAC7D5"
                 android:textSize="11sp"
-                android:textStyle="bold" />
+                android:textStyle="bold"
+                android:maxLines="1" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -494,14 +537,16 @@ const widgetCompactPreview = `<?xml version="1.0" encoding="utf-8"?>
                 android:text="36 037 ₽"
                 android:textColor="#FFFFFF"
                 android:textSize="18sp"
-                android:textStyle="bold" />
+                android:textStyle="bold"
+                android:maxLines="1" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="из 78 000 ₽"
                 android:textColor="#94A3B8"
-                android:textSize="12.5sp" />
+                android:textSize="12sp"
+                android:maxLines="1" />
         </LinearLayout>
     </LinearLayout>
 </FrameLayout>`;
@@ -549,19 +594,25 @@ fs.writeFileSync(path.join(baseRes, 'layout/widget_action_layout.xml'), widgetAc
 const widgetActionPreview = `<?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="match_parent"
     android:background="@drawable/widget_preview_bg"
     android:padding="12dp">
 
-    <TextView
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="42dp"
-        android:background="@drawable/widget_btn_bg"
-        android:text="+ Внести расход"
-        android:textColor="#FFFFFF"
-        android:textSize="14sp"
-        android:textStyle="bold"
-        android:gravity="center" />
+        android:layout_height="match_parent"
+        android:gravity="center">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="42dp"
+            android:background="@drawable/widget_btn_bg"
+            android:text="+ Внести расход"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:gravity="center" />
+    </LinearLayout>
 </FrameLayout>`;
 fs.writeFileSync(path.join(baseRes, 'layout/widget_action_preview.xml'), widgetActionPreview);
 

@@ -90,6 +90,11 @@ if (currentAuth && typeof currentAuth.onAuthStateChanged === 'function') {
     if (typeof window.checkAndShowWidgetPrompt === 'function') {
       window.checkAndShowWidgetPrompt(3500);
     }
+
+    // Для Android APK: проверяем разрешение на чтение пуш-уведомлений банков
+    if (typeof window.checkAndPromptBankPushPermission === 'function') {
+      window.checkAndPromptBankPushPermission(4500);
+    }
   } else {
     isAppInitialized = false;
     currentAuthedUid = null;
