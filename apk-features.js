@@ -1149,80 +1149,47 @@ async function renderBankPushModalContent() {
   const isAutoEnabled = isBankPushAutoExpenseEnabled();
   const isNotifyEnabled = isBankPushNotifyOnSaveEnabled();
   const isNative = isNativeAppPlatform();
-  let isGranted = false;
-  let isPostGranted = true;
+  let isGranted = true;
 
   if (isNative) {
     isGranted = await checkBankPushPermissions();
-    isPostGranted = await checkPostNotificationPermission();
   }
 
   modal.innerHTML = `
     <div class="relative bg-[#161822] border border-white/10 rounded-3xl p-5 sm:p-6 max-w-md w-full shadow-2xl space-y-4 my-auto animate-in fade-in zoom-in duration-200">
       
       <!-- Шапка модального окна -->
-      <div class="flex items-center justify-between pb-3 border-b border-white/5">
-        <div class="flex items-center gap-3">
+      <div class="flex items-start justify-between pb-3 border-b border-white/5 gap-3">
+        <div class="flex items-center gap-3 min-w-0">
           <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#6C5DD3] to-[#8C7DFF] flex items-center justify-center text-white shadow-lg shadow-[#6C5DD3]/30 flex-shrink-0">
             <i data-lucide="bell-ring" class="w-5 h-5"></i>
           </div>
-          <div>
+          <div class="min-w-0">
             <div class="flex items-center gap-1.5">
               <h3 class="text-base font-bold text-white leading-tight">Авто-учет по пушам</h3>
-              <span class="text-[9px] font-bold bg-[#6C5DD3]/25 text-[#A594FD] border border-[#6C5DD3]/40 px-1.5 py-0.2 rounded-full">Авто</span>
+              <span class="text-[9px] font-bold bg-[#6C5DD3]/25 text-[#A594FD] border border-[#6C5DD3]/40 px-1.5 py-0.5 rounded-full">Авто</span>
             </div>
-            <span class="text-xs text-gray-400">Мгновенное внесение трат сразу после покупки</span>
+            <p class="text-xs text-gray-400 leading-tight mt-1">Мгновенное внесение трат сразу после покупки</p>
           </div>
         </div>
-        <button type="button" onclick="closeBankPushModal()" class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-all cursor-pointer">
+        <button type="button" onclick="closeBankPushModal()" class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-all cursor-pointer flex-shrink-0">
           <i data-lucide="x" class="w-4 h-4"></i>
         </button>
       </div>
 
-      <!-- Статус разрешения Android (если запущено в APK) -->
-      ${isNative ? `
-        ${isGranted ? `
-          <div class="bg-[#14261F] border border-emerald-500/25 rounded-2xl p-3 flex items-center justify-between gap-2.5">
-            <div class="flex items-center gap-2.5 min-w-0 flex-1">
-              <div class="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-[#30D158] flex-shrink-0">
-                <i data-lucide="shield-check" class="w-4 h-4"></i>
-              </div>
-              <div class="min-w-0 flex-1">
-                <div class="flex items-center gap-1.5">
-                  <span class="text-xs font-bold text-emerald-200 truncate">Доступ активен</span>
-                  <span class="text-[9.5px] font-semibold text-emerald-400 bg-emerald-500/20 px-1.5 py-0.2 rounded-full">В фоне</span>
-                </div>
-                <span class="text-[11px] text-emerald-300/80 block truncate mt-0.5">Android перехватывает пуши покупок</span>
-              </div>
-            </div>
-            <button type="button" onclick="openBankPushPermissionSettings()" class="px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 active:scale-95 text-[11px] font-semibold text-gray-300 hover:text-white border border-white/10 flex items-center gap-1.5 transition-all flex-shrink-0 cursor-pointer shadow-sm">
-              <i data-lucide="settings-2" class="w-3.5 h-3.5 text-gray-400"></i>
-              <span>Настройки</span>
-            </button>
+      <!-- Предупреждение об отсутствии разрешений (только если разрешения не даны) -->
+      ${isNative && !isGranted ? `
+        <div class="bg-amber-500/10 border border-amber-500/25 rounded-2xl p-3.5 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-2.5 min-w-0 flex-1">
+            <i data-lucide="alert-circle" class="w-4 h-4 text-amber-400 flex-shrink-0"></i>
+            <span class="text-xs text-amber-200/90 leading-snug">Для работы авто-учета требуется доступ к уведомлениям в Android</span>
           </div>
-        ` : `
-          <div class="bg-amber-500/10 border border-amber-500/25 rounded-2xl p-3.5 space-y-2.5">
-            <div class="flex items-start gap-2.5">
-              <div class="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 flex-shrink-0 mt-0.5">
-                <i data-lucide="alert-circle" class="w-4 h-4"></i>
-              </div>
-              <div class="min-w-0 flex-1">
-                <span class="text-xs font-semibold text-amber-200 block">Требуется разрешение Android</span>
-                <span class="text-[11px] text-amber-300/80 block leading-snug mt-0.5">Разрешите приложению «Доступ к уведомлениям», чтобы распознавать покупки в фоне.</span>
-              </div>
-            </div>
-            <button type="button" onclick="openBankPushPermissionSettings()" class="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-[#6C5DD3] to-[#8C7DFF] hover:opacity-90 active:scale-98 text-white text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-[#6C5DD3]/25">
-              <i data-lucide="settings" class="w-3.5 h-3.5"></i>
-              <span>Открыть настройки Android</span>
-            </button>
-          </div>
-        `}
-      ` : `
-        <div class="bg-white/5 border border-white/5 rounded-2xl p-3 flex items-center gap-2.5 text-xs text-gray-400">
-          <i data-lucide="smartphone" class="w-4 h-4 text-[#8C7DFF] flex-shrink-0"></i>
-          <span class="text-[11.5px] leading-snug">Фоновый перехват пушей работает в <strong>Android APK</strong>. Ниже можно проверить алгоритм на симуляторе.</span>
+          <button type="button" onclick="openBankPushPermissionSettings()" class="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 active:scale-95 text-amber-200 border border-amber-500/30 text-xs font-semibold transition-all flex items-center gap-1.5 flex-shrink-0 cursor-pointer shadow-sm">
+            <i data-lucide="settings" class="w-3.5 h-3.5"></i>
+            <span>Настройки</span>
+          </button>
         </div>
-      `}
+      ` : ''}
 
       <!-- Настройки: Тумблеры управления -->
       <div class="space-y-2">
@@ -1260,46 +1227,6 @@ async function renderBankPushModalContent() {
         <p class="text-[11px] text-blue-200/80 leading-relaxed">
           Наше приложение обрабатывает исключительно push-уведомления о покупках от банков — звонки и личные сообщения (Telegram, WhatsApp, SMS) никогда не читаются и не передаются.
         </p>
-      </div>
-
-      <!-- Важное условие для работы -->
-      <div class="bg-amber-500/10 border border-amber-500/25 rounded-2xl p-3.5 flex items-start gap-2.5">
-        <i data-lucide="info" class="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5"></i>
-        <div class="text-[11.5px] text-amber-200/90 leading-relaxed">
-          <b class="text-amber-300 font-semibold block mb-0.5">Важное условие для работы</b>
-          Убедитесь, что в приложениях ваших банков (Сбер, Т-Банк, Альфа и др.) <strong class="text-white">включены push-уведомления об операциях и покупках</strong>.
-        </div>
-      </div>
-
-      <!-- Интерактивный симулятор / Тестовое внесение -->
-      <div class="bg-[#0F1118] border border-white/5 rounded-2xl p-3.5 space-y-2.5">
-        <div class="flex items-center justify-between">
-          <span class="text-[11px] font-bold uppercase tracking-wider text-gray-400">Проверить распознавание пуша</span>
-          <span class="text-[10px] text-[#8C7DFF]">Тестовая симуляция</span>
-        </div>
-        <p class="text-[11px] text-gray-400 leading-snug">Нажмите на любой банк, чтобы сымитировать получение пуша и проверить моментальное добавление в бюджет:</p>
-
-        <div class="grid grid-cols-2 gap-2">
-          <button type="button" onclick="simulateBankPush('tinkoff')" class="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 active:scale-95 text-left transition-all cursor-pointer">
-            <span class="text-xs font-bold text-white block truncate">Т-Банк</span>
-            <span class="text-[10px] text-gray-400 block truncate">Пятерочка 1 450 ₽</span>
-          </button>
-
-          <button type="button" onclick="simulateBankPush('sber')" class="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 active:scale-95 text-left transition-all cursor-pointer">
-            <span class="text-xs font-bold text-white block truncate">СберБанк</span>
-            <span class="text-[10px] text-gray-400 block truncate">Аптека Ригла 890 ₽</span>
-          </button>
-
-          <button type="button" onclick="simulateBankPush('yandex')" class="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 active:scale-95 text-left transition-all cursor-pointer">
-            <span class="text-xs font-bold text-white block truncate">Яндекс Пэй</span>
-            <span class="text-[10px] text-gray-400 block truncate">Лавка 450 ₽</span>
-          </button>
-
-          <button type="button" onclick="simulateBankPush('alfa')" class="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 active:scale-95 text-left transition-all cursor-pointer">
-            <span class="text-xs font-bold text-white block truncate">Альфа-Банк</span>
-            <span class="text-[10px] text-gray-400 block truncate">ВкусВилл 2 100 ₽</span>
-          </button>
-        </div>
       </div>
 
       <!-- Кнопка закрытия -->
@@ -1460,7 +1387,6 @@ window.toggleBankPushAutoExpense = toggleBankPushAutoExpense;
 window.initBankPushListener = initBankPushListener;
 window.openBankPushModal = openBankPushModal;
 window.closeBankPushModal = closeBankPushModal;
-window.simulateBankPush = simulateBankPush;
 window.openBankPushPermissionPrompt = openBankPushPermissionPrompt;
 window.closeBankPushPermissionPrompt = closeBankPushPermissionPrompt;
 window.handleAcceptBankPushPrompt = handleAcceptBankPushPrompt;
