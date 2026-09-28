@@ -1656,6 +1656,8 @@ function openSubModalFromProfile(type) {
     if (typeof showManageCategoriesDialog === 'function') showManageCategoriesDialog();
   } else if (type === 'rules') {
     if (typeof openRulesEditorModal === 'function') openRulesEditorModal();
+  } else if (type === 'push' || type === 'bank-push') {
+    if (typeof openBankPushModal === 'function') openBankPushModal({ fromProfile: true });
   }
 }
 

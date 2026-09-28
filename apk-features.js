@@ -9,6 +9,7 @@
  *    - Компактный (2x2): крупный остаток месяца с круговым прогрессом.
  * 4. Окно добавления виджетов (без лишних кнопок и инструкций) с прямым системным закреплением.
  * 5. Всплывающая шторка-предложение (только для нативного APK).
+ * 6. Фоновый перехват push-уведомлений банков (Сбер, Т-Банк, Яндекс Пэй, Альфа и др.) и авто-внесение трат.
  */
 
 // 1. Проверка окружения (APK / Native vs PWA vs Браузер)
@@ -228,7 +229,7 @@ function renderFullWidgetPreviewHtml(data) {
           <span class="text-[11px] font-bold text-[#BAC7D5] block leading-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">Траты за месяц</span>
           <span class="text-[15.5px] font-bold text-white block leading-tight tracking-tight drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] truncate mt-1">${format(data.monthlySpent)} из ${format(data.monthlyLimit)}</span>
 
-          <!-- Линейный прогресс-бар месяца (увеличенная толщина 8.5px) -->
+          <!-- Линейный прогресс-бар месяца (утолщенная шкала 8.5px) -->
           <div class="w-full h-[8.5px] bg-white/15 rounded-full overflow-hidden my-1.5">
             <div class="h-full rounded-full transition-all duration-700" style="width: ${Math.min(100, Math.max(0, data.monthlyPct))}%; background-color: ${monthColor};"></div>
           </div>
@@ -974,8 +975,22 @@ async function saveAutoExpenseTransaction(parsedData) {
   return txObj;
 }
 
+// Отправка нативного push-уведомления пользователю и настройки
+function isBankPushNotifyOnSaveEnabled() {
+  return localStorage.getItem('bank_push_notify_on_save_enabled') !== 'false';
+}
+
+function toggleBankPushNotifyOnSave(enabled) {
+  localStorage.setItem('bank_push_notify_on_save_enabled', enabled ? 'true' : 'false');
+  if (enabled) {
+    requestPostNotificationPermission();
+  }
+  renderBankPushModalContent();
+}
+
 // Отправка нативного push-уведомления пользователю
 function sendAppLocalNotification(title, body) {
+  if (!isBankPushNotifyOnSaveEnabled()) return;
   try {
     // 1. Через нативный плагин Capacitor BankPush
     if (window.Capacitor?.Plugins?.BankPush?.notifyExpenseSaved) {
@@ -1005,6 +1020,33 @@ async function checkBankPushPermissions() {
     }
   }
   return false;
+}
+
+async function checkPostNotificationPermission() {
+  if (window.Capacitor?.Plugins?.BankPush?.checkPostNotificationPermission) {
+    try {
+      const res = await window.Capacitor.Plugins.BankPush.checkPostNotificationPermission();
+      return !!(res && res.granted);
+    } catch (_) {
+      return false;
+    }
+  }
+  if (typeof Notification !== 'undefined') {
+    return Notification.permission === 'granted';
+  }
+  return true;
+}
+
+async function requestPostNotificationPermission() {
+  if (window.Capacitor?.Plugins?.BankPush?.requestPostNotificationPermission) {
+    try {
+      await window.Capacitor.Plugins.BankPush.requestPostNotificationPermission();
+    } catch (_) {}
+  } else if (typeof Notification !== 'undefined' && Notification.requestPermission) {
+    try {
+      await Notification.requestPermission();
+    } catch (_) {}
+  }
 }
 
 function openBankPushPermissionSettings() {
@@ -1059,9 +1101,19 @@ function initBankPushListener() {
 }
 
 // 12. Модальное окно настроек и симулятора авто-учета по пушам (Bank Push Hub)
+window._bankPushOpenedFromProfile = false;
 
-function openBankPushModal() {
-  if (typeof closeProfileModal === 'function') closeProfileModal();
+function openBankPushModal(options = {}) {
+  const profileDialog = document.getElementById('profile-dialog');
+  const isFromProfile = !!(options?.fromProfile || (profileDialog && !profileDialog.classList.contains('hidden')));
+  
+  if (isFromProfile) {
+    window._bankPushOpenedFromProfile = true;
+    if (profileDialog) profileDialog.classList.add('hidden');
+  } else {
+    window._bankPushOpenedFromProfile = false;
+  }
+
   let modal = document.getElementById('bank-push-modal');
   if (!modal) {
     modal = document.createElement('div');
@@ -1080,6 +1132,14 @@ function openBankPushModal() {
 function closeBankPushModal() {
   const modal = document.getElementById('bank-push-modal');
   if (modal) modal.classList.add('hidden');
+
+  // Если окно было вызвано из профиля, возвращаем пользователя в профиль
+  if (window._bankPushOpenedFromProfile) {
+    window._bankPushOpenedFromProfile = false;
+    if (typeof openProfileModal === 'function') {
+      openProfileModal();
+    }
+  }
 }
 
 async function renderBankPushModalContent() {
@@ -1087,10 +1147,14 @@ async function renderBankPushModalContent() {
   if (!modal) return;
 
   const isAutoEnabled = isBankPushAutoExpenseEnabled();
+  const isNotifyEnabled = isBankPushNotifyOnSaveEnabled();
   const isNative = isNativeAppPlatform();
   let isGranted = false;
+  let isPostGranted = true;
+
   if (isNative) {
     isGranted = await checkBankPushPermissions();
+    isPostGranted = await checkPostNotificationPermission();
   }
 
   modal.innerHTML = `
@@ -1118,23 +1182,33 @@ async function renderBankPushModalContent() {
       <!-- Статус разрешения Android (если запущено в APK) -->
       ${isNative ? `
         ${isGranted ? `
-          <div class="bg-emerald-500/10 border border-emerald-500/25 rounded-2xl p-3.5 flex items-center justify-between">
-            <div class="flex items-center gap-2.5">
-              <i data-lucide="check-circle-2" class="w-4 h-4 text-[#30D158] flex-shrink-0"></i>
-              <div>
-                <span class="text-xs font-semibold text-emerald-200 block leading-tight">Доступ к уведомлениям активен</span>
-                <span class="text-[10.5px] text-emerald-400/80 block mt-0.5">Android перехватывает пуши банков в фоне</span>
+          <div class="bg-[#14261F] border border-emerald-500/25 rounded-2xl p-3 flex items-center justify-between gap-2.5">
+            <div class="flex items-center gap-2.5 min-w-0 flex-1">
+              <div class="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-[#30D158] flex-shrink-0">
+                <i data-lucide="shield-check" class="w-4 h-4"></i>
+              </div>
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-1.5">
+                  <span class="text-xs font-bold text-emerald-200 truncate">Доступ активен</span>
+                  <span class="text-[9.5px] font-semibold text-emerald-400 bg-emerald-500/20 px-1.5 py-0.2 rounded-full">В фоне</span>
+                </div>
+                <span class="text-[11px] text-emerald-300/80 block truncate mt-0.5">Android перехватывает пуши покупок</span>
               </div>
             </div>
-            <button type="button" onclick="openBankPushPermissionSettings()" class="text-[11px] font-medium text-[#A594FD] hover:text-white underline underline-offset-2 cursor-pointer">Настройки</button>
+            <button type="button" onclick="openBankPushPermissionSettings()" class="px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 active:scale-95 text-[11px] font-semibold text-gray-300 hover:text-white border border-white/10 flex items-center gap-1.5 transition-all flex-shrink-0 cursor-pointer shadow-sm">
+              <i data-lucide="settings-2" class="w-3.5 h-3.5 text-gray-400"></i>
+              <span>Настройки</span>
+            </button>
           </div>
         ` : `
           <div class="bg-amber-500/10 border border-amber-500/25 rounded-2xl p-3.5 space-y-2.5">
             <div class="flex items-start gap-2.5">
-              <i data-lucide="alert-circle" class="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5"></i>
-              <div>
+              <div class="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 flex-shrink-0 mt-0.5">
+                <i data-lucide="alert-circle" class="w-4 h-4"></i>
+              </div>
+              <div class="min-w-0 flex-1">
                 <span class="text-xs font-semibold text-amber-200 block">Требуется разрешение Android</span>
-                <span class="text-[11px] text-amber-300/80 block leading-snug mt-0.5">Разрешите приложению «Доступ к уведомлениям», чтобы оно могло распознавать пуши банков при покупках.</span>
+                <span class="text-[11px] text-amber-300/80 block leading-snug mt-0.5">Разрешите приложению «Доступ к уведомлениям», чтобы распознавать покупки в фоне.</span>
               </div>
             </div>
             <button type="button" onclick="openBankPushPermissionSettings()" class="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-[#6C5DD3] to-[#8C7DFF] hover:opacity-90 active:scale-98 text-white text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-[#6C5DD3]/25">
@@ -1150,9 +1224,10 @@ async function renderBankPushModalContent() {
         </div>
       `}
 
-      <!-- Главная карточка: переключатель автоматического учета -->
-      <div class="bg-[#0F1118] border border-white/5 rounded-2xl p-4">
-        <div class="flex items-center justify-between">
+      <!-- Настройки: Тумблеры управления -->
+      <div class="space-y-2">
+        <!-- Тумблер 1: Автоматический учет -->
+        <div class="bg-[#0F1118] border border-white/5 rounded-2xl p-3.5 flex items-center justify-between">
           <div class="pr-3">
             <span class="text-xs font-bold text-white block">Автоматически вносить траты</span>
             <span class="text-[11px] text-gray-400 block mt-0.5 leading-snug">Вносить покупку в базу сразу при получении пуша</span>
@@ -1162,33 +1237,38 @@ async function renderBankPushModalContent() {
             <div class="w-11 h-6 bg-[#2A2D3C] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-[#30D158] after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
           </label>
         </div>
+
+        <!-- Тумблер 2: Подтверждающий пуш от приложения -->
+        <div class="bg-[#0F1118] border border-white/5 rounded-2xl p-3.5 flex items-center justify-between">
+          <div class="pr-3">
+            <span class="text-xs font-bold text-white block">Пуш-подтверждение о записи</span>
+            <span class="text-[11px] text-gray-400 block mt-0.5 leading-snug">Присылать уведомление после успешного внесения расхода</span>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+            <input type="checkbox" ${isNotifyEnabled ? 'checked' : ''} onchange="toggleBankPushNotifyOnSave(this.checked)" class="sr-only peer">
+            <div class="w-11 h-6 bg-[#2A2D3C] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-[#30D158] after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+          </label>
+        </div>
       </div>
 
-      <!-- Важное пояснение про настройку в банке -->
+      <!-- Разъяснение о безопасности данных -->
+      <div class="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-3.5 space-y-1.5">
+        <div class="flex items-center gap-1.5 text-xs font-bold text-blue-200">
+          <i data-lucide="shield-check" class="w-4 h-4 text-[#8C7DFF]"></i>
+          <span>Безопасность и приватность</span>
+        </div>
+        <p class="text-[11px] text-blue-200/80 leading-relaxed">
+          Наше приложение обрабатывает исключительно push-уведомления о покупках от банков — звонки и личные сообщения (Telegram, WhatsApp, SMS) никогда не читаются и не передаются.
+        </p>
+      </div>
+
+      <!-- Важное условие для работы -->
       <div class="bg-amber-500/10 border border-amber-500/25 rounded-2xl p-3.5 flex items-start gap-2.5">
         <i data-lucide="info" class="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5"></i>
         <div class="text-[11.5px] text-amber-200/90 leading-relaxed">
           <b class="text-amber-300 font-semibold block mb-0.5">Важное условие для работы</b>
           Убедитесь, что в приложениях ваших банков (Сбер, Т-Банк, Альфа и др.) <strong class="text-white">включены push-уведомления об операциях и покупках</strong>.
         </div>
-      </div>
-
-      <!-- Приватность и Безопасность -->
-      <div class="bg-[#0F1118] border border-white/5 rounded-2xl p-3.5 space-y-2">
-        <div class="flex items-center gap-1.5 text-xs font-bold text-gray-200">
-          <i data-lucide="shield-check" class="w-4 h-4 text-[#30D158]"></i>
-          <span>100% конфиденциальность</span>
-        </div>
-        <ul class="text-[11px] text-gray-400 space-y-1 leading-normal pl-1">
-          <li class="flex items-start gap-1.5">
-            <span class="text-[#8C7DFF] font-bold">•</span>
-            <span>Приложение фильтрует уведомления строго по белому списку официальных банков РФ.</span>
-          </li>
-          <li class="flex items-start gap-1.5">
-            <span class="text-[#8C7DFF] font-bold">•</span>
-            <span>Личные сообщения (Telegram, WhatsApp, SMS) <strong>никогда не читаются</strong>.</span>
-          </li>
-        </ul>
       </div>
 
       <!-- Интерактивный симулятор / Тестовое внесение -->
@@ -1281,13 +1361,21 @@ function openBankPushPermissionPrompt() {
       <div class="bg-[#0F1118] border border-white/5 rounded-2xl p-3.5 space-y-2.5">
         <div class="text-xs font-bold text-white flex items-center gap-1.5">
           <i data-lucide="zap" class="w-4 h-4 text-[#A594FD]"></i>
-          <span>Как это настроить за 10 секунд:</span>
+          <span>Как включить за 10 секунд:</span>
         </div>
         <ol class="text-[11.5px] text-gray-300 space-y-2 pl-4 list-decimal leading-snug">
           <li>Нажмите <b>«Включить доступ»</b> ниже.</li>
           <li>В системных настройках Android найдите <b>«Семейный бюджет»</b> и активируйте тумблер.</li>
           <li>Убедитесь, что в мобильных банках включены push-уведомления об операциях.</li>
         </ol>
+      </div>
+
+      <!-- Пояснение о безопасности -->
+      <div class="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-3 flex items-start gap-2.5 text-xs text-blue-200/90 leading-snug">
+        <i data-lucide="shield-check" class="w-4 h-4 text-[#8C7DFF] flex-shrink-0 mt-0.5"></i>
+        <div class="text-[11px] leading-relaxed">
+          Наше приложение обрабатывает исключительно push-уведомления о покупках от банков — звонки и личные сообщения (Telegram, WhatsApp, SMS) никогда не читаются и не передаются.
+        </div>
       </div>
 
       <div class="space-y-2 pt-1">
@@ -1314,10 +1402,12 @@ function closeBankPushPermissionPrompt() {
 
 function handleAcceptBankPushPrompt() {
   closeBankPushPermissionPrompt();
+  requestPostNotificationPermission();
   openBankPushPermissionSettings();
 }
 
 async function checkAndPromptBankPushPermission(delayMs = 4500) {
+  // Если запущено не в APK или пользователь выключил авто-учет — никогда не показываем
   if (!isNativeAppPlatform() || !isBankPushAutoExpenseEnabled()) return;
   
   const dismissedAt = parseInt(localStorage.getItem('bank_push_permission_prompt_dismissed_at') || '0', 10);
@@ -1326,6 +1416,8 @@ async function checkAndPromptBankPushPermission(delayMs = 4500) {
 
   setTimeout(async () => {
     try {
+      // Если пользователь отключил в процессе ожидания
+      if (!isBankPushAutoExpenseEnabled()) return;
       const isGranted = await checkBankPushPermissions();
       if (!isGranted) {
         openBankPushPermissionPrompt();
@@ -1357,7 +1449,11 @@ window.handleWidgetPinRequest = handleWidgetPinRequest;
 window.parseBankPushText = parseBankPushText;
 window.saveAutoExpenseTransaction = saveAutoExpenseTransaction;
 window.sendAppLocalNotification = sendAppLocalNotification;
+window.isBankPushNotifyOnSaveEnabled = isBankPushNotifyOnSaveEnabled;
+window.toggleBankPushNotifyOnSave = toggleBankPushNotifyOnSave;
 window.checkBankPushPermissions = checkBankPushPermissions;
+window.checkPostNotificationPermission = checkPostNotificationPermission;
+window.requestPostNotificationPermission = requestPostNotificationPermission;
 window.openBankPushPermissionSettings = openBankPushPermissionSettings;
 window.isBankPushAutoExpenseEnabled = isBankPushAutoExpenseEnabled;
 window.toggleBankPushAutoExpense = toggleBankPushAutoExpense;
@@ -1376,4 +1472,3 @@ if (typeof window !== 'undefined') {
     initBankPushListener();
   }, 1000);
 }
-

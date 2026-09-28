@@ -1483,6 +1483,33 @@ public class BankPushPlugin extends Plugin {
     }
 
     @PluginMethod
+    public void checkPostNotificationPermission(PluginCall call) {
+        Context context = getContext();
+        boolean granted = true;
+        if (Build.VERSION.SDK_INT >= 33) {
+            granted = androidx.core.content.ContextCompat.checkSelfPermission(
+                context,
+                "android.permission.POST_NOTIFICATIONS"
+            ) == android.content.pm.PackageManager.PERMISSION_GRANTED;
+        }
+        JSObject ret = new JSObject();
+        ret.put("granted", granted);
+        call.resolve(ret);
+    }
+
+    @PluginMethod
+    public void requestPostNotificationPermission(PluginCall call) {
+        if (Build.VERSION.SDK_INT >= 33 && getActivity() != null) {
+            androidx.core.app.ActivityCompat.requestPermissions(
+                getActivity(),
+                new String[]{"android.permission.POST_NOTIFICATIONS"},
+                101
+            );
+        }
+        call.resolve();
+    }
+
+    @PluginMethod
     public void openPermissionSettings(PluginCall call) {
         try {
             Intent intent = new Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS);
