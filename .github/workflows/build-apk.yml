@@ -34,11 +34,25 @@ jobs:
 
       - name: 5. Синхронизация Android и подготовка постоянного Keystore
         run: |
+          # 1. Подготовка чистой папки веб-ассетов www
+          rm -rf www
           mkdir -p www
-          cp -r *.html *.js *.css *.json *.svg www/ 2>/dev/null || true
+          cp -f index.html www/index.html
+          cp -f *.js www/ 2>/dev/null || true
+          cp -f *.css www/ 2>/dev/null || true
+          cp -f *.json www/ 2>/dev/null || true
+          cp -f *.svg www/ 2>/dev/null || true
           if [ -d "public" ]; then cp -r public/* www/ 2>/dev/null || true; fi
 
-          # Подготовка постоянного Keystore подписи (один постоянный ключ для всего проекта)
+          if [ ! -f "www/index.html" ]; then
+            echo "Критическая ошибка: www/index.html не найден!"
+            exit 1
+          fi
+
+          echo "Содержимое папки www:"
+          ls -la www/
+
+          # 2. Подготовка постоянного Keystore подписи (один постоянный ключ для всего проекта)
           mkdir -p ~/.android
           if [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
             echo "Использование ключа из GitHub Secrets (KEYSTORE_BASE64)..."
@@ -59,7 +73,15 @@ jobs:
             git push origin HEAD || echo "Не удалось сделать git push (проверьте права токена), но ключ сохранен в артефакты"
           fi
 
+          # 3. Инициализация платформы Android
+          # Если папка android неполная (нет build.gradle), пересоздаем ее через Capacitor
+          if [ -d "android" ] && [ ! -f "android/build.gradle" ]; then
+            echo "Обнаружена неполная папка android (нет build.gradle). Очищаем для npx cap add android..."
+            rm -rf android
+          fi
+
           if [ ! -d "android" ]; then
+            echo "Добавление платформы Android через Capacitor..."
             npx cap add android
           fi
 
@@ -103,6 +125,7 @@ jobs:
             run();
           "
 
+          # 4. Синхронизация веб-ресурсов в Android
           npx cap sync android
 
           # Внедряем нативные виджеты Android (AppWidgetProvider, RemoteViews, WidgetPinPlugin)
