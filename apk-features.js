@@ -1313,20 +1313,47 @@ function initBankPushListener() {
   }
 }
 
-// 12. Модальное окно настроек и симулятора авто-учета по пушам (Bank Push Hub)
-window._bankPushOpenedFromProfile = false;
+// 12. Модальное окно настроек авто-учета по пушам (Bank Push Hub)
+let _bankPushCheckInterval = null;
 
-function openBankPushModal(options = {}) {
-  const profileDialog = document.getElementById('profile-dialog');
-  const isFromProfile = !!(options?.fromProfile || (profileDialog && !profileDialog.classList.contains('hidden')));
-  
-  if (isFromProfile) {
-    window._bankPushOpenedFromProfile = true;
-    if (profileDialog) profileDialog.classList.add('hidden');
-  } else {
-    window._bankPushOpenedFromProfile = false;
+async function checkAndUpdatePushPermissionsUI() {
+  const modal = document.getElementById('bank-push-modal');
+  const isModalOpen = modal && !modal.classList.contains('hidden');
+  const warnEl = document.getElementById('bank-push-permission-warning');
+  if (!warnEl && !isModalOpen) return;
+
+  const isNative = typeof isNativeAppPlatform === 'function' ? isNativeAppPlatform() : false;
+  if (!isNative) {
+    if (warnEl) warnEl.classList.add('hidden');
+    return;
   }
 
+  try {
+    const isGranted = typeof checkBankPushPermissions === 'function' ? await checkBankPushPermissions() : true;
+    if (warnEl) {
+      if (isGranted) {
+        if (!warnEl.classList.contains('hidden')) {
+          warnEl.style.transition = 'opacity 0.25s ease, max-height 0.3s ease, margin 0.3s ease, padding 0.3s ease';
+          warnEl.style.overflow = 'hidden';
+          warnEl.style.opacity = '0';
+          warnEl.style.maxHeight = '0px';
+          warnEl.style.paddingTop = '0px';
+          warnEl.style.paddingBottom = '0px';
+          warnEl.style.marginTop = '0px';
+          warnEl.style.marginBottom = '0px';
+          setTimeout(() => {
+            warnEl.classList.add('hidden');
+            warnEl.style.cssText = '';
+          }, 300);
+        }
+      } else if (isModalOpen) {
+        warnEl.classList.remove('hidden');
+      }
+    }
+  } catch (_) {}
+}
+
+function openBankPushModal(options = {}) {
   let modal = document.getElementById('bank-push-modal');
   if (!modal) {
     modal = document.createElement('div');
@@ -1340,18 +1367,28 @@ function openBankPushModal(options = {}) {
 
   renderBankPushModalContent();
   modal.classList.remove('hidden');
+
+  if (typeof lockBodyScroll === 'function') lockBodyScroll();
+
+  // Запуск периодической проверки прав для мгновенного скрытия плашки при возврате из настроек
+  if (_bankPushCheckInterval) clearInterval(_bankPushCheckInterval);
+  _bankPushCheckInterval = setInterval(checkAndUpdatePushPermissionsUI, 900);
 }
 
 function closeBankPushModal() {
   const modal = document.getElementById('bank-push-modal');
   if (modal) modal.classList.add('hidden');
 
-  // Если окно было вызвано из профиля, возвращаем пользователя в профиль
-  if (window._bankPushOpenedFromProfile) {
-    window._bankPushOpenedFromProfile = false;
-    if (typeof openProfileModal === 'function') {
-      openProfileModal();
-    }
+  if (_bankPushCheckInterval) {
+    clearInterval(_bankPushCheckInterval);
+    _bankPushCheckInterval = null;
+  }
+
+  // Если под модалкой пушей нет открытого профиля, разблокируем скролл страницы
+  const profileDialog = document.getElementById('profile-dialog');
+  const isProfileOpen = profileDialog && !profileDialog.classList.contains('hidden');
+  if (!isProfileOpen && typeof unlockBodyScroll === 'function') {
+    unlockBodyScroll();
   }
 }
 
@@ -1390,19 +1427,19 @@ async function renderBankPushModalContent() {
         </button>
       </div>
 
-      <!-- Предупреждение об отсутствии разрешений (только если разрешения не даны) -->
-      ${isNative && !isGranted ? `
-        <div class="bg-amber-500/10 border border-amber-500/25 rounded-2xl p-3.5 flex items-center justify-between gap-3">
-          <div class="flex items-center gap-2.5 min-w-0 flex-1">
-            <i data-lucide="alert-circle" class="w-4 h-4 text-amber-400 flex-shrink-0"></i>
-            <span class="text-xs text-amber-200/90 leading-snug">Для работы авто-учета требуется доступ к уведомлениям в Android</span>
-          </div>
-          <button type="button" onclick="openBankPushPermissionSettings()" class="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 active:scale-95 text-amber-200 border border-amber-500/30 text-xs font-semibold transition-all flex items-center gap-1.5 flex-shrink-0 cursor-pointer shadow-sm">
+      <!-- Предупреждение об отсутствии разрешений (текст на всю ширину, кнопка в правом нижнем углу) -->
+      <div id="bank-push-permission-warning" class="${isNative && !isGranted ? 'flex' : 'hidden'} bg-amber-500/10 border border-amber-500/25 rounded-2xl p-3.5 flex-col gap-2.5 transition-all duration-300">
+        <div class="flex items-start gap-2.5 w-full">
+          <i data-lucide="alert-circle" class="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5"></i>
+          <span class="text-xs text-amber-200/90 leading-snug flex-1">Для работы авто-учета требуется доступ к уведомлениям в Android</span>
+        </div>
+        <div class="flex justify-end pt-0.5">
+          <button type="button" onclick="openBankPushPermissionSettings()" class="px-3.5 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 active:scale-95 text-amber-200 border border-amber-500/30 text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm">
             <i data-lucide="settings" class="w-3.5 h-3.5"></i>
             <span>Настройки</span>
           </button>
         </div>
-      ` : ''}
+      </div>
 
       <!-- Настройки: Тумблеры управления -->
       <div class="space-y-2">
@@ -1629,12 +1666,33 @@ window.openBankPushModal = openBankPushModal;
 window.closeBankPushModal = closeBankPushModal;
 window.openBankPushPermissionPrompt = openBankPushPermissionPrompt;
 window.closeBankPushPermissionPrompt = closeBankPushPermissionPrompt;
+window.checkAndUpdatePushPermissionsUI = checkAndUpdatePushPermissionsUI;
 window.handleAcceptBankPushPrompt = handleAcceptBankPushPrompt;
 window.checkAndPromptBankPushPermission = checkAndPromptBankPushPermission;
 
-// Автоматическая инициализация слушателя при загрузке скрипта
+// Автоматическая инициализация слушателя при загрузке скрипта и отслеживание возврата в приложение
 if (typeof window !== 'undefined') {
   setTimeout(() => {
     initBankPushListener();
   }, 1000);
+
+  window.addEventListener('focus', () => {
+    checkAndUpdatePushPermissionsUI();
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      checkAndUpdatePushPermissionsUI();
+    }
+  });
+
+  if (window.Capacitor?.Plugins?.App?.addListener) {
+    try {
+      window.Capacitor.Plugins.App.addListener('appStateChange', (state) => {
+        if (state && state.isActive) {
+          checkAndUpdatePushPermissionsUI();
+        }
+      }).catch(() => {});
+    } catch (_) {}
+  }
 }
