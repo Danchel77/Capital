@@ -440,21 +440,32 @@ function openProfileModal() {
     togglePdf.checked = Cache?.settings?.showPdfInfo !== undefined ? !!Cache.settings.showPdfInfo : true;
   }
 
-  // Обновляем видимость пунктов установки, виджетов и проверки обновлений
+  // Обновляем видимость пунктов установки, виджетов, пушей и проверки обновлений
   const pwaBtn = document.getElementById('profile-install-app-btn');
   const checkUpdatesBtn = document.getElementById('profile-check-updates-btn');
   const widgetsBtn = document.getElementById('profile-widgets-btn');
+  const bankPushBtn = document.getElementById('profile-bank-push-btn');
 
   const isNative = typeof window.isNativeAppPlatform === 'function' ? window.isNativeAppPlatform() : false;
   const isPwa = typeof window.isPwaStandalone === 'function' ? window.isPwaStandalone() : false;
 
   if (isNative) {
-    // В нативном APK: пункта установки нет, но доступны виджеты и проверка обновлений
+    // В нативном APK: пункта установки нет, но доступны виджеты, авто-пуши и проверка обновлений
     if (pwaBtn) pwaBtn.classList.add('hidden');
     if (checkUpdatesBtn) checkUpdatesBtn.classList.remove('hidden');
     if (widgetsBtn) widgetsBtn.classList.remove('hidden');
+    if (bankPushBtn) {
+      bankPushBtn.classList.remove('hidden');
+      const autoPushEnabled = typeof window.isBankPushAutoExpenseEnabled === 'function' ? window.isBankPushAutoExpenseEnabled() : true;
+      const badgeEl = document.getElementById('profile-bank-push-badge');
+      if (badgeEl) {
+        badgeEl.textContent = autoPushEnabled ? 'Включен' : 'Выключен';
+        badgeEl.className = autoPushEnabled ? 'text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full' : 'text-[10px] font-bold text-gray-400 bg-white/5 px-2 py-0.5 rounded-full';
+      }
+    }
   } else if (isPwa) {
     // В ярлыке (PWA): доступно скачивание приложения для Android
+    if (bankPushBtn) bankPushBtn.classList.add('hidden');
     if (pwaBtn) {
       pwaBtn.classList.remove('hidden');
       const titleSpan = pwaBtn.querySelector('.profile-install-title');
@@ -466,6 +477,7 @@ function openProfileModal() {
     if (widgetsBtn) widgetsBtn.classList.add('hidden');
   } else {
     // В обычном браузере: пункт установки
+    if (bankPushBtn) bankPushBtn.classList.add('hidden');
     if (pwaBtn) {
       pwaBtn.classList.remove('hidden');
       const titleSpan = pwaBtn.querySelector('.profile-install-title');

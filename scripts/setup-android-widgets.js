@@ -134,7 +134,8 @@ const widgetFullLayout = `<?xml version="1.0" encoding="utf-8"?>
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:layout_marginEnd="10dp">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -199,15 +200,6 @@ const widgetFullLayout = `<?xml version="1.0" encoding="utf-8"?>
                 </LinearLayout>
             </LinearLayout>
         </LinearLayout>
-
-        <!-- Тонкий вертикальный разделитель -->
-        <ImageView
-            android:layout_width="1.2dp"
-            android:layout_height="44dp"
-            android:background="#383E52"
-            android:layout_marginStart="10dp"
-            android:layout_marginEnd="12dp"
-            android:contentDescription="@null" />
 
         <!-- 2. Справа: Траты за месяц -->
         <LinearLayout
@@ -292,7 +284,8 @@ const widgetFullPreview = `<?xml version="1.0" encoding="utf-8"?>
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:layout_marginEnd="10dp">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -337,13 +330,6 @@ const widgetFullPreview = `<?xml version="1.0" encoding="utf-8"?>
                 </LinearLayout>
             </LinearLayout>
         </LinearLayout>
-
-        <ImageView
-            android:layout_width="1.2dp"
-            android:layout_height="42dp"
-            android:background="#383E52"
-            android:layout_marginStart="10dp"
-            android:layout_marginEnd="12dp" />
 
         <!-- Месяц -->
         <LinearLayout
@@ -1292,6 +1278,273 @@ public class WidgetPinPlugin extends Plugin {
 `;
 fs.writeFileSync(path.join(baseJava, 'WidgetPinPlugin.java'), widgetPinPluginJava);
 
+// 10.1. Нативный NotificationListenerService для автоматического считывания банковских пушей
+const bankPushServiceJava = `package com.budget.family;
+
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.os.Build;
+import android.os.Bundle;
+import android.service.notification.NotificationListenerService;
+import android.service.notification.StatusBarNotification;
+import androidx.core.app.NotificationCompat;
+import com.getcapacitor.JSObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
+public class BankPushService extends NotificationListenerService {
+
+    private static final String PREFS_NAME = "BankPushPrefs";
+    private static final String CHANNEL_ID = "budget_auto_expenses";
+    
+    // Белый список пакетов официальных банков РФ
+    private static final Set<String> ALLOWED_BANK_PACKAGES = new HashSet<>(Arrays.asList(
+        "com.idamob.tinkoff.android",
+        "ru.tinkoff.mobile",
+        "ru.sberbankmobile",
+        "ru.alfabank.mobile.android",
+        "ru.vtb24.mobilebanking",
+        "ru.raiffeisennews",
+        "com.yandex.bank",
+        "ru.yandex.pay",
+        "ru.gazprombank.android.mobilebank.app",
+        "ru.ozon.fintech.bank",
+        "ru.mts.money",
+        "ru.rosbank.android",
+        "ru.sovcomcard.halva.v1",
+        "ru.psbank.mobile.individual"
+    ));
+
+    @Override
+    public void onNotificationPosted(StatusBarNotification sbn) {
+        if (sbn == null || sbn.getNotification() == null) return;
+
+        String packageName = sbn.getPackageName();
+        if (packageName == null) return;
+
+        // Фильтрация: слушаем строго банковские приложения
+        boolean isAllowedBank = ALLOWED_BANK_PACKAGES.contains(packageName);
+        if (!isAllowedBank) {
+            // Проверка по ключевым словам в имени пакета
+            String pkgLower = packageName.toLowerCase();
+            if (!pkgLower.contains("bank") && !pkgLower.contains("tinkoff") && !pkgLower.contains("sber") && !pkgLower.contains("alfa") && !pkgLower.contains("vtb")) {
+                return;
+            }
+        }
+
+        Notification notification = sbn.getNotification();
+        Bundle extras = notification.extras;
+        if (extras == null) return;
+
+        CharSequence titleCs = extras.getCharSequence(Notification.EXTRA_TITLE);
+        CharSequence textCs = extras.getCharSequence(Notification.EXTRA_TEXT);
+        CharSequence bigTextCs = extras.getCharSequence(Notification.EXTRA_BIG_TEXT);
+
+        String title = titleCs != null ? titleCs.toString() : "";
+        String text = bigTextCs != null ? bigTextCs.toString() : (textCs != null ? textCs.toString() : "");
+
+        if (title.isEmpty() && text.isEmpty()) return;
+
+        // Сохраняем во временную очередь SharedPreferences для веб-части
+        try {
+            SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+            String existingQueue = prefs.getString("pending_pushes", "[]");
+            JSONArray arr = new JSONArray(existingQueue);
+
+            JSONObject item = new JSONObject();
+            item.put("packageName", packageName);
+            item.put("title", title);
+            item.put("text", text);
+            item.put("postTime", sbn.getPostTime());
+
+            arr.put(item);
+            prefs.edit().putString("pending_pushes", arr.toString()).apply();
+        } catch (Exception ignored) {}
+
+        // Отправляем событие в плагин Capacitor в реальном времени
+        JSObject data = new JSObject();
+        data.put("packageName", packageName);
+        data.put("title", title);
+        data.put("text", text);
+        data.put("postTime", sbn.getPostTime());
+
+        BankPushPlugin.dispatchBankPushEvent(data);
+    }
+}
+`;
+fs.writeFileSync(path.join(baseJava, 'BankPushService.java'), bankPushServiceJava);
+
+// 10.2. Capacitor Plugin для связи JS с BankPushService
+const bankPushPluginJava = `package com.budget.family;
+
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.os.Build;
+import android.provider.Settings;
+import android.text.TextUtils;
+import androidx.core.app.NotificationCompat;
+import com.getcapacitor.JSArray;
+import com.getcapacitor.JSObject;
+import com.getcapacitor.Plugin;
+import com.getcapacitor.PluginCall;
+import com.getcapacitor.PluginMethod;
+import com.getcapacitor.annotation.CapacitorPlugin;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+@CapacitorPlugin(name = "BankPush")
+public class BankPushPlugin extends Plugin {
+
+    private static final String PREFS_NAME = "BankPushPrefs";
+    private static final String CHANNEL_ID = "budget_auto_expenses";
+    private static BankPushPlugin instance;
+
+    @Override
+    public void load() {
+        super.load();
+        instance = this;
+        createNotificationChannel();
+    }
+
+    public static void dispatchBankPushEvent(JSObject data) {
+        if (instance != null) {
+            instance.notifyListeners("bankPushReceived", data);
+        }
+    }
+
+    @PluginMethod
+    public void checkPermission(PluginCall call) {
+        Context context = getContext();
+        boolean isEnabled = isNotificationServiceEnabled(context);
+        JSObject ret = new JSObject();
+        ret.put("granted", isEnabled);
+        call.resolve(ret);
+    }
+
+    @PluginMethod
+    public void openPermissionSettings(PluginCall call) {
+        try {
+            Intent intent = new Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            getContext().startActivity(intent);
+            call.resolve();
+        } catch (Exception e) {
+            try {
+                Intent fallback = new Intent(Settings.ACTION_SETTINGS);
+                fallback.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                getContext().startActivity(fallback);
+                call.resolve();
+            } catch (Exception ex) {
+                call.reject("Cannot open settings", ex);
+            }
+        }
+    }
+
+    @PluginMethod
+    public void getPendingBankPushes(PluginCall call) {
+        SharedPreferences prefs = getContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        String jsonStr = prefs.getString("pending_pushes", "[]");
+        prefs.edit().putString("pending_pushes", "[]").apply();
+
+        try {
+            JSONArray arr = new JSONArray(jsonStr);
+            JSArray jsArr = new JSArray();
+            for (int i = 0; i < arr.length(); i++) {
+                JSONObject obj = arr.getJSONObject(i);
+                JSObject jsObj = new JSObject();
+                jsObj.put("packageName", obj.optString("packageName"));
+                jsObj.put("title", obj.optString("title"));
+                jsObj.put("text", obj.optString("text"));
+                jsObj.put("postTime", obj.optLong("postTime"));
+                jsArr.put(jsObj);
+            }
+            JSObject ret = new JSObject();
+            ret.put("pushes", jsArr);
+            call.resolve(ret);
+        } catch (Exception e) {
+            JSObject ret = new JSObject();
+            ret.put("pushes", new JSArray());
+            call.resolve(ret);
+        }
+    }
+
+    @PluginMethod
+    public void notifyExpenseSaved(PluginCall call) {
+        String title = call.getString("title", "Расход внесен");
+        String body = call.getString("body", "");
+
+        try {
+            createNotificationChannel();
+            NotificationManager nm = (NotificationManager) getContext().getSystemService(Context.NOTIFICATION_SERVICE);
+            if (nm != null) {
+                NotificationCompat.Builder builder = new NotificationCompat.Builder(getContext(), CHANNEL_ID)
+                    .setSmallIcon(R.mipmap.ic_launcher)
+                    .setContentTitle(title)
+                    .setContentText(body)
+                    .setPriority(NotificationCompat.PRIORITY_HIGH)
+                    .setAutoCancel(true);
+
+                nm.notify((int) System.currentTimeMillis(), builder.build());
+            }
+            call.resolve();
+        } catch (Exception e) {
+            call.resolve();
+        }
+    }
+
+    @PluginMethod
+    public void setAutoExpenseEnabled(PluginCall call) {
+        boolean enabled = call.getBoolean("enabled", true);
+        SharedPreferences prefs = getContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        prefs.edit().putBoolean("auto_expense_enabled", enabled).apply();
+        call.resolve();
+    }
+
+    private boolean isNotificationServiceEnabled(Context context) {
+        String pkgName = context.getPackageName();
+        final String flat = Settings.Secure.getString(context.getContentResolver(), "enabled_notification_listeners");
+        if (!TextUtils.isEmpty(flat)) {
+            final String[] names = flat.split(":");
+            for (String name : names) {
+                final ComponentName cn = ComponentName.unflattenFromString(name);
+                if (cn != null) {
+                    if (TextUtils.equals(pkgName, cn.getPackageName())) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationManager nm = (NotificationManager) getContext().getSystemService(Context.NOTIFICATION_SERVICE);
+            if (nm != null) {
+                NotificationChannel channel = new NotificationChannel(
+                    CHANNEL_ID,
+                    "Авто-внесение трат",
+                    NotificationManager.IMPORTANCE_HIGH
+                );
+                channel.setDescription("Уведомления об автоматически внесенных операциях");
+                nm.createNotificationChannel(channel);
+            }
+        }
+    }
+}
+`;
+fs.writeFileSync(path.join(baseJava, 'BankPushPlugin.java'), bankPushPluginJava);
+
 // 11. Обновление strings.xml
 if (fs.existsSync(stringsPath)) {
   let stringsContent = fs.readFileSync(stringsPath, 'utf8');
@@ -1312,6 +1565,29 @@ if (fs.existsSync(stringsPath)) {
 // 12. Обновление AndroidManifest.xml
 if (fs.existsSync(manifestPath)) {
   let manifestContent = fs.readFileSync(manifestPath, 'utf8');
+  
+  // Добавляем разрешение на получение уведомлений (Android 13+)
+  if (!manifestContent.includes('POST_NOTIFICATIONS')) {
+    manifestContent = manifestContent.replace(
+      '<application',
+      '    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>\n    <application'
+    );
+  }
+
+  if (!manifestContent.includes('BankPushService')) {
+    const serviceRegistration = [
+      '        <service android:name=".BankPushService"',
+      '            android:label="@string/app_name"',
+      '            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"',
+      '            android:exported="true">',
+      '            <intent-filter>',
+      '                <action android:name="android.service.notification.NotificationListenerService" />',
+      '            </intent-filter>',
+      '        </service>'
+    ].join('\n');
+    manifestContent = manifestContent.replace('</application>', serviceRegistration + '\n    </application>');
+  }
+
   if (!manifestContent.includes('WidgetConfigureActivity')) {
     const activityAndReceivers = [
       '        <activity android:name=".WidgetConfigureActivity" android:exported="true">',
@@ -1345,8 +1621,9 @@ if (fs.existsSync(manifestPath)) {
       '        </receiver>'
     ].join('\n');
     manifestContent = manifestContent.replace('</application>', activityAndReceivers + '\n    </application>');
-    fs.writeFileSync(manifestPath, manifestContent);
   }
+
+  fs.writeFileSync(manifestPath, manifestContent);
 }
 
 // 13. MainActivity.java
@@ -1364,6 +1641,7 @@ if (fs.existsSync(mainActivityPath)) {
     '    public void onCreate(Bundle savedInstanceState) {',
     '        registerPlugin(GoogleAuth.class);',
     '        registerPlugin(WidgetPinPlugin.class);',
+    '        registerPlugin(BankPushPlugin.class);',
     '        super.onCreate(savedInstanceState);',
     '        handleWidgetAction(getIntent());',
     '    }',

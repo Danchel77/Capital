@@ -1459,4 +1459,14 @@ body.privacy-mode-active canvas:hover {
   overscroll-behavior-y: contain !important;
 }
 
+/* ==========================================
+   Virtual Keyboard & Bottom Nav Auto-Hiding
+   ========================================== */
+body.keyboard-visible #bottom-nav-bar {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+}
+
 

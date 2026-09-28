@@ -217,7 +217,7 @@ function handleMouseMove(e) {
 // ==========================================
 function openCardContextMenu(e, title, onEdit, onDelete, extraAction = null) {
   if (selectionMode) {
-    if (e) e.stopPropagation();
+    if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
     const el = getEventTargetElement(e?.target);
     const card = e ? (e.currentTarget || (el && el.closest('.card'))) : null;
     if (card) {
@@ -226,7 +226,10 @@ function openCardContextMenu(e, title, onEdit, onDelete, extraAction = null) {
     return;
   }
 
-  if (e) e.stopPropagation();
+  if (e) {
+    if (typeof e.stopPropagation === 'function') e.stopPropagation();
+    if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+  }
   const menu = document.getElementById('card-context-menu');
   const titleEl = document.getElementById('context-menu-title');
   const editBtn = document.getElementById('context-btn-edit');
@@ -268,8 +271,8 @@ function openCardContextMenu(e, title, onEdit, onDelete, extraAction = null) {
   }
 
   titleEl.innerText = title || 'Действия';
-  editBtn.onclick = () => triggerPopoverAction(editBtn, onEdit);
-  deleteBtn.onclick = () => triggerPopoverAction(deleteBtn, onDelete);
+  editBtn.onclick = (ev) => { if (ev) ev.stopPropagation(); triggerPopoverAction(editBtn, onEdit); };
+  deleteBtn.onclick = (ev) => { if (ev) ev.stopPropagation(); triggerPopoverAction(deleteBtn, onDelete); };
 
   if (amortizeBtn) {
     if (extraAction && typeof extraAction.handler === 'function') {
@@ -277,7 +280,7 @@ function openCardContextMenu(e, title, onEdit, onDelete, extraAction = null) {
       amortizeBtn.classList.add('flex');
       if (amortizeText) amortizeText.innerText = extraAction.label || 'Сделать разовой';
       if (amortizeIcon && extraAction.icon) amortizeIcon.setAttribute('data-lucide', extraAction.icon);
-      amortizeBtn.onclick = () => triggerPopoverAction(amortizeBtn, extraAction.handler);
+      amortizeBtn.onclick = (ev) => { if (ev) ev.stopPropagation(); triggerPopoverAction(amortizeBtn, extraAction.handler); };
     } else {
       amortizeBtn.classList.add('hidden');
       amortizeBtn.classList.remove('flex');
@@ -286,7 +289,11 @@ function openCardContextMenu(e, title, onEdit, onDelete, extraAction = null) {
   }
 
   menu.classList.remove('hidden');
-  if (typeof lucide !== 'undefined') lucide.createIcons({ root: menu });
+  menu.style.display = 'flex';
+  menu.style.zIndex = '150';
+  try {
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  } catch (err) {}
 
   const rect = card.getBoundingClientRect();
   const hasExtra = (extraAction && typeof extraAction.handler === 'function');
@@ -304,13 +311,10 @@ function openCardContextMenu(e, title, onEdit, onDelete, extraAction = null) {
 
   let top;
   if (spaceBelow >= menuHeight + 6) {
-    // Достаточно места под карточкой
     top = rect.bottom + 6;
   } else if (spaceAbove >= menuHeight + 6) {
-    // Места снизу нет, открываем аккуратно СВЕРХУ карточки без перекрытия
     top = rect.top - menuHeight - 6;
   } else {
-    // В редком случае нехватки места с обеих сторон выбираем сторону с большим запасом
     if (spaceAbove >= spaceBelow) {
       top = Math.max(topLimit, rect.top - menuHeight - 6);
     } else {
@@ -318,7 +322,6 @@ function openCardContextMenu(e, title, onEdit, onDelete, extraAction = null) {
     }
   }
 
-  // Горизонтальное позиционирование (прижимаем к правому краю карточки, но в пределах экрана)
   let left = Math.min(window.innerWidth - menuWidth - 12, Math.max(12, rect.right - menuWidth));
 
   menu.style.top = `${top}px`;
@@ -329,7 +332,10 @@ function closeCardContextMenu() {
   const menu = document.getElementById('card-context-menu');
   const isMenuOpen = menu && !menu.classList.contains('hidden');
   if (!isMenuOpen && !activeContextCard) return;
-  if (menu) menu.classList.add('hidden');
+  if (menu) {
+    menu.classList.add('hidden');
+    menu.style.display = 'none';
+  }
   if (activeContextCard) {
     activeContextCard.classList.remove('context-active');
     activeContextCard = null;
@@ -431,19 +437,32 @@ function openCustomDatePicker(inputEl) {
 
   if (modal) {
     modal.classList.remove('hidden');
-    picker?.classList.remove('hidden');
+    modal.style.display = 'flex';
+    if (picker) {
+      picker.classList.remove('hidden');
+      picker.style.display = 'block';
+    }
   } else if (picker) {
     picker.classList.remove('hidden');
+    picker.style.display = 'block';
   }
 
-  if (typeof lucide !== 'undefined') lucide.createIcons();
+  try {
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  } catch (err) {}
 }
 
 function closeCustomDatePicker() {
   const modal = document.getElementById('custom-datepicker-modal');
   const picker = document.getElementById('custom-datepicker');
-  if (modal) modal.classList.add('hidden');
-  if (picker) picker.classList.add('hidden');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.style.display = 'none';
+  }
+  if (picker) {
+    picker.classList.add('hidden');
+    picker.style.display = 'none';
+  }
   activeDateInput = null;
 }
 
@@ -644,11 +663,15 @@ function triggerPdfImportFromWizard() {
 document.addEventListener('DOMContentLoaded', setupCustomDatePickers);
 setTimeout(setupCustomDatePickers, 500);
 
-// При скролле страницы скрываются меню, календарь и всплывающие тултипы
+// При скролле страницы мягко скрываем только контекстное мини-меню карточек
+let lastScrollY = window.scrollY || window.pageYOffset || 0;
 window.addEventListener('scroll', () => {
-  closeCardContextMenu();
-  closeCustomDatePicker();
-  hideAllChartTooltips();
+  const curY = window.scrollY || window.pageYOffset || 0;
+  if (Math.abs(curY - lastScrollY) > 16) {
+    lastScrollY = curY;
+    closeCardContextMenu();
+    hideAllChartTooltips();
+  }
 }, { passive: true });
 
 // Перехват нативного календаря Android / iOS (Capture phase)
@@ -662,7 +685,7 @@ document.addEventListener('click', (e) => {
     dateInput.readOnly = true;
     dateInput.setAttribute('inputmode', 'none');
     dateInput.blur();
-    openCustomDatePicker(dateInput);
+    openCustomDatePicker(dateInput, e);
   }
 }, true);
 
@@ -730,33 +753,43 @@ document.addEventListener('click', (e) => {
     return;
   }
 
-  // 2. Закрытие контекстного мини-меню карточки при клике мимо
-  if (activeContextCard && !el.closest('#card-context-menu') && !el.closest('.context-menu-btn')) {
+  // 2. Закрытие контекстного мини-меню карточки при клике мимо карточки и поповера
+  if (activeContextCard && !el.closest('#card-context-menu') && !el.closest('.context-menu-btn') && !el.closest('.card') && !el.closest('[data-table]')) {
     closeCardContextMenu();
   }
 
-  // 5. Закрытие DatePicker при клике вне его
+  // 3. Закрытие DatePicker при клике вне модального окна календаря
   const modal = document.getElementById('custom-datepicker-modal');
   const picker = document.getElementById('custom-datepicker');
   const isDatepickerOpen = (modal && !modal.classList.contains('hidden')) || (picker && !picker.classList.contains('hidden'));
   if (isDatepickerOpen) {
-    if (!el.closest('#custom-datepicker') && !el.closest('input[type="date"]') && !el.closest('input[data-datepicker]') && !el.closest('#edit-tx-date-btn')) {
+    if (!el.closest('#custom-datepicker-modal') && 
+        !el.closest('#custom-datepicker') && 
+        !el.closest('input[type="date"]') && 
+        !el.closest('input[data-datepicker]') && 
+        !el.closest('[data-datepicker]') && 
+        !el.closest('#edit-tx-date-btn') && 
+        !el.closest('#edit-dep-start') && 
+        !el.closest('#edit-dep-end') && 
+        !el.closest('#edit-broker-date') && 
+        !el.closest('.tx-date') && 
+        !el.closest('[onclick*="openCustomDatePicker"]')) {
       closeCustomDatePicker();
     }
   }
 
-  // Закрытие всех кастомных выпадающих меню при клике мимо (не закрывать при работе с дейтпикером)
+  // 4. Закрытие всех кастомных выпадающих меню при клике мимо (не закрывать при работе с дейтпикером)
   if (!el.closest('.custom-dropdown-wrap') && !el.closest('.custom-dropdown-menu') && !el.closest('#custom-datepicker') && !el.closest('#custom-datepicker-modal')) {
     document.querySelectorAll('.custom-dropdown-menu').forEach(m => m.classList.add('hidden'));
     document.querySelectorAll('.tx-item').forEach(r => r.style.zIndex = '');
   }
 
-  // 6. Закрытие тултипов на графиках
+  // 5. Закрытие тултипов на графиках
   if (typeof hideAllChartTooltips === 'function') {
     hideAllChartTooltips(e);
   }
 
-  // 7. Кнопки вызова категорий (если кликнули по ним)
+  // 6. Кнопки вызова категорий (если кликнули по ним)
   if (el.classList?.contains('manage-categories-btn')) {
     if (typeof showManageCategoriesDialog === 'function') showManageCategoriesDialog();
     return;
@@ -779,6 +812,69 @@ document.addEventListener('touchmove', handleTouchMove, { passive: true });
 document.addEventListener('mousedown', handleMouseDown);
 document.addEventListener('mouseup', handleMouseUp);
 document.addEventListener('mousemove', handleMouseMove);
+
+// ==========================================
+// Virtual Keyboard & Bottom Navigation Auto-Adjust
+// ==========================================
+(function initVirtualKeyboardManager() {
+  let baseHeight = window.innerHeight;
+  let isKeyboardOpen = false;
+
+  function checkHeight() {
+    const curInner = window.innerHeight;
+    const curVisual = window.visualViewport ? window.visualViewport.height : curInner;
+    const curHeight = Math.min(curInner, curVisual);
+
+    // Если фокуса на инпутах нет, обновляем базовую высоту экрана (например, при загрузке или смене ориентации)
+    const activeEl = document.activeElement;
+    const activeTag = activeEl ? activeEl.tagName : '';
+    const isEditing = activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT' || (activeEl && activeEl.isContentEditable);
+    
+    if (!isEditing && curHeight > baseHeight * 0.85) {
+      baseHeight = Math.max(baseHeight, curHeight);
+    }
+
+    // Клавиатура считается открытой ТОЛЬКО если высота экрана реально физически уменьшилась более чем на 130px
+    const diff = baseHeight - curHeight;
+    const actuallyOpen = diff > 130;
+
+    if (actuallyOpen !== isKeyboardOpen) {
+      isKeyboardOpen = actuallyOpen;
+      if (isKeyboardOpen) {
+        document.body.classList.add('keyboard-visible');
+      } else {
+        document.body.classList.remove('keyboard-visible');
+      }
+    }
+  }
+
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', checkHeight, { passive: true });
+    window.visualViewport.addEventListener('scroll', checkHeight, { passive: true });
+  }
+  window.addEventListener('resize', checkHeight, { passive: true });
+  window.addEventListener('orientationchange', () => {
+    setTimeout(() => {
+      baseHeight = window.innerHeight;
+      checkHeight();
+    }, 200);
+  });
+
+  document.addEventListener('focusin', () => {
+    checkHeight();
+    setTimeout(checkHeight, 100);
+    setTimeout(checkHeight, 250);
+    setTimeout(checkHeight, 450);
+  }, { passive: true });
+
+  document.addEventListener('focusout', () => {
+    setTimeout(checkHeight, 80);
+    setTimeout(checkHeight, 250);
+  }, { passive: true });
+
+  setInterval(checkHeight, 350);
+  checkHeight();
+})();
 
 // ==========================================
 // Global Scope Exports

@@ -1,11 +1,47 @@
 // ==========================================
 // PWA Service Worker & Offline Resilience
 // ==========================================
+let _swRefreshing = false;
 if ('serviceWorker' in navigator) {
+  // При смене контроллера (активации новой версии PWA) бесшовно перезагружаем вкладку один раз для отображения свежего интерфейса
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!_swRefreshing) {
+      _swRefreshing = true;
+      window.location.reload();
+    }
+  });
+
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(err => {
+    navigator.serviceWorker.register('./sw.js').then((reg) => {
+      // Принудительно проверяем наличие новой версии sw.js на сервере при каждом открытии
+      reg.update().catch(() => {});
+
+      if (reg.waiting) {
+        reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+      }
+
+      reg.addEventListener('updatefound', () => {
+        const newWorker = reg.installing;
+        if (newWorker) {
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              newWorker.postMessage({ type: 'SKIP_WAITING' });
+            }
+          });
+        }
+      });
+    }).catch(err => {
       console.log('SW registration failed:', err);
     });
+  });
+
+  // При возврате пользователя на вкладку браузера проверяем обновления
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      navigator.serviceWorker.getRegistration().then(reg => {
+        if (reg) reg.update().catch(() => {});
+      });
+    }
   });
 }
 

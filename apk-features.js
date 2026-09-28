@@ -209,7 +209,7 @@ function renderFullWidgetPreviewHtml(data) {
       
       <div class="p-3.5 flex items-center justify-between gap-3">
         <!-- 1. Слева: Недельные траты -->
-        <div class="flex-1 min-w-0">
+        <div class="flex-1 min-w-0 pr-1">
           <span class="text-[11px] font-bold text-[#BAC7D5] block leading-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">Недельные траты</span>
           <div class="flex items-center gap-2.5 mt-1.5">
             <div class="relative flex items-center justify-center flex-shrink-0">
@@ -223,11 +223,8 @@ function renderFullWidgetPreviewHtml(data) {
           </div>
         </div>
 
-        <!-- Разделитель -->
-        <div class="w-[1.2px] h-11 bg-[#383E52] flex-shrink-0"></div>
-
         <!-- 2. Справа: Траты за месяц -->
-        <div class="flex-[1.35] min-w-0">
+        <div class="flex-[1.35] min-w-0 pl-1">
           <span class="text-[11px] font-bold text-[#BAC7D5] block leading-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">Траты за месяц</span>
           <span class="text-[15.5px] font-bold text-white block leading-tight tracking-tight drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] truncate mt-1">${format(data.monthlySpent)} из ${format(data.monthlyLimit)}</span>
 
@@ -732,7 +729,490 @@ function initWidgetSwipeGesture() {
   card.addEventListener('touchcancel', endDrag, { passive: true });
 }
 
-// 11. Глобальный экспорт функций
+// 11. Автоматический учет расходов по банковским пуш-уведомлениям (Bank Push Automation)
+
+const BANK_PACKAGE_NAMES = {
+  'com.idamob.tinkoff.android': 'Т-Банк',
+  'ru.tinkoff.mobile': 'Т-Банк',
+  'ru.sberbankmobile': 'СберБанк',
+  'ru.alfabank.mobile.android': 'Альфа-Банк',
+  'ru.vtb24.mobilebanking': 'ВТБ',
+  'ru.raiffeisennews': 'Райффайзенбанк',
+  'com.yandex.bank': 'Яндекс Банк',
+  'ru.yandex.pay': 'Яндекс Пэй',
+  'ru.gazprombank.android.mobilebank.app': 'Газпромбанк',
+  'ru.ozon.fintech.bank': 'Озон Банк',
+  'ru.mts.money': 'МТС Банк',
+  'ru.rosbank.android': 'Росбанк',
+  'ru.sovcomcard.halva.v1': 'Совкомбанк',
+  'ru.psbank.mobile.individual': 'ПСБ'
+};
+
+function getBankNameByPackage(pkgName) {
+  if (!pkgName) return 'Банк';
+  return BANK_PACKAGE_NAMES[pkgName] || 'Банк';
+}
+
+function parseBankPushText(title = '', text = '', packageName = '') {
+  const fullText = `${title} ${text}`.trim();
+  if (!fullText) return null;
+
+  // 1. Определение банка
+  let bankName = getBankNameByPackage(packageName);
+  const lowerFull = fullText.toLowerCase();
+  if (bankName === 'Банк') {
+    if (lowerFull.includes('тинькофф') || lowerFull.includes('т-банк') || lowerFull.includes('tinkoff') || lowerFull.includes('t-bank')) bankName = 'Т-Банк';
+    else if (lowerFull.includes('сбер') || lowerFull.includes('sber')) bankName = 'СберБанк';
+    else if (lowerFull.includes('альфа') || lowerFull.includes('alfa')) bankName = 'Альфа-Банк';
+    else if (lowerFull.includes('втб') || lowerFull.includes('vtb')) bankName = 'ВТБ';
+    else if (lowerFull.includes('райф') || lowerFull.includes('raiff')) bankName = 'Райффайзенбанк';
+    else if (lowerFull.includes('яндекс') || lowerFull.includes('yandex')) bankName = 'Яндекс Пэй';
+    else if (lowerFull.includes('газпром') || lowerFull.includes('gpb')) bankName = 'Газпромбанк';
+    else if (lowerFull.includes('озон') || lowerFull.includes('ozon')) bankName = 'Озон Банк';
+  }
+
+  // 2. Определение типа операции (Расход vs Доход vs Игнор)
+  const isIncome = /(?:зачисление|пополнение|перевод от|возврат|зарплата|входящий перевод|\+[\d\s]+)/i.test(fullText) && !/(?:списание|покупка|оплата)/i.test(fullText);
+  const isExpense = /(?:покупка|оплата|списание|списано|снятие|чек|заказ|перевод клиенту|перевод на|в адрес)/i.test(fullText) || !isIncome;
+
+  // 3. Извлечение суммы операции
+  // Примеры: "1 450 ₽", "1450.50 руб", "320.00 RUB", "890р", "+15 000 ₽"
+  let amount = 0;
+  const amountRegexes = [
+    /(?:покупка|оплата|списание|списано|снятие|зачисление|пополнение|сумма|чек|на сумму|расход)\s*(?::)?\s*([+\-]?\s*[\d\s]+(?:[.,]\d{1,2})?)\s*(?:₽|руб|рубл|rur|rub|р\b)/i,
+    /([+\-]?\s*[\d\s]+(?:[.,]\d{1,2})?)\s*(?:₽|руб|рубл|rur|rub|р\b)/i,
+    /(?:сумма|итог)\s*[:=]\s*([+\-]?\s*[\d\s]+(?:[.,]\d{1,2})?)/i
+  ];
+
+  for (const reg of amountRegexes) {
+    const match = fullText.match(reg);
+    if (match && match[1]) {
+      const cleanNumStr = match[1].replace(/\s/g, '').replace(/\+/g, '').replace(/,/g, '.');
+      const parsed = parseFloat(cleanNumStr);
+      if (!isNaN(parsed) && parsed > 0 && parsed < 10000000) {
+        amount = Math.round(parsed * 100) / 100;
+        break;
+      }
+    }
+  }
+
+  if (amount <= 0) return null;
+
+  // 4. Извлечение названия магазина / мерчанта
+  let rawMerchant = '';
+
+  // Специфика Т-Банка: "Покупка 1 450 ₽, Пятерочка. Доступно 54 200 ₽" или "Оплата 320 ₽, Yandex Go. Кэшбэк 16 ₽"
+  if (/com\.idamob\.tinkoff|ru\.tinkoff/i.test(packageName) || bankName === 'Т-Банк') {
+    const m = text.match(/(?:покупка|оплата|списание)\s+[\d\s.,]+(?:₽|руб|rur|rub|р)?\s*[,.]?\s*([^.,]+?)(?:\.\s*(?:доступно|баланс|кэшб|карта|$)|,\s*кэшб|$)/i);
+    if (m && m[1]) rawMerchant = m[1].trim();
+  }
+
+  // Специфика Сбера: "СберБанк: Списание 890р Перекресток. Баланс: 12 340.50р"
+  if (!rawMerchant && (/ru\.sberbankmobile/i.test(packageName) || bankName === 'СберБанк')) {
+    const m = text.match(/(?:покупка|оплата|списание|зачисление)\s+[\d\s.,]+(?:₽|руб|rur|rub|р)?\s+([^.]+?)(?:\.|\s+баланс|\s+карта|$)/i);
+    if (m && m[1]) rawMerchant = m[1].trim();
+  }
+
+  // Специфика Альфа: "Покупка: 2 100 руб, ВкусВилл. Доступно: 45 000 руб"
+  if (!rawMerchant && (/ru\.alfabank/i.test(packageName) || bankName === 'Альфа-Банк')) {
+    const m = text.match(/(?:покупка|оплата|списание)[:\s]+[\d\s.,]+(?:₽|руб|rur|rub|р)?\s*[,.]?\s*([^.,]+?)(?:\.\s*(?:доступно|остаток)|$)/i);
+    if (m && m[1]) rawMerchant = m[1].trim();
+  }
+
+  // Специфика Яндекс Пэй: "Оплата 450 ₽ в Лавка. Карта Пэй"
+  if (!rawMerchant && (/yandex/i.test(packageName) || bankName === 'Яндекс Пэй')) {
+    const m = text.match(/(?:оплата|списание|покупка)\s+[\d\s.,]+(?:₽|руб|rur|rub|р)?\s+(?:в\s+|за\s+)?([^.]+?)(?:\.|\s+карта|$)/i);
+    if (m && m[1]) rawMerchant = m[1].trim();
+  }
+
+  // Универсальное извлечение мерчанта
+  if (!rawMerchant) {
+    let clean = text
+      .replace(/^(?:сбербанк|тинькофф|т-банк|альфа-банк|втб|банк):\s*/i, '')
+      .replace(/(?:покупка|оплата|списание|списано|зачисление|пополнение|снятие)[:\s]+[\d\s.,]+(?:₽|руб|rur|rub|р)?/gi, '')
+      .replace(/(?:доступно|баланс|остаток|карта|кэшбэк|счет|счёта|authcode|mcc)[\s\d*.:,₽рубrur]+/gi, '')
+      .replace(/[.,;]+$/, '')
+      .trim();
+
+    clean = clean.replace(/^[,\s.—–-]+|[,\s.—–-]+$/g, '').trim();
+    if (clean.length >= 2 && clean.length <= 40) {
+      rawMerchant = clean;
+    }
+  }
+
+  const finalMerchant = rawMerchant || title || bankName || 'Покупка';
+
+  // 5. Автокатегоризация через StatementCategorizer
+  let category = isIncome ? 'Зарплата' : 'Продукты';
+  if (typeof window.StatementCategorizer?.categorize === 'function') {
+    category = window.StatementCategorizer.categorize(finalMerchant, fullText, isIncome ? 'Доход' : 'Расход');
+  } else {
+    // Fallback категоризация по правилам
+    const rules = window.Cache?.categoryRules || window.DEFAULT_CATEGORY_RULES || [];
+    const lowerNorm = (finalMerchant + ' ' + fullText).toLowerCase();
+    for (const r of rules) {
+      if (r.pattern && lowerNorm.includes(r.pattern.toLowerCase())) {
+        category = r.category;
+        break;
+      }
+    }
+  }
+
+  return {
+    bank: bankName,
+    amount,
+    type: isIncome ? 'Доход' : 'Расход',
+    merchant: finalMerchant,
+    category: category || (isIncome ? 'Другое' : 'Прочее'),
+    rawText: fullText,
+    timestamp: Date.now()
+  };
+}
+
+// Автоматическое сохранение распознанной операции
+async function saveAutoExpenseTransaction(parsedData) {
+  if (!parsedData || !parsedData.amount || parsedData.amount <= 0) return null;
+  if (!window.auth?.currentUser) return null;
+
+  const now = new Date();
+  const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const formattedDateStr = `${String(now.getDate()).padStart(2, '0')}.${String(now.getMonth() + 1).padStart(2, '0')}.${now.getFullYear()}`;
+
+  const tempTxId = `auto_push_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+
+  // Проверка на дубликат (если операция уже внесена за последние 10 минут с такой же суммой)
+  const allFlat = typeof getAllCachedTransactionsFlat === 'function' ? getAllCachedTransactionsFlat() : [];
+  const isDuplicate = allFlat.some(t => {
+    if (t.date !== dateStr) return false;
+    const diff = Math.abs(parseFloat(t.amount) - parsedData.amount);
+    if (diff < 0.01) {
+      const timeDiff = Math.abs((t.timestamp || t.createdAt || 0) - parsedData.timestamp);
+      if (timeDiff < 10 * 60 * 1000) return true; // 10 минут
+    }
+    return false;
+  });
+
+  if (isDuplicate) {
+    console.log('[BankPush] Операция пропущена (обнаружен дубликат):', parsedData);
+    return null;
+  }
+
+  const userProfile = (typeof getCurrentUserProfile === 'function') ? getCurrentUserProfile() : { displayName: 'Пользователь', avatarId: 'user' };
+  const authorInfo = {
+    uid: window.auth.currentUser.uid || '',
+    name: userProfile.displayName || 'Пользователь',
+    avatarId: userProfile.avatarId || 'user'
+  };
+
+  const txObj = {
+    id: tempTxId,
+    type: parsedData.type || 'Расход',
+    amount: parsedData.amount,
+    category: parsedData.category || 'Прочее',
+    date: dateStr,
+    formattedDate: formattedDateStr,
+    rawDate: dateStr,
+    comment: parsedData.merchant || '',
+    excludeFromBudget: false,
+    spreadMonths: 1,
+    isBillPayment: false,
+    billId: null,
+    billName: '',
+    billType: '',
+    source: 'bank_push_auto',
+    bank: parsedData.bank || '',
+    timestamp: parsedData.timestamp || Date.now(),
+    createdAt: Date.now(),
+    author: authorInfo
+  };
+
+  // Мгновенное добавление в кэш
+  allFlat.unshift(txObj);
+  window.lastAddedTxIds = [tempTxId];
+  window.lastAddedTxTime = Date.now();
+
+  if (typeof processTransactions === 'function') {
+    window.Cache.transactions = processTransactions(allFlat);
+  }
+
+  // Анимация и обновление интерфейса
+  if (typeof triggerBudgetExpenseAnimation === 'function') {
+    triggerBudgetExpenseAnimation();
+  } else {
+    window._budgetNeedsExpenseAnimation = true;
+    window._budgetTabDirty = true;
+  }
+
+  if (typeof markTabsDirty === 'function') markTabsDirty();
+  if (typeof renderBudgetTab === 'function') renderBudgetTab();
+  if (typeof renderTransactions === 'function') renderTransactions();
+
+  // Синхронизация виджетов на экране телефона
+  syncWidgetData();
+
+  // Локальный тост в интерфейсе
+  const format = typeof window.formatMoney === 'function' ? window.formatMoney : (n) => `${Math.round(n).toLocaleString('ru-RU')} ₽`;
+  if (typeof showToast === 'function') {
+    showToast(`Авто-расход: ${format(parsedData.amount)} • ${parsedData.merchant} (${parsedData.category})`);
+  }
+
+  // Отправка нативного push-уведомления
+  sendAppLocalNotification(
+    `Расход внесен: ${format(parsedData.amount)}`,
+    `${parsedData.merchant} • ${parsedData.category}`
+  );
+
+  // Фоновая запись в Firestore
+  try {
+    if (typeof getUserCol === 'function') {
+      await getUserCol('Transactions').doc(tempTxId).set(txObj);
+    }
+  } catch (err) {
+    console.warn('[BankPush] Ошибка сохранения транзакции в Firestore:', err);
+  }
+
+  return txObj;
+}
+
+// Отправка нативного push-уведомления пользователю
+function sendAppLocalNotification(title, body) {
+  try {
+    // 1. Через нативный плагин Capacitor BankPush
+    if (window.Capacitor?.Plugins?.BankPush?.notifyExpenseSaved) {
+      window.Capacitor.Plugins.BankPush.notifyExpenseSaved({ title, body }).catch(() => {});
+      return;
+    }
+
+    // 2. Через браузерный Notification API (если доступен и разрешен)
+    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+      new Notification(title, {
+        body,
+        icon: 'icon-pwa.svg?v=3',
+        badge: 'icon-pwa.svg?v=3'
+      });
+    }
+  } catch (_) {}
+}
+
+// Проверка и запрос разрешений нативного сервиса пушей
+async function checkBankPushPermissions() {
+  if (window.Capacitor?.Plugins?.BankPush?.checkPermission) {
+    try {
+      const res = await window.Capacitor.Plugins.BankPush.checkPermission();
+      return !!(res && res.granted);
+    } catch (_) {
+      return false;
+    }
+  }
+  return false;
+}
+
+function openBankPushPermissionSettings() {
+  if (window.Capacitor?.Plugins?.BankPush?.openPermissionSettings) {
+    window.Capacitor.Plugins.BankPush.openPermissionSettings().catch(() => {});
+  } else {
+    if (typeof showToast === 'function') {
+      showToast('Откройте: Настройки телефона → Приложения → Доступ к уведомлениям');
+    }
+  }
+}
+
+function isBankPushAutoExpenseEnabled() {
+  return localStorage.getItem('bank_push_auto_expense_enabled') !== 'false';
+}
+
+function toggleBankPushAutoExpense(enabled) {
+  localStorage.setItem('bank_push_auto_expense_enabled', enabled ? 'true' : 'false');
+  if (window.Capacitor?.Plugins?.BankPush?.setAutoExpenseEnabled) {
+    window.Capacitor.Plugins.BankPush.setAutoExpenseEnabled({ enabled: !!enabled }).catch(() => {});
+  }
+  renderBankPushModalContent();
+}
+
+// Инициализация фонового слушателя входящих банковских пушей
+function initBankPushListener() {
+  if (window._bankPushListenerInitialized) return;
+  window._bankPushListenerInitialized = true;
+
+  if (window.Capacitor?.Plugins?.BankPush) {
+    // Подписка на событие прихода пуша в реальном времени
+    window.Capacitor.Plugins.BankPush.addListener('bankPushReceived', async (eventData) => {
+      if (!isBankPushAutoExpenseEnabled()) return;
+      const parsed = parseBankPushText(eventData.title, eventData.text || eventData.body, eventData.packageName);
+      if (parsed && parsed.amount > 0) {
+        await saveAutoExpenseTransaction(parsed);
+      }
+    }).catch(() => {});
+
+    // Получение пушей, накопившихся пока приложение было закрыто
+    window.Capacitor.Plugins.BankPush.getPendingBankPushes?.().then(async (res) => {
+      if (res && Array.isArray(res.pushes) && isBankPushAutoExpenseEnabled()) {
+        for (const p of res.pushes) {
+          const parsed = parseBankPushText(p.title, p.text || p.body, p.packageName);
+          if (parsed && parsed.amount > 0) {
+            await saveAutoExpenseTransaction(parsed);
+          }
+        }
+      }
+    }).catch(() => {});
+  }
+}
+
+// 12. Модальное окно настроек и симулятора авто-учета по пушам (Bank Push Hub)
+let isCheckingPushPermission = false;
+
+function openBankPushModal() {
+  if (typeof closeProfileModal === 'function') closeProfileModal();
+  let modal = document.getElementById('bank-push-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'bank-push-modal';
+    modal.className = 'fixed inset-0 z-[1400] bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-fade-in custom-scrollbar';
+    modal.onclick = (e) => {
+      if (e.target === modal) closeBankPushModal();
+    };
+    document.body.appendChild(modal);
+  }
+
+  renderBankPushModalContent();
+  modal.classList.remove('hidden');
+}
+
+function closeBankPushModal() {
+  const modal = document.getElementById('bank-push-modal');
+  if (modal) modal.classList.add('hidden');
+}
+
+async function renderBankPushModalContent() {
+  const modal = document.getElementById('bank-push-modal');
+  if (!modal) return;
+
+  const isAutoEnabled = isBankPushAutoExpenseEnabled();
+
+  modal.innerHTML = `
+    <div class="relative bg-[#161822] border border-white/10 rounded-3xl p-5 sm:p-6 max-w-md w-full shadow-2xl space-y-4 my-auto animate-in fade-in zoom-in duration-200">
+      
+      <!-- Шапка модального окна -->
+      <div class="flex items-center justify-between pb-3 border-b border-white/5">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#6C5DD3] to-[#8C7DFF] flex items-center justify-center text-white shadow-lg shadow-[#6C5DD3]/30 flex-shrink-0">
+            <i data-lucide="bell-ring" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-1.5">
+              <h3 class="text-base font-bold text-white leading-tight">Авто-учет по пушам</h3>
+              <span class="text-[9px] font-bold bg-[#6C5DD3]/25 text-[#A594FD] border border-[#6C5DD3]/40 px-1.5 py-0.2 rounded-full">Авто</span>
+            </div>
+            <span class="text-xs text-gray-400">Мгновенное внесение трат сразу после покупки</span>
+          </div>
+        </div>
+        <button type="button" onclick="closeBankPushModal()" class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-all cursor-pointer">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Главная карточка: переключатель автоматического учета -->
+      <div class="bg-[#0F1118] border border-white/5 rounded-2xl p-4">
+        <div class="flex items-center justify-between">
+          <div class="pr-3">
+            <span class="text-xs font-bold text-white block">Автоматически вносить траты</span>
+            <span class="text-[11px] text-gray-400 block mt-0.5 leading-snug">Вносить покупку в базу сразу при получении пуша</span>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+            <input type="checkbox" ${isAutoEnabled ? 'checked' : ''} onchange="toggleBankPushAutoExpense(this.checked)" class="sr-only peer">
+            <div class="w-11 h-6 bg-[#2A2D3C] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-[#30D158] after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Важное пояснение про настройку в банке -->
+      <div class="bg-amber-500/10 border border-amber-500/25 rounded-2xl p-3.5 flex items-start gap-2.5">
+        <i data-lucide="info" class="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5"></i>
+        <div class="text-[11.5px] text-amber-200/90 leading-relaxed">
+          <b class="text-amber-300 font-semibold block mb-0.5">Важное условие для работы</b>
+          Убедитесь, что в приложениях ваших банков (Сбер, Т-Банк, Альфа и др.) <strong class="text-white">включены push-уведомления об операциях и покупках</strong>.
+        </div>
+      </div>
+
+      <!-- Приватность и Безопасность -->
+      <div class="bg-[#0F1118] border border-white/5 rounded-2xl p-3.5 space-y-2">
+        <div class="flex items-center gap-1.5 text-xs font-bold text-gray-200">
+          <i data-lucide="shield-check" class="w-4 h-4 text-[#30D158]"></i>
+          <span>100% конфиденциальность</span>
+        </div>
+        <ul class="text-[11px] text-gray-400 space-y-1 leading-normal pl-1">
+          <li class="flex items-start gap-1.5">
+            <span class="text-[#8C7DFF] font-bold">•</span>
+            <span>Приложение фильтрует уведомления строго по белому списку официальных банков РФ.</span>
+          </li>
+          <li class="flex items-start gap-1.5">
+            <span class="text-[#8C7DFF] font-bold">•</span>
+            <span>Личные сообщения (Telegram, WhatsApp, SMS) <strong>никогда не читаются</strong>.</span>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Интерактивный симулятор / Тестовое внесение -->
+      <div class="bg-[#0F1118] border border-white/5 rounded-2xl p-3.5 space-y-2.5">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] font-bold uppercase tracking-wider text-gray-400">Проверить распознавание пуша</span>
+          <span class="text-[10px] text-[#8C7DFF]">Тестовая симуляция</span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <button type="button" onclick="simulateBankPush('tinkoff')" class="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 active:scale-95 text-left transition-all cursor-pointer">
+            <span class="text-xs font-bold text-white block truncate">Т-Банк</span>
+            <span class="text-[10px] text-gray-400 block truncate">Пятерочка 1 450 ₽</span>
+          </button>
+
+          <button type="button" onclick="simulateBankPush('sber')" class="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 active:scale-95 text-left transition-all cursor-pointer">
+            <span class="text-xs font-bold text-white block truncate">СберБанк</span>
+            <span class="text-[10px] text-gray-400 block truncate">Аптека Ригла 890 ₽</span>
+          </button>
+
+          <button type="button" onclick="simulateBankPush('yandex')" class="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 active:scale-95 text-left transition-all cursor-pointer">
+            <span class="text-xs font-bold text-white block truncate">Яндекс Пэй</span>
+            <span class="text-[10px] text-gray-400 block truncate">Лавка 450 ₽</span>
+          </button>
+
+          <button type="button" onclick="simulateBankPush('alfa')" class="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 active:scale-95 text-left transition-all cursor-pointer">
+            <span class="text-xs font-bold text-white block truncate">Альфа-Банк</span>
+            <span class="text-[10px] text-gray-400 block truncate">ВкусВилл 2 100 ₽</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Кнопка закрытия -->
+      <div class="pt-1">
+        <button type="button" onclick="closeBankPushModal()" class="w-full py-3.5 px-4 rounded-2xl bg-[#212430] hover:bg-[#2A2D3C] active:scale-98 text-white text-xs font-bold transition-all cursor-pointer shadow-sm">
+          Закрыть
+        </button>
+      </div>
+    </div>
+  `;
+
+  if (typeof lucide !== 'undefined') lucide.createIcons({ root: modal });
+}
+
+// Тестовая симуляция входящего пуша
+async function simulateBankPush(bankPreset) {
+  let pushData = { title: 'Покупка', text: 'Покупка 1 450 ₽, Пятерочка. Доступно 54 200 ₽', packageName: 'com.idamob.tinkoff.android' };
+  
+  if (bankPreset === 'sber') {
+    pushData = { title: 'СберБанк', text: 'Списание 890р Аптека Ригла. Баланс: 12 340.50р', packageName: 'ru.sberbankmobile' };
+  } else if (bankPreset === 'yandex') {
+    pushData = { title: 'Яндекс Пэй', text: 'Оплата 450 ₽ в Лавка. Карта Пэй', packageName: 'ru.yandex.pay' };
+  } else if (bankPreset === 'alfa') {
+    pushData = { title: 'Альфа-Банк', text: 'Покупка: 2 100 руб, ВкусВилл. Доступно: 45 000 руб', packageName: 'ru.alfabank.mobile.android' };
+  }
+
+  const parsed = parseBankPushText(pushData.title, pushData.text, pushData.packageName);
+  if (parsed) {
+    await saveAutoExpenseTransaction(parsed);
+  }
+}
+
+// 13. Глобальный экспорт функций
 window.isNativeAppPlatform = isNativeAppPlatform;
 window.getLiveWidgetData = getLiveWidgetData;
 window.syncWidgetData = syncWidgetData;
@@ -750,3 +1230,24 @@ window.pauseWidgetTimer = pauseWidgetTimer;
 window.resumeWidgetTimer = resumeWidgetTimer;
 window.handleWidgetBannerAction = handleWidgetBannerAction;
 window.handleWidgetPinRequest = handleWidgetPinRequest;
+
+// Экспорты модуля автоматического учета по банковским пушам
+window.parseBankPushText = parseBankPushText;
+window.saveAutoExpenseTransaction = saveAutoExpenseTransaction;
+window.sendAppLocalNotification = sendAppLocalNotification;
+window.checkBankPushPermissions = checkBankPushPermissions;
+window.openBankPushPermissionSettings = openBankPushPermissionSettings;
+window.isBankPushAutoExpenseEnabled = isBankPushAutoExpenseEnabled;
+window.toggleBankPushAutoExpense = toggleBankPushAutoExpense;
+window.initBankPushListener = initBankPushListener;
+window.openBankPushModal = openBankPushModal;
+window.closeBankPushModal = closeBankPushModal;
+window.simulateBankPush = simulateBankPush;
+
+// Автоматическая инициализация слушателя при загрузке скрипта
+if (typeof window !== 'undefined') {
+  setTimeout(() => {
+    initBankPushListener();
+  }, 1000);
+}
+

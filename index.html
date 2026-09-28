@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=overlays-content">
   <title>Бюджет</title>
   <meta name="description" content="PWA веб-приложение для учета личных финансов, бюджета, инвестиций и целей.">
   <meta property="og:title" content="Бюджет">
@@ -310,22 +310,22 @@
   <!-- PDF.js для чтения выписок в браузере (отложенная загрузка, не блокирует старт) -->
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" crossorigin="anonymous"></script>
 
-  <link rel="stylesheet" href="style.css?v=67">
-  <script defer src="iconsSVG.js?v=67"></script>
-  <script defer src="default-rules.js?v=67"></script>
-  <script defer src="statement-parser.js?v=67"></script>
+  <link rel="stylesheet" href="style.css?v=75">
+  <script defer src="iconsSVG.js?v=75"></script>
+  <script defer src="default-rules.js?v=75"></script>
+  <script defer src="statement-parser.js?v=75"></script>
   
   <!-- Модули приложения -->
-  <script defer src="core.js?v=67"></script>
-  <script defer src="auth-profile.js?v=67"></script>
-  <script defer src="backup-manager.js?v=67"></script>
-  <script defer src="ui-tools.js?v=67"></script>
-  <script defer src="app-updater.js?v=67"></script>
-  <script defer src="apk-features.js?v=67"></script>
-  <script defer src="transactions.js?v=67"></script>
-  <script defer src="investments.js?v=67"></script>
-  <script defer src="budget.js?v=67"></script>
-  <script defer src="app.js?v=67"></script>
+  <script defer src="core.js?v=75"></script>
+  <script defer src="auth-profile.js?v=75"></script>
+  <script defer src="backup-manager.js?v=75"></script>
+  <script defer src="ui-tools.js?v=75"></script>
+  <script defer src="app-updater.js?v=75"></script>
+  <script defer src="apk-features.js?v=75"></script>
+  <script defer src="transactions.js?v=75"></script>
+  <script defer src="investments.js?v=75"></script>
+  <script defer src="budget.js?v=75"></script>
+  <script defer src="app.js?v=75"></script>
 </head>
 <body class="bg-[#0F1117] text-[#F2F4F7]" ontouchstart="">
 
@@ -2741,6 +2741,21 @@
             <i data-lucide="chevron-right" class="w-4 h-4 sm:w-5 sm:h-5 text-gray-600"></i>
           </button>
 
+          <!-- Кнопка авто-учета по банковским пушам -->
+          <button id="profile-bank-push-btn" type="button" onclick="openBankPushModal()" class="w-full flex items-center justify-between p-3 sm:p-3.5 hover:bg-white/[0.01] transition-colors cursor-pointer">
+            <div class="flex items-center gap-3">
+              <div class="p-2 rounded-xl bg-gradient-to-br from-[#6C5DD3]/20 to-[#8C7DFF]/20 text-[#8C7DFF] border border-[#6C5DD3]/30"><i data-lucide="bell-ring" class="w-4 h-4 sm:w-5 sm:h-5"></i></div>
+              <div class="text-left">
+                <div class="flex items-center gap-2">
+                  <span class="text-[14px] sm:text-[15px] font-medium text-gray-200 block">Авто-учет по пушам</span>
+                  <span id="profile-bank-push-badge" class="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">Включен</span>
+                </div>
+                <span class="text-[11px] text-[#848D99] leading-tight block mt-0.5">Внесение расходов сразу при оплате картой</span>
+              </div>
+            </div>
+            <i data-lucide="chevron-right" class="w-4 h-4 sm:w-5 sm:h-5 text-gray-600"></i>
+          </button>
+
           <!-- Кнопка установки приложения на телефон / скачивания APK -->
           <button id="profile-install-app-btn" type="button" onclick="openAppInstallOptionsModal()" class="w-full flex items-center justify-between p-3 sm:p-3.5 hover:bg-white/[0.01] transition-colors cursor-pointer">
             <div class="flex items-center gap-3">
@@ -2758,10 +2773,7 @@
             <div class="flex items-center gap-3">
               <div class="p-2 rounded-xl bg-[#6C5DD3]/15 text-[#8C7DFF]"><i data-lucide="layout-grid" class="w-4 h-4 sm:w-5 sm:h-5"></i></div>
               <div class="text-left">
-                <div class="flex items-center gap-1.5">
-                  <span class="text-[14px] sm:text-[15px] font-medium text-gray-200 block">Виджеты на рабочий стол</span>
-                  <span class="text-[9px] font-bold bg-[#6C5DD3]/25 text-[#A594FD] border border-[#6C5DD3]/35 px-1.5 py-0.2 rounded-full">Виджет</span>
-                </div>
+                <span class="text-[14px] sm:text-[15px] font-medium text-gray-200 block">Виджеты на рабочий стол</span>
                 <span class="text-[11px] text-[#848D99] leading-tight block mt-0.5">Круговые графики остатка недели и месяца</span>
               </div>
             </div>
@@ -3127,6 +3139,7 @@
         </div>
       </div>
     </div>
+  </div>
   </div>
 
   <!-- МОДАЛЬНОЕ ОКНО: ДЕТАЛЬНЫЙ ПРОСМОТР И ВЫБОР ЭЛЕМЕНТОВ ДЛЯ ИМПОРТА -->

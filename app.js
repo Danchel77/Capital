@@ -62,15 +62,15 @@ if (currentAuth && typeof currentAuth.onAuthStateChanged === 'function') {
       if (typeof window.triggerQuickNewExpense === 'function') {
         window.triggerQuickNewExpense();
       } else {
-        switchTab('transactions');
+        switchTab('transactions', { initial: true });
       }
       if (urlParams.has('action')) {
         window.history.replaceState({}, document.title, window.location.pathname);
       }
     } else {
-      // Восстанавливаем сохраненную вкладку или открываем бюджет по умолчанию
+      // Восстанавливаем сохраненную вкладку или открываем бюджет по умолчанию (без анимации сжатия/разжатия при старте)
       const savedTab = localStorage.getItem('budget_active_tab') || 'budget';
-      switchTab(savedTab);
+      switchTab(savedTab, { initial: true });
     }
 
     isAppInitialized = true;
@@ -280,7 +280,10 @@ function getCurrentActiveTab() {
 }
 window.getCurrentActiveTab = getCurrentActiveTab;
 
-function switchTab(tab) {
+function switchTab(tab, options = false) {
+  const isInitial = (typeof options === 'boolean' && options) || Boolean(options && (options.initial || options.skipAnimation)) || !isAppInitialized;
+  const skipAnimation = isInitial;
+
   if (typeof closeCardContextMenu === 'function') closeCardContextMenu();
   if (typeof disableSelectionMode === 'function') disableSelectionMode();
 
@@ -338,9 +341,11 @@ function switchTab(tab) {
 
   if (activeTabEl) {
     activeTabEl.classList.remove('hidden');
-    requestAnimationFrame(() => {
-      activeTabEl.classList.add('tab-enter-active');
-    });
+    if (!skipAnimation) {
+      requestAnimationFrame(() => {
+        activeTabEl.classList.add('tab-enter-active');
+      });
+    }
   }
   if (activeNavBtn) {
     activeNavBtn.classList.remove('text-[#848D99]');

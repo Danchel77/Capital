@@ -2,7 +2,7 @@
    Семейный Бюджет — Service Worker (Offline-First)
    ========================================== */
 
-const CACHE_NAME = 'budget-pwa-v25';
+const CACHE_NAME = 'budget-pwa-v33';
 
 const STATIC_SHELL = [
   './',
@@ -18,6 +18,8 @@ const STATIC_SHELL = [
   './statement-parser.js',
   './default-rules.js',
   './iconsSVG.js',
+  './apk-features.js',
+  './app-updater.js',
   './app.js',
   './manifest.json',
   './favicon.svg',
@@ -28,16 +30,15 @@ const STATIC_SHELL = [
 
 // Установка: Предзагрузка критического App Shell в Cache Storage
 self.addEventListener('install', (event) => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(STATIC_SHELL);
-    }).then(() => {
-      return self.skipWaiting();
     })
   );
 });
 
-// Активация: Очистка старых версий кэша
+// Активация: Очистка старых версий кэша и немедленный перехват управления клиентами
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
@@ -52,6 +53,13 @@ self.addEventListener('activate', (event) => {
       return self.clients.claim();
     })
   );
+});
+
+// Прием сообщений от клиентских вкладок (мгновенная активация по требованию)
+self.addEventListener('message', (event) => {
+  if (event.data && (event.data === 'skipWaiting' || event.data.type === 'SKIP_WAITING')) {
+    self.skipWaiting();
+  }
 });
 
 // Обработка сетевых запросов
@@ -92,7 +100,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 2. Для навигации (HTML страницы): Network-First с мгновенным переключением на кэш при отсутствии сети
+  // 2. Для навигации (HTML страницы): Network-First с немедленным обновлением кэша
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request).then((networkResponse) => {
@@ -103,7 +111,7 @@ self.addEventListener('fetch', (event) => {
         return networkResponse;
       }).catch(async () => {
         const cached = await caches.match(request);
-        return cached || await caches.match('./index.html') || await caches.match('./');
+        return cached || (await caches.match('./index.html')) || (await caches.match('./'));
       })
     );
     return;

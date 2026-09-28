@@ -262,9 +262,12 @@ function openAppInstallOptionsModal() {
               <i data-lucide="download" class="w-4 h-4"></i>
             </div>
             <div class="flex-1 min-w-0">
-              <h4 class="text-sm font-semibold text-white">Скачать приложение</h4>
-              <p class="text-xs text-gray-400 leading-relaxed mt-0.5">
-                Полнофункциональная версия для Android с поддержкой системных виджетов на экране
+              <div class="flex items-center gap-1.5">
+                <h4 class="text-sm font-semibold text-white">Скачать приложение</h4>
+                <span class="text-[9px] font-bold bg-[#6C5DD3]/25 text-[#A594FD] border border-[#6C5DD3]/40 px-1.5 py-0.2 rounded-full">Android</span>
+              </div>
+              <p class="text-xs text-gray-300 leading-relaxed mt-1">
+                Полнофункциональная версия: <strong class="text-white">авто-внесение трат по банковским пушам</strong> прямо после оплаты и живые <strong class="text-white">виджеты на рабочем столе</strong>
               </p>
             </div>
           </div>
