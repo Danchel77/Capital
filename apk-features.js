@@ -357,7 +357,7 @@ function closeWidgetHubModal() {
 
 function setWidgetHubTab(tab) {
   currentWidgetTab = tab;
-  renderWidgetHubContent();
+  updateWidgetHubUI();
 }
 
 const WIDGET_OPACITY_STEPS = [0, 25, 50, 75, 100];
@@ -367,8 +367,61 @@ function handleWidgetOpacityChange(val) {
   localStorage.setItem('budget_widget_bg_opacity', opacity);
   
   syncWidgetData();
-  
-  renderWidgetHubContent();
+  updateWidgetHubUI();
+}
+
+function updateWidgetHubUI() {
+  const card = document.getElementById('widget-hub-card');
+  if (!card) {
+    renderWidgetHubContent();
+    return;
+  }
+
+  const data = getLiveWidgetData();
+  const currentOpacity = data.bgOpacity !== undefined ? data.bgOpacity : 75;
+
+  // 1. Обновляем табы форматов без пересоздания модалки
+  const tabFullBtn = document.getElementById('widget-tab-full');
+  const tabCompactBtn = document.getElementById('widget-tab-compact');
+  const tabActionBtn = document.getElementById('widget-tab-action');
+
+  if (tabFullBtn && tabCompactBtn && tabActionBtn) {
+    const activeClass = 'bg-[#6C5DD3] text-white shadow-md';
+    const inactiveClass = 'text-gray-400 hover:text-white';
+
+    tabFullBtn.className = `flex-1 py-2 px-1 rounded-xl text-[11px] font-bold transition-all cursor-pointer flex items-center justify-center gap-1 ${currentWidgetTab === 'full' ? activeClass : inactiveClass}`;
+    tabCompactBtn.className = `flex-1 py-2 px-1 rounded-xl text-[11px] font-bold transition-all cursor-pointer flex items-center justify-center gap-1 ${currentWidgetTab === 'compact' ? activeClass : inactiveClass}`;
+    tabActionBtn.className = `flex-1 py-2 px-1 rounded-xl text-[11px] font-bold transition-all cursor-pointer flex items-center justify-center gap-1 ${currentWidgetTab === 'action' ? activeClass : inactiveClass}`;
+  }
+
+  // 2. Обновляем контейнер превью
+  const previewArea = document.getElementById('widget-preview-area');
+  if (previewArea) {
+    previewArea.innerHTML = currentWidgetTab === 'full' 
+      ? renderFullWidgetPreviewHtml(data) 
+      : (currentWidgetTab === 'compact' ? renderCompactWidgetPreviewHtml(data) : renderActionWidgetPreviewHtml(data));
+    if (typeof lucide !== 'undefined') lucide.createIcons({ root: previewArea });
+  }
+
+  // 3. Обновляем процент прозрачности
+  const opacityValEl = document.getElementById('widget-opacity-val');
+  if (opacityValEl) {
+    opacityValEl.textContent = `${currentOpacity}%`;
+  }
+
+  // 4. Обновляем кнопки прозрачности
+  WIDGET_OPACITY_STEPS.forEach(step => {
+    const btn = document.getElementById(`widget-opacity-btn-${step}`);
+    if (btn) {
+      btn.className = `py-1.5 text-center text-xs font-bold rounded-xl transition-all cursor-pointer ${currentOpacity === step ? 'bg-[#6C5DD3] text-white shadow-md shadow-[#6C5DD3]/30 scale-105' : 'bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white'}`;
+    }
+  });
+
+  // 5. Обновляем кнопку добавления
+  const addBtn = document.getElementById('widget-pin-action-btn');
+  if (addBtn) {
+    addBtn.setAttribute('onclick', `handleWidgetPinRequest('${currentWidgetTab}')`);
+  }
 }
 
 function renderWidgetHubContent() {
@@ -379,7 +432,7 @@ function renderWidgetHubContent() {
   const currentOpacity = data.bgOpacity !== undefined ? data.bgOpacity : 75;
 
   modal.innerHTML = `
-    <div class="relative bg-[#161822] border border-white/10 rounded-3xl p-5 sm:p-6 max-w-sm w-full shadow-2xl space-y-4 my-auto animate-in fade-in zoom-in duration-200">
+    <div id="widget-hub-card" class="relative bg-[#161822] border border-white/10 rounded-3xl p-5 sm:p-6 max-w-sm w-full shadow-2xl space-y-4 my-auto animate-in fade-in zoom-in duration-200">
       <!-- Шапка модалки -->
       <div class="flex items-center justify-between pb-2 border-b border-white/5">
         <div class="flex items-center gap-3">
@@ -398,15 +451,15 @@ function renderWidgetHubContent() {
 
       <!-- Переключатель 3 форматов -->
       <div class="flex p-1 bg-[#0F1118] rounded-2xl border border-white/5 gap-1">
-        <button type="button" onclick="setWidgetHubTab('full')" class="flex-1 py-2 px-1 rounded-xl text-[11px] font-bold transition-all cursor-pointer flex items-center justify-center gap-1 ${currentWidgetTab === 'full' ? 'bg-[#6C5DD3] text-white shadow-md' : 'text-gray-400 hover:text-white'}">
+        <button type="button" id="widget-tab-full" onclick="setWidgetHubTab('full')" class="flex-1 py-2 px-1 rounded-xl text-[11px] font-bold transition-all cursor-pointer flex items-center justify-center gap-1 ${currentWidgetTab === 'full' ? 'bg-[#6C5DD3] text-white shadow-md' : 'text-gray-400 hover:text-white'}">
           <i data-lucide="columns-2" class="w-3 h-3"></i>
           <span>4×1</span>
         </button>
-        <button type="button" onclick="setWidgetHubTab('compact')" class="flex-1 py-2 px-1 rounded-xl text-[11px] font-bold transition-all cursor-pointer flex items-center justify-center gap-1 ${currentWidgetTab === 'compact' ? 'bg-[#6C5DD3] text-white shadow-md' : 'text-gray-400 hover:text-white'}">
+        <button type="button" id="widget-tab-compact" onclick="setWidgetHubTab('compact')" class="flex-1 py-2 px-1 rounded-xl text-[11px] font-bold transition-all cursor-pointer flex items-center justify-center gap-1 ${currentWidgetTab === 'compact' ? 'bg-[#6C5DD3] text-white shadow-md' : 'text-gray-400 hover:text-white'}">
           <i data-lucide="pie-chart" class="w-3 h-3"></i>
           <span>2×1 Месяц</span>
         </button>
-        <button type="button" onclick="setWidgetHubTab('action')" class="flex-1 py-2 px-1 rounded-xl text-[11px] font-bold transition-all cursor-pointer flex items-center justify-center gap-1 ${currentWidgetTab === 'action' ? 'bg-[#6C5DD3] text-white shadow-md' : 'text-gray-400 hover:text-white'}">
+        <button type="button" id="widget-tab-action" onclick="setWidgetHubTab('action')" class="flex-1 py-2 px-1 rounded-xl text-[11px] font-bold transition-all cursor-pointer flex items-center justify-center gap-1 ${currentWidgetTab === 'action' ? 'bg-[#6C5DD3] text-white shadow-md' : 'text-gray-400 hover:text-white'}">
           <i data-lucide="plus-circle" class="w-3 h-3"></i>
           <span>+ Расход</span>
         </button>
@@ -427,11 +480,11 @@ function renderWidgetHubContent() {
             <i data-lucide="sliders" class="w-3.5 h-3.5 text-[#8C7DFF]"></i>
             <span>Прозрачность фона</span>
           </div>
-          <span class="text-xs font-bold text-[#8C7DFF] font-mono">${currentOpacity}%</span>
+          <span id="widget-opacity-val" class="text-xs font-bold text-[#8C7DFF] font-mono">${currentOpacity}%</span>
         </div>
         <div class="grid grid-cols-5 gap-1.5 pt-0.5">
           ${WIDGET_OPACITY_STEPS.map(step => `
-            <button type="button" onclick="handleWidgetOpacityChange(${step})" 
+            <button type="button" id="widget-opacity-btn-${step}" onclick="handleWidgetOpacityChange(${step})" 
                     class="py-1.5 text-center text-xs font-bold rounded-xl transition-all cursor-pointer ${currentOpacity === step ? 'bg-[#6C5DD3] text-white shadow-md shadow-[#6C5DD3]/30 scale-105' : 'bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white'}">
               ${step}%
             </button>
@@ -441,7 +494,7 @@ function renderWidgetHubContent() {
 
       <!-- Кнопка добавления на экран -->
       <div class="pt-1">
-        <button type="button" onclick="handleWidgetPinRequest('${currentWidgetTab}')" class="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-[#6C5DD3] to-[#8C7DFF] hover:opacity-95 active:scale-95 text-white text-xs font-bold shadow-lg shadow-[#6C5DD3]/30 flex items-center justify-center gap-2 cursor-pointer transition-all">
+        <button type="button" id="widget-pin-action-btn" onclick="handleWidgetPinRequest('${currentWidgetTab}')" class="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-[#6C5DD3] to-[#8C7DFF] hover:opacity-95 active:scale-95 text-white text-xs font-bold shadow-lg shadow-[#6C5DD3]/30 flex items-center justify-center gap-2 cursor-pointer transition-all">
           <i data-lucide="plus-circle" class="w-4 h-4"></i>
           <span>Добавить виджет на экран</span>
         </button>
@@ -754,6 +807,70 @@ function getBankNameByPackage(pkgName) {
   return BANK_PACKAGE_NAMES[pkgName] || 'Банк';
 }
 
+// Буфер недавних пушей для моментального отсечения парных встречных операций (+X и -X)
+const recentBankPushesBuffer = [];
+
+function checkAndCancelPairPush(parsedData) {
+  const now = Date.now();
+  // Очищаем события старше 60 секунд
+  while (recentBankPushesBuffer.length > 0 && (now - recentBankPushesBuffer[0].time > 60000)) {
+    recentBankPushesBuffer.shift();
+  }
+
+  // Ищем встречную операцию с такой же суммой и противоположным типом (от того же банка или в пределах 60 сек)
+  const pairIdx = recentBankPushesBuffer.findIndex(p => 
+    Math.abs(p.amount - parsedData.amount) < 0.01 && 
+    p.type !== parsedData.type
+  );
+
+  if (pairIdx !== -1) {
+    const pair = recentBankPushesBuffer.splice(pairIdx, 1)[0];
+    console.log('[BankPush] Обнаружена встречная парная операция (+-), отменяем обе:', pair, parsedData);
+    
+    // Если первая операция успела сохраниться как pending transfer, тихо удаляем её
+    if (pair.txId && typeof window.dismissPendingTransferSilent === 'function') {
+      window.dismissPendingTransferSilent(pair.txId);
+    }
+    return true; // Парная операция компенсирована
+  }
+
+  return false;
+}
+
+function cleanBankPushMerchant(text = '', title = '') {
+  let combined = `${title} ${text}`.trim();
+  let clean = text || combined;
+
+  // 1. Отрезаем всё после точки, двоеточия или перевода строки, если там начинается баланс/доступно/остаток/счет/карта/кэшбэк
+  clean = clean.split(/(?:\.|\n|\r)\s*(?:баланс|доступно|остаток|лимит|карта\b|карты\b|кэшб|authcode|mcc\b|сч[её]т\b|счета\b|сч[её]та\b|накопительн)/i)[0];
+  
+  // 2. Если слово баланс встретилось без точки перед ним
+  clean = clean.split(/\s+(?:баланс|доступно|остаток|лимит)[\s:]+/i)[0];
+
+  // 3. Срезаем префиксы банков
+  clean = clean.replace(/^(?:сбербанк|тинькофф|т-банк|альфа-банк|втб|банк|яндекс\s*пэй|пэй|озон\s*банк|райффайзенбанк|газпромбанк)[:\s]+/i, '');
+
+  // 4. Срезаем тип операции и сумму в начале
+  clean = clean.replace(/^(?:покупка|оплата|списание|списано|зачисление|пополнение|снятие|перевод)(?:\s*(?:на\s+сумму|в\s+размере))?[:\s]+[+\-]?\s*[\d\s.,]+(?:₽|руб|rur|rub|р)?\s*[,.]?\s*(?:в\s+|за\s+|от\s+|клиенту\s+|на\s+карту\s+|с\s+карты\s+)?/i, '');
+
+  // 5. Срезаем хвосты «карта Пэй», «карта *1234», «кэшбэк ...»
+  clean = clean.replace(/\s+(?:карта\s+пэй|карта\s+\*?\d+|кэшбэк.*)$/i, '');
+
+  // 6. Срезаем знаки препинания и пробелы на концах
+  clean = clean.replace(/^[,\s.—–:;]+|[,\s.—–:;]+$/g, '').trim();
+
+  // 7. Если строка пустая, пробуем взять заголовок
+  if (!clean || clean.length < 2) {
+    let titleClean = (title || '')
+      .replace(/^[+\-]?\s*[\d\s.,]+(?:₽|руб|rur|rub|р)?\s*/i, '')
+      .replace(/^[,\s.—–:;]+|[,\s.—–:;]+$/g, '')
+      .trim();
+    if (titleClean.length >= 2) clean = titleClean;
+  }
+
+  return clean || 'Операция';
+}
+
 function parseBankPushText(title = '', text = '', packageName = '') {
   const fullText = `${title} ${text}`.trim();
   if (!fullText) return null;
@@ -772,15 +889,20 @@ function parseBankPushText(title = '', text = '', packageName = '') {
     else if (lowerFull.includes('озон') || lowerFull.includes('ozon')) bankName = 'Озон Банк';
   }
 
-  // 2. Определение типа операции (Расход vs Доход vs Игнор)
+  // 2. Распознавание внутреннего перевода между счетами / в накопительные счета
+  const isInternalAccountTransfer = /(?:на\s+сч[её]т\s+в\s+сейвах|в\s+сейвы|на\s+накопительн|накопительного\s+сч[её]та|пополнение\s+с\s+карты.*на\s+сч[её]т|перевод.*между\s+(?:своими|счетами)|в\s+инвесткопилку|в\s+копилку|перевод\s+на\s+сч[её]т\s+в\s+сейв|перевод\s+с\s+накопительн)/i.test(fullText);
+
+  // 3. Определение типа операции (Расход vs Доход)
   const isIncome = /(?:зачисление|пополнение|перевод от|возврат|зарплата|входящий перевод|\+[\d\s]+)/i.test(fullText) && !/(?:списание|покупка|оплата)/i.test(fullText);
   const isExpense = /(?:покупка|оплата|списание|списано|снятие|чек|заказ|перевод клиенту|перевод на|в адрес)/i.test(fullText) || !isIncome;
 
-  // 3. Извлечение суммы операции
-  // Примеры: "1 450 ₽", "1450.50 руб", "320.00 RUB", "890р", "+15 000 ₽"
+  // 4. Определение обычного перевода (требует подтверждения)
+  const isTransferOperation = !isInternalAccountTransfer && /(?:перевод|сбп|по\s+номеру|клиенту|зачисление\s+перевода|входящий\s+перевод|исходящий\s+перевод)/i.test(fullText);
+
+  // 5. Извлечение суммы операции
   let amount = 0;
   const amountRegexes = [
-    /(?:покупка|оплата|списание|списано|снятие|зачисление|пополнение|сумма|чек|на сумму|расход)\s*(?::)?\s*([+\-]?\s*[\d\s]+(?:[.,]\d{1,2})?)\s*(?:₽|руб|рубл|rur|rub|р\b)/i,
+    /(?:покупка|оплата|списание|списано|снятие|зачисление|пополнение|сумма|чек|на сумму|расход|перевод)\s*(?::)?\s*([+\-]?\s*[\d\s]+(?:[.,]\d{1,2})?)\s*(?:₽|руб|рубл|rur|rub|р\b)/i,
     /([+\-]?\s*[\d\s]+(?:[.,]\d{1,2})?)\s*(?:₽|руб|рубл|rur|rub|р\b)/i,
     /(?:сумма|итог)\s*[:=]\s*([+\-]?\s*[\d\s]+(?:[.,]\d{1,2})?)/i
   ];
@@ -799,56 +921,16 @@ function parseBankPushText(title = '', text = '', packageName = '') {
 
   if (amount <= 0) return null;
 
-  // 4. Извлечение названия магазина / мерчанта
-  let rawMerchant = '';
+  // 6. Извлечение чистого названия магазина / назначения
+  const finalMerchant = cleanBankPushMerchant(text, title);
 
-  // Специфика Т-Банка: "Покупка 1 450 ₽, Пятерочка. Доступно 54 200 ₽" или "Оплата 320 ₽, Yandex Go. Кэшбэк 16 ₽"
-  if (/com\.idamob\.tinkoff|ru\.tinkoff/i.test(packageName) || bankName === 'Т-Банк') {
-    const m = text.match(/(?:покупка|оплата|списание)\s+[\d\s.,]+(?:₽|руб|rur|rub|р)?\s*[,.]?\s*([^.,]+?)(?:\.\s*(?:доступно|баланс|кэшб|карта|$)|,\s*кэшб|$)/i);
-    if (m && m[1]) rawMerchant = m[1].trim();
-  }
-
-  // Специфика Сбера: "СберБанк: Списание 890р Перекресток. Баланс: 12 340.50р"
-  if (!rawMerchant && (/ru\.sberbankmobile/i.test(packageName) || bankName === 'СберБанк')) {
-    const m = text.match(/(?:покупка|оплата|списание|зачисление)\s+[\d\s.,]+(?:₽|руб|rur|rub|р)?\s+([^.]+?)(?:\.|\s+баланс|\s+карта|$)/i);
-    if (m && m[1]) rawMerchant = m[1].trim();
-  }
-
-  // Специфика Альфа: "Покупка: 2 100 руб, ВкусВилл. Доступно: 45 000 руб"
-  if (!rawMerchant && (/ru\.alfabank/i.test(packageName) || bankName === 'Альфа-Банк')) {
-    const m = text.match(/(?:покупка|оплата|списание)[:\s]+[\d\s.,]+(?:₽|руб|rur|rub|р)?\s*[,.]?\s*([^.,]+?)(?:\.\s*(?:доступно|остаток)|$)/i);
-    if (m && m[1]) rawMerchant = m[1].trim();
-  }
-
-  // Специфика Яндекс Пэй: "Оплата 450 ₽ в Лавка. Карта Пэй"
-  if (!rawMerchant && (/yandex/i.test(packageName) || bankName === 'Яндекс Пэй')) {
-    const m = text.match(/(?:оплата|списание|покупка)\s+[\d\s.,]+(?:₽|руб|rur|rub|р)?\s+(?:в\s+|за\s+)?([^.]+?)(?:\.|\s+карта|$)/i);
-    if (m && m[1]) rawMerchant = m[1].trim();
-  }
-
-  // Универсальное извлечение мерчанта
-  if (!rawMerchant) {
-    let clean = text
-      .replace(/^(?:сбербанк|тинькофф|т-банк|альфа-банк|втб|банк):\s*/i, '')
-      .replace(/(?:покупка|оплата|списание|списано|зачисление|пополнение|снятие)[:\s]+[\d\s.,]+(?:₽|руб|rur|rub|р)?/gi, '')
-      .replace(/(?:доступно|баланс|остаток|карта|кэшбэк|счет|счёта|authcode|mcc)[\s\d*.:,₽рубrur]+/gi, '')
-      .replace(/[.,;]+$/, '')
-      .trim();
-
-    clean = clean.replace(/^[,\s.—–-]+|[,\s.—–-]+$/g, '').trim();
-    if (clean.length >= 2 && clean.length <= 40) {
-      rawMerchant = clean;
-    }
-  }
-
-  const finalMerchant = rawMerchant || title || bankName || 'Покупка';
-
-  // 5. Автокатегоризация через StatementCategorizer
+  // 7. Автокатегоризация через StatementCategorizer
   let category = isIncome ? 'Зарплата' : 'Продукты';
-  if (typeof window.StatementCategorizer?.categorize === 'function') {
+  if (isTransferOperation || isInternalAccountTransfer) {
+    category = isIncome ? 'Входящий перевод' : 'Перевод';
+  } else if (typeof window.StatementCategorizer?.categorize === 'function') {
     category = window.StatementCategorizer.categorize(finalMerchant, fullText, isIncome ? 'Доход' : 'Расход');
   } else {
-    // Fallback категоризация по правилам
     const rules = window.Cache?.categoryRules || window.DEFAULT_CATEGORY_RULES || [];
     const lowerNorm = (finalMerchant + ' ' + fullText).toLowerCase();
     for (const r of rules) {
@@ -866,6 +948,8 @@ function parseBankPushText(title = '', text = '', packageName = '') {
     merchant: finalMerchant,
     category: category || (isIncome ? 'Другое' : 'Прочее'),
     rawText: fullText,
+    isInternalTransfer: isInternalAccountTransfer,
+    isPendingTransfer: isTransferOperation,
     timestamp: Date.now()
   };
 }
@@ -875,13 +959,25 @@ async function saveAutoExpenseTransaction(parsedData) {
   if (!parsedData || !parsedData.amount || parsedData.amount <= 0) return null;
   if (!window.auth?.currentUser) return null;
 
+  // 1. Если это явный внутренний перевод между своими счетами — пропускаем учет в тратах
+  if (parsedData.isInternalTransfer) {
+    console.log('[BankPush] Внутренний перевод между своими счетами пропущен:', parsedData);
+    return null;
+  }
+
+  // 2. Проверка и отсечение встречных парных операций (+- на одинаковую сумму)
+  const isPairCancelled = checkAndCancelPairPush(parsedData);
+  if (isPairCancelled) {
+    return null;
+  }
+
   const now = new Date();
   const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   const formattedDateStr = `${String(now.getDate()).padStart(2, '0')}.${String(now.getMonth() + 1).padStart(2, '0')}.${now.getFullYear()}`;
 
   const tempTxId = `auto_push_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
 
-  // Проверка на дубликат (если операция уже внесена за последние 10 минут с такой же суммой)
+  // Проверка на дубликат
   const allFlat = typeof getAllCachedTransactionsFlat === 'function' ? getAllCachedTransactionsFlat() : [];
   const isDuplicate = allFlat.some(t => {
     if (t.date !== dateStr) return false;
@@ -898,6 +994,7 @@ async function saveAutoExpenseTransaction(parsedData) {
     return null;
   }
 
+  const isPending = !!parsedData.isPendingTransfer;
   const userProfile = (typeof getCurrentUserProfile === 'function') ? getCurrentUserProfile() : { displayName: 'Пользователь', avatarId: 'user' };
   const authorInfo = {
     uid: window.auth.currentUser.uid || '',
@@ -914,7 +1011,9 @@ async function saveAutoExpenseTransaction(parsedData) {
     formattedDate: formattedDateStr,
     rawDate: dateStr,
     comment: parsedData.merchant || '',
-    excludeFromBudget: false,
+    excludeFromBudget: isPending ? true : false, // Неподтвержденные переводы не влияют на бюджет
+    isPendingTransfer: isPending,
+    transferStatus: isPending ? 'pending' : 'confirmed',
     spreadMonths: 1,
     isBillPayment: false,
     billId: null,
@@ -927,6 +1026,15 @@ async function saveAutoExpenseTransaction(parsedData) {
     author: authorInfo
   };
 
+  // Добавляем в буфер недавних пушей для проверки встречных парных списаний/пополнений
+  recentBankPushesBuffer.push({
+    txId: tempTxId,
+    amount: parsedData.amount,
+    type: parsedData.type,
+    bank: parsedData.bank,
+    time: Date.now()
+  });
+
   // Мгновенное добавление в кэш
   allFlat.unshift(txObj);
   window.lastAddedTxIds = [tempTxId];
@@ -936,32 +1044,41 @@ async function saveAutoExpenseTransaction(parsedData) {
     window.Cache.transactions = processTransactions(allFlat);
   }
 
-  // Анимация и обновление интерфейса
-  if (typeof triggerBudgetExpenseAnimation === 'function') {
-    triggerBudgetExpenseAnimation();
-  } else {
-    window._budgetNeedsExpenseAnimation = true;
-    window._budgetTabDirty = true;
+  // Анимация и обновление интерфейса (только если операция подтвержденная и влияет на бюджет)
+  if (!isPending) {
+    if (typeof triggerBudgetExpenseAnimation === 'function') {
+      triggerBudgetExpenseAnimation();
+    } else {
+      window._budgetNeedsExpenseAnimation = true;
+      window._budgetTabDirty = true;
+    }
+    syncWidgetData();
   }
 
   if (typeof markTabsDirty === 'function') markTabsDirty();
   if (typeof renderBudgetTab === 'function') renderBudgetTab();
   if (typeof renderTransactions === 'function') renderTransactions();
 
-  // Синхронизация виджетов на экране телефона
-  syncWidgetData();
-
-  // Локальный тост в интерфейсе
+  // Локальный тост и push-уведомление
   const format = typeof window.formatMoney === 'function' ? window.formatMoney : (n) => `${Math.round(n).toLocaleString('ru-RU')} ₽`;
-  if (typeof showToast === 'function') {
-    showToast(`Авто-расход: ${format(parsedData.amount)} • ${parsedData.merchant} (${parsedData.category})`);
+  
+  if (isPending) {
+    if (typeof showToast === 'function') {
+      showToast(`Перевод: ${format(parsedData.amount)} • Требует подтверждения`);
+    }
+    sendAppLocalNotification(
+      `Перевод: ${format(parsedData.amount)}`,
+      `${parsedData.merchant} • Подтвердите в приложении`
+    );
+  } else {
+    if (typeof showToast === 'function') {
+      showToast(`Авто-расход: ${format(parsedData.amount)} • ${parsedData.merchant} (${parsedData.category})`);
+    }
+    sendAppLocalNotification(
+      `Расход внесен: ${format(parsedData.amount)}`,
+      `${parsedData.merchant} • ${parsedData.category}`
+    );
   }
-
-  // Отправка нативного push-уведомления
-  sendAppLocalNotification(
-    `Расход внесен: ${format(parsedData.amount)}`,
-    `${parsedData.merchant} • ${parsedData.category}`
-  );
 
   // Фоновая запись в Firestore
   try {
@@ -1241,31 +1358,13 @@ async function renderBankPushModalContent() {
   if (typeof lucide !== 'undefined') lucide.createIcons({ root: modal });
 }
 
-// Тестовая симуляция входящего пуша
-async function simulateBankPush(bankPreset) {
-  let pushData = { title: 'Покупка', text: 'Покупка 1 450 ₽, Пятерочка. Доступно 54 200 ₽', packageName: 'com.idamob.tinkoff.android' };
-  
-  if (bankPreset === 'sber') {
-    pushData = { title: 'СберБанк', text: 'Списание 890р Аптека Ригла. Баланс: 12 340.50р', packageName: 'ru.sberbankmobile' };
-  } else if (bankPreset === 'yandex') {
-    pushData = { title: 'Яндекс Пэй', text: 'Оплата 450 ₽ в Лавка. Карта Пэй', packageName: 'ru.yandex.pay' };
-  } else if (bankPreset === 'alfa') {
-    pushData = { title: 'Альфа-Банк', text: 'Покупка: 2 100 руб, ВкусВилл. Доступно: 45 000 руб', packageName: 'ru.alfabank.mobile.android' };
-  }
-
-  const parsed = parseBankPushText(pushData.title, pushData.text, pushData.packageName);
-  if (parsed) {
-    await saveAutoExpenseTransaction(parsed);
-  }
-}
-
 // 12.1. Диалог запроса разрешений Android при первом старте приложения
 function openBankPushPermissionPrompt() {
   let modal = document.getElementById('bank-push-permission-prompt-modal');
   if (!modal) {
     modal = document.createElement('div');
     modal.id = 'bank-push-permission-prompt-modal';
-    modal.className = 'fixed inset-0 z-[1500] bg-black/85 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto animate-fade-in custom-scrollbar';
+    modal.className = 'fixed inset-0 z-[1500] bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-fade-in [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden';
     modal.onclick = (e) => {
       if (e.target === modal) closeBankPushPermissionPrompt();
     };
@@ -1273,24 +1372,24 @@ function openBankPushPermissionPrompt() {
   }
 
   modal.innerHTML = `
-    <div class="relative bg-[#161822] border border-white/10 rounded-3xl p-5 sm:p-6 max-w-md w-full shadow-2xl space-y-4 my-auto animate-in fade-in zoom-in duration-200">
+    <div class="relative bg-[#161822] border border-white/10 rounded-3xl p-4 sm:p-5 max-w-md w-full shadow-2xl space-y-3 my-auto animate-in fade-in zoom-in duration-200 select-none">
       
-      <div class="text-center space-y-2">
-        <div class="w-14 h-14 mx-auto rounded-3xl bg-gradient-to-br from-[#6C5DD3] to-[#8C7DFF] flex items-center justify-center text-white shadow-xl shadow-[#6C5DD3]/30">
-          <i data-lucide="bell-ring" class="w-7 h-7"></i>
+      <div class="text-center space-y-1.5">
+        <div class="w-12 h-12 mx-auto rounded-2xl bg-gradient-to-br from-[#6C5DD3] to-[#8C7DFF] flex items-center justify-center text-white shadow-xl shadow-[#6C5DD3]/30">
+          <i data-lucide="bell-ring" class="w-6 h-6"></i>
         </div>
-        <h3 class="text-lg font-bold text-white leading-tight">Авто-учет расходов по пушам</h3>
-        <p class="text-xs text-gray-300 leading-relaxed px-2">
+        <h3 class="text-base font-bold text-white leading-tight">Авто-учет расходов по пушам</h3>
+        <p class="text-xs text-gray-300 leading-relaxed px-1">
           Приложение может автоматически вносить траты сразу после оплаты картой или телефоном, считывая push-уведомления банков.
         </p>
       </div>
 
-      <div class="bg-[#0F1118] border border-white/5 rounded-2xl p-3.5 space-y-2.5">
+      <div class="bg-[#0F1118] border border-white/5 rounded-2xl p-3 space-y-2">
         <div class="text-xs font-bold text-white flex items-center gap-1.5">
           <i data-lucide="zap" class="w-4 h-4 text-[#A594FD]"></i>
           <span>Как включить за 10 секунд:</span>
         </div>
-        <ol class="text-[11.5px] text-gray-300 space-y-2 pl-4 list-decimal leading-snug">
+        <ol class="text-[11px] text-gray-300 space-y-1.5 pl-4 list-decimal leading-snug">
           <li>Нажмите <b>«Включить доступ»</b> ниже.</li>
           <li>В системных настройках Android найдите <b>«Семейный бюджет»</b> и активируйте тумблер.</li>
           <li>Убедитесь, что в мобильных банках включены push-уведомления об операциях.</li>
@@ -1298,19 +1397,19 @@ function openBankPushPermissionPrompt() {
       </div>
 
       <!-- Пояснение о безопасности -->
-      <div class="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-3 flex items-start gap-2.5 text-xs text-blue-200/90 leading-snug">
+      <div class="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-2.5 flex items-start gap-2 text-xs text-blue-200/90 leading-snug">
         <i data-lucide="shield-check" class="w-4 h-4 text-[#8C7DFF] flex-shrink-0 mt-0.5"></i>
-        <div class="text-[11px] leading-relaxed">
+        <div class="text-[10.5px] leading-relaxed">
           Наше приложение обрабатывает исключительно push-уведомления о покупках от банков — звонки и личные сообщения (Telegram, WhatsApp, SMS) никогда не читаются и не передаются.
         </div>
       </div>
 
-      <div class="space-y-2 pt-1">
-        <button type="button" onclick="handleAcceptBankPushPrompt()" class="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-[#6C5DD3] to-[#8C7DFF] hover:opacity-90 active:scale-98 text-white text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-[#6C5DD3]/30">
+      <div class="space-y-1.5 pt-0.5">
+        <button type="button" onclick="handleAcceptBankPushPrompt()" class="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-[#6C5DD3] to-[#8C7DFF] hover:opacity-90 active:scale-98 text-white text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-[#6C5DD3]/30">
           <i data-lucide="check" class="w-4 h-4"></i>
           <span>Включить доступ в Android</span>
         </button>
-        <button type="button" onclick="closeBankPushPermissionPrompt()" class="w-full py-3 px-4 rounded-2xl bg-white/5 hover:bg-white/10 active:scale-98 text-gray-400 hover:text-white text-xs font-semibold transition-all cursor-pointer">
+        <button type="button" onclick="closeBankPushPermissionPrompt()" class="w-full py-2.5 px-4 rounded-2xl bg-white/5 hover:bg-white/10 active:scale-98 text-gray-400 hover:text-white text-xs font-semibold transition-all cursor-pointer">
           Настроить позже
         </button>
       </div>

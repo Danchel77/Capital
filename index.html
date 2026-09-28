@@ -310,22 +310,22 @@
   <!-- PDF.js для чтения выписок в браузере (отложенная загрузка, не блокирует старт) -->
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" crossorigin="anonymous"></script>
 
-  <link rel="stylesheet" href="style.css?v=78">
-  <script defer src="iconsSVG.js?v=78"></script>
-  <script defer src="default-rules.js?v=78"></script>
-  <script defer src="statement-parser.js?v=78"></script>
+  <link rel="stylesheet" href="style.css?v=80">
+  <script defer src="iconsSVG.js?v=80"></script>
+  <script defer src="default-rules.js?v=80"></script>
+  <script defer src="statement-parser.js?v=80"></script>
   
   <!-- Модули приложения -->
-  <script defer src="core.js?v=78"></script>
-  <script defer src="auth-profile.js?v=78"></script>
-  <script defer src="backup-manager.js?v=78"></script>
-  <script defer src="ui-tools.js?v=78"></script>
-  <script defer src="app-updater.js?v=78"></script>
-  <script defer src="apk-features.js?v=78"></script>
-  <script defer src="transactions.js?v=78"></script>
-  <script defer src="investments.js?v=78"></script>
-  <script defer src="budget.js?v=78"></script>
-  <script defer src="app.js?v=78"></script>
+  <script defer src="core.js?v=80"></script>
+  <script defer src="auth-profile.js?v=80"></script>
+  <script defer src="backup-manager.js?v=80"></script>
+  <script defer src="ui-tools.js?v=80"></script>
+  <script defer src="app-updater.js?v=80"></script>
+  <script defer src="apk-features.js?v=80"></script>
+  <script defer src="transactions.js?v=80"></script>
+  <script defer src="investments.js?v=80"></script>
+  <script defer src="budget.js?v=80"></script>
+  <script defer src="app.js?v=80"></script>
 </head>
 <body class="bg-[#0F1117] text-[#F2F4F7]" ontouchstart="">
 
@@ -1097,6 +1097,30 @@
               <button type="submit" id="tx-submit-btn" class="w-2/3 h-full bg-[#6C5DD3] hover:bg-[#5E4FC9] text-white font-semibold rounded-xl text-xs flex items-center justify-center cursor-pointer shadow-md shadow-[#6C5DD3]/25 transition-all active:scale-95 leading-none">Сохранить</button>
             </div>
           </form>
+        </div>
+
+        <!-- Баннер переводов на подтверждении -->
+        <div id="tx-pending-transfers-banner" class="hidden">
+          <div class="bg-gradient-to-r from-[#6C5DD3]/15 to-[#8C7DFF]/10 border border-[#6C5DD3]/30 rounded-2xl p-3 flex items-center justify-between gap-2.5 shadow-sm">
+            <div class="flex items-center gap-2.5 min-w-0 flex-1">
+              <div class="w-8 h-8 rounded-xl bg-[#6C5DD3]/20 flex items-center justify-center text-[#A594FD] flex-shrink-0">
+                <i data-lucide="arrow-left-right" class="w-4 h-4"></i>
+              </div>
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-1.5">
+                  <span class="text-xs font-bold text-white truncate">Переводы на подтверждении</span>
+                  <span id="tx-pending-count-badge" class="px-1.5 py-0.2 rounded-full bg-[#6C5DD3] text-white text-[10px] font-black font-mono flex-shrink-0">0</span>
+                </div>
+                <span class="text-[11px] text-gray-400 block truncate mt-0.5">Требуют подтверждения для учета в бюджете</span>
+              </div>
+            </div>
+            <button type="button" 
+                    id="tx-pending-filter-btn"
+                    onclick="togglePendingTransfersFilter()" 
+                    class="px-3 py-1.5 rounded-xl bg-[#6C5DD3] hover:bg-[#5E4FC9] active:scale-95 text-white text-xs font-bold transition-all flex items-center gap-1 flex-shrink-0 cursor-pointer shadow-sm">
+              <span id="tx-pending-filter-btn-text">Показать</span>
+            </button>
+          </div>
         </div>
 
         <!-- Меню фильтрации + кнопка поиска -->

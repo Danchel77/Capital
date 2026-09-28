@@ -10,6 +10,7 @@ let currentStructureType = 'Расход'; // 'Расход' или 'Доход'
 let currentFilterMonth = 'all';
 let currentFilterCategory = 'all';
 let currentFilterSearch = '';
+let currentFilterPendingOnly = false;
 
 // Состояние модалок категорий
 let currentCategoryType = 'Расход';
@@ -52,8 +53,12 @@ function processTransactions(txs) {
     const rawType = String(tx.type || '').trim().toLowerCase();
     const isIncome = rawType === 'доход' || rawType === 'income';
     const isExpense = !isIncome;
-    if (isExpense) grouped[key].expense += amount;
-    else if (isIncome) grouped[key].income += amount;
+    const isPending = !!(tx.isPendingTransfer || tx.transferStatus === 'pending');
+
+    if (!isPending) {
+      if (isExpense) grouped[key].expense += amount;
+      else if (isIncome) grouped[key].income += amount;
+    }
 
     const isoDateStr = (typeof formatDateStr === 'function') ? formatDateStr(txDate, 'yyyy-MM-dd') : (tx.date || tx.rawDate);
     const ruDateStr = (typeof formatDateStr === 'function') ? formatDateStr(txDate, 'dd.MM.yyyy') : (tx.formattedDate || isoDateStr);
@@ -91,7 +96,9 @@ function processTransactions(txs) {
       note: commentVal,
       _searchIndex: searchTokens,
       author: tx.author || null,
-      excludeFromBudget: !!(tx.excludeFromBudget || tx.isExcludedFromBudget),
+      excludeFromBudget: isPending ? true : !!(tx.excludeFromBudget || tx.isExcludedFromBudget),
+      isPendingTransfer: isPending,
+      transferStatus: tx.transferStatus || (isPending ? 'pending' : 'confirmed'),
       isBillPayment: !!tx.isBillPayment,
       billId: tx.billId || null,
       billName: tx.billName || '',
@@ -1995,7 +2002,8 @@ function renderTxRowHtml(tx, largeThreshold, hasDynamicThreshold) {
     }
   }
 
-  const isLarge = isExp && !isAmortized && !isBill && hasDynamicThreshold && isTxMonthTracked && (parseFloat(tx.amount) >= largeThreshold);
+  const isPending = !!(tx.isPendingTransfer || tx.transferStatus === 'pending');
+  const isLarge = isExp && !isAmortized && !isBill && !isPending && hasDynamicThreshold && isTxMonthTracked && (parseFloat(tx.amount) >= largeThreshold);
 
   const isTxTabVisible = !document.getElementById('transactions-tab')?.classList.contains('hidden');
   const isFresh = (Date.now() - (window.lastAddedTxTime || 0)) < 1800;
@@ -2003,10 +2011,15 @@ function renderTxRowHtml(tx, largeThreshold, hasDynamicThreshold) {
 
   const catArr = isExp ? (Cache.categories?.expense || []) : (Cache.categories?.income || []);
   const catInfo = catArr.find(c => c.name === tx.category);
-  const iconStr = catInfo && catInfo.icon ? catInfo.icon : 'tag';
-  const iconBg = isExp 
+  let iconStr = catInfo && catInfo.icon ? catInfo.icon : 'tag';
+  let iconBg = isExp 
     ? 'bg-[#212430] text-[#9EA7B3] border border-[rgba(255,255,255,0.04)]' 
     : 'bg-[#30D158]/10 text-[#30D158] border border-[#30D158]/20';
+
+  if (isPending) {
+    iconStr = 'arrow-left-right';
+    iconBg = 'bg-[#6C5DD3]/20 text-[#A594FD] border border-[#6C5DD3]/30';
+  }
 
   const rawComment = (typeof getTxComment === 'function')
     ? getTxComment(tx)
@@ -2057,7 +2070,7 @@ function renderTxRowHtml(tx, largeThreshold, hasDynamicThreshold) {
   }
 
   return `
-    <div class="card cursor-pointer w-full py-[13px] px-4 relative flex items-center justify-between ${authorBadgeHtml ? 'tx-has-author' : ''} ${isJustAdded ? 'tx-row-new' : ''}"
+    <div class="card cursor-pointer w-full py-[13px] px-4 relative flex items-center justify-between ${authorBadgeHtml ? 'tx-has-author' : ''} ${isJustAdded ? 'tx-row-new' : ''} ${isPending ? 'border border-[#6C5DD3]/25 bg-[#171926]/90' : ''}"
          data-id="${tx.id}"
          data-table="Transactions"
          onclick="openTxContextMenu(event, '${tx.id}')">
@@ -2072,7 +2085,11 @@ function renderTxRowHtml(tx, largeThreshold, hasDynamicThreshold) {
          <div class="min-w-0 flex flex-col justify-center">
            <div class="flex items-center gap-1.5 min-w-0">
              <span class="text-[15px] font-semibold text-gray-200 truncate leading-snug">${escapeHtml(mainTitle)}</span>
-             ${isBill ? `
+             ${isPending ? `
+               <span class="px-1.5 py-0.5 rounded bg-[#6C5DD3]/20 text-[#A594FD] border border-[#6C5DD3]/30 text-[10px] font-bold flex items-center gap-1 flex-shrink-0 leading-none">
+                 <i data-lucide="arrow-left-right" class="w-2.5 h-2.5"></i>Перевод
+               </span>
+             ` : (isBill ? `
                <span class="px-1.5 py-0.5 rounded bg-[#6C5DD3]/15 text-[#a594fd] border border-[#6C5DD3]/25 text-[10px] font-medium flex items-center gap-1 flex-shrink-0 leading-none" title="Ежемесячный счет: ${escapeHtml(tx.billName || 'Счет')}">
                  <i data-lucide="calendar" class="w-2.5 h-2.5"></i>Счет
                </span>
@@ -2084,15 +2101,41 @@ function renderTxRowHtml(tx, largeThreshold, hasDynamicThreshold) {
                <span class="px-1.5 py-0.5 rounded bg-violet-500/15 text-violet-300 border border-violet-500/25 flex items-center justify-center flex-shrink-0 leading-none shadow-sm" title="Крупная трата (от ${formatMoney(largeThreshold)})">
                  <i data-lucide="gem" class="w-3 h-3 stroke-[2]"></i>
                </span>
-             ` : ''))}
+             ` : '')))}
            </div>
-           ${subCategory ? `<span class="text-[12px] text-[#848D99] truncate leading-tight">${escapeHtml(subCategory)}</span>` : ''}
+           ${isPending ? `
+             <div class="flex items-center gap-1.5 mt-1" onclick="event.stopPropagation()">
+               <button type="button" 
+                       onclick="confirmPendingTransfer('${tx.id}', event)" 
+                       class="px-2 py-0.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 active:scale-95 text-emerald-300 border border-emerald-500/30 text-[11px] font-bold flex items-center gap-1 transition-all shadow-sm cursor-pointer" 
+                       title="Учесть в бюджете">
+                 <i data-lucide="check" class="w-3 h-3 stroke-[2.5]"></i>
+                 <span>Учесть</span>
+               </button>
+               <button type="button" 
+                       onclick="dismissPendingTransfer('${tx.id}', event)" 
+                       class="px-2 py-0.5 rounded-lg bg-white/5 hover:bg-red-500/20 active:scale-95 text-gray-400 hover:text-red-300 border border-white/10 hover:border-red-500/30 text-[11px] font-semibold flex items-center gap-1 transition-all cursor-pointer" 
+                       title="Удалить (перевод себе / не учитывать)">
+                 <i data-lucide="trash-2" class="w-3 h-3"></i>
+                 <span>Удалить</span>
+               </button>
+             </div>
+           ` : (subCategory ? `<span class="text-[12px] text-[#848D99] truncate leading-tight">${escapeHtml(subCategory)}</span>` : '')}
          </div>
       </div>
 
-      <div class="tx-amount text-right font-medium ${isExp ? 'text-gray-200' : 'text-[#30D158]'} text-[16px] flex-shrink-0 ml-2 ${authorBadgeHtml ? 'mr-7' : ''}">
-        ${window.isPrivacyModeEnabled ? '•••• ₽' : (isExp ? '-' : '+') + formatMoney(tx.amount)}
-      </div>
+      ${isPending ? `
+        <div class="tx-amount text-right flex flex-col items-end flex-shrink-0 ml-2 ${authorBadgeHtml ? 'mr-7' : ''}">
+          <span class="font-bold text-gray-200 text-[15px]">
+            ${window.isPrivacyModeEnabled ? '•••• ₽' : (isExp ? '-' : '+') + formatMoney(tx.amount)}
+          </span>
+          <span class="text-[9.5px] font-semibold text-[#A594FD] bg-[#6C5DD3]/20 border border-[#6C5DD3]/30 px-1.5 py-0.2 rounded-md mt-0.5">Ожидает</span>
+        </div>
+      ` : `
+        <div class="tx-amount text-right font-medium ${isExp ? 'text-gray-200' : 'text-[#30D158]'} text-[16px] flex-shrink-0 ml-2 ${authorBadgeHtml ? 'mr-7' : ''}">
+          ${window.isPrivacyModeEnabled ? '•••• ₽' : (isExp ? '-' : '+') + formatMoney(tx.amount)}
+        </div>
+      `}
     </div>
   `;
 }
@@ -2176,9 +2219,141 @@ function appendTxChunk() {
   }
 }
 
+function togglePendingTransfersFilter() {
+  currentFilterPendingOnly = !currentFilterPendingOnly;
+  renderTransactions();
+}
+window.togglePendingTransfersFilter = togglePendingTransfersFilter;
+
+async function confirmPendingTransfer(txId, event) {
+  if (event) event.stopPropagation();
+  if (!txId) return;
+
+  const allFlat = typeof getAllCachedTransactionsFlat === 'function' ? getAllCachedTransactionsFlat() : [];
+  const tx = allFlat.find(t => t.id === txId);
+  if (!tx) return;
+
+  tx.isPendingTransfer = false;
+  tx.transferStatus = 'confirmed';
+  tx.excludeFromBudget = false;
+
+  if (typeof processTransactions === 'function') {
+    Cache.transactions = processTransactions(allFlat);
+  }
+
+  // Запуск анимации расхода
+  if (tx.type === 'Расход') {
+    if (typeof triggerBudgetExpenseAnimation === 'function') {
+      triggerBudgetExpenseAnimation();
+    } else {
+      window._budgetNeedsExpenseAnimation = true;
+      window._budgetTabDirty = true;
+    }
+  }
+
+  if (typeof markTabsDirty === 'function') markTabsDirty();
+  if (typeof renderBudgetTab === 'function') renderBudgetTab();
+  if (typeof renderTransactions === 'function') renderTransactions();
+
+  if (typeof syncWidgetData === 'function') syncWidgetData();
+  if (typeof showToast === 'function') showToast('Перевод подтвержден и учтен в бюджете');
+
+  // Фоновое обновление в Firestore
+  try {
+    if (typeof getUserCol === 'function') {
+      await getUserCol('Transactions').doc(txId).update({
+        isPendingTransfer: false,
+        transferStatus: 'confirmed',
+        excludeFromBudget: false,
+        updatedAt: Date.now()
+      });
+    }
+  } catch (err) {
+    console.warn('Ошибка обновления статуса перевода:', err);
+  }
+}
+window.confirmPendingTransfer = confirmPendingTransfer;
+
+async function dismissPendingTransfer(txId, event) {
+  if (event) event.stopPropagation();
+  if (!txId) return;
+
+  const allFlat = typeof getAllCachedTransactionsFlat === 'function' ? getAllCachedTransactionsFlat() : [];
+  const idx = allFlat.findIndex(t => t.id === txId);
+  if (idx !== -1) {
+    allFlat.splice(idx, 1);
+  }
+
+  if (typeof processTransactions === 'function') {
+    Cache.transactions = processTransactions(allFlat);
+  }
+
+  if (typeof markTabsDirty === 'function') markTabsDirty();
+  if (typeof renderBudgetTab === 'function') renderBudgetTab();
+  if (typeof renderTransactions === 'function') renderTransactions();
+
+  if (typeof showToast === 'function') showToast('Перевод удален');
+
+  // Фоновое удаление из Firestore
+  try {
+    if (typeof getUserCol === 'function') {
+      await getUserCol('Transactions').doc(txId).delete();
+    }
+  } catch (err) {
+    console.warn('Ошибка удаления перевода:', err);
+  }
+}
+window.dismissPendingTransfer = dismissPendingTransfer;
+
+async function dismissPendingTransferSilent(txId) {
+  if (!txId) return;
+  const allFlat = typeof getAllCachedTransactionsFlat === 'function' ? getAllCachedTransactionsFlat() : [];
+  const idx = allFlat.findIndex(t => t.id === txId);
+  if (idx !== -1) {
+    allFlat.splice(idx, 1);
+  }
+  if (typeof processTransactions === 'function') {
+    Cache.transactions = processTransactions(allFlat);
+  }
+  if (typeof markTabsDirty === 'function') markTabsDirty();
+  if (typeof renderBudgetTab === 'function') renderBudgetTab();
+  if (typeof renderTransactions === 'function') renderTransactions();
+  try {
+    if (typeof getUserCol === 'function') {
+      await getUserCol('Transactions').doc(txId).delete();
+    }
+  } catch (_) {}
+}
+window.dismissPendingTransferSilent = dismissPendingTransferSilent;
+
 function renderTransactions() {
   const data = Cache.transactions || [];
   const isTotallyEmpty = (data.length === 0);
+
+  // Подсчет количества неподтвержденных переводов
+  const allFlat = typeof getAllCachedTransactionsFlat === 'function' ? getAllCachedTransactionsFlat() : [];
+  const pendingTransfers = allFlat.filter(t => t.isPendingTransfer || t.transferStatus === 'pending');
+  const pendingCount = pendingTransfers.length;
+
+  const pendingBannerEl = document.getElementById('tx-pending-transfers-banner');
+  const pendingBadgeEl = document.getElementById('tx-pending-count-badge');
+  const pendingFilterBtnText = document.getElementById('tx-pending-filter-btn-text');
+
+  if (pendingCount === 0) {
+    currentFilterPendingOnly = false;
+  }
+
+  if (pendingBannerEl) {
+    if (pendingCount > 0) {
+      pendingBannerEl.classList.remove('hidden');
+      if (pendingBadgeEl) pendingBadgeEl.textContent = String(pendingCount);
+      if (pendingFilterBtnText) {
+        pendingFilterBtnText.textContent = currentFilterPendingOnly ? 'Все операции' : 'Показать';
+      }
+    } else {
+      pendingBannerEl.classList.add('hidden');
+    }
+  }
 
   const topActionsEl = document.getElementById('tx-top-actions');
   const filterBarEl = document.getElementById('tx-filter-bar');
@@ -2247,6 +2422,9 @@ function renderTransactions() {
     if (currentFilterMonth !== 'all' && m.id !== currentFilterMonth) return null;
 
     let items = m.items;
+    if (currentFilterPendingOnly) {
+      items = items.filter(tx => tx.isPendingTransfer || tx.transferStatus === 'pending');
+    }
     if (currentFilterCategory !== 'all') {
       items = items.filter(tx => tx.category === currentFilterCategory);
     }
@@ -2266,8 +2444,8 @@ function renderTransactions() {
 
     if (items.length === 0) return null;
 
-    const expense = items.filter(i => i.type === 'Расход').reduce((sum, i) => sum + i.amount, 0);
-    const income = items.filter(i => i.type === 'Доход').reduce((sum, i) => sum + i.amount, 0);
+    const expense = items.filter(i => i.type === 'Расход' && !i.isPendingTransfer).reduce((sum, i) => sum + i.amount, 0);
+    const income = items.filter(i => i.type === 'Доход' && !i.isPendingTransfer).reduce((sum, i) => sum + i.amount, 0);
 
     return { ...m, items, expense, income };
   }).filter(Boolean);
@@ -3064,3 +3242,9 @@ window.switchStructureType = switchStructureType;
 window.updateAnalyticsForMonth = updateAnalyticsForMonth;
 window.resetCategoryDonutCenter = resetCategoryDonutCenter;
 window.selectCategorySlice = selectCategorySlice;
+
+// Управление переводами на подтверждении
+window.togglePendingTransfersFilter = togglePendingTransfersFilter;
+window.confirmPendingTransfer = confirmPendingTransfer;
+window.dismissPendingTransfer = dismissPendingTransfer;
+window.dismissPendingTransferSilent = dismissPendingTransferSilent;
