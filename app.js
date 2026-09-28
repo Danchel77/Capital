@@ -86,14 +86,12 @@ if (currentAuth && typeof currentAuth.onAuthStateChanged === 'function') {
     // Проверяем и предлагаем установку PWA (только 1 раз в день в обычном браузере)
     checkAndShowPwaInstallPrompt(2500);
 
-    // Для мобильного приложения (APK / PWA): предлагаем вынести виджет на домашний экран
-    if (typeof window.checkAndShowWidgetPrompt === 'function') {
-      window.checkAndShowWidgetPrompt(3500);
-    }
-
-    // Для Android APK: проверяем разрешение на чтение пуш-уведомлений банков
+    // Для Android APK: проверяем разрешение на чтение банковских пушей.
+    // Шторка предложения виджетов скоординирована и покажется либо после закрытия окна пушей, либо штатно при наличии разрешений.
     if (typeof window.checkAndPromptBankPushPermission === 'function') {
-      window.checkAndPromptBankPushPermission(4500);
+      window.checkAndPromptBankPushPermission(2500);
+    } else if (typeof window.checkAndShowWidgetPrompt === 'function') {
+      window.checkAndShowWidgetPrompt(3500);
     }
   } else {
     isAppInitialized = false;

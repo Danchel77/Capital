@@ -551,10 +551,13 @@ function shouldShowWidgetPrompt() {
   const isNative = isNativeAppPlatform();
   if (!isNative) return false;
 
-  // 2. Пользователь отключил навсегда
+  // 2. Если сейчас открыто окно запроса разрешений на пуши — не показываем шторку
+  if (window._isBankPushPromptOpen) return false;
+
+  // 3. Пользователь отключил навсегда
   if (localStorage.getItem('widget_prompt_dismissed_permanently') === 'true') return false;
 
-  // 3. Частота: не чаще одного раза в сутки
+  // 4. Частота: не чаще одного раза в сутки
   const lastShownDate = localStorage.getItem('widget_prompt_last_shown_date');
   const todayStr = new Date().toISOString().split('T')[0];
   if (lastShownDate === todayStr) return false;
@@ -837,6 +840,91 @@ function checkAndCancelPairPush(parsedData) {
   return false;
 }
 
+/**
+ * Скоринговая модель классификации push-уведомлений банков (Financial Push Scoring Engine)
+ * Оценивает достоверность того, что входящее уведомление является реальной финансовой транзакцией,
+ * а не рекламой, кредитным предложением, акцией, кэшбэк-промокодом или кодом подтверждения.
+ */
+function scoreBankPushNotification(title = '', text = '', packageName = '') {
+  const fullText = `${title} ${text}`.trim();
+  if (!fullText) return { score: 0, isFinancial: false, reason: 'empty_text', factors: [] };
+
+  // 1. АБСОЛЮТНЫЕ СТОП-ФАКТОРЫ (Hard Gate -> Score = -999, мгновенный отброс)
+  // 1.1. Одноразовые коды и данные авторизации / безопасности
+  if (/(?:код\s+подтверждения|пароль\s+для\s+входа|никому\s+не\s+(?:сообщайте|передавайте)|вход\s+в\s+(?:приложение|банк)|одноразовый\s+пароль|для\s+входа\s+в\s+лк|push[- ]?код|код\s+авторизации|sms[- ]?код)/i.test(fullText)) {
+    return { score: -999, isFinancial: false, reason: 'auth_otp_code', factors: ['auth_otp_code'] };
+  }
+  // 1.2. Сервисные/технические уведомления банков
+  if (/(?:обновление\s+условий|изменение\s+тарифов|график\s+работы|технические\s+работы|безопасность\s+аккаунта|новая\s+версия\s+приложения|оцените\s+приложение|опрос\s+о\s+качестве)/i.test(fullText)) {
+    return { score: -999, isFinancial: false, reason: 'system_service_alert', factors: ['system_service_alert'] };
+  }
+
+  let score = 0;
+  const factors = [];
+
+  // 2. ПОЛОЖИТЕЛЬНЫЕ СИГНАЛЫ (ФАКТ СОВЕРШЕННОЙ ФИНАНСОВОЙ ОПЕРАЦИИ)
+  
+  // 2.1. Глаголы совершенного действия / прошедшее время (+40)
+  if (/(?:покупка|оплата|оплачено|списано|списание|снятие|зачисление|зачислено|пополнение|пополнено|выдача\s+наличных|чек\b)/i.test(fullText)) {
+    score += 40;
+    factors.push('action_verb_match (+40)');
+  }
+
+  // 2.2. Наличие статуса счета / карты / баланса (+35)
+  if (/(?:баланс|остаток|доступно|лимит\s+карты|карта\s+\*?\d+|сч[её]т\s+\*?\d+|mir-\d+|ecmc\d+|visa\d+|authcode|mcc\b)/i.test(fullText)) {
+    score += 35;
+    factors.push('balance_or_card_state (+35)');
+  }
+
+  // 2.3. Переводы (+30)
+  if (/(?:перевод\s+от|перевод\s+клиенту|перевод\s+на|входящий\s+перевод|исходящий\s+перевод|перевод\s+по\s+сбп|сбп\b)/i.test(fullText)) {
+    score += 30;
+    factors.push('transfer_marker (+30)');
+  }
+
+  // 2.4. Пакет известного банковского приложения (+15)
+  if (packageName && BANK_PACKAGE_NAMES[packageName]) {
+    score += 15;
+    factors.push('known_bank_package (+15)');
+  }
+
+  // 2.5. Сумма в жесткой связке с операцией (+20)
+  if (/(?:покупка|оплата|списание|списано|зачисление|пополнение|перевод)\s*[:=]?\s*[+\-]?\s*\d+[\s\d]*[.,]?\d*\s*(?:₽|руб|rur|rub|р\b)/i.test(fullText)) {
+    score += 20;
+    factors.push('amount_bound_to_action (+20)');
+  }
+
+  // 3. ОТРИЦАТЕЛЬНЫЕ СИГНАЛЫ (МАРКЕТИНГ, СПАМ, БУДУЩИЕ ПРЕДЛОЖЕНИЯ)
+
+  // 3.1. Предлоги диапазонов и условий перед суммами (-50)
+  // Примеры: "до 10 000 ₽", "от 500 ₽", "кешбэк до 5 000", "скидка до 30%"
+  if (/(?:до|от)\s+\d+[\s\d]*\s*(?:₽|руб|рубл|rur|rub|р\b|%)/i.test(fullText) ||
+      /(?:лимит(?:\s+до|\s+на)?|кешбэк(?:\s+до)?|кэшбэк(?:\s+до)?|ставка(?:\s+от)?|скидк[аи](?:\s+до)?|рассрочк[аи](?:\s+на)?|кредит(?:\s+до|\s+на)?|одобрен[ао]?\s+на)\s+\d+/i.test(fullText)) {
+    score -= 50;
+    factors.push('range_or_future_offer_penalty (-50)');
+  }
+
+  // 3.2. Повелительное наклонение и рекламные глаголы (-40)
+  if (/\b(?:оформите|получите|попробуйте|откройте|возьмите|узнайте|дарим|выиграйте|успейте|инвестируйте|подключите|заберите|выбирайте|закажите|увеличьте|подайте\s+заявку|активируйте|пригласите|копите)\b/i.test(fullText)) {
+    score -= 40;
+    factors.push('imperative_marketing_verb (-40)');
+  }
+
+  // 3.3. Рекламные ключевые слова и акции (-35)
+  if (/\b(?:промокод|специальное\s+предложение|персональное\s+предложение|акция|выгода|партнеры\s+банка|рассрочка|кредитные\s+каникулы|бонусы\s+спасибо|кэшбэк|кешбэк|выгодн[а-я]+|шанс\s+выиграть|розыгрыш|дополнительный\s+доход|начните\s+инвестировать)\b/i.test(fullText)) {
+    score -= 35;
+    factors.push('marketing_buzzwords (-35)');
+  }
+
+  const isFinancial = score >= 50;
+  return {
+    score,
+    isFinancial,
+    factors,
+    reason: isFinancial ? 'valid_transaction' : 'low_confidence_or_marketing'
+  };
+}
+
 function cleanBankPushMerchant(text = '', title = '') {
   let combined = `${title} ${text}`.trim();
   let clean = text || combined;
@@ -875,7 +963,14 @@ function parseBankPushText(title = '', text = '', packageName = '') {
   const fullText = `${title} ${text}`.trim();
   if (!fullText) return null;
 
-  // 1. Определение банка
+  // 1. Прогон через скоринговую модель оценки доверия к транзакции
+  const scoring = scoreBankPushNotification(title, text, packageName);
+  if (!scoring.isFinancial) {
+    console.log(`[BankPush] Пуш отфильтрован скорингом (Score: ${scoring.score}, Причина: ${scoring.reason}):`, fullText, scoring.factors);
+    return null;
+  }
+
+  // 2. Определение банка
   let bankName = getBankNameByPackage(packageName);
   const lowerFull = fullText.toLowerCase();
   if (bankName === 'Банк') {
@@ -889,17 +984,17 @@ function parseBankPushText(title = '', text = '', packageName = '') {
     else if (lowerFull.includes('озон') || lowerFull.includes('ozon')) bankName = 'Озон Банк';
   }
 
-  // 2. Распознавание внутреннего перевода между счетами / в накопительные счета
+  // 3. Распознавание внутреннего перевода между счетами / в накопительные счета
   const isInternalAccountTransfer = /(?:на\s+сч[её]т\s+в\s+сейвах|в\s+сейвы|на\s+накопительн|накопительного\s+сч[её]та|пополнение\s+с\s+карты.*на\s+сч[её]т|перевод.*между\s+(?:своими|счетами)|в\s+инвесткопилку|в\s+копилку|перевод\s+на\s+сч[её]т\s+в\s+сейв|перевод\s+с\s+накопительн)/i.test(fullText);
 
-  // 3. Определение типа операции (Расход vs Доход)
+  // 4. Определение типа операции (Расход vs Доход)
   const isIncome = /(?:зачисление|пополнение|перевод от|возврат|зарплата|входящий перевод|\+[\d\s]+)/i.test(fullText) && !/(?:списание|покупка|оплата)/i.test(fullText);
   const isExpense = /(?:покупка|оплата|списание|списано|снятие|чек|заказ|перевод клиенту|перевод на|в адрес)/i.test(fullText) || !isIncome;
 
-  // 4. Определение обычного перевода (требует подтверждения)
+  // 5. Определение обычного перевода (требует подтверждения)
   const isTransferOperation = !isInternalAccountTransfer && /(?:перевод|сбп|по\s+номеру|клиенту|зачисление\s+перевода|входящий\s+перевод|исходящий\s+перевод)/i.test(fullText);
 
-  // 5. Извлечение суммы операции
+  // 6. Извлечение суммы операции
   let amount = 0;
   const amountRegexes = [
     /(?:покупка|оплата|списание|списано|снятие|зачисление|пополнение|сумма|чек|на сумму|расход|перевод)\s*(?::)?\s*([+\-]?\s*[\d\s]+(?:[.,]\d{1,2})?)\s*(?:₽|руб|рубл|rur|rub|р\b)/i,
@@ -921,10 +1016,10 @@ function parseBankPushText(title = '', text = '', packageName = '') {
 
   if (amount <= 0) return null;
 
-  // 6. Извлечение чистого названия магазина / назначения
+  // 7. Извлечение чистого названия магазина / назначения
   const finalMerchant = cleanBankPushMerchant(text, title);
 
-  // 7. Автокатегоризация через StatementCategorizer
+  // 8. Автокатегоризация через StatementCategorizer
   let category = isIncome ? 'Зарплата' : 'Продукты';
   if (isTransferOperation || isInternalAccountTransfer) {
     category = isIncome ? 'Входящий перевод' : 'Перевод';
@@ -948,6 +1043,7 @@ function parseBankPushText(title = '', text = '', packageName = '') {
     merchant: finalMerchant,
     category: category || (isIncome ? 'Другое' : 'Прочее'),
     rawText: fullText,
+    score: scoring.score,
     isInternalTransfer: isInternalAccountTransfer,
     isPendingTransfer: isTransferOperation,
     timestamp: Date.now()
@@ -1360,6 +1456,18 @@ async function renderBankPushModalContent() {
 
 // 12.1. Диалог запроса разрешений Android при первом старте приложения
 function openBankPushPermissionPrompt() {
+  window._isBankPushPromptOpen = true;
+
+  // Отменяем или скрываем шторку виджетов, если она была запланирована или открыта
+  if (widgetPromptTimer) {
+    clearTimeout(widgetPromptTimer);
+    widgetPromptTimer = null;
+  }
+  const banner = document.getElementById('widget-install-banner');
+  if (banner && !banner.classList.contains('hidden')) {
+    hideWidgetBanner();
+  }
+
   let modal = document.getElementById('bank-push-permission-prompt-modal');
   if (!modal) {
     modal = document.createElement('div');
@@ -1421,9 +1529,17 @@ function openBankPushPermissionPrompt() {
 }
 
 function closeBankPushPermissionPrompt() {
+  window._isBankPushPromptOpen = false;
   const modal = document.getElementById('bank-push-permission-prompt-modal');
   if (modal) modal.classList.add('hidden');
   localStorage.setItem('bank_push_permission_prompt_dismissed_at', Date.now().toString());
+
+  // При закрытии окна пушей плавно предлагаем шторку добавления виджетов
+  setTimeout(() => {
+    if (typeof checkAndShowWidgetPrompt === 'function') {
+      checkAndShowWidgetPrompt(600);
+    }
+  }, 300);
 }
 
 function handleAcceptBankPushPrompt() {
@@ -1432,23 +1548,47 @@ function handleAcceptBankPushPrompt() {
   openBankPushPermissionSettings();
 }
 
-async function checkAndPromptBankPushPermission(delayMs = 4500) {
-  // Если запущено не в APK или пользователь выключил авто-учет — никогда не показываем
-  if (!isNativeAppPlatform() || !isBankPushAutoExpenseEnabled()) return;
+async function checkAndPromptBankPushPermission(delayMs = 2500) {
+  // Если запущено не в APK или пользователь выключил авто-учет — запускаем шторку виджетов
+  if (!isNativeAppPlatform() || !isBankPushAutoExpenseEnabled()) {
+    if (typeof checkAndShowWidgetPrompt === 'function') {
+      checkAndShowWidgetPrompt(3000);
+    }
+    return;
+  }
   
   const dismissedAt = parseInt(localStorage.getItem('bank_push_permission_prompt_dismissed_at') || '0', 10);
-  // Не показываем чаще, чем раз в 24 часа, если пользователь закрыл окно
-  if (Date.now() - dismissedAt < 24 * 60 * 60 * 1000) return;
+  // Не показываем чаще, чем раз в 24 часа, если пользователь уже закрывал окно
+  if (Date.now() - dismissedAt < 24 * 60 * 60 * 1000) {
+    if (typeof checkAndShowWidgetPrompt === 'function') {
+      checkAndShowWidgetPrompt(3000);
+    }
+    return;
+  }
 
   setTimeout(async () => {
     try {
       // Если пользователь отключил в процессе ожидания
-      if (!isBankPushAutoExpenseEnabled()) return;
+      if (!isBankPushAutoExpenseEnabled()) {
+        if (typeof checkAndShowWidgetPrompt === 'function') {
+          checkAndShowWidgetPrompt(1000);
+        }
+        return;
+      }
       const isGranted = await checkBankPushPermissions();
       if (!isGranted) {
         openBankPushPermissionPrompt();
+      } else {
+        // Разрешения уже есть — сразу показываем шторку виджетов
+        if (typeof checkAndShowWidgetPrompt === 'function') {
+          checkAndShowWidgetPrompt(1500);
+        }
       }
-    } catch (_) {}
+    } catch (_) {
+      if (typeof checkAndShowWidgetPrompt === 'function') {
+        checkAndShowWidgetPrompt(2000);
+      }
+    }
   }, delayMs);
 }
 
@@ -1472,6 +1612,7 @@ window.handleWidgetBannerAction = handleWidgetBannerAction;
 window.handleWidgetPinRequest = handleWidgetPinRequest;
 
 // Экспорты модуля автоматического учета по банковским пушам
+window.scoreBankPushNotification = scoreBankPushNotification;
 window.parseBankPushText = parseBankPushText;
 window.saveAutoExpenseTransaction = saveAutoExpenseTransaction;
 window.sendAppLocalNotification = sendAppLocalNotification;
