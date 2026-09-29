@@ -551,13 +551,16 @@ function shouldShowWidgetPrompt() {
   const isNative = isNativeAppPlatform();
   if (!isNative) return false;
 
-  // 2. Если сейчас открыто окно запроса разрешений на пуши — не показываем шторку
+  // 2. Если сейчас открыто окно обновления приложения — не показываем
+  if (window._isAppUpdateModalOpen) return false;
+
+  // 3. Если сейчас открыто окно запроса разрешений на пуши — не показываем шторку
   if (window._isBankPushPromptOpen) return false;
 
-  // 3. Пользователь отключил навсегда
+  // 4. Пользователь отключил навсегда
   if (localStorage.getItem('widget_prompt_dismissed_permanently') === 'true') return false;
 
-  // 4. Частота: не чаще одного раза в сутки
+  // 5. Частота: не чаще одного раза в сутки
   const lastShownDate = localStorage.getItem('widget_prompt_last_shown_date');
   const todayStr = new Date().toISOString().split('T')[0];
   if (lastShownDate === todayStr) return false;
@@ -1586,7 +1589,10 @@ function handleAcceptBankPushPrompt() {
 }
 
 async function checkAndPromptBankPushPermission(delayMs = 2500) {
-  // Если запущено не в APK или пользователь выключил авто-учет — запускаем шторку виджетов
+  // 1. Если сейчас открыто окно обновления приложения — откладываем проверку
+  if (window._isAppUpdateModalOpen) return;
+
+  // 2. Если запущено не в APK или пользователь выключил авто-учет — запускаем шторку виджетов
   if (!isNativeAppPlatform() || !isBankPushAutoExpenseEnabled()) {
     if (typeof checkAndShowWidgetPrompt === 'function') {
       checkAndShowWidgetPrompt(3000);
@@ -1604,6 +1610,7 @@ async function checkAndPromptBankPushPermission(delayMs = 2500) {
   }
 
   setTimeout(async () => {
+    if (window._isAppUpdateModalOpen) return;
     try {
       // Если пользователь отключил в процессе ожидания
       if (!isBankPushAutoExpenseEnabled()) {
@@ -1614,6 +1621,7 @@ async function checkAndPromptBankPushPermission(delayMs = 2500) {
       }
       const isGranted = await checkBankPushPermissions();
       if (!isGranted) {
+        if (window._isAppUpdateModalOpen) return;
         openBankPushPermissionPrompt();
       } else {
         // Разрешения уже есть — сразу показываем шторку виджетов

@@ -3756,8 +3756,180 @@ function formatFileSize(bytes) {
 }
 window.formatFileSize = formatFileSize;
 
+// -------------------------------------------------------------
+// ВСТРОЕННЫЙ ПРОСМОТРЩИК PDF (КАНВАС НА БАЗЕ PDF.JS ДЛЯ APK И БРАУЗЕРА)
+// -------------------------------------------------------------
+
+let _currentPdfDoc = null;
+let _currentPdfPageNum = 1;
+let _currentPdfTotalPages = 1;
+let _currentPdfScale = 1.0;
+let _currentPdfBlobUrl = null;
+let _isPdfRendering = false;
+
+/**
+ * Открывает встроенный просмотрщик PDF внутри приложения
+ */
+async function openInAppPdfViewer(fileOrBlobUrl, fileName = 'Выписка.pdf') {
+  const modal = document.getElementById('in-app-pdf-viewer-modal');
+  if (!modal) return;
+
+  const titleEl = document.getElementById('pdf-viewer-title');
+  if (titleEl) titleEl.textContent = fileName || 'Выписка.pdf';
+
+  const externalBtn = document.getElementById('pdf-viewer-external-btn');
+  const isNative = typeof window.isNativeAppPlatform === 'function' ? window.isNativeAppPlatform() : false;
+  if (externalBtn) {
+    externalBtn.style.display = isNative ? 'none' : 'flex';
+  }
+
+  if (typeof lockBodyScroll === 'function') lockBodyScroll();
+  modal.classList.remove('hidden');
+  if (typeof lucide !== 'undefined') lucide.createIcons({ root: modal });
+
+  try {
+    let pdfData = null;
+    if (fileOrBlobUrl instanceof File || fileOrBlobUrl instanceof Blob) {
+      pdfData = await fileOrBlobUrl.arrayBuffer();
+      try {
+        _currentPdfBlobUrl = URL.createObjectURL(fileOrBlobUrl);
+      } catch (e) {}
+    } else if (typeof fileOrBlobUrl === 'string') {
+      _currentPdfBlobUrl = fileOrBlobUrl;
+      pdfData = fileOrBlobUrl;
+    }
+
+    if (!window.pdfjsLib) {
+      throw new Error('Библиотека PDF.js загружается, повторите через пару секунд...');
+    }
+
+    _currentPdfDoc = await pdfjsLib.getDocument(pdfData).promise;
+    _currentPdfTotalPages = _currentPdfDoc.numPages;
+    _currentPdfPageNum = 1;
+    _currentPdfScale = 1.0;
+
+    await renderCurrentPdfPage();
+  } catch (err) {
+    console.error('Ошибка рендеринга PDF:', err);
+    if (typeof showToast === 'function') {
+      showToast('Не удалось отобразить PDF: ' + err.message, true);
+    }
+  }
+}
+window.openInAppPdfViewer = openInAppPdfViewer;
+
+async function renderCurrentPdfPage() {
+  if (!_currentPdfDoc || _isPdfRendering) return;
+  _isPdfRendering = true;
+
+  try {
+    const page = await _currentPdfDoc.getPage(_currentPdfPageNum);
+    const canvas = document.getElementById('pdf-viewer-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    const container = document.getElementById('pdf-viewer-canvas-wrap');
+    const availWidth = (container ? container.clientWidth : window.innerWidth) - 24;
+
+    const unscaledViewport = page.getViewport({ scale: 1 });
+    const baseScale = Math.min(availWidth / unscaledViewport.width, 2.0);
+    const finalScale = Math.max(0.4, baseScale * _currentPdfScale);
+
+    const dpr = window.devicePixelRatio || 1;
+    const viewport = page.getViewport({ scale: finalScale });
+
+    canvas.width = viewport.width * dpr;
+    canvas.height = viewport.height * dpr;
+    canvas.style.width = `${viewport.width}px`;
+    canvas.style.height = `${viewport.height}px`;
+
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    const renderContext = {
+      canvasContext: ctx,
+      viewport: viewport
+    };
+
+    await page.render(renderContext).promise;
+
+    // Обновляем метки и кнопки навигации
+    const pageLabel = document.getElementById('pdf-viewer-pages-label');
+    const pageIndicator = document.getElementById('pdf-page-indicator');
+    const zoomLabel = document.getElementById('pdf-viewer-zoom-label');
+    const prevBtn = document.getElementById('pdf-prev-page-btn');
+    const nextBtn = document.getElementById('pdf-next-page-btn');
+
+    if (pageLabel) pageLabel.textContent = `Страница ${_currentPdfPageNum} из ${_currentPdfTotalPages}`;
+    if (pageIndicator) pageIndicator.textContent = `${_currentPdfPageNum} / ${_currentPdfTotalPages}`;
+    if (zoomLabel) zoomLabel.textContent = `${Math.round(_currentPdfScale * 100)}%`;
+
+    if (prevBtn) prevBtn.disabled = (_currentPdfPageNum <= 1);
+    if (nextBtn) nextBtn.disabled = (_currentPdfPageNum >= _currentPdfTotalPages);
+  } catch (err) {
+    console.warn('Ошибка отрисовки страницы PDF:', err);
+  } finally {
+    _isPdfRendering = false;
+  }
+}
+window.renderCurrentPdfPage = renderCurrentPdfPage;
+
+function changePdfViewerPage(delta) {
+  const newPage = _currentPdfPageNum + delta;
+  if (newPage >= 1 && newPage <= _currentPdfTotalPages) {
+    _currentPdfPageNum = newPage;
+    renderCurrentPdfPage();
+  }
+}
+window.changePdfViewerPage = changePdfViewerPage;
+
+function changePdfViewerZoom(delta) {
+  const newScale = Math.max(0.5, Math.min(3.0, _currentPdfScale + delta));
+  if (newScale !== _currentPdfScale) {
+    _currentPdfScale = newScale;
+    renderCurrentPdfPage();
+  }
+}
+window.changePdfViewerZoom = changePdfViewerZoom;
+
+function closeInAppPdfViewer() {
+  const modal = document.getElementById('in-app-pdf-viewer-modal');
+  if (modal) modal.classList.add('hidden');
+  if (typeof unlockBodyScroll === 'function') unlockBodyScroll();
+  _currentPdfDoc = null;
+}
+window.closeInAppPdfViewer = closeInAppPdfViewer;
+
+function openCurrentPdfInExternalTab() {
+  if (_currentPdfBlobUrl) {
+    try {
+      window.open(_currentPdfBlobUrl, '_blank', 'noopener,noreferrer');
+    } catch (e) {
+      console.warn('Не удалось открыть вкладку:', e);
+    }
+  }
+}
+window.openCurrentPdfInExternalTab = openCurrentPdfInExternalTab;
+
+/**
+ * Главный диспетчер открытия PDF:
+ * - В APK приложении (Android WebView): всегда использует встроенный полноэкранный просмотрщик canvas
+ * - В браузере (Desktop / Mobile Chrome): открывает в новой вкладке с фоллбеком на встроенный просмотрщик
+ */
 function openStatementFileDirectly(statement) {
   if (!statement) return;
+
+  // Закрываем выпадающее меню выбора выписки, если оно было открыто
+  document.getElementById('statement-file-picker-popup')?.classList.add('hidden');
+
+  const isNative = typeof window.isNativeAppPlatform === 'function' ? window.isNativeAppPlatform() : false;
+
+  // 1. В нативном APK (Android WebView): открываем встроенный просмотрщик
+  if (isNative) {
+    openInAppPdfViewer(statement.file || statement.blobUrl, statement.fileName);
+    return;
+  }
+
+  // 2. В обычном браузере: пробуем открыть в новой вкладке
   let fileUrl = statement.blobUrl;
   if (!fileUrl && statement.file) {
     try {
@@ -3772,25 +3944,23 @@ function openStatementFileDirectly(statement) {
   }
 
   if (!fileUrl) {
-    if (typeof showToast === 'function') {
-      showToast('Файл выписки недоступен для просмотра', true);
-    }
+    openInAppPdfViewer(statement.file, statement.fileName);
     return;
   }
 
-  // Закрываем меню выбора выписки, если оно было открыто
-  document.getElementById('statement-file-picker-popup')?.classList.add('hidden');
-
-  // Надежно открываем файл выписки в новой вкладке без дублирующих вызовов (предотвращает ложную блокировку всплывающих окон браузером)
-  const a = document.createElement('a');
-  a.href = fileUrl;
-  a.target = '_blank';
-  a.rel = 'noopener noreferrer';
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(() => {
-    try { a.remove(); } catch (err) {}
-  }, 100);
+  try {
+    const a = document.createElement('a');
+    a.href = fileUrl;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      try { a.remove(); } catch (err) {}
+    }, 100);
+  } catch (err) {
+    openInAppPdfViewer(statement.file || fileUrl, statement.fileName);
+  }
 }
 window.openStatementFileDirectly = openStatementFileDirectly;
 

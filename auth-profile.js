@@ -440,9 +440,8 @@ function openProfileModal() {
     togglePdf.checked = Cache?.settings?.showPdfInfo !== undefined ? !!Cache.settings.showPdfInfo : true;
   }
 
-  // Обновляем видимость пунктов установки, виджетов, пушей и проверки обновлений
+  // Обновляем видимость пунктов установки, виджетов и пушей
   const pwaBtn = document.getElementById('profile-install-app-btn');
-  const checkUpdatesBtn = document.getElementById('profile-check-updates-btn');
   const widgetsBtn = document.getElementById('profile-widgets-btn');
   const bankPushBtn = document.getElementById('profile-bank-push-btn');
 
@@ -450,10 +449,10 @@ function openProfileModal() {
   const isPwa = typeof window.isPwaStandalone === 'function' ? window.isPwaStandalone() : false;
 
   if (isNative) {
-    // В нативном APK: пункта установки нет, но доступны виджеты, авто-пуши и проверка обновлений
+    // В нативном APK: пункта установки нет, но доступны виджеты и авто-пуши
     if (pwaBtn) pwaBtn.classList.add('hidden');
-    if (checkUpdatesBtn) checkUpdatesBtn.classList.remove('hidden');
     if (widgetsBtn) widgetsBtn.classList.remove('hidden');
+
     if (bankPushBtn) {
       bankPushBtn.classList.remove('hidden');
       const autoPushEnabled = typeof window.isBankPushAutoExpenseEnabled === 'function' ? window.isBankPushAutoExpenseEnabled() : true;

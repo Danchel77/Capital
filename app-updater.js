@@ -69,14 +69,14 @@ async function checkAppUpdates(isManual = false) {
     const remoteTag = (data.tag_name || '1.0.0').replace(/^v/i, '');
     const currentAppVer = window.APP_VERSION || '1.0.1';
 
-    // Если приложение запущено в первый раз, сохраняем текущую версию приложения
+    // Синхронизируем установленную версию с текущей версией запущенного кода
     let installedVersion = localStorage.getItem('app_installed_version');
     let installedTimestamp = parseInt(localStorage.getItem('app_installed_release_timestamp') || '0', 10);
 
-    if (!installedVersion) {
+    if (!installedVersion || compareSemver(currentAppVer, installedVersion) > 0) {
       installedVersion = currentAppVer;
       localStorage.setItem('app_installed_version', installedVersion);
-      if (releaseTimestamp > 0) {
+      if (releaseTimestamp > 0 && (!installedTimestamp || releaseTimestamp > installedTimestamp)) {
         localStorage.setItem('app_installed_release_timestamp', releaseTimestamp.toString());
         installedTimestamp = releaseTimestamp;
       }
@@ -105,46 +105,118 @@ async function checkAppUpdates(isManual = false) {
   }
 }
 
+/**
+ * Преобразует текст описания релиза из Markdown в структурированные аккуратные карточки
+ */
+function formatReleaseNotesHtml(rawNotes) {
+  if (!rawNotes || typeof rawNotes !== 'string') {
+    return '<p class="text-xs text-gray-300">Улучшения производительности и исправления ошибок.</p>';
+  }
+
+  // Удаляем эмодзи для соответствия строгому UI-стилю
+  let text = rawNotes.replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E6}-\u{1F1FF}]/gu, '').trim();
+
+  // Удаляем заголовок "### Что нового..." если он дублирует шапку
+  text = text.replace(/^#+\s*Что нового[^\n]*\n?/gim, '').trim();
+
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  const items = [];
+
+  for (const line of lines) {
+    const cleanLine = line.replace(/^[-*•]\s+/, '').replace(/^\d+\.\s+/, '').trim();
+    if (!cleanLine) continue;
+
+    // Парсим формат вида: **Заголовок:** подробное описание
+    const match = cleanLine.match(/^\*\*([^*]+)\*\*:?\s*(.*)$/);
+    if (match) {
+      const title = match[1].trim();
+      const desc = match[2].trim();
+      items.push(`
+        <div class="flex items-start gap-2.5 p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.05] transition-colors">
+          <div class="w-2 h-2 rounded-full bg-[#6C5DD3] mt-1.5 flex-shrink-0 shadow-[0_0_8px_rgba(108,93,211,0.8)]"></div>
+          <div class="text-xs leading-relaxed flex-1">
+            <span class="font-semibold text-white block">${escapeHtml(title)}</span>
+            ${desc ? `<span class="text-gray-300 text-[11.5px] mt-0.5 block leading-normal">${escapeHtml(desc)}</span>` : ''}
+          </div>
+        </div>
+      `);
+    } else {
+      const formatted = cleanLine.replace(/\*\*([^*]+)\*\*/g, '<strong class="text-white font-semibold">$1</strong>');
+      items.push(`
+        <div class="flex items-start gap-2.5 p-2 rounded-xl bg-white/[0.02] border border-white/[0.04]">
+          <div class="w-1.5 h-1.5 rounded-full bg-indigo-400/80 mt-1.5 flex-shrink-0"></div>
+          <div class="text-xs text-gray-300 leading-relaxed flex-1">${formatted}</div>
+        </div>
+      `);
+    }
+  }
+
+  if (items.length === 0) {
+    return `<p class="text-xs text-gray-300 leading-relaxed">${escapeHtml(text)}</p>`;
+  }
+
+  return items.join('');
+}
+window.formatReleaseNotesHtml = formatReleaseNotesHtml;
+
 // Отображение модального окна обновления
 function showUpdateAvailableModal(tag, notes, dateStr, releaseTimestamp) {
+  window._isAppUpdateModalOpen = true;
+
+  // Если были активны шторка виджетов или другие баннеры — скрываем их
+  if (typeof window.hideWidgetBanner === 'function') {
+    window.hideWidgetBanner();
+  }
+  if (typeof window.closeBankPushPermissionPrompt === 'function') {
+    const pushPrompt = document.getElementById('bank-push-permission-prompt-modal');
+    if (pushPrompt && !pushPrompt.classList.contains('hidden')) {
+      pushPrompt.classList.add('hidden');
+    }
+  }
+
   let modal = document.getElementById('app-update-modal');
   if (!modal) {
     modal = document.createElement('div');
     modal.id = 'app-update-modal';
-    modal.className = 'fixed inset-0 z-[1200] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 overscroll-contain no-scrollbar transition-all duration-300';
+    modal.className = 'fixed inset-0 z-[1200] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 overscroll-contain no-scrollbar transition-all duration-300 select-none';
     document.body.appendChild(modal);
   }
 
   if (typeof lockBodyScroll === 'function') lockBodyScroll();
 
   modal.innerHTML = `
-    <div class="bg-[#181B24] border border-white/10 rounded-3xl p-6 max-w-sm w-full shadow-2xl space-y-4 animate-in fade-in zoom-in duration-200">
+    <div class="bg-[#181B24] border border-white/10 rounded-3xl p-5 sm:p-6 max-w-md sm:max-w-lg w-full shadow-2xl space-y-4 animate-in fade-in zoom-in duration-200">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-2xl bg-[#6C5DD3]/20 border border-[#6C5DD3]/40 flex items-center justify-center text-[#6C5DD3]">
-            <i data-lucide="download-cloud" class="w-5 h-5"></i>
+          <div class="w-11 h-11 rounded-2xl bg-[#6C5DD3]/20 border border-[#6C5DD3]/40 flex items-center justify-center text-[#8C7DFF]">
+            <i data-lucide="download-cloud" class="w-6 h-6"></i>
           </div>
           <div>
-            <h3 class="text-base font-bold text-white leading-tight">Доступно обновление</h3>
-            <span class="text-xs text-[#6C5DD3] font-semibold">${dateStr ? `Релиз от ${dateStr}` : `Версия ${escapeHtml(tag)}`}</span>
+            <h3 class="text-base sm:text-lg font-bold text-white leading-tight">Доступно обновление</h3>
+            <span class="text-xs text-[#8C7DFF] font-semibold">${dateStr ? `Релиз от ${dateStr}` : `Версия ${escapeHtml(tag)}`}</span>
           </div>
         </div>
-        <button type="button" onclick="closeUpdateModal()" class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-all">
+        <button type="button" onclick="closeUpdateModal()" class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-all cursor-pointer">
           <i data-lucide="x" class="w-4 h-4"></i>
         </button>
       </div>
 
-      <div class="bg-[#0F1117] border border-white/5 rounded-2xl p-3.5 space-y-1">
-        <span class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Что нового:</span>
-        <p class="text-xs text-gray-300 whitespace-pre-line leading-relaxed max-h-32 overflow-y-auto pr-1">${escapeHtml(notes)}</p>
+      <div class="bg-[#0F1117] border border-white/5 rounded-2xl p-3.5 sm:p-4 space-y-2.5">
+        <div class="flex items-center justify-between pb-1 border-b border-white/5">
+          <span class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Что нового в обновлении:</span>
+          <span class="text-[11px] font-mono text-indigo-300 font-semibold">${escapeHtml(tag)}</span>
+        </div>
+        <div class="space-y-2 max-h-72 sm:max-h-96 overflow-y-auto pr-1 custom-scrollbar">
+          ${formatReleaseNotesHtml(notes)}
+        </div>
       </div>
 
       <div class="pt-1 flex flex-col gap-2">
-        <button type="button" onclick="downloadApkDirectly(${releaseTimestamp})" class="w-full py-3 px-4 rounded-xl bg-[#6C5DD3] hover:bg-[#5b4eb8] active:scale-98 text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-lg shadow-[#6C5DD3]/20 transition-all cursor-pointer">
+        <button type="button" onclick="downloadApkDirectly(${releaseTimestamp})" class="w-full py-3.5 px-4 rounded-xl bg-[#6C5DD3] hover:bg-[#5b4eb8] active:scale-98 text-white font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-[#6C5DD3]/25 transition-all cursor-pointer">
           <i data-lucide="download" class="w-4 h-4"></i>
-          Обновить сейчас (.APK)
+          <span>Обновить сейчас (.APK)</span>
         </button>
-        <button type="button" onclick="closeUpdateModal()" class="w-full py-2.5 px-4 rounded-xl text-gray-400 hover:text-white font-semibold text-xs text-center transition-all cursor-pointer">
+        <button type="button" onclick="closeUpdateModal()" class="w-full py-2 px-4 rounded-xl text-gray-400 hover:text-white font-medium text-xs text-center transition-all cursor-pointer">
           Позже
         </button>
       </div>
@@ -156,9 +228,18 @@ function showUpdateAvailableModal(tag, notes, dateStr, releaseTimestamp) {
 }
 
 function closeUpdateModal() {
+  window._isAppUpdateModalOpen = false;
   const modal = document.getElementById('app-update-modal');
   if (modal) modal.classList.add('hidden');
   if (typeof unlockBodyScroll === 'function') unlockBodyScroll();
+
+  // После закрытия окна обновления (если пользователь отложил)
+  // плавно проверяем разрешения пушей и виджеты без наложения
+  setTimeout(() => {
+    if (typeof window.checkAndPromptBankPushPermission === 'function') {
+      window.checkAndPromptBankPushPermission(400);
+    }
+  }, 800);
 }
 
 // Прямое скачивание APK
@@ -339,18 +420,13 @@ function closeAppInstallOptionsModal() {
   if (typeof unlockBodyScroll === 'function') unlockBodyScroll();
 }
 
-// Автоматическая фоновая проверка раз в сутки при запуске (ТОЛЬКО ДЛЯ APK)
+// Автоматическая фоновая проверка при запуске нативного APK (с задержкой 2.5 сек)
 window.addEventListener('DOMContentLoaded', () => {
-  if (window.Capacitor?.isNativePlatform()) {
-    setTimeout(() => {
-      const lastCheck = localStorage.getItem('app_last_check_time');
-      const now = Date.now();
-      if (!lastCheck || (now - parseInt(lastCheck, 10)) > 24 * 3600 * 1000) {
-        localStorage.setItem('app_last_check_time', now.toString());
-        checkAppUpdates(false);
-      }
-    }, 4000);
-  }
+  setTimeout(() => {
+    if (checkIsNativeApp()) {
+      checkAppUpdates(false);
+    }
+  }, 2500);
 });
 
 // Экспорт глобальных функций

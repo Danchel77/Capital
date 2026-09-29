@@ -310,22 +310,22 @@
   <!-- PDF.js для чтения выписок в браузере (отложенная загрузка, не блокирует старт) -->
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" crossorigin="anonymous"></script>
 
-  <link rel="stylesheet" href="style.css?v=104">
-  <script defer src="iconsSVG.js?v=104"></script>
-  <script defer src="default-rules.js?v=104"></script>
-  <script defer src="statement-parser.js?v=104"></script>
+  <link rel="stylesheet" href="style.css?v=107">
+  <script defer src="iconsSVG.js?v=107"></script>
+  <script defer src="default-rules.js?v=107"></script>
+  <script defer src="statement-parser.js?v=107"></script>
   
   <!-- Модули приложения -->
-  <script defer src="core.js?v=104"></script>
-  <script defer src="auth-profile.js?v=104"></script>
-  <script defer src="backup-manager.js?v=104"></script>
-  <script defer src="ui-tools.js?v=104"></script>
-  <script defer src="app-updater.js?v=104"></script>
-  <script defer src="apk-features.js?v=104"></script>
-  <script defer src="transactions.js?v=104"></script>
-  <script defer src="investments.js?v=104"></script>
-  <script defer src="budget.js?v=104"></script>
-  <script defer src="app.js?v=104"></script>
+  <script defer src="core.js?v=107"></script>
+  <script defer src="auth-profile.js?v=107"></script>
+  <script defer src="backup-manager.js?v=107"></script>
+  <script defer src="ui-tools.js?v=107"></script>
+  <script defer src="app-updater.js?v=107"></script>
+  <script defer src="apk-features.js?v=107"></script>
+  <script defer src="transactions.js?v=107"></script>
+  <script defer src="investments.js?v=107"></script>
+  <script defer src="budget.js?v=107"></script>
+  <script defer src="app.js?v=107"></script>
 </head>
 <body class="bg-[#0F1117] text-[#F2F4F7]" ontouchstart="">
 
@@ -2496,6 +2496,60 @@
     </div>
   </div>
 
+  <!-- МОДАЛЬНОЕ ОКНО: ВСТРОЕННЫЙ ПРОСМОТРЩИК PDF (КАНВАС PDF.JS ДЛЯ APK И БРАУЗЕРА) -->
+  <div id="in-app-pdf-viewer-modal" class="fixed inset-0 bg-black/95 z-[200] hidden flex flex-col items-center justify-between backdrop-blur-md animate-fade-in select-none">
+    <!-- Шапка просмотрщика -->
+    <div class="w-full bg-[#181B24] border-b border-[rgba(255,255,255,0.08)] px-3.5 sm:px-5 py-2.5 flex items-center justify-between z-10 shadow-lg flex-shrink-0">
+      <div class="flex items-center gap-2.5 min-w-0 pr-2">
+        <div class="w-8 h-8 rounded-xl bg-[#6C5DD3]/20 text-[#8C7DFF] flex items-center justify-center flex-shrink-0 border border-[#6C5DD3]/30">
+          <i data-lucide="file-text" class="w-4 h-4"></i>
+        </div>
+        <div class="min-w-0">
+          <h4 id="pdf-viewer-title" class="text-xs sm:text-sm font-bold text-white truncate max-w-[160px] sm:max-w-md">Выписка.pdf</h4>
+          <p id="pdf-viewer-pages-label" class="text-[10px] text-[#848D99] font-mono">Страница 1 из 1</p>
+        </div>
+      </div>
+      
+      <!-- Панель управления: зум + пагинация + закрыть -->
+      <div class="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+        <!-- Кнопки зума -->
+        <div class="flex items-center bg-[#12151C] rounded-xl border border-white/10 p-0.5">
+          <button type="button" onclick="changePdfViewerZoom(-0.25)" class="w-7 h-7 rounded-lg text-gray-300 hover:text-white flex items-center justify-center font-bold text-sm active:scale-90 cursor-pointer" title="Уменьшить">-</button>
+          <span id="pdf-viewer-zoom-label" class="text-[10px] font-mono font-bold text-[#8C7DFF] px-1.5 min-w-[38px] text-center">100%</span>
+          <button type="button" onclick="changePdfViewerZoom(0.25)" class="w-7 h-7 rounded-lg text-gray-300 hover:text-white flex items-center justify-center font-bold text-sm active:scale-90 cursor-pointer" title="Увеличить">+</button>
+        </div>
+
+        <!-- Кнопка перехода на внешнюю вкладку браузера -->
+        <button type="button" id="pdf-viewer-external-btn" onclick="openCurrentPdfInExternalTab()" class="hidden sm:flex h-8 px-2.5 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 hover:text-white rounded-xl text-xs font-medium items-center gap-1 active:scale-95 cursor-pointer" title="Открыть в новой вкладке браузера">
+          <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+          <span>Вкладка</span>
+        </button>
+
+        <button type="button" onclick="closeInAppPdfViewer()" class="w-8 h-8 rounded-xl bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 hover:text-white flex items-center justify-center cursor-pointer active:scale-95 transition-all" title="Закрыть">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Область холста PDF (скроллируемая) -->
+    <div id="pdf-viewer-canvas-wrap" class="flex-1 w-full overflow-auto flex items-start justify-center p-2 sm:p-4 bg-[#090B0F] custom-scrollbar">
+      <canvas id="pdf-viewer-canvas" class="shadow-2xl rounded-lg bg-white transition-transform duration-150 origin-top"></canvas>
+    </div>
+
+    <!-- Нижняя плавающая панель перелистывания страниц -->
+    <div class="w-full bg-[#181B24]/90 backdrop-blur-md border-t border-[rgba(255,255,255,0.08)] py-2 px-4 flex items-center justify-center gap-4 z-10 flex-shrink-0">
+      <button type="button" id="pdf-prev-page-btn" onclick="changePdfViewerPage(-1)" class="px-3.5 py-1.5 rounded-xl bg-[#212430] hover:bg-[#2A2D3C] text-white text-xs font-semibold flex items-center gap-1.5 disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 transition-all cursor-pointer">
+        <i data-lucide="chevron-left" class="w-4 h-4"></i>
+        <span>Назад</span>
+      </button>
+      <span id="pdf-page-indicator" class="text-xs font-mono font-bold text-gray-200">1 / 1</span>
+      <button type="button" id="pdf-next-page-btn" onclick="changePdfViewerPage(1)" class="px-3.5 py-1.5 rounded-xl bg-[#212430] hover:bg-[#2A2D3C] text-white text-xs font-semibold flex items-center gap-1.5 disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 transition-all cursor-pointer">
+        <span>Вперед</span>
+        <i data-lucide="chevron-right" class="w-4 h-4"></i>
+      </button>
+    </div>
+  </div>
+
   <!-- Всплывающий компактный тултип сырого описания операции (при удержании карточки) -->
   <div id="raw-tx-tooltip" 
        class="fixed z-[160] hidden max-w-[92vw] sm:max-w-md w-full p-2.5 bg-[#181B24] border border-[#6C5DD3]/50 rounded-2xl shadow-[0_12px_36px_rgba(0,0,0,0.75)] select-none"
@@ -2845,18 +2899,6 @@
               <div class="text-left">
                 <span class="text-[14px] sm:text-[15px] font-medium text-gray-200 block">Виджеты на рабочий стол</span>
                 <span class="text-[11px] text-[#848D99] leading-tight block mt-0.5">Круговые графики остатка недели и месяца</span>
-              </div>
-            </div>
-            <i data-lucide="chevron-right" class="w-4 h-4 sm:w-5 sm:h-5 text-gray-600"></i>
-          </button>
-
-          <!-- Кнопка проверки обновлений (только для нативного APK приложения) -->
-          <button id="profile-check-updates-btn" type="button" onclick="checkAppUpdates(true)" class="w-full flex items-center justify-between p-3 sm:p-3.5 hover:bg-white/[0.01] transition-colors cursor-pointer hidden">
-            <div class="flex items-center gap-3">
-              <div class="p-2 rounded-xl bg-[#6C5DD3]/15 text-[#8C7DFF]"><i data-lucide="refresh-cw" class="w-4 h-4 sm:w-5 sm:h-5"></i></div>
-              <div class="text-left">
-                <span class="text-[14px] sm:text-[15px] font-medium text-gray-200 block">Проверить обновления</span>
-                <span class="text-[11px] text-[#848D99] leading-tight block mt-0.5">Версия <script>document.write(window.APP_VERSION || '1.0.0')</script> · Загрузка последней сборки</span>
               </div>
             </div>
             <i data-lucide="chevron-right" class="w-4 h-4 sm:w-5 sm:h-5 text-gray-600"></i>
