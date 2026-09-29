@@ -6,6 +6,11 @@
 
 const DEFAULT_CATEGORY_RULES = [
   // 1. ПРОДУКТЫ И СУПЕРМАРКЕТЫ
+  { pattern: "супермаркет", category: "Продукты" },
+  { pattern: "супермаркеты", category: "Продукты" },
+  { pattern: "гипермаркет", category: "Продукты" },
+  { pattern: "гастроном", category: "Продукты" },
+  { pattern: "бакалея", category: "Продукты" },
   { pattern: "перекресток", category: "Продукты" },
   { pattern: "perek", category: "Продукты" },
   { pattern: "пятерочка", category: "Продукты" },
@@ -32,6 +37,9 @@ const DEFAULT_CATEGORY_RULES = [
   { pattern: "пекарня", category: "Продукты" },
 
   // 2. КАФЕ И РЕСТОРАНЫ
+  { pattern: "кафе и рестораны", category: "Кафе и рестораны" },
+  { pattern: "рестораны и кафе", category: "Кафе и рестораны" },
+  { pattern: "фастфуд", category: "Кафе и рестораны" },
   { pattern: "vlavashe", category: "Кафе и рестораны" },
   { pattern: "ростикс", category: "Кафе и рестораны" },
   { pattern: "kfc", category: "Кафе и рестораны" },
@@ -53,6 +61,10 @@ const DEFAULT_CATEGORY_RULES = [
   { pattern: "вкусно и точка", category: "Кафе и рестораны" },
   { pattern: "додо", category: "Кафе и рестораны" },
   { pattern: "бургер кинг", category: "Кафе и рестораны" },
+  { pattern: "burger king", category: "Кафе и рестораны" },
+  { pattern: "burgerrus", category: "Кафе и рестораны" },
+  { pattern: "burgerking", category: "Кафе и рестораны" },
+  { pattern: "бургер рус", category: "Кафе и рестораны" },
   { pattern: "теремок", category: "Кафе и рестораны" },
   { pattern: "шоколадница", category: "Кафе и рестораны" },
   { pattern: "старбакс", category: "Кафе и рестораны" },
@@ -73,6 +85,8 @@ const DEFAULT_CATEGORY_RULES = [
   { pattern: "паб", category: "Кафе и рестораны" },
 
   // 3. МАРКЕТПЛЕЙСЫ
+  { pattern: "электроника", category: "Маркетплейсы" },
+  { pattern: "бытовая техника", category: "Маркетплейсы" },
   { pattern: "wb", category: "Маркетплейсы" },
   { pattern: "вайлдберриз", category: "Маркетплейсы" },
   { pattern: "озон", category: "Маркетплейсы" },
@@ -85,6 +99,8 @@ const DEFAULT_CATEGORY_RULES = [
   { pattern: "магнит маркет", category: "Маркетплейсы" },
 
   // 4. ТРАНСПОРТ, АЗС И ПОЕЗДКИ
+  { pattern: "автоуслуги", category: "Транспорт" },
+  { pattern: "автомобиль", category: "Транспорт" },
   { pattern: "ржд", category: "Транспорт" },
   { pattern: "сзппк", category: "Транспорт" },
   { pattern: "транском", category: "Транспорт" },
@@ -121,6 +137,10 @@ const DEFAULT_CATEGORY_RULES = [
   { pattern: "площадь ленина", category: "Транспорт" },
 
   // 5. ЖИЛЬЕ, СВЯЗЬ И РЕМОНТ
+  { pattern: "коммунальные платежи", category: "Жилье" },
+  { pattern: "дом и ремонт", category: "Жилье" },
+  { pattern: "товары для дома", category: "Жилье" },
+  { pattern: "все для дома", category: "Жилье" },
   { pattern: "жкх", category: "Жилье" },
   { pattern: "квартплата", category: "Жилье" },
   { pattern: "еирц", category: "Жилье" },
@@ -146,6 +166,8 @@ const DEFAULT_CATEGORY_RULES = [
   { pattern: "всеинструменты", category: "Жилье" },
 
   // 6. ОДЕЖДА И ОБУВЬ
+  { pattern: "одежда и обувь", category: "Одежда" },
+  { pattern: "обувь и одежда", category: "Одежда" },
   { pattern: "zara", category: "Одежда" },
   { pattern: "befree", category: "Одежда" },
   { pattern: "лайм", category: "Одежда" },
@@ -179,6 +201,10 @@ const DEFAULT_CATEGORY_RULES = [
   { pattern: "обувь", category: "Одежда" },
 
   // 7. ЗДОРОВЬЕ И МЕДИЦИНА
+  { pattern: "здоровье и красота", category: "Здоровье" },
+  { pattern: "красота и здоровье", category: "Здоровье" },
+  { pattern: "аптеки", category: "Здоровье" },
+  { pattern: "косметика", category: "Здоровье" },
   { pattern: "аптека", category: "Здоровье" },
   { pattern: "ригла", category: "Здоровье" },
   { pattern: "еаптека", category: "Здоровье" },
@@ -213,6 +239,9 @@ const DEFAULT_CATEGORY_RULES = [
   { pattern: "бассейн", category: "Здоровье" },
 
   // 8. РАЗВЛЕЧЕНИЯ И ПОДПИСКИ
+  { pattern: "отдых и развлечения", category: "Развлечения" },
+  { pattern: "развлечения и отдых", category: "Развлечения" },
+  { pattern: "культура и искусство", category: "Развлечения" },
   { pattern: "музей", category: "Развлечения" },
   { pattern: "хомлины", category: "Развлечения" },
   { pattern: "афиша", category: "Развлечения" },
@@ -247,12 +276,18 @@ const DEFAULT_CATEGORY_RULES = [
   { pattern: "дивиденды", category: "Зарплата" },
   { pattern: "кешбек", category: "Кэшбек" },
   { pattern: "баллами плюса", category: "Кэшбек" },
-  { pattern: "возврат", category: "Возврат" }
+  { pattern: "возврат", category: "Возврат" },
+
+  // 10. ПЕРЕВОДЫ
+  { pattern: "перевод", category: "Переводы" },
+  { pattern: "переводы", category: "Переводы" },
+  { pattern: "сбп", category: "Переводы" },
+  { pattern: "быстрых платежей", category: "Переводы" }
 ];
 
 const DEFAULT_SYSTEM_CATEGORIES = [
   'Продукты', 'Кафе и рестораны', 'Маркетплейсы', 'Транспорт', 'Жилье',
-  'Одежда', 'Здоровье', 'Развлечения', 'Другое', 'Зарплата', 'Возврат', 'Кэшбек'
+  'Одежда', 'Здоровье', 'Развлечения', 'Переводы', 'Другое', 'Зарплата', 'Возврат', 'Кэшбек'
 ];
 
 if (typeof window !== 'undefined') {

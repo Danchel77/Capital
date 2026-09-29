@@ -1469,4 +1469,15 @@ body.keyboard-visible #bottom-nav-bar {
   visibility: hidden !important;
 }
 
+/* ==========================================
+   Raw Statement Transaction Tooltip (60/120 FPS GPU Swipe)
+   ========================================== */
+#raw-tx-tooltip {
+  will-change: transform, opacity;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  touch-action: none;
+}
+
 

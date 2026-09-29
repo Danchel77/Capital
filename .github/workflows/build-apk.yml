@@ -223,13 +223,43 @@ jobs:
           if-no-files-found: ignore
           retention-days: 90
 
-      - name: 10. Публикация APK в GitHub Releases (постоянная ссылка)
+      - name: 10. Определение версии приложения
+        id: get_version
+        run: |
+          VERSION=$(node -p "
+            try {
+              const content = require('fs').readFileSync('app-updater.js', 'utf8');
+              const match = content.match(/window\.APP_VERSION\s*=\s*['\"]([^'\"]+)['\"]/);
+              match ? match[1] : '1.0.1';
+            } catch(e) { '1.0.1'; }
+          ")
+          echo "APP_VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "Обнаружена версия приложения: $VERSION"
+
+      - name: 11. Публикация версионированного релиза (v${{ steps.get_version.outputs.APP_VERSION }})
+        uses: softprops/action-gh-release@v2
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.event_name == 'workflow_dispatch'
+        with:
+          tag_name: v${{ steps.get_version.outputs.APP_VERSION }}
+          name: "Family Budget v${{ steps.get_version.outputs.APP_VERSION }}"
+          body: |
+            ### Что нового в версии ${{ steps.get_version.outputs.APP_VERSION }}:
+            - 🚀 **Продвинутый сеточный парсер выписок:** единое ядро распознавания табличных и многострочных PDF/Excel/1C выписок банков РФ (Сбер, Т-Банк, Яндекс Пэй, Газпромбанк, Озон Банк и универсальный режим).
+            - ⚡ **Автоматический учет трат по пуш-уведомлениям:** фоновый перехват и мгновенная запись операций.
+            - 🛡️ **Улучшенная очистка наименований мерчантов:** умное определение брендов (Burger King, сети фастфуда, супермаркеты, СБП-переводы) без остаточных артефактов и служебных слов банка.
+            - 🔧 **Оптимизация производительности и стабильности.**
+          draft: false
+          prerelease: false
+          files: FamilyBudget.apk
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 12. Обновление постоянного релиза latest
         uses: softprops/action-gh-release@v2
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.event_name == 'workflow_dispatch'
         with:
           tag_name: latest
-          name: "Family Budget Android App"
-          body: "Последняя актуальная версия APK приложения «Бюджет» для Android."
+          name: "Family Budget Android App (Latest Build)"
+          body: "Последняя актуальная сборка приложения «Бюджет» (v${{ steps.get_version.outputs.APP_VERSION }})."
           draft: false
           prerelease: false
           files: FamilyBudget.apk

@@ -310,22 +310,22 @@
   <!-- PDF.js для чтения выписок в браузере (отложенная загрузка, не блокирует старт) -->
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" crossorigin="anonymous"></script>
 
-  <link rel="stylesheet" href="style.css?v=84">
-  <script defer src="iconsSVG.js?v=84"></script>
-  <script defer src="default-rules.js?v=84"></script>
-  <script defer src="statement-parser.js?v=84"></script>
+  <link rel="stylesheet" href="style.css?v=104">
+  <script defer src="iconsSVG.js?v=104"></script>
+  <script defer src="default-rules.js?v=104"></script>
+  <script defer src="statement-parser.js?v=104"></script>
   
   <!-- Модули приложения -->
-  <script defer src="core.js?v=84"></script>
-  <script defer src="auth-profile.js?v=84"></script>
-  <script defer src="backup-manager.js?v=84"></script>
-  <script defer src="ui-tools.js?v=84"></script>
-  <script defer src="app-updater.js?v=84"></script>
-  <script defer src="apk-features.js?v=84"></script>
-  <script defer src="transactions.js?v=84"></script>
-  <script defer src="investments.js?v=84"></script>
-  <script defer src="budget.js?v=84"></script>
-  <script defer src="app.js?v=84"></script>
+  <script defer src="core.js?v=104"></script>
+  <script defer src="auth-profile.js?v=104"></script>
+  <script defer src="backup-manager.js?v=104"></script>
+  <script defer src="ui-tools.js?v=104"></script>
+  <script defer src="app-updater.js?v=104"></script>
+  <script defer src="apk-features.js?v=104"></script>
+  <script defer src="transactions.js?v=104"></script>
+  <script defer src="investments.js?v=104"></script>
+  <script defer src="budget.js?v=104"></script>
+  <script defer src="app.js?v=104"></script>
 </head>
 <body class="bg-[#0F1117] text-[#F2F4F7]" ontouchstart="">
 
@@ -2390,13 +2390,29 @@
       <!-- Фиксированная только верхняя шапка выписки (заголовок, информация и кнопки) -->
       <div class="p-3.5 sm:p-4 border-b border-[rgba(255,255,255,0.06)] bg-[#181B24] z-20 flex-shrink-0">
         <div class="flex items-center justify-between w-full min-w-0">
-          <div class="flex items-center gap-2.5 min-w-0 flex-1">
-            <div class="w-8 h-8 rounded-xl bg-[#6C5DD3]/15 text-[#8C7DFF] flex items-center justify-center flex-shrink-0 border border-[#6C5DD3]/25">
-              <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+          <div class="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1 relative">
+            <!-- Кнопка-иконка выписки в левом верхнем углу (высота строго соответствует высоте 2 строк справа) -->
+            <button type="button" 
+                    id="btn-open-statement-file" 
+                    onclick="event.stopPropagation(); handleOpenStatementFileClick(event)" 
+                    class="h-11 w-11 sm:h-12 sm:w-12 rounded-2xl bg-[#6C5DD3]/15 hover:bg-[#6C5DD3]/25 active:scale-95 text-[#8C7DFF] hover:text-white flex items-center justify-center flex-shrink-0 border border-[#6C5DD3]/30 transition-all cursor-pointer shadow-sm group" 
+                    title="Просмотреть файл выписки">
+              <i data-lucide="file-spreadsheet" class="w-5 h-5 sm:w-6 sm:h-6 transition-transform group-hover:scale-110"></i>
+            </button>
+
+            <!-- Всплывающий список файлов выписок (если загружено несколько) -->
+            <div id="statement-file-picker-popup" 
+                 class="hidden absolute left-0 top-full mt-2 w-72 max-w-[85vw] bg-[#181B24] border border-[rgba(255,255,255,0.1)] rounded-2xl shadow-[0_16px_50px_rgba(0,0,0,0.85)] z-50 p-2 space-y-1 backdrop-blur-xl">
+              <div class="text-[11px] font-semibold text-[#848D99] px-2 py-1 flex items-center justify-between border-b border-[rgba(255,255,255,0.06)]">
+                <span>Выберите выписку</span>
+                <span id="statement-file-picker-count" class="font-mono text-[10px] text-[#8C7DFF]"></span>
+              </div>
+              <div id="statement-file-picker-list" class="max-h-60 overflow-y-auto custom-scrollbar space-y-1 pt-1"></div>
             </div>
-            <div class="min-w-0 flex-1">
-              <h3 class="font-bold text-white text-sm truncate">Импорт выписки</h3>
-              <div id="pdf-debug-info" class="flex items-center gap-1.5 min-w-0 truncate text-xs text-[#848D99]"></div>
+
+            <div class="min-w-0 flex-1 flex flex-col justify-center">
+              <h3 class="font-bold text-white text-sm sm:text-base leading-tight truncate">Импорт выписки</h3>
+              <div id="pdf-debug-info" class="flex items-center gap-1.5 min-w-0 truncate text-xs text-[#848D99] mt-0.5"></div>
             </div>
           </div>
           <div class="flex items-center gap-1.5 flex-shrink-0 ml-2">
@@ -2477,6 +2493,36 @@
           </button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- Всплывающий компактный тултип сырого описания операции (при удержании карточки) -->
+  <div id="raw-tx-tooltip" 
+       class="fixed z-[160] hidden max-w-[92vw] sm:max-w-md w-full p-2.5 bg-[#181B24] border border-[#6C5DD3]/50 rounded-2xl shadow-[0_12px_36px_rgba(0,0,0,0.75)] select-none"
+       style="touch-action: pan-y; will-change: transform; -webkit-backface-visibility: hidden; backface-visibility: hidden; transform: translate3d(0, 0, 0);">
+    <!-- Шапка тултипа с датой, банком и крестиком закрытия -->
+    <div class="flex items-center justify-between pb-1.5 border-b border-[rgba(255,255,255,0.08)] mb-1.5">
+      <div class="flex items-center gap-2 min-w-0">
+        <span class="w-5 h-5 rounded-lg bg-[#6C5DD3]/20 text-[#8C7DFF] flex items-center justify-center flex-shrink-0 border border-[#6C5DD3]/30">
+          <i data-lucide="file-text" class="w-3 h-3"></i>
+        </span>
+        <span class="text-xs font-bold text-white truncate">Данные из выписки</span>
+        <span id="raw-tooltip-date" class="text-[11px] font-mono text-[#848D99] ml-1"></span>
+      </div>
+      <div class="flex items-center gap-2 flex-shrink-0 ml-2">
+        <span id="raw-tooltip-bank" class="text-[10px] text-[#8C7DFF] font-medium lowercase px-1.5 py-0.5 rounded-md bg-[#6C5DD3]/10 border border-[#6C5DD3]/20"></span>
+        <button type="button" 
+                onclick="event.stopPropagation(); hideRawTxTooltip();" 
+                class="w-5 h-5 rounded-lg bg-[#212430] hover:bg-[#2A2D3C] text-gray-400 hover:text-white flex items-center justify-center cursor-pointer text-xs active:scale-90 transition-colors" 
+                title="Закрыть">✕</button>
+      </div>
+    </div>
+    
+    <!-- Содержимое: скроллируемый текст операции (вертикальный скролл) -->
+    <div class="space-y-1 text-xs">
+      <div id="raw-tooltip-text" 
+           class="bg-[#0F1117] p-2 rounded-xl border border-[rgba(255,255,255,0.06)] font-mono text-[11px] sm:text-xs text-gray-200 leading-relaxed max-h-36 sm:max-h-44 overflow-y-auto whitespace-pre-wrap break-words custom-scrollbar select-text overscroll-contain"
+           style="touch-action: pan-y;"></div>
     </div>
   </div>
   

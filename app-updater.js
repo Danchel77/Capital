@@ -2,10 +2,25 @@
 // МОДУЛЬ ОБНОВЛЕНИЯ И УСТАНОВКИ ПРИЛОЖЕНИЯ (PWA / APK)
 // ============================================================
 
-window.APP_VERSION = '1.0.0';
+window.APP_VERSION = '1.0.1';
 window.GITHUB_REPO = 'Danchel77/Capital';
 window.APK_DOWNLOAD_URL = `https://github.com/${window.GITHUB_REPO}/releases/download/latest/FamilyBudget.apk`;
 window.RELEASES_API_URL = `https://api.github.com/repos/${window.GITHUB_REPO}/releases/latest`;
+
+// Helper для строгого семантического сравнения версий (например, 1.0.1 > 1.0.0)
+function compareSemver(v1, v2) {
+  const p1 = String(v1 || '0').replace(/^v/i, '').split('.').map(x => parseInt(x, 10) || 0);
+  const p2 = String(v2 || '0').replace(/^v/i, '').split('.').map(x => parseInt(x, 10) || 0);
+  const len = Math.max(p1.length, p2.length);
+  for (let i = 0; i < len; i++) {
+    const num1 = p1[i] || 0;
+    const num2 = p2[i] || 0;
+    if (num1 > num2) return 1;
+    if (num1 < num2) return -1;
+  }
+  return 0;
+}
+window.compareSemver = compareSemver;
 
 // Глобальный перехват события установки PWA
 window.deferredPwaPrompt = null;
@@ -52,13 +67,14 @@ async function checkAppUpdates(isManual = false) {
     const publishedAt = data.published_at ? new Date(data.published_at).toLocaleDateString('ru-RU') : '';
     const releaseTimestamp = data.published_at ? new Date(data.published_at).getTime() : 0;
     const remoteTag = (data.tag_name || '1.0.0').replace(/^v/i, '');
+    const currentAppVer = window.APP_VERSION || '1.0.1';
 
-    // Если приложение запущено в первый раз, сохраняем текущий релиз как установленный
+    // Если приложение запущено в первый раз, сохраняем текущую версию приложения
     let installedVersion = localStorage.getItem('app_installed_version');
     let installedTimestamp = parseInt(localStorage.getItem('app_installed_release_timestamp') || '0', 10);
 
     if (!installedVersion) {
-      installedVersion = window.APP_VERSION || '1.0.0';
+      installedVersion = currentAppVer;
       localStorage.setItem('app_installed_version', installedVersion);
       if (releaseTimestamp > 0) {
         localStorage.setItem('app_installed_release_timestamp', releaseTimestamp.toString());
@@ -67,11 +83,11 @@ async function checkAppUpdates(isManual = false) {
     }
 
     // Сравнение версий
-    const isNewerTag = (remoteTag !== installedVersion && remoteTag !== (window.APP_VERSION || '1.0.0'));
-    const isNewerTime = releaseTimestamp > 0 && installedTimestamp > 0 && releaseTimestamp > installedTimestamp;
+    const isNewerTag = (remoteTag !== 'latest' && (compareSemver(remoteTag, installedVersion) > 0 || compareSemver(remoteTag, currentAppVer) > 0));
+    const isNewerTime = releaseTimestamp > 0 && installedTimestamp > 0 && releaseTimestamp > installedTimestamp && (remoteTag !== installedVersion);
 
-    // Новое обновление доступно только если тег и дата релиза строго новее текущей версии
-    const isNewer = isNewerTag && isNewerTime;
+    // Новое обновление доступно, если на сервере более свежий тег или время публикации
+    const isNewer = isNewerTag || isNewerTime;
 
     if (!isNewer) {
       if (isManual) {

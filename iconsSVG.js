@@ -52,6 +52,22 @@ const BANK_ICONS = {
     </svg>
   `,
 
+  // ВТБ: фирменный синий фон с тремя белыми полосами
+  vtb: `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">
+      <path fill="#0A2896" d="M0 0h40v40H0z"/>
+      <path fill="#FFFFFF" d="M8 13h24v3H8zm0 5h20v3H8zm0 5h16v3H8z"/>
+    </svg>
+  `,
+
+  // Райффайзенбанк: фирменный желтый фон с перекрещенными балками
+  raiffeisen: `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">
+      <path fill="#FFEE00" d="M0 0h40v40H0z"/>
+      <path fill="#000000" d="M14 11l6 6 6-6 3 3-6 6 6 6-3 3-6-6-6 6-3-3 6-6-6-6 3-3z"/>
+    </svg>
+  `,
+
   // Универсальная векторная иконка банка
   generic: `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">
