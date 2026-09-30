@@ -83,6 +83,11 @@ if (currentAuth && typeof currentAuth.onAuthStateChanged === 'function') {
       document.getElementById('loading-screen')?.classList.add('hidden');
     }
 
+    // Проверяем и отправляем запланированные напоминания о счетах и вкладах (только в день наступления)
+    if (typeof checkAndSendReminders === 'function') {
+      setTimeout(() => checkAndSendReminders(), 1500);
+    }
+
     // Проверяем и предлагаем установку PWA (только 1 раз в день в обычном браузере)
     checkAndShowPwaInstallPrompt(2500);
 
@@ -440,13 +445,30 @@ function toggleForm(containerId, btnId, btnText, formId, type) {
       const list = document.getElementById('tx-items-list');
       if (list) list.innerHTML = '';
       addTxRow();
-    } else if (type === 'dep') {
+    } else if (type === 'dep' || type === 'deposit') {
+      const allDeposits = Cache?.deposits || [];
+      const nextNum = allDeposits.length + 1;
+      const nameInp = document.getElementById('dep-name');
+      if (nameInp) nameInp.value = `Вклад ${nextNum}`;
+
+      const now = new Date();
+      const todayRu = (typeof formatDateStr === 'function') ? formatDateStr(now, 'dd.MM.yyyy') : `${String(now.getDate()).padStart(2, '0')}.${String(now.getMonth() + 1).padStart(2, '0')}.${now.getFullYear()}`;
+
       const startInp = document.getElementById('dep-start');
-      if (startInp) startInp.value = today;
+      if (startInp) startInp.value = todayRu;
       const endInp = document.getElementById('dep-end');
       if (endInp) endInp.value = '';
-      if (typeof selectDepositGoal === 'function') {
-        selectDepositGoal('', 'Без привязки к цели');
+
+      // По умолчанию выбираем первую активную цель
+      const activeGoals = (Cache?.goals || []).filter(g => !g.isAchieved);
+      if (activeGoals.length > 0) {
+        if (typeof selectDepositGoal === 'function') {
+          selectDepositGoal(activeGoals[0].id, activeGoals[0].name);
+        }
+      } else {
+        if (typeof selectDepositGoal === 'function') {
+          selectDepositGoal('', 'Без привязки к цели');
+        }
       }
       if (typeof updateGoalDropdowns === 'function') {
         updateGoalDropdowns();
@@ -800,6 +822,147 @@ function dismissPwaInstallBannerPermanently() {
   }
 }
 
+// ==========================================
+// Напоминания о счетах и вкладах (Push-уведомления)
+// ==========================================
+async function checkAndSendReminders() {
+  if (!Cache?.settings?.enableNotifications) return;
+  if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+
+  const now = new Date();
+  const targetTime = Cache?.settings?.notificationTime || '10:00';
+  const parts = targetTime.split(':').map(Number);
+  const tHour = isNaN(parts[0]) ? 10 : parts[0];
+  const tMin = isNaN(parts[1]) ? 0 : parts[1];
+
+  const curHour = now.getHours();
+  const curMin = now.getMinutes();
+
+  // Отправляем только в день наступления и не раньше указанного часа (по умолчанию 10:00)
+  if (curHour < tHour || (curHour === tHour && curMin < tMin)) {
+    return;
+  }
+
+  const todayStr = (typeof formatDateStr === 'function') ? formatDateStr(now, 'yyyy-MM-dd') : now.toISOString().slice(0, 10);
+
+  // 1. Проверка счетов из календаря (только не оплаченные и на сегодня)
+  const billsNotifKey = `notif_bills_sent_${todayStr}`;
+  if (!localStorage.getItem(billsNotifKey)) {
+    const bills = Cache?.calendarBills || [];
+    const dueBills = bills.filter(b => {
+      if (b.isPaid || b.isArchived) return false;
+      const bDay = parseInt(b.day, 10);
+      const bDate = b.dueDate || b.date;
+      if (b.type === 'recurring' || b.isRecurring) {
+        return bDay === now.getDate();
+      }
+      return bDate === todayStr;
+    });
+
+    if (dueBills.length > 0) {
+      let title = '';
+      let body = '';
+
+      if (dueBills.length === 1) {
+        const single = dueBills[0];
+        const name = single.name || single.title || 'Счет';
+        const amt = parseFloat(single.amount) || 0;
+        const formattedAmt = typeof formatMoney === 'function' ? formatMoney(amt) : amt + ' ₽';
+        title = 'Напоминание о платеже';
+        body = `Сегодня по плану: ${name} на ${formattedAmt}`;
+      } else {
+        const totalSum = dueBills.reduce((s, b) => s + (parseFloat(b.amount) || 0), 0);
+        const formattedTotal = typeof formatMoney === 'function' ? formatMoney(totalSum) : totalSum + ' ₽';
+        const count = dueBills.length;
+        const mod10 = count % 10;
+        const mod100 = count % 100;
+        let countText = `${count} платежей`;
+        if (mod100 < 11 || mod100 > 19) {
+          if (mod10 === 1) countText = `${count} платеж`;
+          else if (mod10 >= 2 && mod10 <= 4) countText = `${count} платежа`;
+        }
+        title = 'Счета на сегодня';
+        body = `Сегодня по плану: ${countText} на сумму ${formattedTotal}`;
+      }
+
+      sendSystemNotification(title, body, 'budget', `bill-reminder-${todayStr}`);
+      localStorage.setItem(billsNotifKey, 'true');
+    }
+  }
+
+  // 2. Проверка окончания вкладов (только в день закрытия вклада)
+  const deposits = Cache?.deposits || [];
+  deposits.forEach(dep => {
+    if (dep.isClosed || dep.status === 'closed' || dep.status === 'Завершен') return;
+    const depKey = `notif_dep_sent_${dep.id}_${todayStr}`;
+    if (localStorage.getItem(depKey)) return;
+
+    let isEndingToday = false;
+    if (dep.endDate) {
+      const pDate = (typeof parseAnyDate === 'function') ? parseAnyDate(dep.endDate) : new Date(dep.endDate);
+      if (pDate && !isNaN(pDate.getTime())) {
+        isEndingToday = (pDate.getFullYear() === now.getFullYear() && pDate.getMonth() === now.getMonth() && pDate.getDate() === now.getDate());
+      }
+    }
+
+    if (isEndingToday) {
+      const depName = dep.name || dep.bank || 'Вклад';
+      const depAmt = parseFloat(dep.amount) || 0;
+      const formattedAmt = typeof formatMoney === 'function' ? formatMoney(depAmt) : depAmt + ' ₽';
+      const title = `Завершился вклад «${depName}»`;
+      const body = `Сумма: ${formattedAmt}. Выберите действие во вкладке «Вклады»`;
+
+      sendSystemNotification(title, body, 'deposits', `dep-reminder-${dep.id}-${todayStr}`);
+      localStorage.setItem(depKey, 'true');
+    }
+  });
+}
+
+async function sendSystemNotification(title, body, tab, tag) {
+  try {
+    if ('serviceWorker' in navigator && navigator.serviceWorker.ready) {
+      const reg = await navigator.serviceWorker.ready;
+      if (reg && typeof reg.showNotification === 'function') {
+        reg.showNotification(title, {
+          body,
+          icon: './icon-pwa.svg',
+          badge: './icon-pwa.svg',
+          tag,
+          data: { tab, url: './' }
+        });
+        return;
+      }
+    }
+    if (typeof Notification !== 'undefined') {
+      new Notification(title, {
+        body,
+        icon: './icon-pwa.svg',
+        tag
+      });
+    }
+  } catch (err) {
+    console.warn('Notification send failed:', err);
+  }
+}
+
+// Прием сообщений от Service Worker (например, при клике на push)
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('message', (event) => {
+    if (event.data?.type === 'SWITCH_TAB' && event.data?.tab) {
+      if (typeof switchTab === 'function') {
+        switchTab(event.data.tab);
+      }
+    }
+  });
+}
+
+// Периодическая проверка раз в 15 минут
+setInterval(() => {
+  if (typeof checkAndSendReminders === 'function') {
+    checkAndSendReminders();
+  }
+}, 15 * 60 * 1000);
+
 // Экспорт в глобальную область
 window.switchTab = switchTab;
 window.toggleForm = toggleForm;
@@ -815,6 +978,8 @@ window.dismissPwaInstallBannerForToday = dismissPwaInstallBannerForToday;
 window.dismissPwaInstallBannerPermanently = dismissPwaInstallBannerPermanently;
 window.pausePwaTimer = pausePwaTimer;
 window.resumePwaTimer = resumePwaTimer;
+window.checkAndSendReminders = checkAndSendReminders;
+window.sendSystemNotification = sendSystemNotification;
 
 // Первичная синхронизация режима приватности и векторных иконок
 if (typeof window.updatePrivacyModeUI === 'function') {

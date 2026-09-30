@@ -2,7 +2,7 @@
    Семейный Бюджет — Service Worker (Offline-First)
    ========================================== */
 
-const CACHE_NAME = 'budget-pwa-v65';
+const CACHE_NAME = 'budget-pwa-v98';
 
 const STATIC_SHELL = [
   './',
@@ -60,6 +60,29 @@ self.addEventListener('message', (event) => {
   if (event.data && (event.data === 'skipWaiting' || event.data.type === 'SKIP_WAITING')) {
     self.skipWaiting();
   }
+});
+
+// Обработка клика по уведомлению: переход в приложение и открытие нужной вкладки
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const targetTab = event.notification.data?.tab || '';
+  const urlToOpen = event.notification.data?.url || './';
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+      for (const client of windowClients) {
+        if (client.url.includes(self.location.origin) && 'focus' in client) {
+          if (targetTab) {
+            client.postMessage({ type: 'SWITCH_TAB', tab: targetTab });
+          }
+          return client.focus();
+        }
+      }
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(urlToOpen);
+      }
+    })
+  );
 });
 
 // Обработка сетевых запросов

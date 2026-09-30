@@ -988,14 +988,14 @@ function parseBankPushText(title = '', text = '', packageName = '') {
   }
 
   // 3. Распознавание внутреннего перевода между счетами / в накопительные счета
-  const isInternalAccountTransfer = /(?:на\s+сч[её]т\s+в\s+сейвах|в\s+сейвы|на\s+накопительн|накопительного\s+сч[её]та|пополнение\s+с\s+карты.*на\s+сч[её]т|перевод.*между\s+(?:своими|счетами)|в\s+инвесткопилку|в\s+копилку|перевод\s+на\s+сч[её]т\s+в\s+сейв|перевод\s+с\s+накопительн)/i.test(fullText);
+  const isInternalAccountTransfer = /(?:на\s+сч[её]т\s+в\s+сейвах|в\s+сейвы|пополнение\s+с\s+карты.*на\s+сч[её]т|перевод.*между\s+(?:своими|счетами)|в\s+инвесткопилку|перевод\s+на\s+сч[её]т\s+в\s+сейв)/i.test(fullText);
 
   // 4. Определение типа операции (Расход vs Доход)
   const isIncome = /(?:зачисление|пополнение|перевод от|возврат|зарплата|входящий перевод|\+[\d\s]+)/i.test(fullText) && !/(?:списание|покупка|оплата)/i.test(fullText);
   const isExpense = /(?:покупка|оплата|списание|списано|снятие|чек|заказ|перевод клиенту|перевод на|в адрес)/i.test(fullText) || !isIncome;
 
-  // 5. Определение обычного перевода (требует подтверждения)
-  const isTransferOperation = !isInternalAccountTransfer && /(?:перевод|сбп|по\s+номеру|клиенту|зачисление\s+перевода|входящий\s+перевод|исходящий\s+перевод)/i.test(fullText);
+  // 5. Определение обычного перевода и пополнений с сейва/накопительных счетов (требует подтверждения)
+  const isTransferOperation = !isInternalAccountTransfer && /(?:пополнение\s+(?:с|из)\s+сейва|с\s+сейва|из\s+сейва|сейв|сейва|пополнение\s+(?:с|из)\s+накопительн|с\s+накопительн|из\s+накопительн|накопительного\s+сч[её]та|копилк|перевод|сбп|по\s+номеру|клиенту|зачисление\s+перевода|входящий\s+перевод|исходящий\s+перевод)/i.test(fullText);
 
   // 6. Извлечение суммы операции
   let amount = 0;
@@ -1520,7 +1520,7 @@ function openBankPushPermissionPrompt() {
   }
 
   modal.innerHTML = `
-    <div class="relative bg-[#161822] border border-white/10 rounded-3xl p-4 sm:p-5 max-w-md w-full shadow-2xl space-y-3 my-auto animate-in fade-in zoom-in duration-200 select-none">
+    <div class="relative bg-[#161822] border border-white/10 rounded-3xl p-4 sm:p-5 max-w-md w-full shadow-2xl space-y-3.5 my-auto animate-in fade-in zoom-in duration-200 select-none">
       
       <div class="text-center space-y-1.5">
         <div class="w-12 h-12 mx-auto rounded-2xl bg-gradient-to-br from-[#6C5DD3] to-[#8C7DFF] flex items-center justify-center text-white shadow-xl shadow-[#6C5DD3]/30">
@@ -1528,36 +1528,49 @@ function openBankPushPermissionPrompt() {
         </div>
         <h3 class="text-base font-bold text-white leading-tight">Авто-учет расходов по пушам</h3>
         <p class="text-xs text-gray-300 leading-relaxed px-1">
-          Приложение может автоматически вносить траты сразу после оплаты картой или телефоном, считывая push-уведомления банков.
+          Приложение автоматически вносит траты в фоне сразу после оплаты картой или телефоном.
         </p>
       </div>
 
-      <div class="bg-[#0F1118] border border-white/5 rounded-2xl p-3 space-y-2">
+      <div class="bg-[#0F1118] border border-white/5 rounded-2xl p-3 space-y-2.5">
         <div class="text-xs font-bold text-white flex items-center gap-1.5">
-          <i data-lucide="zap" class="w-4 h-4 text-[#A594FD]"></i>
-          <span>Как включить за 10 секунд:</span>
+          <i data-lucide="shield-alert" class="w-4 h-4 text-[#A594FD]"></i>
+          <span>Что нужно включить для работы в фоне:</span>
         </div>
-        <ol class="text-[11px] text-gray-300 space-y-1.5 pl-4 list-decimal leading-snug">
-          <li>Нажмите <b>«Включить доступ»</b> ниже.</li>
-          <li>В системных настройках Android найдите <b>«Семейный бюджет»</b> и активируйте тумблер.</li>
-          <li>Убедитесь, что в мобильных банках включены push-уведомления об операциях.</li>
-        </ol>
+        <ul class="text-[11px] text-gray-300 space-y-2 leading-snug">
+          <li class="flex items-start gap-2">
+            <span class="w-4 h-4 rounded-full bg-[#6C5DD3]/30 text-[#A594FD] flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5">1</span>
+            <div><b>Доступ к уведомлениям:</b> Разрешите приложению считывать пуши от банков.</div>
+          </li>
+          <li class="flex items-start gap-2">
+            <span class="w-4 h-4 rounded-full bg-[#6C5DD3]/30 text-[#A594FD] flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5">2</span>
+            <div><b>Показ уведомлений:</b> Для отправки подтверждающих пушей о занесении покупки.</div>
+          </li>
+          <li class="flex items-start gap-2">
+            <span class="w-4 h-4 rounded-full bg-[#6C5DD3]/30 text-[#A594FD] flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5">3</span>
+            <div><b>Работа в фоне и Автозапуск:</b> Выберите <i>«Без ограничений»</i> в экономии батареи (Xiaomi, Samsung, Realme), чтобы Android не усыплял службу в фоне.</div>
+          </li>
+        </ul>
       </div>
 
       <!-- Пояснение о безопасности -->
       <div class="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-2.5 flex items-start gap-2 text-xs text-blue-200/90 leading-snug">
         <i data-lucide="shield-check" class="w-4 h-4 text-[#8C7DFF] flex-shrink-0 mt-0.5"></i>
         <div class="text-[10.5px] leading-relaxed">
-          Наше приложение обрабатывает исключительно push-уведомления о покупках от банков — звонки и личные сообщения (Telegram, WhatsApp, SMS) никогда не читаются и не передаются.
+          Наше приложение обрабатывает исключительно push-уведомления о покупках от банков — личные сообщения, SMS и звонки никогда не читаются.
         </div>
       </div>
 
       <div class="space-y-1.5 pt-0.5">
         <button type="button" onclick="handleAcceptBankPushPrompt()" class="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-[#6C5DD3] to-[#8C7DFF] hover:opacity-90 active:scale-98 text-white text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-[#6C5DD3]/30">
           <i data-lucide="check" class="w-4 h-4"></i>
-          <span>Включить доступ в Android</span>
+          <span>Включить доступ к пушам</span>
         </button>
-        <button type="button" onclick="closeBankPushPermissionPrompt()" class="w-full py-2.5 px-4 rounded-2xl bg-white/5 hover:bg-white/10 active:scale-98 text-gray-400 hover:text-white text-xs font-semibold transition-all cursor-pointer">
+        <button type="button" onclick="openBatteryOptimizationSettings()" class="w-full py-2.5 px-4 rounded-2xl bg-[#212430] hover:bg-[#2A2D3C] active:scale-98 text-amber-300 text-xs font-semibold transition-all flex items-center justify-center gap-2 cursor-pointer">
+          <i data-lucide="battery-charging" class="w-3.5 h-3.5"></i>
+          <span>Настроить работу в фоне (Батарея / Автозапуск)</span>
+        </button>
+        <button type="button" onclick="closeBankPushPermissionPrompt()" class="w-full py-2 px-4 rounded-2xl bg-white/5 hover:bg-white/10 active:scale-98 text-gray-400 hover:text-white text-xs font-semibold transition-all cursor-pointer">
           Настроить позже
         </button>
       </div>
@@ -1567,6 +1580,17 @@ function openBankPushPermissionPrompt() {
   if (typeof lucide !== 'undefined') lucide.createIcons({ root: modal });
   modal.classList.remove('hidden');
 }
+
+function openBatteryOptimizationSettings() {
+  if (window.Capacitor?.Plugins?.BankPush?.openBatterySettings) {
+    window.Capacitor.Plugins.BankPush.openBatterySettings().catch(() => {
+      openBankPushPermissionSettings();
+    });
+  } else {
+    openBankPushPermissionSettings();
+  }
+}
+window.openBatteryOptimizationSettings = openBatteryOptimizationSettings;
 
 function closeBankPushPermissionPrompt() {
   window._isBankPushPromptOpen = false;

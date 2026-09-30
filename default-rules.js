@@ -14,11 +14,22 @@ const DEFAULT_CATEGORY_RULES = [
   { pattern: "перекресток", category: "Продукты" },
   { pattern: "perek", category: "Продукты" },
   { pattern: "пятерочка", category: "Продукты" },
+  { pattern: "пятерочк", category: "Продукты" },
+  { pattern: "pyaterochka", category: "Продукты" },
+  { pattern: "pyaterochk", category: "Продукты" },
+  { pattern: "5ka", category: "Продукты" },
+  { pattern: "доставка из пятерочки", category: "Продукты" },
+  { pattern: "доставка пятерочка", category: "Продукты" },
+  { pattern: "доставка из пятерочк", category: "Продукты" },
+  { pattern: "dostavka iz pyaterochk", category: "Продукты" },
   { pattern: "окей", category: "Продукты" },
   { pattern: "лента", category: "Продукты" },
   { pattern: "магнит", category: "Продукты" },
   { pattern: "красное и белое", category: "Продукты" },
   { pattern: "фикс прайс", category: "Продукты" },
+  { pattern: "фикспрайс", category: "Продукты" },
+  { pattern: "fix price", category: "Продукты" },
+  { pattern: "fixprice", category: "Продукты" },
   { pattern: "дикси", category: "Продукты" },
   { pattern: "вкусвилл", category: "Продукты" },
   { pattern: "избенка", category: "Продукты" },
@@ -40,6 +51,10 @@ const DEFAULT_CATEGORY_RULES = [
   { pattern: "кафе и рестораны", category: "Кафе и рестораны" },
   { pattern: "рестораны и кафе", category: "Кафе и рестораны" },
   { pattern: "фастфуд", category: "Кафе и рестораны" },
+  { pattern: "eggselent", category: "Кафе и рестораны" },
+  { pattern: "shawafel", category: "Кафе и рестораны" },
+  { pattern: "шавафель", category: "Кафе и рестораны" },
+  { pattern: "aziya", category: "Кафе и рестораны" },
   { pattern: "vlavashe", category: "Кафе и рестораны" },
   { pattern: "ростикс", category: "Кафе и рестораны" },
   { pattern: "kfc", category: "Кафе и рестораны" },
@@ -427,10 +442,13 @@ class StatementCategorizer {
    * 4. Главный метод классификации с многофакторным скорингом
    */
   static categorize(merchant = '', rawDetails = '', type = 'Расход') {
-    const rawText = `${merchant} ${rawDetails}`.trim();
+    let rawText = `${merchant} ${rawDetails}`.trim();
     if (!rawText) {
       return type === 'Доход' ? 'Зарплата' : 'Другое';
     }
+
+    // Очищаем стандартизированные банковские технические фразы-префиксы
+    rawText = rawText.replace(/(?:оплата\s+(?:товаров\s+и\s+услуг|товаров\/услуг|товаров|услуг)|оплата\s+по\s+карте|покупка\s+товаров)/gi, ' ');
 
     // Получаем разрешенные категории для текущего типа (Расход или Доход)
     let allowedCategories = [];
@@ -457,8 +475,8 @@ class StatementCategorizer {
       categoryScores.set(cat, (categoryScores.get(cat) || 0) + points);
     }
 
-    // 1. Проверка банковских MCC-кодов (если есть в выписке или тексте)
-    const mccMatch = rawText.match(/\b(?:mcc|мсс)[:\s]*(\d{4})\b/i) || rawText.match(/\b(\d{4})\b/);
+    // 1. Проверка банковских MCC-кодов (только явный префикс MCC/МСС)
+    const mccMatch = rawText.match(/\b(?:mcc|мсс)[:\s]*(\d{4})\b/i);
     if (mccMatch && mccMatch[1] && this.MCC_MAP[mccMatch[1]]) {
       const mccCategory = this.MCC_MAP[mccMatch[1]];
       addScore(mccCategory, 80);
@@ -512,18 +530,21 @@ class StatementCategorizer {
       if (matchedToken) continue;
 
       // 3.3. Совпадение по основе слова (Стемминг - защита от падежей "в пятерочке", "самокатом")
-      let matchedStem = false;
-      const mainPatStem = patStems[0];
-      if (mainPatStem && mainPatStem.length >= 3) {
-        for (const st of textStems) {
-          if (st === mainPatStem) {
-            addScore(rule.category, 35 + (mainPatStem.length * 2) + userBonus + stopWordPenalty);
-            matchedStem = true;
-            break;
+      // Применяем стемминг ТОЛЬКО к однословным правилам. Многословные правила требуют точного контекста фразы.
+      if (patTokens.length === 1) {
+        let matchedStem = false;
+        const mainPatStem = patStems[0];
+        if (mainPatStem && mainPatStem.length >= 3) {
+          for (const st of textStems) {
+            if (st === mainPatStem) {
+              addScore(rule.category, 35 + (mainPatStem.length * 2) + userBonus + stopWordPenalty);
+              matchedStem = true;
+              break;
+            }
           }
         }
+        if (matchedStem) continue;
       }
-      if (matchedStem) continue;
 
       // 3.4. Нечеткое совпадение (Fuzzy Levenshtein - защита от опечаток "петерочка" -> "пятерочка")
       // Применяется ТОЛЬКО для слов длиной >= 5 символов и при условии, что слово не является стоп-словом

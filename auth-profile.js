@@ -259,11 +259,15 @@ async function loadUserSettings(user) {
     
     const showBroker = settings.showBroker !== undefined ? settings.showBroker : false;
     const showPdfInfo = settings.showPdfInfo !== undefined ? settings.showPdfInfo : true;
+    const enableNotifications = settings.enableNotifications !== undefined ? settings.enableNotifications : false;
+    const notificationTime = settings.notificationTime || '10:00';
 
     if (!Cache) Cache = {};
     if (!Cache.settings) Cache.settings = {};
     Cache.settings.showBroker = showBroker;
     Cache.settings.showPdfInfo = showPdfInfo;
+    Cache.settings.enableNotifications = enableNotifications;
+    Cache.settings.notificationTime = notificationTime;
 
     // Загружаем профиль пользователя
     const rawName = user.displayName || (user.email?.includes('@budget.local') ? user.email.replace('@budget.local', '') : user.email?.split('@')[0]) || 'Пользователь';
@@ -428,6 +432,24 @@ function openProfileModal() {
     typeEl.textContent = isGoogle ? `Google (${user.email})` : `Логин: ${user.email?.includes('@budget.local') ? user.email.replace('@budget.local', '') : user.email}`;
   }
 
+  const isNative = typeof window.isNativeAppPlatform === 'function' ? window.isNativeAppPlatform() : false;
+  const isPwa = typeof window.isPwaStandalone === 'function' ? window.isPwaStandalone() : false;
+
+  // Пункт уведомлений о счетах и вкладах отображается только внутри APK приложения
+  const notifItem = document.getElementById('profile-notifications-setting-item');
+  if (notifItem) {
+    notifItem.classList.toggle('hidden', !isNative);
+  }
+
+  // Обновляем состояние чекбокса уведомлений (для APK)
+  const toggleNotif = document.getElementById('toggle-notifications-setting');
+  const timeRow = document.getElementById('notifications-time-row');
+  const timeInput = document.getElementById('notifications-time-input');
+  const notifEnabled = !!(Cache?.settings?.enableNotifications);
+  if (toggleNotif) toggleNotif.checked = notifEnabled;
+  if (timeRow) timeRow.classList.toggle('hidden', !notifEnabled);
+  if (timeInput) timeInput.value = Cache?.settings?.notificationTime || '10:00';
+
   // Обновляем состояние чекбокса брокера
   const toggle = document.getElementById('toggle-broker-setting');
   if (toggle) {
@@ -444,9 +466,7 @@ function openProfileModal() {
   const pwaBtn = document.getElementById('profile-install-app-btn');
   const widgetsBtn = document.getElementById('profile-widgets-btn');
   const bankPushBtn = document.getElementById('profile-bank-push-btn');
-
-  const isNative = typeof window.isNativeAppPlatform === 'function' ? window.isNativeAppPlatform() : false;
-  const isPwa = typeof window.isPwaStandalone === 'function' ? window.isPwaStandalone() : false;
+  const checkUpdatesBtn = document.getElementById('profile-check-updates-btn');
 
   if (isNative) {
     // В нативном APK: пункта установки нет, но доступны виджеты и авто-пуши
@@ -1636,6 +1656,76 @@ async function togglePdfInfoSetting(enable) {
   }
 }
 
+async function toggleNotificationsSetting(enable) {
+  const user = auth.currentUser;
+  if (!user) return;
+
+  if (enable) {
+    if (typeof Notification !== 'undefined') {
+      if (Notification.permission !== 'granted') {
+        try {
+          const perm = await Notification.requestPermission();
+          if (perm !== 'granted') {
+            const toggleEl = document.getElementById('toggle-notifications-setting');
+            if (toggleEl) toggleEl.checked = false;
+            const timeRow = document.getElementById('notifications-time-row');
+            if (timeRow) timeRow.classList.add('hidden');
+            showToast('Разрешите показ уведомлений в настройках браузера/устройства', true);
+            return;
+          }
+        } catch (e) {
+          console.warn('Notification permission error:', e);
+        }
+      }
+    }
+  }
+
+  const timeRow = document.getElementById('notifications-time-row');
+  if (timeRow) timeRow.classList.toggle('hidden', !enable);
+
+  try {
+    await db.collection('users').doc(user.uid).set({
+      settings: { enableNotifications: enable }
+    }, { merge: true });
+
+    if (!Cache.settings) Cache.settings = {};
+    Cache.settings.enableNotifications = enable;
+
+    if (enable) {
+      showToast('Уведомления включены');
+      if (typeof window.checkAndSendReminders === 'function') {
+        window.checkAndSendReminders();
+      }
+    } else {
+      showToast('Уведомления выключены');
+    }
+  } catch (e) {
+    showToast('Ошибка сохранения: ' + e.message, true);
+  }
+}
+
+async function changeNotificationTimeSetting(time) {
+  const user = auth.currentUser;
+  if (!user || !time) return;
+
+  try {
+    await db.collection('users').doc(user.uid).set({
+      settings: { notificationTime: time }
+    }, { merge: true });
+
+    if (!Cache.settings) Cache.settings = {};
+    Cache.settings.notificationTime = time;
+
+    showToast(`Время напоминаний: ${time}`);
+
+    if (Cache.settings.enableNotifications && typeof window.checkAndSendReminders === 'function') {
+      window.checkAndSendReminders();
+    }
+  } catch (e) {
+    showToast('Ошибка сохранения: ' + e.message, true);
+  }
+}
+
 function applyBrokerVisibility(show) {
   const navBroker = document.getElementById('nav-broker');
   if (navBroker) {
@@ -1676,6 +1766,8 @@ window.openProfileModal = openProfileModal;
 window.closeProfileModal = closeProfileModal;
 window.toggleBrokerSetting = toggleBrokerSetting;
 window.togglePdfInfoSetting = togglePdfInfoSetting;
+window.toggleNotificationsSetting = toggleNotificationsSetting;
+window.changeNotificationTimeSetting = changeNotificationTimeSetting;
 window.openSubModalFromProfile = openSubModalFromProfile;
 window.loadUserSettings = loadUserSettings;
 window.applyBrokerVisibility = applyBrokerVisibility;

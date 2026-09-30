@@ -445,12 +445,28 @@ const KNOWN_RETAIL_TRANSLIT = {
   'rossii': 'России',
   'rossiya': 'Россия',
   'dostavka': 'Доставка',
+  'dostavki': 'Доставки',
+  'iz': 'из',
+  'dlya': 'для',
+  'bez': 'без',
+  'ot': 'от',
+  'pri': 'при',
+  'pod': 'под',
+  'nad': 'над',
+  'cherez': 'через',
+  'so': 'со',
+  'vo': 'во',
+  'ko': 'ко',
+  'ob': 'об',
+  'obo': 'обо',
   'uslugi': 'Услуги',
   'platezh': 'Платеж',
   'perevod': 'Перевод',
   'perek': 'Перекресток',
   'perekrestok': 'Перекресток',
   'pyaterochka': 'Пятерочка',
+  'pyaterochki': 'Пятерочки',
+  'pyaterochk': 'Пятерочка',
   '5ka': 'Пятерочка',
   'magnit': 'Магнит',
   'vkusvill': 'ВкусВилл',
@@ -885,7 +901,10 @@ function toCleanTitleCase(str) {
   }
 
   // Предлоги и союзы, которые остаются строчными внутри фразы
-  const LOWER_PREPOSITIONS = new Set(['и', 'в', 'на', 'с', 'со', 'по', 'за', 'под', 'над', 'из', 'от', 'для', 'без', 'у', 'о', 'об', 'обо', 'к', 'ко', 'да', 'но', 'или']);
+  const LOWER_PREPOSITIONS = new Set([
+    'и', 'в', 'во', 'на', 'с', 'со', 'по', 'за', 'под', 'над', 'из', 'из-за', 'из-под', 'от', 'для', 'без', 'у', 'о', 'об', 'обо', 'к', 'ко', 'да', 'но', 'или', 'через', 'при', 'до',
+    'iz', 'v', 'vo', 'na', 's', 'so', 'po', 'za', 'pod', 'nad', 'ot', 'dlya', 'bez', 'u', 'o', 'ob', 'obo', 'k', 'ko', 'cherez', 'pri', 'do'
+  ]);
 
   // Разбиение на токены с сохранением разделителей
   const tokens = s.split(/(\s+|[-–—/\\«»"()]+)/);
@@ -4117,6 +4136,9 @@ async function importSelectedTransactions() {
       avatarId: userProfile.avatarId
     };
 
+    const newDocs = [];
+    const batchPromises = [];
+
     for (let i = 0; i < selected.length; i += CHUNK_SIZE) {
       const chunk = selected.slice(i, i + CHUNK_SIZE);
       const batch = db.batch();
@@ -4124,24 +4146,38 @@ async function importSelectedTransactions() {
       chunk.forEach(tx => {
         const docRef = (window.getUserCol ? getUserCol('Transactions') : db.collection('Transactions')).doc();
         tx.id = docRef.id;
-        batch.set(docRef, {
-          type: tx.type,
-          amount: tx.amount,
+        const txType = (tx.type === 'income' || tx.type === 'Доход') ? 'Доход' : 'Расход';
+        const amt = Math.abs(parseFloat(tx.amount) || 0);
+        const comm = tx.merchant || tx.comment || '';
+        const docData = {
+          type: txType,
+          amount: amt,
           date: tx.date,            // YYYY-MM-DD
-          category: tx.category,
-          comment: tx.merchant,     // Записываем название точки в комментарий
+          category: tx.category || 'Прочее',
+          comment: comm,     // Записываем название точки в комментарий
           author: authorInfo,
           createdAt: Date.now()
-        });
+        };
+        batch.set(docRef, docData);
+        newDocs.push({ id: docRef.id, ...docData });
       });
 
-      await batch.commit();
+      batchPromises.push(batch.commit());
     }
 
-    showToast(`Успешно добавлено ${selected.length} операций!`);
-    document.getElementById('pdf-debug-dialog').classList.add('hidden');
+    // Параллельная пакетная запись (занимает доли секунды)
+    await Promise.all(batchPromises);
 
-    const hasExpensesInImport = selected.some(s => s.type === 'expense' || s.amount < 0 || (s.type !== 'income'));
+    // Мгновенное оптимистичное обновление локального кэша и интерфейса (без ожидания сети)
+    const existingFlat = (typeof getAllCachedTransactionsFlat === 'function') ? getAllCachedTransactionsFlat() : [];
+    const existingIds = new Set(existingFlat.map(t => t.id));
+    const toAppend = newDocs.filter(t => !existingIds.has(t.id));
+
+    if (toAppend.length > 0 && typeof processTransactions === 'function') {
+      Cache.transactions = processTransactions([...existingFlat, ...toAppend]);
+    }
+
+    const hasExpensesInImport = selected.some(s => s.type === 'expense' || s.amount < 0 || (s.type !== 'income' && s.type !== 'Доход'));
     if (hasExpensesInImport) {
       if (typeof triggerBudgetExpenseAnimation === 'function') {
         triggerBudgetExpenseAnimation();
@@ -4151,21 +4187,30 @@ async function importSelectedTransactions() {
       }
     }
 
-    // Обновляем список транзакций и графики
-    if (typeof fetchCollection === 'function') {
-      await fetchCollection('Transactions');
+    if (typeof markTabsDirty === 'function') markTabsDirty();
+    if (typeof renderTransactions === 'function') renderTransactions();
+
+    const importDialog = document.getElementById('pdf-debug-dialog');
+    if (importDialog) importDialog.classList.add('hidden');
+
+    showToast(`Успешно добавлено ${selected.length} операций!`);
+
+    // Если импорт вызывался из мастера бюджета — возвращаем на сохраненный шаг и обновляем доходы
+    if (window._returnToWizardStep) {
+      const returnStep = window._returnToWizardStep;
+      window._returnToWizardStep = null;
+      if (typeof switchTab === 'function') switchTab('budget');
+      if (typeof goToWizardStep === 'function') goToWizardStep(returnStep);
+      if (typeof renderWizardIncomeSources === 'function') renderWizardIncomeSources();
+      if (typeof calculateHistoricalIncomeForWizard === 'function') calculateHistoricalIncomeForWizard();
+    } else {
+      if (typeof renderBudgetTab === 'function') renderBudgetTab();
     }
 
     // Проверяем наличие крупных трат среди импортированных операций (не входящих в закрытые месяца)
     const largeTxs = getImportedLargeExpenses(selected);
     if (largeTxs.length > 0) {
       openStatementLargeExpensesModal(largeTxs);
-    } else if (window._returnToWizardStep) {
-      // Если импорт вызывался из мастера бюджета — возвращаем ровно на Шаг 2
-      const returnStep = window._returnToWizardStep;
-      window._returnToWizardStep = null;
-      if (typeof switchTab === 'function') switchTab('budget');
-      if (typeof goToWizardStep === 'function') goToWizardStep(returnStep);
     }
   } catch (err) {
     console.error('Ошибка импорта:', err);
@@ -4252,10 +4297,22 @@ function openStatementLargeExpensesModal(largeTxs) {
   if (!largeTxs || largeTxs.length === 0) return;
 
   const threshold = (typeof getLargeExpenseThreshold === 'function') ? getLargeExpenseThreshold() : 0;
+  const goals = Cache?.goals || [];
+  const activeGoals = goals.filter(g => g.status !== 'Выполнена' || (parseFloat(g.saved) || 0) > 0);
+  const availableGoals = activeGoals.length > 0 ? activeGoals : goals;
+
+  if (availableGoals.length === 0) {
+    // Если целей нет вообще, не открываем окно списания
+    return;
+  }
+
+  // По умолчанию для всех трат стандартно выбрана первая цель
+  const defaultGoalId = availableGoals[0].id;
+
   window._statementLargeTxs = largeTxs.map(tx => ({
     ...tx,
     selectedForAmortize: true,
-    spreadMonths: 3
+    fundingGoalId: defaultGoalId
   }));
 
   const dlg = document.getElementById('statement-large-expenses-modal');
@@ -4280,6 +4337,10 @@ function renderStatementLargeList() {
   if (!listEl) return;
 
   const expCats = Cache?.categories?.expense || [];
+  const goals = Cache?.goals || [];
+  const activeGoals = goals.filter(g => g.status !== 'Выполнена' || (parseFloat(g.saved) || 0) > 0);
+  const availableGoals = activeGoals.length > 0 ? activeGoals : goals;
+  const defaultGoalId = availableGoals[0]?.id || '';
 
   listEl.innerHTML = (window._statementLargeTxs || []).map((item, idx) => {
     const amt = Math.abs(parseFloat(item.amount) || 0);
@@ -4287,8 +4348,9 @@ function renderStatementLargeList() {
     const dateFormatted = (typeof formatDateStr === 'function' && pDate) ? formatDateStr(pDate, 'dd.MM.yyyy') : item.date;
     const catObj = expCats.find(c => c.name === item.category);
     const icon = catObj?.icon && catObj.icon !== '📦' ? catObj.icon : 'tag';
-    const monthlyVal = Math.round(amt / (item.spreadMonths || 3));
     const title = item.merchant || item.comment || item.category || 'Расход';
+    const currentGoalId = item.fundingGoalId || defaultGoalId;
+    const selectedGoal = availableGoals.find(g => g.id === currentGoalId) || availableGoals[0];
 
     return `
       <div id="stmt-large-card-${idx}" class="p-3 rounded-2xl bg-[#12151C] border border-[rgba(255,255,255,0.06)] flex flex-col gap-2.5 transition-all ${item.selectedForAmortize ? 'border-violet-500/30' : 'opacity-60'}">
@@ -4316,19 +4378,35 @@ function renderStatementLargeList() {
           </div>
         </div>
 
-        <!-- Настройка месяцев и нагрузки -->
-        <div class="flex items-center justify-between pt-2 border-t border-[rgba(255,255,255,0.04)] text-[11px]">
-          <div class="flex items-center gap-1.5">
-            <span class="text-[#848D99]">Срок:</span>
-            <div class="flex items-center bg-[#181B24] border border-[rgba(255,255,255,0.08)] rounded-lg p-0.5">
-              <button type="button" onclick="changeStmtLargeMonths(${idx}, -1)" class="w-5 h-5 rounded text-gray-300 hover:text-white hover:bg-[#212430] flex items-center justify-center font-bold cursor-pointer transition-colors active:scale-90">-</button>
-              <span id="stmt-large-months-${idx}" class="px-1.5 text-[11px] font-bold font-mono text-amber-300 min-w-[42px] text-center">${item.spreadMonths} мес.</span>
-              <button type="button" onclick="changeStmtLargeMonths(${idx}, 1)" class="w-5 h-5 rounded text-gray-300 hover:text-white hover:bg-[#212430] flex items-center justify-center font-bold cursor-pointer transition-colors active:scale-90">+</button>
+        <!-- Выбор цели для списания (Кастомный селектор) -->
+        <div class="flex items-center justify-between pt-2 border-t border-[rgba(255,255,255,0.04)] text-[11px] gap-2">
+          <span class="text-[#848D99] flex-shrink-0 flex items-center gap-1">
+            <i data-lucide="target" class="w-3.5 h-3.5 text-amber-400"></i> Списать из:
+          </span>
+          <div class="relative flex-1" id="stmt-goal-picker-container-${idx}">
+            <button type="button" 
+                    onclick="toggleStmtLargeGoalDropdown(${idx}, event)" 
+                    id="stmt-goal-btn-${idx}"
+                    class="w-full bg-[#181B24] hover:bg-[#212430] border border-[rgba(255,255,255,0.08)] hover:border-violet-500/40 text-white rounded-xl px-2.5 py-1.5 text-xs flex items-center justify-between gap-1.5 transition-all cursor-pointer">
+              <div class="flex items-center gap-1.5 truncate">
+                <i data-lucide="${selectedGoal?.icon || 'target'}" class="w-3.5 h-3.5 text-[#8C7DFF] flex-shrink-0"></i>
+                <span class="truncate font-medium text-gray-200">${escapeHtml(selectedGoal?.name || selectedGoal?.title || 'Цель')}</span>
+                <span class="text-[10px] text-gray-400 font-mono">(${formatMoney(selectedGoal?.saved || 0)})</span>
+              </div>
+              <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-gray-400 flex-shrink-0"></i>
+            </button>
+            
+            <div id="stmt-goal-dropdown-${idx}" class="hidden absolute left-0 right-0 top-full mt-1 z-50 bg-[#1A1D27] border border-[rgba(255,255,255,0.12)] rounded-xl shadow-2xl overflow-hidden py-1 max-h-48 overflow-y-auto custom-scrollbar animate-fade-in" onclick="event.stopPropagation()">
+              ${availableGoals.map(g => `
+                <div onclick="selectStmtLargeGoal(${idx}, '${g.id}')" class="px-2.5 py-2 hover:bg-[#252836] flex items-center justify-between gap-2 cursor-pointer transition-colors ${currentGoalId === g.id ? 'bg-violet-500/15 text-white font-semibold' : 'text-gray-300'}">
+                  <div class="flex items-center gap-2 truncate">
+                    <i data-lucide="${g.icon || 'target'}" class="w-3.5 h-3.5 text-[#8C7DFF] flex-shrink-0"></i>
+                    <span class="truncate text-xs">${escapeHtml(g.name || g.title || 'Цель')}</span>
+                  </div>
+                  <span class="text-[10px] font-mono text-gray-400 flex-shrink-0">${formatMoney(g.saved || 0)}</span>
+                </div>
+              `).join('')}
             </div>
-          </div>
-          <div class="text-[11px] font-mono text-amber-300 font-semibold">
-            <span class="text-[10px] text-[#848D99] font-normal mr-1">В месяц:</span>
-            <span id="stmt-large-calc-${idx}">+${formatMoney(monthlyVal)}/мес</span>
           </div>
         </div>
       </div>
@@ -4337,6 +4415,44 @@ function renderStatementLargeList() {
 
   if (typeof lucide !== 'undefined') lucide.createIcons({ root: listEl });
 }
+
+function toggleStmtLargeGoalDropdown(idx, e) {
+  if (e) e.stopPropagation();
+  const dropdown = document.getElementById(`stmt-goal-dropdown-${idx}`);
+  if (!dropdown) return;
+  const isHidden = dropdown.classList.contains('hidden');
+
+  // Закрываем все остальные открытые дропдауны
+  document.querySelectorAll('[id^="stmt-goal-dropdown-"]').forEach(d => d.classList.add('hidden'));
+
+  if (isHidden) {
+    dropdown.classList.remove('hidden');
+    setTimeout(() => {
+      const handleOutsideClick = (evt) => {
+        const d = document.getElementById(`stmt-goal-dropdown-${idx}`);
+        const btn = document.getElementById(`stmt-goal-btn-${idx}`);
+        if (d && !d.classList.contains('hidden')) {
+          if (!d.contains(evt.target) && !btn?.contains(evt.target)) {
+            d.classList.add('hidden');
+            document.removeEventListener('click', handleOutsideClick);
+          }
+        } else {
+          document.removeEventListener('click', handleOutsideClick);
+        }
+      };
+      document.addEventListener('click', handleOutsideClick);
+    }, 0);
+  }
+}
+window.toggleStmtLargeGoalDropdown = toggleStmtLargeGoalDropdown;
+
+function selectStmtLargeGoal(idx, goalId) {
+  changeStmtLargeGoal(idx, goalId);
+  const dropdown = document.getElementById(`stmt-goal-dropdown-${idx}`);
+  if (dropdown) dropdown.classList.add('hidden');
+  renderStatementLargeList();
+}
+window.selectStmtLargeGoal = selectStmtLargeGoal;
 
 function toggleStmtLargeItem(idx, checked) {
   if (!window._statementLargeTxs || !window._statementLargeTxs[idx]) return;
@@ -4354,22 +4470,9 @@ function toggleStmtLargeItem(idx, checked) {
   updateStmtLargeSummary();
 }
 
-function changeStmtLargeMonths(idx, delta) {
+function changeStmtLargeGoal(idx, goalId) {
   if (!window._statementLargeTxs || !window._statementLargeTxs[idx]) return;
-  const item = window._statementLargeTxs[idx];
-  let val = parseInt(item.spreadMonths, 10) || 3;
-  val = Math.max(1, Math.min(12, val + delta));
-  item.spreadMonths = val;
-
-  const label = document.getElementById(`stmt-large-months-${idx}`);
-  if (label) label.innerText = `${val} мес.`;
-
-  const calc = document.getElementById(`stmt-large-calc-${idx}`);
-  if (calc) {
-    const amt = Math.abs(parseFloat(item.amount) || 0);
-    calc.innerText = `+${formatMoney(Math.round(amt / val))}/мес`;
-  }
-
+  window._statementLargeTxs[idx].fundingGoalId = goalId;
   updateStmtLargeSummary();
 }
 
@@ -4380,15 +4483,14 @@ function updateStmtLargeSummary() {
 
   if (summaryEl) {
     const totalSelectedSum = items.reduce((s, it) => s + Math.abs(parseFloat(it.amount) || 0), 0);
-    summaryEl.innerText = `Выбрано к распределению: ${items.length} из ${(window._statementLargeTxs || []).length} трат на сумму ${formatMoney(totalSelectedSum)}`;
+    summaryEl.innerText = `Выбрано: ${items.length} из ${(window._statementLargeTxs || []).length} трат на сумму ${formatMoney(totalSelectedSum)}`;
   }
 
   if (submitBtn) {
     if (items.length === 0) {
-      submitBtn.innerHTML = `<span>Пропустить</span>`;
+      submitBtn.innerHTML = `<span>Оставить в бюджете</span>`;
     } else {
-      submitBtn.innerHTML = `<i data-lucide="split" class="w-4 h-4"></i><span>Распределить (${items.length})</span>`;
-      if (typeof lucide !== 'undefined') lucide.createIcons({ root: submitBtn });
+      submitBtn.innerHTML = `<span>Сделать разовыми (${items.length})</span>`;
     }
   }
 }
@@ -4417,98 +4519,82 @@ async function submitStatementLargeExpenses() {
     return;
   }
 
-  const btn = document.getElementById('stmt-large-submit-btn');
-  if (btn) {
-    btn.disabled = true;
-    btn.innerText = 'Сохранение...';
-  }
+  const goals = Cache?.goals || [];
+  const defaultGoalId = goals[0]?.id || '';
 
-  try {
-    const billCol = getUserCol('CalendarBills');
-    if (!Cache.calendarBills) Cache.calendarBills = [];
+  // 1. МГНОВЕННОЕ ОПТИМИСТИЧНОЕ ОБНОВЛЕНИЕ В ПАМЯТИ
+  const flat = typeof getAllCachedTransactionsFlat === 'function' ? getAllCachedTransactionsFlat() : [];
+  const backgroundTasks = [];
 
-    for (const item of items) {
-      const spreadMonths = parseInt(item.spreadMonths, 10) || 3;
-      const amount = Math.abs(parseFloat(item.amount) || 0);
-      const pDate = (typeof parseAnyDate === 'function' ? parseAnyDate(item.date) : new Date(item.date)) || new Date();
-      const monthStr = (typeof formatDateStr === 'function') ? formatDateStr(pDate, 'yyyy-MM') : pDate.toISOString().slice(0, 7);
+  for (const item of items) {
+    const amount = Math.abs(parseFloat(item.amount) || 0);
+    const chosenGoalId = item.fundingGoalId || defaultGoalId;
+    const targetGoal = goals.find(g => g.id === chosenGoalId);
+    const goalName = targetGoal ? (targetGoal.name || targetGoal.title || 'Цель') : 'Цель';
 
-      // 1. Обновляем транзакцию в Firestore
-      if (item.id) {
-        await getUserCol('Transactions').doc(item.id).update({
+    // Оптимистично уменьшаем накопления цели
+    if (targetGoal && amount > 0) {
+      targetGoal.saved = Math.max(0, (parseFloat(targetGoal.saved) || 0) - amount);
+      if (typeof adjustGoalSaved === 'function') {
+        backgroundTasks.push(adjustGoalSaved(targetGoal.id, -amount));
+      }
+    }
+
+    // Оптимистично помечаем транзакцию в кэше
+    const cachedTx = flat.find(t => t.id === item.id);
+    if (cachedTx) {
+      cachedTx.excludeFromBudget = true;
+      cachedTx.spreadMonths = 1;
+      cachedTx.billType = 'onetime';
+      cachedTx.fundingGoalId = chosenGoalId || null;
+      cachedTx.fundingGoalName = goalName;
+      cachedTx.fundingGoalAmount = amount;
+    }
+
+    if (item.id) {
+      backgroundTasks.push(
+        getUserCol('Transactions').doc(item.id).update({
           excludeFromBudget: true,
-          spreadMonths: spreadMonths,
+          spreadMonths: 1,
+          billType: 'onetime',
+          fundingGoalId: chosenGoalId || null,
+          fundingGoalName: goalName,
+          fundingGoalAmount: amount,
           updatedAt: Date.now()
-        });
-      }
-
-      // 2. Создаем запись в CalendarBills
-      const billData = {
-        name: item.merchant || item.comment || item.category || 'Разовая трата',
-        totalAmount: amount,
-        spreadMonths: spreadMonths,
-        amount: Math.round(amount / spreadMonths),
-        day: pDate.getDate(),
-        month: monthStr,
-        startMonth: monthStr,
-        type: 'onetime',
-        linkedTxId: item.id || null,
-        isPaid: true,
-        createdAt: Date.now(),
-        updatedAt: Date.now()
-      };
-
-      const billRef = await billCol.add(billData);
-      billData.id = billRef.id;
-      Cache.calendarBills.push(billData);
-
-      // 3. Обновляем кэш транзакций в памяти
-      const flat = typeof getAllCachedTransactionsFlat === 'function' ? getAllCachedTransactionsFlat() : [];
-      const cachedTx = flat.find(t => t.id === item.id);
-      if (cachedTx) {
-        cachedTx.excludeFromBudget = true;
-        cachedTx.spreadMonths = spreadMonths;
-      }
-    }
-
-    // Пересчитываем структуру транзакций
-    if (typeof getAllCachedTransactionsFlat === 'function' && typeof processTransactions === 'function') {
-      Cache.transactions = processTransactions(getAllCachedTransactionsFlat());
-    }
-
-    closeStatementLargeExpensesModal();
-
-    if (typeof triggerBudgetExpenseAnimation === 'function') triggerBudgetExpenseAnimation();
-    if (typeof markTabsDirty === 'function') markTabsDirty();
-    if (typeof renderBudgetTab === 'function') renderBudgetTab();
-    if (typeof renderTransactions === 'function') renderTransactions();
-    if (typeof renderBudgetCalendar === 'function') {
-      const today = (typeof getSelectedBudgetDate === 'function') ? getSelectedBudgetDate() : new Date();
-      const currentMonthStr = (typeof formatDateStr === 'function') ? formatDateStr(today, 'yyyy-MM') : today.toISOString().slice(0, 7);
-      const monthItems = (Cache.transactions || []).find(m => m.month === currentMonthStr)?.items || [];
-      renderBudgetCalendar(Cache.calendarBills || [], today, monthItems);
-      if (typeof updatePlanForecast === 'function') updatePlanForecast();
-      if (typeof renderBudgetMonthProgress === 'function') renderBudgetMonthProgress(Cache.budgetPlan || {}, monthItems);
-      if (typeof renderWeeklyPulse === 'function') renderWeeklyPulse(Cache.budgetPlan || {}, monthItems);
-    }
-
-    showToast(`Успешно распределено ${items.length} ${items.length === 1 ? 'крупная трата' : 'крупных трат'} в календаре!`);
-
-    // Если был возврат в мастер
-    if (window._returnToWizardStep) {
-      const returnStep = window._returnToWizardStep;
-      window._returnToWizardStep = null;
-      if (typeof switchTab === 'function') switchTab('budget');
-      if (typeof goToWizardStep === 'function') goToWizardStep(returnStep);
-    }
-  } catch (err) {
-    console.error('Error submitting statement large expenses:', err);
-    showToast('Ошибка при сохранении распределения: ' + (err.message || ''), true);
-    if (btn) {
-      btn.disabled = false;
-      btn.innerText = 'Распределить';
+        })
+      );
     }
   }
+
+  // Пересчитываем группировку транзакций
+  if (typeof processTransactions === 'function') {
+    Cache.transactions = processTransactions(flat);
+  }
+
+  // Закрываем модалку мгновенно
+  closeStatementLargeExpensesModal();
+
+  // Мгновенный рендер интерфейса
+  if (typeof triggerBudgetExpenseAnimation === 'function') triggerBudgetExpenseAnimation();
+  if (typeof markTabsDirty === 'function') markTabsDirty();
+  if (typeof renderBudgetTab === 'function') renderBudgetTab();
+  if (typeof renderTransactions === 'function') renderTransactions();
+  if (typeof renderGoals === 'function') renderGoals();
+
+  showToast(`Списано из целей ${items.length} ${items.length === 1 ? 'крупная трата' : 'крупных трат'}`);
+
+  // Если был возврат в мастер
+  if (window._returnToWizardStep) {
+    const returnStep = window._returnToWizardStep;
+    window._returnToWizardStep = null;
+    if (typeof switchTab === 'function') switchTab('budget');
+    if (typeof goToWizardStep === 'function') goToWizardStep(returnStep);
+  }
+
+  // Фоновая синхронизация с Firestore (не блокирует UI)
+  Promise.all(backgroundTasks).catch(err => {
+    console.error('Background statement large expenses sync error:', err);
+  });
 }
 
 // Сохраняем последний результат в глобальную переменную для экспорта
@@ -4926,7 +5012,7 @@ window.openStatementLargeExpensesModal = openStatementLargeExpensesModal;
 window.closeStatementLargeExpensesModal = closeStatementLargeExpensesModal;
 window.renderStatementLargeList = renderStatementLargeList;
 window.toggleStmtLargeItem = toggleStmtLargeItem;
-window.changeStmtLargeMonths = changeStmtLargeMonths;
+window.changeStmtLargeGoal = changeStmtLargeGoal;
 window.updateStmtLargeSummary = updateStmtLargeSummary;
 window.submitStatementLargeExpenses = submitStatementLargeExpenses;
 window.UniversalStatementParser = UniversalStatementParser;

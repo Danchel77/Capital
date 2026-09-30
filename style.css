@@ -553,25 +553,41 @@ header button { background:var(--surface) !important; border:1px solid var(--lin
   padding-top: 4px;
 }
 
+.tx-day-group {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 110px;
+}
+
+#transactions-list .card,
+.card[data-table="Transactions"] {
+  contain: layout paint style;
+}
+
 /* Selection mode */
 .select-checkbox {
-  display:none !important;
-  position:absolute !important;
-  top:10px !important;
-  right:10px !important;
-  width:18px !important;
-  height:18px !important;
-  border-radius:4px !important;
-  z-index:8;
-  accent-color:var(--accent);
+  display: block !important;
+  position: absolute !important;
+  top: 10px !important;
+  right: 10px !important;
+  width: 18px !important;
+  height: 18px !important;
+  border-radius: 4px !important;
+  z-index: 8;
+  accent-color: var(--accent);
+  opacity: 0;
   pointer-events: none !important;
+  transform: translate3d(0, 0, 0) scale(0.65);
+  transition: opacity 0.16s cubic-bezier(0.16, 1, 0.3, 1), transform 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
 }
 
 body.selection-mode .select-checkbox {
-  display:block !important;
+  opacity: 1;
+  pointer-events: auto !important;
+  transform: translate3d(0, 0, 0) scale(1);
 }
 
-/* Карточки счетов (календаря): флажок еще ближе к самому правому верхнему углу */
+/* Карточки счетов (календаря): флажок в верхнем правом углу */
 .card[data-table="CalendarBills"] .select-checkbox {
   top: 7px !important;
   right: 7px !important;
@@ -584,9 +600,12 @@ body.selection-mode .select-checkbox {
 .card[data-table="Transactions"] .select-checkbox {
   top: 50% !important;
   right: 12px !important;
-  transform: translateY(-50%) !important;
-  width: 18px !important;
-  height: 18px !important;
+  transform: translate3d(0, -50%, 0) scale(0.65);
+}
+
+body.selection-mode #transactions-list .card .select-checkbox,
+body.selection-mode .card[data-table="Transactions"] .select-checkbox {
+  transform: translate3d(0, -50%, 0) scale(1);
 }
 
 /* При мультивыборе скрываем кнопку оплаты и кнопку "Пополнить" на карточке цели */
@@ -595,44 +614,54 @@ body.selection-mode .goal-topup-btn {
   display: none !important;
 }
 
+/* Правая часть строки транзакции: плавный аппаратный GPU-сдвиг */
+.tx-row-right {
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 /* Бейдж автора транзакции: по умолчанию в правом верхнем углу карточки */
 .tx-author-badge {
   position: absolute;
   top: 8px;
   right: 12px;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Если на карточке есть бейдж автора (в режиме семьи), сдвигаем сумму левее */
-.card:has(.tx-author-badge) .tx-amount,
-.card.tx-has-author .tx-amount,
-.tx-has-author .tx-amount {
-  margin-right: 28px !important;
-  transition: margin-right 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+/* Если на карточке есть бейдж автора (в режиме семьи), базовый отступ */
+.card:has(.tx-author-badge) .tx-row-right,
+.card.tx-has-author .tx-row-right {
+  margin-right: 20px;
 }
 
-/* При мультивыборе: аватар перемещается на одну строку с суммой, вставая справа от нее */
+/* При мультивыборе без автора: быстрый GPU сдвиг ровно под чекбокс */
+body.selection-mode .card[data-table="Transactions"] .tx-row-right,
+body.selection-mode #transactions-list .card .tx-row-right {
+  transform: translate3d(-24px, 0, 0);
+}
+
+/* При мультивыборе: аватар плавно перемещается на одну строку с суммой через GPU translate */
 body.selection-mode .tx-author-badge {
-  top: 50% !important;
-  transform: translateY(-50%) !important;
-  right: 36px !important;
+  transform: translate3d(-24px, 12px, 0);
 }
 
-/* При мультивыборе транзакций сдвигаем сумму левее, чтобы справа аккуратно уместились аватар и флажок */
-body.selection-mode .tx-amount,
-body.selection-mode #transactions-list .tx-amount,
-body.selection-mode .card[data-table="Transactions"] .tx-amount,
-body.selection-mode .card:has(.tx-author-badge) .tx-amount,
-body.selection-mode .tx-has-author .tx-amount {
-  display: block !important;
-  margin-right: 58px !important;
-  transition: margin-right 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+/* При мультивыборе транзакций с автором: сдвиг под аватар + чекбокс */
+body.selection-mode .card:has(.tx-author-badge) .tx-row-right,
+body.selection-mode .card.tx-has-author .tx-row-right {
+  transform: translate3d(-48px, 0, 0);
 }
 
-/* При мультивыборе бейдж цели плавно сдвигается левее, чтобы флажок его не перекрывал */
+/* При мультивыборе бейдж цели плавно сдвигается левее через GPU */
+.deposit-goal-tag {
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
 body.selection-mode .deposit-goal-tag {
-  margin-right: 28px !important;
-  transition: margin-right 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: translate3d(-28px, 0, 0);
 }
 
 /* Единый стиль мультивыбора для всех карточек: мягкая заливка без резких контуров */
@@ -1478,6 +1507,49 @@ body.keyboard-visible #bottom-nav-bar {
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
   touch-action: none;
+}
+
+/* ==========================================
+   Sleek Range Sliders (Goal Shares, etc.)
+   ========================================== */
+.goal-share-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 9999px;
+  height: 4px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.goal-share-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #6C5DD3;
+  cursor: pointer;
+  box-shadow: 0 0 8px rgba(108, 93, 211, 0.5);
+  border: 2px solid #FFFFFF;
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.goal-share-slider::-webkit-slider-thumb:hover,
+.goal-share-slider::-webkit-slider-thumb:active {
+  transform: scale(1.2);
+  background: #7D6FE0;
+}
+
+.goal-share-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #6C5DD3;
+  cursor: pointer;
+  box-shadow: 0 0 8px rgba(108, 93, 211, 0.5);
+  border: 2px solid #FFFFFF;
+  transition: transform 0.15s ease, background-color 0.15s ease;
 }
 
 

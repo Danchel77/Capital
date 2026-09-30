@@ -106,6 +106,18 @@ async function deleteSelectedItems() {
           }
         }
 
+        // Восполняем цели для разовых трат, покрытых из накоплений
+        deletedTxs.forEach(tx => {
+          if (tx && tx.fundingGoalId) {
+            const refundAmt = parseFloat(tx.fundingGoalAmount) || parseFloat(tx.amount) || 0;
+            if (refundAmt > 0 && typeof adjustGoalSaved === 'function') {
+              adjustGoalSaved(tx.fundingGoalId, refundAmt, batch).catch(err => {
+                console.error('Ошибка восполнения цели в пакетном удалении:', err);
+              });
+            }
+          }
+        });
+
         await handleTransactionsDeleted(deletedTxIds, deletedTxs, batch);
       }
 
@@ -169,10 +181,10 @@ function getEventTargetElement(target) {
 function handleTouchStart(e) {
   const el = getEventTargetElement(e?.target);
   if (!el) return;
-  // Касания по плавающей панели выбора, бейджам темпа целей и тултипам не должны инициировать события карточек
-  if (el.closest('#selection-panel') || el.closest('.goal-pace-badge') || el.closest('.goal-pace-tooltip')) return;
-  const card = el.closest('.card, [data-table]');
-  if (!card) return;
+  // Касания по плавающей панели выбора, бейджам темпа целей, тултипам и карточкам лимитов не должны инициировать мультивыбор
+  if (el.closest('#selection-panel, .goal-pace-badge, .goal-pace-tooltip, #budget-categories-list, [data-budget-cat], .category-limit-card')) return;
+  const card = el.closest('[data-id][data-table]');
+  if (!card || !card.dataset.id || !card.dataset.table) return;
   if (selectionMode) return;
   startLongPress(card);
 }
@@ -191,11 +203,12 @@ function handleTouchMove(e) {
 }
 
 function handleMouseDown(e) {
+  if (e.button !== 0) return;
   const el = getEventTargetElement(e?.target);
   if (!el) return;
-  if (el.closest('#selection-panel') || el.closest('.goal-pace-badge') || el.closest('.goal-pace-tooltip')) return;
-  const card = el.closest('.card, [data-table]');
-  if (!card) return;
+  if (el.closest('#selection-panel, .goal-pace-badge, .goal-pace-tooltip, #budget-categories-list, [data-budget-cat], .category-limit-card')) return;
+  const card = el.closest('[data-id][data-table]');
+  if (!card || !card.dataset.id || !card.dataset.table) return;
   if (selectionMode) return;
   startLongPress(card);
 }

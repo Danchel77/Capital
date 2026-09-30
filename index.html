@@ -310,22 +310,22 @@
   <!-- PDF.js для чтения выписок в браузере (отложенная загрузка, не блокирует старт) -->
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" crossorigin="anonymous"></script>
 
-  <link rel="stylesheet" href="style.css?v=107">
-  <script defer src="iconsSVG.js?v=107"></script>
-  <script defer src="default-rules.js?v=107"></script>
-  <script defer src="statement-parser.js?v=107"></script>
+  <link rel="stylesheet" href="style.css?v=141">
+  <script defer src="iconsSVG.js?v=141"></script>
+  <script defer src="default-rules.js?v=141"></script>
+  <script defer src="statement-parser.js?v=141"></script>
   
   <!-- Модули приложения -->
-  <script defer src="core.js?v=107"></script>
-  <script defer src="auth-profile.js?v=107"></script>
-  <script defer src="backup-manager.js?v=107"></script>
-  <script defer src="ui-tools.js?v=107"></script>
-  <script defer src="app-updater.js?v=107"></script>
-  <script defer src="apk-features.js?v=107"></script>
-  <script defer src="transactions.js?v=107"></script>
-  <script defer src="investments.js?v=107"></script>
-  <script defer src="budget.js?v=107"></script>
-  <script defer src="app.js?v=107"></script>
+  <script defer src="core.js?v=141"></script>
+  <script defer src="auth-profile.js?v=141"></script>
+  <script defer src="backup-manager.js?v=141"></script>
+  <script defer src="ui-tools.js?v=141"></script>
+  <script defer src="app-updater.js?v=141"></script>
+  <script defer src="apk-features.js?v=141"></script>
+  <script defer src="transactions.js?v=141"></script>
+  <script defer src="investments.js?v=141"></script>
+  <script defer src="budget.js?v=141"></script>
+  <script defer src="app.js?v=141"></script>
 </head>
 <body class="bg-[#0F1117] text-[#F2F4F7]" ontouchstart="">
 
@@ -769,11 +769,7 @@
               <div class="flex items-center gap-3">
                 <span class="flex items-center gap-1.5 whitespace-nowrap">
                   <span class="w-2 h-2 rounded-full bg-[#6C5DD3] flex-shrink-0"></span>
-                  <span>Ежемесячные</span>
-                </span>
-                <span class="flex items-center gap-1.5 whitespace-nowrap">
-                  <span class="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0"></span>
-                  <span>Разовые</span>
+                  <span>Ежемесячные платежи</span>
                 </span>
               </div>
               <div class="flex items-center gap-1.5 whitespace-nowrap">
@@ -1317,35 +1313,41 @@
       <button id="dep-open-top-btn" onclick="toggleForm('deposit-form-container', 'dep-submit-btn', 'Сохранить вклад', 'deposit-form', 'dep')" class="w-full bg-[#6C5DD3]/15 text-[#8C7DFF] border border-[#6C5DD3]/30 font-semibold rounded-xl text-sm px-5 py-3 hover:bg-[#6C5DD3]/25 active:scale-[0.98] transition-all cursor-pointer shadow-sm">+ Открыть вклад</button>
       <div id="deposit-form-container" class="hidden bg-[#181B24] p-5 rounded-2xl border border-[rgba(255,255,255,0.08)] shadow-xl animate-fade-in">
         <form id="deposit-form" onsubmit="submitDeposit(event)">
-          <input type="text" id="dep-name" placeholder="Название вклада" required class="w-full bg-gray-700 border border-gray-600 text-white rounded-xl p-3 outline-none mb-3.5 text-xs">
+          <input type="text" id="dep-name" placeholder="Название вклада (например: Вклад 1)" class="w-full bg-gray-700 border border-gray-600 text-white rounded-xl p-3 outline-none mb-3.5 text-xs">
           
-          <!-- Кастомный стильный выпадающий список цели вклада -->
-          <div class="relative mb-3.5 custom-dropdown-wrap" id="wrap-dep-goal">
-            <input type="hidden" id="dep-goal" value="">
-            <button type="button" id="dep-goal-btn" onclick="toggleDepositGoalMenu(event)" class="w-full bg-gray-700 border border-gray-600 text-white rounded-xl px-3.5 py-3 text-xs flex items-center justify-between outline-none cursor-pointer hover:border-gray-500 transition-colors">
-              <span id="dep-goal-label" class="flex items-center gap-2 truncate text-gray-300">
-                <i data-lucide="circle-dashed" class="w-4 h-4 text-[#848D99]"></i>
-                <span class="truncate text-gray-400">Без привязки к цели</span>
-              </span>
-              <span class="text-gray-400 text-[9px] ml-1">▼</span>
-            </button>
-            <div id="dep-goal-menu" class="custom-dropdown-menu hidden absolute left-0 top-full mt-1.5 w-full max-h-56 overflow-y-auto bg-gray-800/95 backdrop-blur-md border border-gray-700 rounded-2xl shadow-2xl z-50 p-1 space-y-0.5"></div>
+          <!-- Кастомный стильный выпадающий список цели вклада с подсказкой -->
+          <div class="mb-3.5">
+            <div class="flex items-center justify-between mb-1 px-0.5">
+              <label class="text-[10px] text-[#848D99] uppercase font-bold tracking-wider">Привязка к финансовой цели</label>
+            </div>
+            <p class="text-[11px] text-gray-400 mb-1.5 leading-tight">Вклад и проценты по нему будут учитываться в прогрессе накопления цели.</p>
+            <div class="relative custom-dropdown-wrap" id="wrap-dep-goal">
+              <input type="hidden" id="dep-goal" value="">
+              <button type="button" id="dep-goal-btn" onclick="toggleDepositGoalMenu(event)" class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] text-white rounded-xl px-3.5 py-3 text-xs flex items-center justify-between outline-none cursor-pointer hover:border-gray-500 transition-colors">
+                <span id="dep-goal-label" class="flex items-center gap-2 truncate text-gray-300">
+                  <i data-lucide="circle-dashed" class="w-4 h-4 text-[#848D99]"></i>
+                  <span class="truncate text-gray-400">Без привязки к цели</span>
+                </span>
+                <span class="text-gray-400 text-[9px] ml-1">▼</span>
+              </button>
+              <div id="dep-goal-menu" class="custom-dropdown-menu hidden absolute left-0 top-full mt-1.5 w-full max-h-56 overflow-y-auto bg-[#181B24] backdrop-blur-md border border-[rgba(255,255,255,0.08)] rounded-2xl shadow-2xl z-50 p-1 space-y-0.5"></div>
+            </div>
           </div>
 
           <div class="flex space-x-3 mb-3.5">
-            <input type="text" inputmode="decimal" oninput="formatSumInput(this)" id="dep-amount" placeholder="Сумма (₽)" required class="w-full bg-gray-700 border border-gray-600 text-white rounded-xl p-3 outline-none flex-1 text-xs">
-            <input type="text" inputmode="decimal" oninput="formatSumInput(this)" id="dep-rate" placeholder="Ставка %" required class="w-1/3 bg-gray-700 border border-gray-600 text-white rounded-xl p-3 outline-none text-xs">
+            <input type="text" inputmode="decimal" oninput="formatSumInput(this)" id="dep-amount" placeholder="Сумма (₽)" required class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] text-white rounded-xl p-3 outline-none flex-1 text-xs">
+            <input type="text" inputmode="decimal" oninput="formatSumInput(this)" id="dep-rate" placeholder="Ставка %" required class="w-1/3 bg-[#12151C] border border-[rgba(255,255,255,0.08)] text-white rounded-xl p-3 outline-none text-xs">
           </div>
 
           <!-- Даты открытия и закрытия с явными подсказками и иконками -->
           <div class="grid grid-cols-2 gap-3 mb-5">
             <div>
               <label class="block text-[10px] text-[#848D99] uppercase font-bold mb-1">Дата открытия</label>
-              <input type="text" id="dep-start" data-datepicker="true" readonly placeholder="Дата открытия" required class="w-full bg-gray-700 border border-gray-600 text-white placeholder-gray-400 rounded-xl p-3 outline-none text-xs cursor-pointer">
+              <input type="text" id="dep-start" data-datepicker="true" readonly placeholder="ДД.ММ.ГГГГ" required class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] text-white placeholder-gray-500 rounded-xl p-3 outline-none text-xs cursor-pointer">
             </div>
             <div>
               <label class="block text-[10px] text-[#848D99] uppercase font-bold mb-1">Дата закрытия</label>
-              <input type="text" id="dep-end" data-datepicker="true" readonly placeholder="Дата закрытия" required class="w-full bg-gray-700 border border-gray-600 text-white placeholder-gray-400 rounded-xl p-3 outline-none text-xs cursor-pointer">
+              <input type="text" id="dep-end" data-datepicker="true" readonly placeholder="ДД.ММ.ГГГГ" required class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] text-white placeholder-gray-500 rounded-xl p-3 outline-none text-xs cursor-pointer">
             </div>
           </div>
 
@@ -1406,17 +1408,30 @@
               <i data-lucide="plus" class="w-4 h-4"></i> Пополнить
             </button>
             
-            <div id="broker-popover-deposit" class="broker-popover hidden absolute left-0 top-full mt-2 w-72 bg-[#181B24] border border-[rgba(255,255,255,0.08)] rounded-2xl shadow-[0_16px_40px_rgba(0,0,0,0.85)] p-4 z-50 animate-fade-in">
-              <h4 class="text-xs font-bold text-white mb-3">Внести пополнение</h4>
-              <label class="block text-[10px] text-[#848D99] uppercase font-bold mb-1">Дата</label>
-              <input type="text" id="popover-dep-date" data-datepicker="true" readonly placeholder="ДД.ММ.ГГГГ" class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] text-white rounded-xl p-2.5 outline-none mb-3 text-xs cursor-pointer">
-              <label class="block text-[10px] text-[#848D99] uppercase font-bold mb-1">Сумма пополнения (₽)</label>
-              <input type="text" inputmode="decimal" oninput="formatSumInput(this)" id="popover-dep-amount" placeholder="0 ₽" class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] text-white rounded-xl p-2.5 outline-none mb-3 text-sm font-bold">
-              <label class="block text-[10px] text-[#848D99] uppercase font-bold mb-1">Баланс после пополнения (₽)</label>
-              <input type="text" inputmode="decimal" oninput="formatSumInput(this)" id="popover-dep-balance" placeholder="0 ₽" class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] text-white rounded-xl p-2.5 outline-none mb-4 text-sm font-bold">
+            <div id="broker-popover-deposit" class="broker-popover hidden absolute left-0 top-full mt-1.5 w-[calc(100vw-32px)] max-w-[290px] sm:w-72 bg-[#181B24] border border-[rgba(255,255,255,0.08)] rounded-2xl shadow-[0_16px_40px_rgba(0,0,0,0.85)] p-3 z-50 animate-fade-in">
+              <div class="flex items-center justify-between mb-2">
+                <h4 class="text-xs font-bold text-white">Внести пополнение</h4>
+                <button type="button" onclick="closeAllBrokerPopovers()" class="text-gray-400 hover:text-white p-1 -mr-1 rounded-lg transition-colors cursor-pointer" title="Закрыть">
+                  <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+              <div class="space-y-2 mb-3">
+                <div>
+                  <label class="block text-[10px] text-[#848D99] uppercase font-bold mb-0.5">Дата</label>
+                  <input type="text" id="popover-dep-date" data-datepicker="true" readonly placeholder="ДД.ММ.ГГГГ" class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] text-white rounded-xl px-2.5 py-1.5 outline-none text-xs cursor-pointer">
+                </div>
+                <div>
+                  <label class="block text-[10px] text-[#848D99] uppercase font-bold mb-0.5">Сумма пополнения (₽)</label>
+                  <input type="text" inputmode="decimal" oninput="formatSumInput(this)" id="popover-dep-amount" placeholder="0 ₽" class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] text-white rounded-xl px-2.5 py-1.5 outline-none text-xs font-bold">
+                </div>
+                <div>
+                  <label class="block text-[10px] text-[#848D99] uppercase font-bold mb-0.5">Баланс после пополнения (₽)</label>
+                  <input type="text" inputmode="decimal" oninput="formatSumInput(this)" id="popover-dep-balance" placeholder="0 ₽" class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] text-white rounded-xl px-2.5 py-1.5 outline-none text-xs font-bold">
+                </div>
+              </div>
               <div class="flex gap-2">
-                <button type="button" onclick="closeAllBrokerPopovers()" class="flex-1 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer">Отмена</button>
-                <button type="button" onclick="submitBrokerPopover('Пополнение')" class="flex-1 bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white py-2 rounded-xl text-xs font-semibold shadow-md transition-all active:scale-95 cursor-pointer">Сохранить</button>
+                <button type="button" onclick="closeAllBrokerPopovers()" class="flex-1 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer">Отмена</button>
+                <button type="button" onclick="submitBrokerPopover('Пополнение')" class="flex-1 bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white py-1.5 rounded-xl text-xs font-semibold shadow-md transition-all active:scale-95 cursor-pointer">Сохранить</button>
               </div>
             </div>
           </div>
@@ -1427,15 +1442,26 @@
               <i data-lucide="scale" class="w-4 h-4 text-gray-400"></i> Баланс
             </button>
 
-            <div id="broker-popover-balance" class="broker-popover hidden absolute right-0 top-full mt-2 w-64 bg-[#181B24] border border-[rgba(255,255,255,0.08)] rounded-2xl shadow-[0_16px_40px_rgba(0,0,0,0.85)] p-4 z-50 animate-fade-in">
-              <h4 class="text-xs font-bold text-white mb-3">Зафиксировать баланс</h4>
-              <label class="block text-[10px] text-[#848D99] uppercase font-bold mb-1">Дата</label>
-              <input type="text" id="popover-bal-date" data-datepicker="true" readonly placeholder="ДД.ММ.ГГГГ" class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] text-white rounded-xl p-2.5 outline-none mb-3 text-xs cursor-pointer">
-              <label class="block text-[10px] text-[#848D99] uppercase font-bold mb-1">Баланс на дату (₽)</label>
-              <input type="text" inputmode="decimal" oninput="formatSumInput(this)" id="popover-bal-input" placeholder="0 ₽" class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] text-white rounded-xl p-2.5 outline-none mb-4 text-sm font-bold">
+            <div id="broker-popover-balance" class="broker-popover hidden absolute right-0 top-full mt-1.5 w-[calc(100vw-32px)] max-w-[270px] sm:w-64 bg-[#181B24] border border-[rgba(255,255,255,0.08)] rounded-2xl shadow-[0_16px_40px_rgba(0,0,0,0.85)] p-3 z-50 animate-fade-in">
+              <div class="flex items-center justify-between mb-2">
+                <h4 class="text-xs font-bold text-white">Зафиксировать баланс</h4>
+                <button type="button" onclick="closeAllBrokerPopovers()" class="text-gray-400 hover:text-white p-1 -mr-1 rounded-lg transition-colors cursor-pointer" title="Закрыть">
+                  <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+              <div class="space-y-2 mb-3">
+                <div>
+                  <label class="block text-[10px] text-[#848D99] uppercase font-bold mb-0.5">Дата</label>
+                  <input type="text" id="popover-bal-date" data-datepicker="true" readonly placeholder="ДД.ММ.ГГГГ" class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] text-white rounded-xl px-2.5 py-1.5 outline-none text-xs cursor-pointer">
+                </div>
+                <div>
+                  <label class="block text-[10px] text-[#848D99] uppercase font-bold mb-0.5">Баланс на дату (₽)</label>
+                  <input type="text" inputmode="decimal" oninput="formatSumInput(this)" id="popover-bal-input" placeholder="0 ₽" class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] text-white rounded-xl px-2.5 py-1.5 outline-none text-xs font-bold">
+                </div>
+              </div>
               <div class="flex gap-2">
-                <button type="button" onclick="closeAllBrokerPopovers()" class="flex-1 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer">Отмена</button>
-                <button type="button" onclick="submitBrokerPopover('Баланс')" class="flex-1 bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white py-2 rounded-xl text-xs font-semibold shadow-md transition-all active:scale-95 cursor-pointer">Сохранить</button>
+                <button type="button" onclick="closeAllBrokerPopovers()" class="flex-1 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer">Отмена</button>
+                <button type="button" onclick="submitBrokerPopover('Баланс')" class="flex-1 bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white py-1.5 rounded-xl text-xs font-semibold shadow-md transition-all active:scale-95 cursor-pointer">Сохранить</button>
               </div>
             </div>
           </div>
@@ -1510,9 +1536,10 @@
     <button type="button" 
             onclick="switchTab('deposits')" 
             id="nav-deposits" 
-            class="nav-tab-btn flex-1 py-0.5 px-1 flex flex-col items-center justify-center gap-0.5 transition-all duration-200 cursor-pointer text-[#848D99] hover:text-gray-300">
-      <div class="nav-icon-wrap w-10 h-6 rounded-lg flex items-center justify-center transition-all duration-200 bg-transparent text-inherit">
+            class="nav-tab-btn flex-1 py-0.5 px-1 flex flex-col items-center justify-center gap-0.5 transition-all duration-200 cursor-pointer text-[#848D99] hover:text-gray-300 relative">
+      <div class="nav-icon-wrap w-10 h-6 rounded-lg flex items-center justify-center transition-all duration-200 bg-transparent text-inherit relative">
         <i data-lucide="piggy-bank" class="w-[19px] h-[19px] stroke-[2px] transition-transform duration-200"></i>
+        <span id="nav-deposits-badge" class="hidden absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-amber-400 ring-2 ring-[#12141C]"></span>
       </div>
       <span class="nav-label text-[10px] font-medium tracking-tight transition-colors duration-200 text-[#848D99]">Вклады</span>
       <div class="nav-indicator w-6 h-[2.5px] rounded-full bg-[#727cff] transition-all duration-200 opacity-0 scale-75 shadow-[0_0_8px_rgba(114,124,255,0.7)]"></div>
@@ -1585,8 +1612,8 @@
     <!-- Блок разовой / крупной траты -->
     <div class="inline-tx-amortize-wrap hidden bg-[#181B24] p-2.5 rounded-xl border border-[rgba(255,255,255,0.06)] space-y-1.5 mt-1.5 transition-all">
       <div class="inline-tx-large-notice hidden items-center justify-between pb-1.5 border-b border-[rgba(255,255,255,0.06)]">
-        <div class="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-violet-500/15 border border-violet-500/30 text-violet-300 text-[10px] font-semibold">
-          <i data-lucide="gem" class="w-2.5 h-2.5 stroke-[2]"></i>
+        <div class="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-500/15 border border-amber-500/30 text-amber-300 text-[10px] font-semibold">
+          <i data-lucide="sparkles" class="w-3 h-3 stroke-[2]"></i>
           <span class="inline-tx-large-badge">Крупная трата</span>
         </div>
         <button type="button" onclick="toggleInlineTxAmortizeHelp(this)" class="text-[9px] text-[#8C7DFF] hover:text-white flex items-center gap-1 font-semibold cursor-pointer select-none transition-colors" title="Зачем делать трату разовой?">
@@ -1605,31 +1632,40 @@
           <button type="button" onclick="toggleInlineTxAmortizeHelp(this)" class="text-gray-400 hover:text-white cursor-pointer">✕</button>
         </div>
         <p class="leading-relaxed">
-          Крупные нерегулярные покупки искажают ваш недельный бюджет. «Разовая трата» исключается из ежедневного лимита и равномерно распределяется в календаре на выбранные месяцы.
+          Крупные нерегулярные покупки искажают ваш недельный бюджет. «Разовая трата» исключается из лимита недели и месяца и покрывается из накоплений выбранной финансовой цели.
         </p>
       </div>
 
       <label class="flex items-center justify-between cursor-pointer select-none py-0.5">
         <div class="flex items-center gap-1.5 min-w-0 pr-2">
-          <i data-lucide="split" class="w-3.5 h-3.5 text-amber-400 flex-shrink-0"></i>
+          <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-400 flex-shrink-0"></i>
           <span class="inline-tx-amortize-title text-[11px] font-semibold text-white truncate">Сделать разовой тратой</span>
         </div>
         <input type="checkbox" class="tx-exclude-budget w-3.5 h-3.5 rounded bg-[#12151C] border-gray-600 text-[#6C5DD3] focus:ring-0 cursor-pointer accent-[#6C5DD3] flex-shrink-0" onchange="toggleInlineTxAmortize(this)">
       </label>
 
       <div class="inline-tx-amortize-details hidden pt-1.5 border-t border-[rgba(255,255,255,0.06)] space-y-1.5">
-        <div class="flex items-center justify-between text-[11px]">
-          <span class="text-[10px] text-gray-300">Распределить на:</span>
-          <div class="flex items-center bg-[#12151C] border border-[rgba(255,255,255,0.08)] rounded-lg p-0.5">
-            <button type="button" onclick="changeInlineTxSpreadMonths(this, -1)" class="w-5 h-5 rounded text-gray-300 hover:text-white hover:bg-[#212430] flex items-center justify-center font-bold cursor-pointer transition-colors">-</button>
-            <span class="inline-tx-spread-label px-1.5 text-[11px] font-bold font-mono text-amber-300 min-w-[42px] text-center">3 мес.</span>
-            <button type="button" onclick="changeInlineTxSpreadMonths(this, 1)" class="w-5 h-5 rounded text-gray-300 hover:text-white hover:bg-[#212430] flex items-center justify-center font-bold cursor-pointer transition-colors">+</button>
+        <div class="space-y-1">
+          <div class="flex items-center justify-between text-[11px]">
+            <span class="text-[10px] text-gray-300 font-medium">Списать из цели:</span>
           </div>
-          <input type="hidden" class="tx-spread-months" value="3">
+          <div class="relative w-full custom-dropdown-wrap">
+            <input type="hidden" class="tx-goal-id" value="">
+            <button type="button" 
+                    onclick="toggleInlineTxGoalMenu(this, event)" 
+                    class="tx-goal-btn h-9 w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] hover:border-gray-500 focus:border-[#6C5DD3] text-white rounded-xl px-2.5 text-xs flex items-center justify-between outline-none cursor-pointer transition-colors">
+              <span class="tx-goal-label flex items-center gap-1.5 truncate text-white min-w-0 text-xs">
+                <i data-lucide="target" class="w-3.5 h-3.5 text-amber-400 flex-shrink-0"></i>
+                <span class="truncate font-medium text-gray-200">Выберите цель</span>
+              </span>
+              <span class="text-gray-400 text-[8px] ml-1 flex-shrink-0">▼</span>
+            </button>
+            <div class="tx-goal-menu custom-dropdown-menu hidden absolute left-0 w-full max-h-52 overflow-y-auto bg-[#181B24]/95 backdrop-blur-md border border-gray-700 rounded-xl shadow-2xl z-50 p-1 space-y-0.5 custom-scrollbar"></div>
+          </div>
         </div>
-        <div class="flex items-center justify-between text-[10px] bg-[#12151C] px-2 py-1 rounded-lg">
-          <span class="text-[#848D99]">Нагрузка в месяц:</span>
-          <span class="inline-tx-spread-calc font-mono font-bold text-amber-300">0 ₽/мес</span>
+        <div class="inline-tx-goal-remaining hidden flex items-center justify-between text-[10px] bg-[#12151C] px-2.5 py-1.5 rounded-lg border border-[rgba(255,255,255,0.04)]">
+          <span class="text-[#848D99]">Останется в цели:</span>
+          <span class="inline-tx-goal-remaining-val font-mono font-bold text-emerald-400">0 ₽</span>
         </div>
       </div>
     </div>
@@ -1749,22 +1785,33 @@
 
   <!-- МОДАЛЬНОЕ ОКНО: СОЗДАНИЕ И РЕДАКТИРОВАНИЕ ЦЕЛИ БЮДЖЕТА -->
   <div id="budget-goal-dialog" class="fixed inset-0 bg-black/80 z-[150] hidden flex flex-col justify-center items-center p-4 backdrop-blur-sm animate-fade-in" onclick="if(event.target === this) closeGoalModal();">
-    <div class="bg-[#181B24] border border-[rgba(255,255,255,0.08)] w-full max-w-sm rounded-3xl p-5 shadow-2xl">
-      <div class="flex items-center justify-between pb-3 mb-3 border-b border-[rgba(255,255,255,0.06)]">
+    <div class="bg-[#181B24] border border-[rgba(255,255,255,0.08)] w-full max-w-sm rounded-3xl p-5 shadow-2xl max-h-[90vh] flex flex-col">
+      <div class="flex items-center justify-between pb-3 mb-3 border-b border-[rgba(255,255,255,0.06)] flex-shrink-0">
         <h3 id="budget-goal-dialog-title" class="font-bold text-white text-base">Цель накопления</h3>
         <button type="button" onclick="closeGoalModal()" class="w-7 h-7 rounded-full bg-[#212430] text-gray-400 hover:text-white flex items-center justify-center cursor-pointer text-sm">✕</button>
       </div>
 
-      <form id="budget-goal-form" onsubmit="submitBudgetGoal(event)" class="space-y-3">
+      <form id="budget-goal-form" onsubmit="submitBudgetGoal(event)" class="space-y-3 flex-1 overflow-y-auto pr-1 custom-scrollbar">
         <input type="hidden" id="goal-edit-id">
         <!-- Блок выбора иконки и названия в одну строку -->
-        <div class="flex items-end gap-2.5">
-          <div class="relative flex-shrink-0">
-            <button type="button" onclick="openBudgetGoalIconPicker()" id="goal-modal-icon-btn" class="w-14 h-14 rounded-2xl bg-[#12151C] hover:bg-[#212430] border border-dashed border-[#727cff]/40 hover:border-[#727cff] flex items-center justify-center transition-all cursor-pointer shadow-inner active:scale-95 group" title="Нажмите, чтобы выбрать иконку цели">
+        <div class="flex items-end gap-2.5 relative">
+          <div class="relative flex-shrink-0" id="goal-modal-icon-container">
+            <button type="button" onclick="toggleBudgetGoalIconPicker(event)" id="goal-modal-icon-btn" class="w-14 h-14 rounded-2xl bg-[#12151C] hover:bg-[#212430] border border-dashed border-[#727cff]/40 hover:border-[#727cff] flex items-center justify-center transition-all cursor-pointer shadow-inner active:scale-95 group" title="Нажмите, чтобы выбрать иконку цели">
               <span id="goal-modal-icon-display" class="text-gray-400 group-hover:text-[#727cff] flex items-center justify-center transition-colors">
                 <i data-lucide="target" class="w-6 h-6"></i>
               </span>
             </button>
+
+            <!-- Всплывающий поп-ап выбора иконки прямо под кнопкой -->
+            <div id="goal-modal-icon-picker" class="hidden absolute top-full left-0 mt-2 z-[60] w-[270px] xs:w-[300px] p-3 bg-[#181B24] rounded-2xl border border-[rgba(255,255,255,0.12)] shadow-2xl backdrop-blur-xl animate-fade-in space-y-2" onclick="event.stopPropagation()">
+              <div class="flex items-center justify-between pb-1.5 border-b border-[rgba(255,255,255,0.06)]">
+                <span class="text-[11px] font-bold text-gray-300">Выберите иконку цели</span>
+                <button type="button" onclick="closeBudgetGoalIconPicker()" class="w-5 h-5 rounded-md hover:bg-[#212430] text-gray-400 hover:text-white flex items-center justify-center text-xs cursor-pointer">✕</button>
+              </div>
+              <div id="goal-modal-icon-grid" class="grid grid-cols-6 gap-1.5 max-h-44 overflow-y-auto pr-1 custom-scrollbar">
+                <!-- Иконки генерируются динамически -->
+              </div>
+            </div>
           </div>
           <div class="flex-1 min-w-0">
             <label class="block text-[10px] text-[#848D99] uppercase font-bold tracking-wider mb-1">На что копим?</label>
@@ -1773,17 +1820,6 @@
         </div>
 
         <input type="hidden" id="goal-icon-input" value="target">
-
-        <!-- Поп-ап выбора векторных иконок Lucide (скрыт по умолчанию) -->
-        <div id="goal-modal-icon-picker" class="hidden p-3 bg-[#12151C] rounded-2xl border border-[rgba(255,255,255,0.08)] space-y-2 animate-fade-in shadow-xl">
-          <div class="flex items-center justify-between pb-1.5 border-b border-[rgba(255,255,255,0.04)]">
-            <span class="text-[11px] font-semibold text-gray-300">Выберите иконку цели:</span>
-            <button type="button" onclick="closeBudgetGoalIconPicker()" class="w-5 h-5 rounded-md hover:bg-[#212430] text-gray-400 hover:text-white flex items-center justify-center text-xs cursor-pointer">✕</button>
-          </div>
-          <div id="goal-modal-icon-grid" class="grid grid-cols-6 gap-1.5 max-h-40 overflow-y-auto pr-2.5 custom-scrollbar">
-            <!-- Иконки генерируются динамически -->
-          </div>
-        </div>
 
         <div class="grid grid-cols-2 gap-2">
           <div>
@@ -1796,21 +1832,28 @@
           </div>
         </div>
 
-        <div>
-          <div class="flex justify-between items-center mb-1">
-            <label class="text-[10px] text-[#848D99] uppercase font-bold">Доля в накоплениях</label>
-            <span id="goal-share-label" class="text-xs font-bold text-[#6C5DD3]">100%</span>
+        <!-- Блок распределения долей накоплений (показывается только при наличии 2+ целей) -->
+        <div id="goal-shares-manager-section" class="hidden space-y-1.5 pt-1 border-t border-[rgba(255,255,255,0.06)]">
+          <div class="flex items-center justify-between">
+            <label class="text-[10px] text-[#848D99] uppercase font-bold tracking-wider">Доли в накоплениях</label>
+            <span id="goal-shares-total-monthly" class="text-[11px] font-mono font-bold text-[#30D158]"></span>
           </div>
-          <input type="range" id="goal-share-input" min="5" max="100" step="5" value="100" oninput="document.getElementById('goal-share-label').innerText = this.value + '%'" class="w-full accent-[#6C5DD3] cursor-pointer">
+          <div id="goal-shares-list" class="space-y-1.5 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
+            <!-- Динамический список всех целей с ползунками -->
+          </div>
         </div>
 
-        <div class="flex gap-2 pt-2">
-          <button type="button" onclick="closeGoalModal()" class="flex-1 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 py-2.5 rounded-xl text-xs font-semibold cursor-pointer">Отмена</button>
-          <button type="submit" class="flex-1 bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white py-2.5 rounded-xl text-xs font-semibold shadow-md active:scale-95 cursor-pointer">Сохранить</button>
+        <div class="flex items-center gap-2 pt-2">
+          <button type="button" 
+                  id="goal-delete-btn" 
+                  onclick="deleteCurrentEditingGoal()" 
+                  class="hidden w-10 h-10 bg-[#FF453A]/15 hover:bg-[#FF453A]/25 text-[#FF453A] border border-[#FF453A]/20 rounded-xl transition-all cursor-pointer flex items-center justify-center active:scale-95 flex-shrink-0" 
+                  title="Удалить цель">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+          </button>
+          <button type="button" onclick="closeGoalModal()" class="flex-1 h-10 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 rounded-xl text-xs font-semibold cursor-pointer transition-colors flex items-center justify-center active:scale-95">Отмена</button>
+          <button type="submit" class="flex-1 h-10 bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white rounded-xl text-xs font-bold shadow-md active:scale-95 cursor-pointer transition-all flex items-center justify-center">Сохранить</button>
         </div>
-        <button type="button" id="goal-delete-btn" onclick="deleteCurrentEditingGoal()" class="hidden w-full text-center text-xs text-[#FF453A] hover:bg-[#FF453A]/10 py-2 rounded-xl transition-colors cursor-pointer mt-1">
-          Удалить цель
-        </button>
       </form>
     </div>
   </div>
@@ -1933,61 +1976,7 @@
         
         <!-- Скрытый инпут дня месяца (задается кликом по ячейке в календаре) -->
         <input type="number" id="bill-day" min="1" max="31" value="1" required class="hidden">
-
-        <div>
-          <label class="block text-[10px] text-[#848D99] uppercase font-bold mb-1.5">Тип платежа</label>
-          <input type="hidden" id="bill-type" value="recurring">
-          <div class="grid grid-cols-2 p-1 bg-[#12151C] border border-[rgba(255,255,255,0.08)] rounded-xl gap-1" id="bill-type-toggle">
-            <button type="button" 
-                    id="bill-type-recurring-btn"
-                    onclick="setBillType('recurring')" 
-                    class="py-2.5 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 bg-[#6C5DD3] text-white shadow-sm cursor-pointer">
-              <i data-lucide="repeat" class="w-3.5 h-3.5"></i>
-              <span>Ежемесячно</span>
-            </button>
-            <button type="button" 
-                    id="bill-type-onetime-btn"
-                    onclick="setBillType('onetime')" 
-                    class="py-2.5 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 text-[#848D99] hover:text-white cursor-pointer">
-              <i data-lucide="zap" class="w-3.5 h-3.5"></i>
-              <span>Разовый</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Блок настройки распределения разового расхода на несколько месяцев -->
-        <div id="bill-spread-section" class="hidden space-y-2.5 bg-[#12151C] p-3 rounded-2xl border border-amber-500/20 animate-fade-in">
-          <div class="flex items-center justify-between">
-            <span class="text-[11px] font-semibold text-white">Разделить в бюджете на:</span>
-            <div class="flex items-center bg-[#181B24] border border-[rgba(255,255,255,0.08)] rounded-xl p-0.5">
-              <button type="button" onclick="changeBillSpreadMonths(-1)" class="w-7 h-7 rounded-lg text-gray-300 hover:text-white hover:bg-[#212430] flex items-center justify-center font-bold cursor-pointer transition-colors active:scale-90">-</button>
-              <span id="bill-spread-months-label" class="px-2.5 text-xs font-bold font-mono text-amber-300 min-w-[58px] text-center">3 мес.</span>
-              <button type="button" onclick="changeBillSpreadMonths(1)" class="w-7 h-7 rounded-lg text-gray-300 hover:text-white hover:bg-[#212430] flex items-center justify-center font-bold cursor-pointer transition-colors active:scale-90">+</button>
-            </div>
-            <input type="hidden" id="bill-spread-months" value="3">
-          </div>
-
-          <!-- Интерактивный расчет нагрузки на месяц и неделю -->
-          <div class="grid grid-cols-2 gap-2 pt-1 border-t border-[rgba(255,255,255,0.04)] text-[11px]">
-            <div class="bg-[#181B24] p-2 rounded-xl">
-              <span class="text-[10px] text-[#848D99] block">В месяц:</span>
-              <span id="bill-spread-monthly-calc" class="font-mono font-bold text-amber-300">0 ₽</span>
-            </div>
-            <div class="bg-[#181B24] p-2 rounded-xl">
-              <span class="text-[10px] text-[#848D99] block">В неделю:</span>
-              <span id="bill-spread-weekly-calc" class="font-mono font-bold text-gray-300">~0 ₽</span>
-            </div>
-          </div>
-          <div id="bill-spread-period-hint" class="text-[10px] text-[#848D99] text-center font-medium">
-            Период: текущий месяц
-          </div>
-
-          <!-- Подсказка о механике распределения в лимитах -->
-          <div class="flex items-start gap-2 bg-[#181B24] p-2.5 rounded-xl border border-[rgba(255,255,255,0.04)] text-[11px] text-[#848D99] leading-relaxed">
-            <i data-lucide="info" class="w-3.5 h-3.5 text-amber-400 flex-shrink-0 mt-0.5"></i>
-            <span>Сумма крупной разовой траты распределится по бюджетам выбранных месяцев равными частями, не перегружая лимит одного месяца.</span>
-          </div>
-        </div>
+        <input type="hidden" id="bill-type" value="recurring">
 
         <div id="bill-dialog-actions" class="flex gap-2 pt-2">
           <button type="button" onclick="closeAddBillModal()" class="flex-1 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 py-3 rounded-xl text-xs font-semibold cursor-pointer">Отмена</button>
@@ -2045,11 +2034,7 @@
         <div class="flex items-center gap-3">
           <span class="flex items-center gap-1.5 whitespace-nowrap">
             <span class="w-2 h-2 rounded-full bg-[#6C5DD3] flex-shrink-0"></span>
-            <span>Ежемесячные</span>
-          </span>
-          <span class="flex items-center gap-1.5 whitespace-nowrap">
-            <span class="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0"></span>
-            <span>Разовые</span>
+            <span>Ежемесячные платежи</span>
           </span>
         </div>
         <div class="flex items-center gap-1.5 whitespace-nowrap">
@@ -2152,8 +2137,12 @@
         </div>
       </div>
 
-      <div class="pt-3 border-t border-[rgba(255,255,255,0.06)] mt-2 flex-shrink-0">
-        <button type="button" onclick="closeCategoryLimitModal()" class="w-full bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition-colors">Готово</button>
+      <div class="pt-3 border-t border-[rgba(255,255,255,0.06)] mt-2 flex-shrink-0 flex items-center gap-2">
+        <button type="button" id="category-limit-delete-btn" onclick="deleteCategoryLimitFromModal()" class="hidden px-3.5 h-10 bg-[#FF453A]/15 hover:bg-[#FF453A]/25 text-[#FF453A] border border-[#FF453A]/20 rounded-xl text-xs font-semibold transition-colors cursor-pointer flex items-center justify-center gap-1.5 active:scale-95 flex-shrink-0" title="Удалить этот лимит и перенести сумму в Прочие расходы">
+          <i data-lucide="trash-2" class="w-4 h-4"></i>
+          <span>Удалить лимит</span>
+        </button>
+        <button type="button" onclick="closeCategoryLimitModal()" class="flex-1 h-10 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 rounded-xl text-xs font-semibold cursor-pointer transition-colors flex items-center justify-center active:scale-95">Готово</button>
       </div>
     </div>
   </div>
@@ -2364,20 +2353,17 @@
         <button type="button" 
                 id="wiz-avg-delete-cat-btn" 
                 onclick="deleteCurrentWizCategory()" 
-                class="hidden py-2 px-3 bg-red-500/10 hover:bg-red-500/20 text-[#FF453A] border border-red-500/20 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1 active:scale-95 flex-shrink-0" 
-                title="Удалить эту категорию из лимитов">
-          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-          <span>Удалить категорию</span>
+                class="hidden w-10 h-10 bg-[#FF453A]/15 hover:bg-[#FF453A]/25 text-[#FF453A] border border-[#FF453A]/20 rounded-xl transition-all cursor-pointer flex items-center justify-center active:scale-95 flex-shrink-0" 
+                title="Удалить категорию из лимитов">
+          <i data-lucide="trash-2" class="w-4 h-4"></i>
         </button>
 
-        <div class="flex items-center gap-2 flex-1">
-          <button type="button" onclick="closeWizAvgDetailsModal()" class="flex-1 h-10 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 rounded-xl text-xs font-semibold cursor-pointer transition-colors flex items-center justify-center active:scale-95">
-            Отмена
-          </button>
-          <button type="button" onclick="applyWizAvgDetailsResult()" id="wiz-avg-apply-btn" class="flex-1 h-10 bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white rounded-xl text-xs font-bold shadow-lg shadow-[#6C5DD3]/20 active:scale-95 cursor-pointer transition-all flex items-center justify-center">
-            <span>Применить среднее</span>
-          </button>
-        </div>
+        <button type="button" onclick="closeWizAvgDetailsModal()" class="flex-1 h-10 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 rounded-xl text-xs font-semibold cursor-pointer transition-colors flex items-center justify-center active:scale-95">
+          Отмена
+        </button>
+        <button type="button" onclick="applyWizAvgDetailsResult()" id="wiz-avg-apply-btn" class="flex-1 h-10 bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white rounded-xl text-xs font-bold shadow-lg shadow-[#6C5DD3]/20 active:scale-95 cursor-pointer transition-all flex items-center justify-center px-2">
+          <span>Применить среднее</span>
+        </button>
       </div>
 
     </div>
@@ -2809,6 +2795,29 @@
         <div class="bg-[#181B24] sm:bg-[#12151C] border border-[rgba(255,255,255,0.06)] rounded-2xl overflow-hidden divide-y divide-[rgba(255,255,255,0.03)]">
           <div class="py-2.5 px-3.5 bg-white/[0.01]">
             <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">Настройки приложения</span>
+          </div>
+
+          <!-- Уведомления о счетах и вкладах (только для APK приложения) -->
+          <div id="profile-notifications-setting-item" class="hidden p-3 sm:p-3.5 hover:bg-white/[0.01] transition-colors space-y-2.5">
+            <label class="flex items-center justify-between cursor-pointer">
+              <div class="flex items-center gap-3">
+                <div class="p-2 rounded-xl bg-violet-500/15 text-violet-400"><i data-lucide="bell" class="w-4 h-4 sm:w-5 sm:h-5"></i></div>
+                <div class="text-left">
+                  <span class="text-[14px] sm:text-[15px] font-medium text-gray-200 block">Уведомления о счетах и вкладах</span>
+                  <span class="text-[11px] text-[#848D99] leading-tight block mt-0.5">Напоминания в день оплаты счетов и закрытия вкладов</span>
+                </div>
+              </div>
+              <div class="relative inline-flex items-center flex-shrink-0">
+                <input type="checkbox" id="toggle-notifications-setting" onchange="toggleNotificationsSetting(this.checked)" class="sr-only peer">
+                <div class="w-11 h-6 bg-[#2A2D3C] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-[#30D158] after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+              </div>
+            </label>
+            <div id="notifications-time-row" class="hidden flex items-center justify-between pt-2 border-t border-[rgba(255,255,255,0.04)] text-xs text-gray-300">
+              <span class="text-[12px] text-[#848D99] flex items-center gap-1.5">
+                <i data-lucide="clock" class="w-3.5 h-3.5 text-gray-400"></i> Время напоминаний:
+              </span>
+              <input type="time" id="notifications-time-input" value="10:00" onchange="changeNotificationTimeSetting(this.value)" class="bg-[#12151C] border border-[rgba(255,255,255,0.08)] hover:border-gray-500 focus:border-[#6C5DD3] text-white rounded-xl px-2.5 py-1 text-xs outline-none cursor-pointer transition-colors font-mono">
+            </div>
           </div>
 
           <!-- Брокерский счет -->
@@ -3579,7 +3588,7 @@
       <i data-lucide="pencil" class="w-4 h-4 text-[#848D99]"></i> Редактировать
     </button>
     <button type="button" id="context-btn-amortize" class="context-menu-btn w-full hidden items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-[#212430] text-[13px] font-medium text-amber-300 transition-colors cursor-pointer text-left">
-      <i id="context-amortize-icon" data-lucide="split" class="w-4 h-4 text-amber-400"></i>
+      <i id="context-amortize-icon" data-lucide="sparkles" class="w-4 h-4 text-amber-400"></i>
       <span id="context-amortize-text">Сделать разовой</span>
     </button>
     <button type="button" id="context-btn-delete" class="context-menu-btn w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-[#FF453A]/10 text-[13px] font-medium text-[#FF453A] transition-colors cursor-pointer text-left">
@@ -3647,9 +3656,9 @@
 
   <!-- МОДАЛЬНОЕ ОКНО РЕДАКТИРОВАНИЯ ОПЕРАЦИИ (ТРАНЗАКЦИИ) -->
   <div id="tx-edit-modal" onclick="if(event.target === this) closeEditTxModal()" class="fixed inset-0 bg-black/80 z-[150] hidden flex flex-col justify-center items-center p-4 backdrop-blur-sm animate-fade-in">
-    <div class="bg-[#181B24] border border-[rgba(255,255,255,0.08)] w-full max-w-sm rounded-3xl p-5 shadow-2xl">
+    <div class="bg-[#181B24] border border-[rgba(255,255,255,0.08)] w-full max-w-sm rounded-3xl p-5 shadow-2xl max-h-[92dvh] flex flex-col">
       <!-- Шапка модального окна -->
-      <div class="flex items-center justify-between mb-3.5 pb-2.5 border-b border-[rgba(255,255,255,0.06)]">
+      <div class="flex items-center justify-between mb-3.5 pb-2.5 border-b border-[rgba(255,255,255,0.06)] flex-shrink-0">
         <div>
           <h3 id="tx-edit-modal-title" class="font-bold text-white text-base">Редактирование операции</h3>
           <p id="tx-edit-modal-subtitle" class="text-xs text-[#848D99] mt-0.5 hidden"></p>
@@ -3659,7 +3668,7 @@
         </button>
       </div>
 
-      <form id="edit-tx-form" onsubmit="submitEditTxModal(event)">
+      <form id="edit-tx-form" onsubmit="submitEditTxModal(event)" class="overflow-y-auto overscroll-contain pr-1 -mr-1 custom-scrollbar flex-1 flex flex-col min-h-0">
         <input type="hidden" id="edit-tx-id" value="">
         <input type="hidden" id="edit-tx-type" value="Расход">
         <input type="hidden" id="edit-tx-bill-id" value="">
@@ -3667,18 +3676,18 @@
         <input type="hidden" id="edit-tx-is-bill-payment" value="false">
 
         <!-- Переключатель типа: Расход / Доход -->
-        <div class="flex bg-[#12151C] p-1 rounded-xl mb-3 border border-[rgba(255,255,255,0.06)]">
+        <div class="flex bg-[#12151C] p-1 rounded-xl mb-3 border border-[rgba(255,255,255,0.06)] flex-shrink-0">
           <button type="button" id="edit-tx-type-expense" onclick="setEditTxType('Расход')" class="flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all text-white bg-[#FF453A]/20 border border-[#FF453A]/30 cursor-pointer shadow-sm">Расход</button>
           <button type="button" id="edit-tx-type-income" onclick="setEditTxType('Доход')" class="flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all text-gray-400 hover:text-white border border-transparent cursor-pointer">Доход</button>
         </div>
 
         <!-- Поле ввода суммы без лишней надписи -->
-        <div class="mb-3">
+        <div class="mb-3 flex-shrink-0">
           <input type="text" inputmode="decimal" oninput="formatSumInput(this); handleEditTxAmountChange();" id="edit-tx-amount" placeholder="0 ₽" required class="w-full h-12 bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white text-xl font-bold rounded-xl px-3.5 outline-none tracking-wide transition-colors placeholder-gray-500">
         </div>
 
         <!-- Компактная строка в 2 колонки: Дата + Категория -->
-        <div class="grid grid-cols-[140px_1fr] gap-2 mb-3">
+        <div class="grid grid-cols-[140px_1fr] gap-2 mb-3 flex-shrink-0">
           <!-- Дата операции: кнопка-плашка 1-в-1 по стилю с категорией -->
           <div class="relative min-w-0">
             <button type="button" id="edit-tx-date-btn" onclick="openCustomDatePicker(document.getElementById('edit-tx-date'))" class="w-full h-10 bg-[#12151C] border border-[rgba(255,255,255,0.08)] hover:border-gray-500 text-white rounded-xl px-2.5 text-xs flex items-center gap-2 outline-none cursor-pointer transition-colors select-none">
@@ -3703,7 +3712,7 @@
         </div>
 
         <!-- Магазин или назначение платежа + булавка сохранения в словарь -->
-        <div class="mb-3">
+        <div class="mb-3 flex-shrink-0">
           <div class="flex items-center gap-2">
             <input type="text" id="edit-tx-comment" oninput="handleEditTxCommentInput(this)" placeholder="Магазин или назначение платежа" class="flex-1 min-w-0 h-10 bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white placeholder-gray-500 rounded-xl px-3 outline-none text-xs transition-colors">
             <button type="button" 
@@ -3715,8 +3724,8 @@
           </div>
         </div>
 
-        <!-- Опция: сделать разовой тратой (динамически подсказывается при крупной трате) -->
-        <div id="wrap-edit-tx-amortize" class="mb-3.5 bg-[#12151C] p-3 rounded-2xl border border-[rgba(255,255,255,0.06)] space-y-2.5 transition-all duration-200">
+        <!-- Опция: сделать разовой тратой (покрыть из накоплений цели) -->
+        <div id="wrap-edit-tx-amortize" class="mb-3.5 bg-[#12151C] p-3 rounded-2xl border border-[rgba(255,255,255,0.06)] space-y-2.5 transition-all duration-200 flex-shrink-0">
           <!-- Индикатор крупной траты -->
           <div id="edit-tx-large-notice" class="hidden items-center justify-between pb-2 border-b border-[rgba(255,255,255,0.06)]">
             <div class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-violet-500/15 border border-violet-500/30 text-violet-300 text-[10px] font-semibold">
@@ -3733,49 +3742,54 @@
           <div id="edit-tx-amortize-help" class="hidden p-2.5 rounded-xl bg-[#181B24] border border-[#6C5DD3]/25 text-[11px] text-[#A0AEC0] space-y-1.5 animate-fade-in select-none">
             <div class="flex items-center justify-between font-bold text-gray-200 text-xs">
               <span class="flex items-center gap-1.5 text-[#a594fd]">
-                <i data-lucide="info" class="w-3.5 h-3.5"></i>
+                <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-400"></i>
                 <span>Что такое «Разовая трата»?</span>
               </span>
               <button type="button" onclick="toggleTxAmortizeHelp()" class="text-gray-400 hover:text-white text-xs cursor-pointer">✕</button>
             </div>
-            <p class="leading-relaxed">
-              Крупные нерегулярные покупки (техника, отпуск, ремонт, страховка) могут мгновенно увести ваш <b>недельный бюджет</b> в глубокий минус.
-            </p>
             <p class="leading-relaxed text-gray-300">
-              Если сделать покупку <b>«Разовой»</b>, она исключится из ежедневного лимита и равномерно распределится в календаре платежей на выбранное количество месяцев. Недельный лимит останется чистым и реалистичным.
+              Разовая покупка списывается напрямую из накоплений выбранной цели и не уменьшает ваш недельный лимит трат на жизнь.
             </p>
           </div>
 
           <label class="flex items-center justify-between cursor-pointer select-none">
             <div class="min-w-0 pr-2">
               <div class="flex items-center gap-2 mb-0.5">
-                <i data-lucide="split" class="w-4 h-4 text-amber-400 flex-shrink-0"></i>
-                <span id="edit-tx-amortize-title" class="text-xs font-semibold text-white">Сделать разовой тратой</span>
+                <i data-lucide="sparkles" class="w-4 h-4 text-amber-400 flex-shrink-0"></i>
+                <span id="edit-tx-amortize-title" class="text-xs font-semibold text-white">Сделать разовой</span>
               </div>
-              <p id="edit-tx-amortize-desc" class="text-[11px] text-[#848D99] leading-tight pl-6">Распределит нагрузку на несколько месяцев</p>
+              <p id="edit-tx-amortize-desc" class="text-[11px] text-[#848D99] leading-tight pl-6">Исключает трату из лимитов недели и месяца</p>
             </div>
             <input type="checkbox" id="edit-tx-exclude-budget" onchange="toggleTxAmortizeSection(this.checked)" class="w-4 h-4 rounded bg-[#181B24] border-gray-600 text-[#6C5DD3] focus:ring-0 cursor-pointer accent-[#6C5DD3] flex-shrink-0">
           </label>
 
-          <div id="edit-tx-amortize-details" class="hidden space-y-2 pt-2.5 border-t border-[rgba(255,255,255,0.06)]">
-            <div class="flex items-center justify-between">
-              <span class="text-[11px] text-gray-300">Период распределения:</span>
-              <div class="flex items-center bg-[#181B24] border border-[rgba(255,255,255,0.08)] rounded-xl p-0.5">
-                <button type="button" onclick="changeTxSpreadMonths(-1)" class="w-6 h-6 rounded-lg text-gray-300 hover:text-white hover:bg-[#212430] flex items-center justify-center font-bold cursor-pointer transition-colors">-</button>
-                <span id="edit-tx-spread-months-label" class="px-2 text-xs font-bold font-mono text-amber-300 min-w-[48px] text-center">3 мес.</span>
-                <button type="button" onclick="changeTxSpreadMonths(1)" class="w-6 h-6 rounded-lg text-gray-300 hover:text-white hover:bg-[#212430] flex items-center justify-center font-bold cursor-pointer transition-colors">+</button>
+          <div id="edit-tx-amortize-details" class="hidden space-y-2.5 pt-2.5 border-t border-[rgba(255,255,255,0.06)]">
+            <div>
+              <label class="block text-[10px] text-[#848D99] uppercase font-bold mb-1">Списать из накоплений цели:</label>
+              <div class="relative custom-dropdown-wrap" id="wrap-edit-tx-goal">
+                <input type="hidden" id="edit-tx-goal-id" value="">
+                <button type="button" id="edit-tx-goal-btn" onclick="toggleEditTxGoalMenu(event)" class="w-full h-10 bg-[#181B24] border border-[rgba(255,255,255,0.08)] hover:border-gray-500 text-white rounded-xl px-3 text-xs flex items-center justify-between outline-none cursor-pointer transition-colors">
+                  <span id="edit-tx-goal-label" class="flex items-center gap-2 truncate text-white min-w-0">
+                    <i data-lucide="target" class="w-4 h-4 text-amber-400 flex-shrink-0"></i>
+                    <span class="truncate text-gray-200">Выберите цель...</span>
+                  </span>
+                  <span class="text-gray-400 text-[8px] ml-1 flex-shrink-0">▼</span>
+                </button>
+                <div id="edit-tx-goal-menu" class="custom-dropdown-menu hidden absolute left-0 top-full mt-1.5 w-full max-h-56 overflow-y-auto bg-[#181B24]/95 backdrop-blur-md border border-gray-700 rounded-2xl shadow-2xl z-[160] p-1 space-y-0.5"></div>
               </div>
-              <input type="hidden" id="edit-tx-spread-months" value="3">
             </div>
-            <div class="flex items-center justify-between text-[11px] bg-[#181B24] px-2.5 py-1.5 rounded-xl">
-              <span class="text-[10px] text-[#848D99]">Нагрузка на календарь:</span>
-              <span id="edit-tx-spread-calc" class="font-mono font-bold text-amber-300">0 ₽/мес</span>
+
+            <!-- Интерактивный предпросмотр остатка цели -->
+            <div id="edit-tx-goal-preview" class="hidden flex items-center justify-between text-[11px] bg-[#181B24] px-2.5 py-1.5 rounded-xl border border-[rgba(255,255,255,0.04)]">
+              <span class="text-[10px] text-[#848D99]">Списание из накоплений:</span>
+              <span id="edit-tx-goal-calc" class="font-mono font-bold text-amber-300">-0 ₽</span>
             </div>
+            <div id="edit-tx-goal-balance-info" class="hidden text-[10px] text-[#848D99] px-1 font-mono"></div>
           </div>
         </div>
 
         <!-- Кнопки действий: Удалить | Отмена | Сохранить -->
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 pt-1 flex-shrink-0">
           <button type="button" id="edit-tx-delete-btn" onclick="deleteTxFromModal()" class="px-3.5 h-10 bg-[#FF453A]/15 hover:bg-[#FF453A]/25 text-[#FF453A] border border-[#FF453A]/20 rounded-xl text-xs font-semibold transition-colors cursor-pointer flex items-center justify-center gap-1.5 active:scale-95" title="Удалить операцию">
             <i data-lucide="trash-2" class="w-4 h-4"></i>
             <span>Удалить</span>
@@ -3787,13 +3801,13 @@
     </div>
   </div>
 
-  <!-- БЫСТРАЯ МОДАЛКА РАСПРЕДЕЛЕНИЯ РАЗОВОЙ ТРАТЫ В КАЛЕНДАРЕ -->
+  <!-- БЫСТРАЯ МОДАЛКА РАСПРЕДЕЛЕНИЯ РАЗОВОЙ ТРАТЫ В ЦЕЛЬ -->
   <div id="quick-amortize-modal" onclick="if(event.target === this) closeQuickAmortizeModal()" class="fixed inset-0 bg-black/80 z-[150] hidden flex flex-col justify-center items-center p-4 animate-fade-in">
     <div class="bg-[#181B24] border border-[rgba(255,255,255,0.08)] w-full max-w-sm rounded-3xl p-5 shadow-2xl">
       <div class="flex items-center justify-between mb-3.5 pb-2.5 border-b border-[rgba(255,255,255,0.06)]">
         <div>
           <h3 class="font-bold text-white text-base">Сделать разовой тратой</h3>
-          <p class="text-xs text-[#848D99] mt-0.5">Распределение крупного расхода</p>
+          <p class="text-xs text-[#848D99] mt-0.5">Покрытие расхода из накоплений цели</p>
         </div>
         <button type="button" onclick="closeQuickAmortizeModal()" class="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-[#212430] cursor-pointer">
           <i data-lucide="x" class="w-4 h-4"></i>
@@ -3803,7 +3817,7 @@
       <input type="hidden" id="quick-amortize-tx-id" value="">
       <input type="hidden" id="quick-amortize-amount" value="0">
 
-      <div class="space-y-3.5 mb-4">
+      <div class="space-y-3 mb-4">
         <div class="bg-[#12151C] p-3 rounded-2xl border border-[rgba(255,255,255,0.06)] flex items-center justify-between">
           <div class="min-w-0 pr-2">
             <span class="text-[10px] text-[#848D99] uppercase font-bold block">Сумма операции</span>
@@ -3813,31 +3827,38 @@
         </div>
 
         <div class="bg-[#12151C] p-3 rounded-2xl border border-[rgba(255,255,255,0.06)] space-y-2.5">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-semibold text-gray-200">Срок распределения:</span>
-            <div class="flex items-center bg-[#181B24] border border-[rgba(255,255,255,0.08)] rounded-xl p-0.5">
-              <button type="button" onclick="changeQuickSpreadMonths(-1)" class="w-7 h-7 rounded-lg text-gray-300 hover:text-white hover:bg-[#212430] flex items-center justify-center font-bold cursor-pointer transition-colors">-</button>
-              <span id="quick-amortize-months-label" class="px-2 text-xs font-bold font-mono text-amber-300 min-w-[55px] text-center">3 мес.</span>
-              <button type="button" onclick="changeQuickSpreadMonths(1)" class="w-7 h-7 rounded-lg text-gray-300 hover:text-white hover:bg-[#212430] flex items-center justify-center font-bold cursor-pointer transition-colors">+</button>
-            </div>
-            <input type="hidden" id="quick-amortize-spread-months" value="3">
+          <span class="text-xs font-semibold text-gray-200 block">Списать из накоплений цели:</span>
+          
+          <div class="relative custom-dropdown-wrap" id="wrap-quick-goal">
+            <input type="hidden" id="quick-amortize-goal-id" value="">
+            <button type="button" id="quick-amortize-goal-btn" onclick="toggleQuickGoalMenu(event)" class="w-full h-10 bg-[#181B24] border border-[rgba(255,255,255,0.08)] hover:border-gray-500 text-white rounded-xl px-3 text-xs flex items-center justify-between outline-none cursor-pointer transition-colors">
+              <span id="quick-amortize-goal-label" class="flex items-center gap-2 truncate text-white min-w-0">
+                <i data-lucide="target" class="w-4 h-4 text-amber-400 flex-shrink-0"></i>
+                <span class="truncate text-gray-200">Выберите цель...</span>
+              </span>
+              <span class="text-gray-400 text-[8px] ml-1 flex-shrink-0">▼</span>
+            </button>
+            <div id="quick-amortize-goal-menu" class="custom-dropdown-menu hidden absolute left-0 top-full mt-1.5 w-full max-h-56 overflow-y-auto bg-[#181B24]/95 backdrop-blur-md border border-gray-700 rounded-2xl shadow-2xl z-[160] p-1 space-y-0.5"></div>
           </div>
 
-          <div class="flex items-center justify-between text-xs bg-[#181B24] p-2.5 rounded-xl border border-[rgba(255,255,255,0.04)]">
-            <span class="text-[11px] text-[#848D99]">Нагрузка на месяц:</span>
-            <span id="quick-amortize-monthly-calc" class="font-mono font-bold text-amber-300 text-[13px]">0 ₽/мес</span>
+          <div id="quick-amortize-goal-calc" class="hidden flex items-center justify-between text-xs bg-[#181B24] p-2.5 rounded-xl border border-[rgba(255,255,255,0.04)]">
+            <span class="text-[11px] text-[#848D99]">Останется в цели:</span>
+            <span id="quick-amortize-goal-remaining" class="font-mono font-bold text-emerald-400">0 ₽</span>
           </div>
 
           <div class="flex items-start gap-2 bg-[#181B24] p-2.5 rounded-xl border border-[rgba(255,255,255,0.04)] text-[11px] text-[#848D99] leading-relaxed">
-            <i data-lucide="split" class="w-3.5 h-3.5 text-amber-400 flex-shrink-0 mt-0.5"></i>
-            <span>Полная сумма остается в истории операции, а нагрузка на лимиты распределится равными долями по месяцам.</span>
+            <i data-lucide="info" class="w-3.5 h-3.5 text-amber-400 flex-shrink-0 mt-0.5"></i>
+            <span>Трата не уменьшит недельный лимит на жизнь и спишется напрямую из накоплений выбранной цели.</span>
           </div>
         </div>
       </div>
 
       <div class="flex items-center gap-2">
         <button type="button" onclick="closeQuickAmortizeModal()" class="flex-1 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 py-2.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer">Отмена</button>
-        <button type="button" onclick="submitQuickAmortize()" class="flex-1 bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white py-2.5 rounded-xl text-xs font-semibold shadow-md transition-all active:scale-95 cursor-pointer">Распределить</button>
+        <button type="button" id="quick-amortize-submit-btn" onclick="submitQuickAmortize()" class="flex-1 bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white py-2.5 rounded-xl text-xs font-semibold shadow-md transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-1.5">
+          <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-300"></i>
+          <span>Сделать разовой</span>
+        </button>
       </div>
     </div>
   </div>
@@ -3852,8 +3873,8 @@
             <i data-lucide="gem" class="w-5 h-5 stroke-[2]"></i>
           </div>
           <div class="min-w-0">
-            <h3 class="font-bold text-white text-base leading-snug">Крупные траты в выписке</h3>
-            <p id="statement-large-subtitle" class="text-xs text-[#848D99] mt-0.5">Найдено операций: 0</p>
+            <h3 class="font-bold text-white text-base leading-snug">Сделать траты разовыми</h3>
+            <p id="statement-large-subtitle" class="text-xs text-[#848D99] mt-0.5">Исключение из бюджета или списание из целей</p>
           </div>
         </div>
         <button type="button" onclick="closeStatementLargeExpensesModal()" class="text-gray-400 hover:text-white p-1.5 rounded-xl hover:bg-[#212430] cursor-pointer transition-colors active:scale-90">
@@ -3864,17 +3885,17 @@
       <!-- Скроллируемый контент (пояснение скроллится вместе со списком операций) -->
       <div class="overflow-y-auto space-y-3 flex-1 pr-1 custom-scrollbar min-h-0 mb-3.5">
         <!-- Дружелюбное пояснение -->
-        <div class="bg-gradient-to-br from-violet-950/40 via-[#181B24] to-[#12151C] border border-violet-500/20 rounded-2xl p-3 text-xs text-gray-300 leading-relaxed space-y-1.5">
+        <div class="bg-gradient-to-br from-violet-950/30 via-[#181B24] to-[#12151C] border border-violet-500/20 rounded-2xl p-3 text-xs text-gray-300 leading-relaxed space-y-1">
           <div class="flex items-center gap-1.5 font-semibold text-violet-300 text-xs">
-            <i data-lucide="sparkles" class="w-3.5 h-3.5 flex-shrink-0"></i>
-            <span>Сделайте их разовыми расходами</span>
+            <i data-lucide="info" class="w-3.5 h-3.5 flex-shrink-0 text-violet-400"></i>
+            <span>Исключение крупных покупок</span>
           </div>
           <p class="text-[11px] text-[#A1AAB7] leading-normal">
-            Крупные траты не будут списываться из текущего недельного лимита. Их сумма распределится равными долями в календаре платежей на выбранное количество месяцев, защитив бюджет от резкого перерасхода.
+            Разовые траты не будут уменьшать недельный лимит бюджета на жизнь и спишутся из выбранных накоплений.
           </p>
         </div>
 
-        <!-- Список крупных трат с настройкой месяцев -->
+        <!-- Список крупных трат с выбором цели -->
         <div id="statement-large-list" class="space-y-2.5">
           <!-- Генерируется динамически -->
         </div>
@@ -3883,13 +3904,12 @@
       <!-- Подвал: Сводка и кнопки действий -->
       <div class="pt-3 border-t border-[rgba(255,255,255,0.06)] flex-shrink-0 space-y-2.5">
         <div class="flex items-center justify-between text-xs text-[#848D99]">
-          <span id="statement-large-summary">Выбрано к распределению: 0</span>
+          <span id="statement-large-summary">Выбрано: 0</span>
         </div>
         <div class="flex items-center gap-2">
           <button type="button" onclick="closeStatementLargeExpensesModal()" class="flex-1 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 py-2.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer active:scale-95">Оставить в бюджете</button>
-          <button type="button" id="stmt-large-submit-btn" onclick="submitStatementLargeExpenses()" class="flex-1 bg-[#6C5DD3] hover:bg-[#5E4FC9] text-white py-2.5 rounded-xl text-xs font-semibold shadow-md shadow-[#6C5DD3]/25 transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-1.5">
-            <i data-lucide="split" class="w-4 h-4"></i>
-            <span>Распределить</span>
+          <button type="button" id="stmt-large-submit-btn" onclick="submitStatementLargeExpenses()" class="flex-1 bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white py-2.5 rounded-xl text-xs font-semibold shadow-md shadow-[#6C5DD3]/25 transition-all active:scale-95 cursor-pointer flex items-center justify-center">
+            <span>Сделать разовыми</span>
           </button>
         </div>
       </div>
@@ -3966,6 +3986,91 @@
           <button type="submit" id="edit-dep-save-btn" class="flex-1 bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white py-2.5 rounded-xl text-xs font-semibold shadow-md transition-all active:scale-95 cursor-pointer">Сохранить</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- МОДАЛЬНОЕ ОКНО ЗАКРЫТИЯ ВКЛАДА (С ВЫБОРОМ ЗАЧИСЛЕНИЯ ПРОЦЕНТОВ) -->
+  <div id="deposit-close-dialog" onclick="if(event.target === this) closeDepositCloseModal()" class="fixed inset-0 bg-black/80 z-[150] hidden flex flex-col justify-center items-center p-4 animate-fade-in backdrop-blur-sm">
+    <div class="bg-[#181B24] border border-[rgba(255,255,255,0.08)] w-full max-w-sm rounded-3xl p-5 shadow-2xl relative">
+      <div class="flex items-center justify-between mb-3.5 pb-2.5 border-b border-[rgba(255,255,255,0.06)]">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center flex-shrink-0 border border-amber-500/25">
+            <i data-lucide="piggy-bank" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-white text-base leading-tight">Закрытие вклада</h3>
+            <p id="dep-close-name" class="text-xs text-[#848D99] mt-0.5 truncate max-w-[200px]">Вклад</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeDepositCloseModal()" class="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-[#212430] cursor-pointer">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <input type="hidden" id="dep-close-id" value="">
+
+      <!-- Сводка по суммам вклада -->
+      <div class="p-3.5 rounded-2xl bg-[#12151C] border border-[rgba(255,255,255,0.06)] space-y-2 mb-3.5">
+        <div class="flex justify-between items-center text-xs">
+          <span class="text-[#848D99]">Сумма вклада:</span>
+          <span id="dep-close-amount" class="font-mono font-bold text-white">0 ₽</span>
+        </div>
+        <div class="flex justify-between items-center text-xs">
+          <span class="text-[#848D99]">Начисленные проценты:</span>
+          <span id="dep-close-interest" class="font-mono font-bold text-[#30D158]">+0 ₽</span>
+        </div>
+        <div class="pt-2 border-t border-[rgba(255,255,255,0.06)] flex justify-between items-center text-xs">
+          <span class="text-gray-200 font-semibold">Итого к получению:</span>
+          <span id="dep-close-total" class="font-mono font-extrabold text-white text-sm">0 ₽</span>
+        </div>
+      </div>
+
+      <!-- Переключатель зачисления процентов в цель -->
+      <div class="p-3.5 rounded-2xl bg-[#12151C] border border-[rgba(255,255,255,0.06)] space-y-3 mb-4">
+        <label class="flex items-center justify-between cursor-pointer select-none">
+          <div class="min-w-0 pr-2">
+            <span class="text-xs font-semibold text-white block">Начислить проценты в цель</span>
+            <span class="text-[10px] text-[#848D99] block mt-0.5 leading-tight">Пополнить накопления выбранной цели</span>
+          </div>
+          <input type="checkbox" id="dep-close-credit-toggle" onchange="toggleDepCloseGoalSection(this.checked)" class="w-4 h-4 rounded bg-[#181B24] border-gray-600 text-[#6C5DD3] focus:ring-0 cursor-pointer accent-[#6C5DD3] flex-shrink-0" checked>
+        </label>
+
+        <!-- Блок выбора цели -->
+        <div id="dep-close-goal-wrap" class="space-y-1.5 pt-2 border-t border-[rgba(255,255,255,0.06)]">
+          <div class="flex items-center justify-between text-[10px]">
+            <span class="text-gray-300 font-medium">Финансовая цель для зачисления:</span>
+          </div>
+          <div class="relative w-full custom-dropdown-wrap">
+            <input type="hidden" id="dep-close-goal-id" value="">
+            <button type="button" 
+                    onclick="toggleDepCloseGoalMenu(event)" 
+                    id="dep-close-goal-btn" 
+                    class="h-9 w-full bg-[#181B24] border border-[rgba(255,255,255,0.08)] hover:border-gray-500 focus:border-[#6C5DD3] text-white rounded-xl px-2.5 text-xs flex items-center justify-between outline-none cursor-pointer transition-colors">
+              <span id="dep-close-goal-label" class="flex items-center gap-1.5 truncate text-white min-w-0 text-xs">
+                <i data-lucide="target" class="w-3.5 h-3.5 text-amber-400 flex-shrink-0"></i>
+                <span class="truncate font-medium text-gray-200">Выберите цель</span>
+              </span>
+              <span class="text-gray-400 text-[8px] ml-1 flex-shrink-0">▼</span>
+            </button>
+            <div id="dep-close-goal-menu" class="custom-dropdown-menu hidden absolute left-0 top-full mt-1 w-full max-h-48 overflow-y-auto bg-[#181B24]/95 backdrop-blur-md border border-gray-700 rounded-xl shadow-2xl z-[160] p-1 space-y-0.5 custom-scrollbar"></div>
+          </div>
+        </div>
+
+        <div class="flex items-start gap-1.5 pt-1 text-[10px] text-[#848D99] leading-relaxed">
+          <i data-lucide="info" class="w-3.5 h-3.5 text-amber-400 flex-shrink-0 mt-0.5"></i>
+          <span>Если банк уже выплатил проценты на карту отдельным доходом (или они реинвестированы), снимите галочку, чтобы сумма не удвоилась в бюджете.</span>
+        </div>
+      </div>
+
+      <!-- Кнопки действий -->
+      <div class="flex items-center gap-2">
+        <button type="button" onclick="closeDepositCloseModal()" class="flex-1 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 py-2.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer">
+          Отмена
+        </button>
+        <button type="button" id="dep-close-submit-btn" onclick="submitCloseDepositModal()" class="flex-1 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white py-2.5 rounded-xl text-xs font-bold shadow-md shadow-emerald-600/20 transition-all active:scale-95 cursor-pointer">
+          Закрыть вклад
+        </button>
+      </div>
     </div>
   </div>
 

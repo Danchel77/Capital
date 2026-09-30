@@ -512,6 +512,13 @@ function addTxRow() {
   row.classList.add('tx-enter-animated');
   document.getElementById('tx-items-list').appendChild(row);
 
+  const activeGoals = (Cache?.goals || []).filter(g => g.status !== 'Выполнена' || (parseFloat(g.saved) || 0) > 0);
+  if (activeGoals.length > 0) {
+    selectInlineTxGoal(row, activeGoals[0].id);
+  } else {
+    selectInlineTxGoal(row, '');
+  }
+
   if (typeof lucide !== 'undefined' && typeof lucide.createIcons === 'function') {
     lucide.createIcons();
   }
@@ -602,7 +609,7 @@ function handleInlineTxAmountChange(inputEl) {
     amortizeWrap.classList.add('hidden');
   }
 
-  updateInlineTxSpreadPreview(row);
+  updateInlineTxGoalRemaining(row);
 }
 window.handleInlineTxAmountChange = handleInlineTxAmountChange;
 
@@ -624,38 +631,170 @@ function toggleInlineTxAmortize(cb) {
   const details = row.querySelector('.inline-tx-amortize-details');
   if (details) {
     if (cb.checked) {
+      const activeGoals = (Cache?.goals || []).filter(g => g.status !== 'Выполнена' || (parseFloat(g.saved) || 0) > 0);
+      if (activeGoals.length === 0) {
+        cb.checked = false;
+        showToast('Для разовой траты нужна финансовая цель. Создайте цель во вкладке «Цели»', true);
+        return;
+      }
       details.classList.remove('hidden');
-      updateInlineTxSpreadPreview(row);
+      const curGoalId = row.querySelector('.tx-goal-id')?.value;
+      if (!curGoalId || !activeGoals.some(g => g.id === curGoalId)) {
+        selectInlineTxGoal(row, activeGoals[0].id);
+      } else {
+        updateInlineTxGoalRemaining(row);
+      }
     } else {
       details.classList.add('hidden');
+      const menu = row.querySelector('.tx-goal-menu');
+      if (menu) menu.classList.add('hidden');
+      row.style.zIndex = '';
     }
   }
 }
 window.toggleInlineTxAmortize = toggleInlineTxAmortize;
 
-function changeInlineTxSpreadMonths(btn, delta) {
-  if (!btn) return;
-  const row = btn.closest('.tx-item');
+function renderInlineTxGoalMenu(row) {
   if (!row) return;
-  const input = row.querySelector('.tx-spread-months');
-  const label = row.querySelector('.inline-tx-spread-label');
-  if (!input) return;
-  let val = parseInt(input.value, 10) || 1;
-  val = Math.max(1, Math.min(12, val + delta));
-  input.value = val;
-  if (label) label.innerText = `${val} мес.`;
-  updateInlineTxSpreadPreview(row);
+  const menu = row.querySelector('.tx-goal-menu');
+  if (!menu) return;
+
+  const currentGoalId = row.querySelector('.tx-goal-id')?.value;
+  const activeGoals = (Cache?.goals || []).filter(g => g.status !== 'Выполнена' || (parseFloat(g.saved) || 0) > 0);
+
+  if (activeGoals.length === 0) {
+    menu.innerHTML = `
+      <div class="p-3 text-center text-xs text-gray-400 space-y-1">
+        <div>Нет активных финансовых целей</div>
+        <button type="button" onclick="switchTab('deposits')" class="text-[#8C7DFF] hover:underline text-[11px] font-semibold cursor-pointer">
+          + Создать цель во вкладке «Цели»
+        </button>
+      </div>
+    `;
+    return;
+  }
+
+  let html = activeGoals.map(g => {
+    const saved = parseFloat(g.saved) || 0;
+    const isSelected = (g.id === currentGoalId);
+    return `
+      <button type="button" 
+              onclick="selectInlineTxGoal(this, '${g.id}')" 
+              class="w-full text-left px-2.5 py-2 text-xs rounded-xl hover:bg-[#212430] transition-colors flex items-center justify-between cursor-pointer group ${isSelected ? 'bg-[#6C5DD3]/20 border border-[#6C5DD3]/30' : ''}">
+        <div class="min-w-0 pr-2">
+          <div class="font-semibold text-gray-200 truncate group-hover:text-white">${escapeHtml(g.name || g.title || 'Цель')}</div>
+          <div class="text-[10px] text-[#848D99]">Накоплено: <span class="text-amber-300 font-mono font-medium">${formatMoney(saved)}</span></div>
+        </div>
+        <i data-lucide="target" class="w-4 h-4 text-amber-400 flex-shrink-0"></i>
+      </button>
+    `;
+  }).join('');
+
+  menu.innerHTML = html;
+  if (typeof lucide !== 'undefined') lucide.createIcons({ root: menu });
 }
+window.renderInlineTxGoalMenu = renderInlineTxGoalMenu;
+
+function toggleInlineTxGoalMenu(triggerBtn, event) {
+  if (event) event.stopPropagation();
+  if (!triggerBtn) return;
+  const row = triggerBtn.closest('.tx-item');
+  if (!row) return;
+  const menu = row.querySelector('.tx-goal-menu');
+  if (!menu) return;
+
+  const isClosed = menu.classList.contains('hidden');
+  document.querySelectorAll('.custom-dropdown-menu').forEach(m => m.classList.add('hidden'));
+  document.querySelectorAll('.tx-item').forEach(r => r.style.zIndex = '');
+
+  if (isClosed) {
+    row.style.zIndex = '50';
+    renderInlineTxGoalMenu(row);
+    if (typeof smartPositionDropdown === 'function') {
+      smartPositionDropdown(menu, triggerBtn);
+    }
+    menu.classList.remove('hidden');
+    if (typeof lucide !== 'undefined') lucide.createIcons({ root: menu });
+  } else {
+    row.style.zIndex = '';
+  }
+}
+window.toggleInlineTxGoalMenu = toggleInlineTxGoalMenu;
+
+function selectInlineTxGoal(targetEl, goalId) {
+  if (!targetEl) return;
+  const row = targetEl.closest('.tx-item') || targetEl;
+  if (!row) return;
+
+  const input = row.querySelector('.tx-goal-id');
+  const label = row.querySelector('.tx-goal-label');
+  const menu = row.querySelector('.tx-goal-menu');
+  if (menu) menu.classList.add('hidden');
+  row.style.zIndex = '';
+
+  const activeGoals = (Cache?.goals || []).filter(g => g.status !== 'Выполнена' || (parseFloat(g.saved) || 0) > 0);
+  const goal = goalId ? (Cache?.goals || []).find(g => g.id === goalId) : (activeGoals[0] || null);
+
+  if (goal) {
+    const goalTitle = goal.name || goal.title || 'Цель';
+    const saved = parseFloat(goal.saved) || 0;
+    if (input) input.value = goal.id;
+    if (label) {
+      label.innerHTML = `
+        <i data-lucide="target" class="w-3.5 h-3.5 text-amber-400 flex-shrink-0"></i>
+        <span class="truncate font-semibold text-white">${escapeHtml(goalTitle)}</span>
+        <span class="text-[10px] font-mono text-amber-300 ml-1">(${formatMoney(saved)})</span>
+      `;
+    }
+  } else {
+    if (input) input.value = '';
+    if (label) {
+      label.innerHTML = `
+        <i data-lucide="target" class="w-3.5 h-3.5 text-gray-400 flex-shrink-0"></i>
+        <span class="truncate font-medium text-gray-400">Выберите цель</span>
+      `;
+    }
+  }
+  if (typeof lucide !== 'undefined' && label) lucide.createIcons({ root: label });
+  updateInlineTxGoalRemaining(row);
+}
+window.selectInlineTxGoal = selectInlineTxGoal;
+
+function updateInlineTxGoalRemaining(row) {
+  if (!row) return;
+  const goalId = row.querySelector('.tx-goal-id')?.value;
+  const amount = getUnformattedVal(row.querySelector('.tx-amount')) || 0;
+  const remBox = row.querySelector('.inline-tx-goal-remaining');
+  const remVal = row.querySelector('.inline-tx-goal-remaining-val');
+  if (!remBox || !remVal) return;
+
+  const goal = (Cache?.goals || []).find(g => g.id === goalId);
+  if (goal && amount > 0) {
+    const curSaved = parseFloat(goal.saved) || 0;
+    const remaining = Math.max(0, curSaved - amount);
+    remBox.classList.remove('hidden');
+    remBox.classList.add('flex');
+    remVal.innerText = formatMoney(remaining);
+    remVal.className = `inline-tx-goal-remaining-val font-mono font-bold ${curSaved < amount ? 'text-amber-400' : 'text-emerald-400'}`;
+  } else {
+    remBox.classList.add('hidden');
+    remBox.classList.remove('flex');
+  }
+}
+window.updateInlineTxGoalRemaining = updateInlineTxGoalRemaining;
+
+// Legacy alias for compatibility
+function handleInlineTxGoalChange(selectEl) {
+  if (!selectEl) return;
+  const row = selectEl.closest('.tx-item');
+  if (row) updateInlineTxGoalRemaining(row);
+}
+window.handleInlineTxGoalChange = handleInlineTxGoalChange;
+
+function changeInlineTxSpreadMonths(btn, delta) {}
 window.changeInlineTxSpreadMonths = changeInlineTxSpreadMonths;
 
-function updateInlineTxSpreadPreview(row) {
-  if (!row) return;
-  const amount = getUnformattedVal(row.querySelector('.tx-amount')) || 0;
-  const spreadMonths = parseInt(row.querySelector('.tx-spread-months')?.value, 10) || 3;
-  const monthlyVal = spreadMonths > 0 ? Math.round(amount / spreadMonths) : amount;
-  const calcEl = row.querySelector('.inline-tx-spread-calc');
-  if (calcEl) calcEl.innerText = `+${formatMoney(monthlyVal)}/мес`;
-}
+function updateInlineTxSpreadPreview(row) {}
 window.updateInlineTxSpreadPreview = updateInlineTxSpreadPreview;
 
 function submitTransactions(e) {
@@ -663,6 +802,21 @@ function submitTransactions(e) {
   const rows = document.querySelectorAll('.tx-item');
   if (rows.length === 0) return showDialog('Ошибка', 'Добавьте хотя бы одну операцию', false);
   
+  // Проверяем обязательность выбора цели для разовых трат
+  for (const row of rows) {
+    const type = row.querySelector('.tx-type:checked')?.value || 'Расход';
+    const amortizeCb = row.querySelector('.tx-exclude-budget');
+    const isExcluded = (type === 'Расход') && (amortizeCb ? amortizeCb.checked : false);
+    if (isExcluded) {
+      const goalId = row.querySelector('.tx-goal-id')?.value;
+      const targetGoal = goalId ? (Cache?.goals || []).find(g => g.id === goalId) : null;
+      if (!targetGoal) {
+        showDialog('Выберите цель', 'Для разовой траты необходимо выбрать цель, из которой будет списана сумма', false);
+        return;
+      }
+    }
+  }
+
   const userProfile = (typeof getCurrentUserProfile === 'function') ? getCurrentUserProfile() : (Cache?.userProfile || { displayName: 'Пользователь', avatarId: 'user' });
   const authorInfo = {
     uid: auth?.currentUser?.uid || '',
@@ -678,8 +832,14 @@ function submitTransactions(e) {
     const comment = row.querySelector('.tx-comment').value;
     const amortizeCb = row.querySelector('.tx-exclude-budget');
     const isExcluded = (type === 'Расход') && (amortizeCb ? amortizeCb.checked : false);
-    const spreadInput = row.querySelector('.tx-spread-months');
-    const spreadMonths = isExcluded ? (parseInt(spreadInput?.value, 10) || 3) : 1;
+    const goalId = isExcluded ? (row.querySelector('.tx-goal-id')?.value || null) : null;
+    const targetGoal = goalId ? (Cache?.goals || []).find(g => g.id === goalId) : null;
+    const fundingGoalName = targetGoal ? (targetGoal.name || targetGoal.title || 'Цель') : '';
+
+    if (isExcluded && goalId && targetGoal && typeof adjustGoalSaved === 'function') {
+      adjustGoalSaved(goalId, -amount).catch(err => console.error(err));
+    }
+
     return {
       type,
       amount,
@@ -689,7 +849,10 @@ function submitTransactions(e) {
       author: authorInfo,
       excludeFromBudget: isExcluded,
       billType: isExcluded ? 'onetime' : '',
-      spreadMonths: isExcluded ? spreadMonths : 1
+      fundingGoalId: isExcluded ? (goalId || null) : null,
+      fundingGoalName: isExcluded ? fundingGoalName : '',
+      fundingGoalAmount: (isExcluded && goalId) ? (parseFloat(amount) || 0) : 0,
+      spreadMonths: 1
     };
   });
   submitAction('tx-submit-btn', 'Transactions', txData);
@@ -925,11 +1088,10 @@ function openCreateTxModal(initData = {}) {
     }
   }
 
-  const spreadMonths = parseInt(initData.spreadMonths, 10) || 3;
-  if (spreadInput) spreadInput.value = spreadMonths;
-  if (spreadLabel) spreadLabel.innerText = `${spreadMonths} мес.`;
-  updateTxSpreadPreview();
-  handleEditTxAmountChange();
+  const activeGoals = (Cache?.goals || []).filter(g => g.status !== 'Выполнена' || (parseFloat(g.saved) || 0) > 0);
+  const targetGoalId = initData.fundingGoalId || activeGoals[0]?.id || (Cache?.goals || [])[0]?.id || '';
+  if (typeof selectEditTxGoal === 'function') selectEditTxGoal(targetGoalId);
+  if (typeof handleEditTxAmountChange === 'function') handleEditTxAmountChange();
 
   if (deleteBtn) deleteBtn.classList.add('hidden');
   if (saveBtn) saveBtn.innerText = 'Создать';
@@ -1002,12 +1164,10 @@ function openEditTxModal(id) {
   const icon = foundCat && foundCat.icon && foundCat.icon !== '📦' ? foundCat.icon : 'tag';
   selectEditTxCategory(tx.category || '', icon);
 
-  // Настройка опции исключения и распределения
+  // Настройка опции исключения и списания из цели
   const amortizeWrap = document.getElementById('wrap-edit-tx-amortize');
   const amortizeCb = document.getElementById('edit-tx-exclude-budget');
   const amortizeDetails = document.getElementById('edit-tx-amortize-details');
-  const spreadInput = document.getElementById('edit-tx-spread-months');
-  const spreadLabel = document.getElementById('edit-tx-spread-months-label');
 
   const isExp = (tx.type === 'Расход' || tx.type === 'expense');
   if (amortizeWrap) {
@@ -1018,7 +1178,7 @@ function openEditTxModal(id) {
     }
   }
 
-  const isOneTimeTx = tx.billType === 'onetime' || (tx.spreadMonths && parseInt(tx.spreadMonths, 10) > 1) || (!tx.isBillPayment && !!tx.excludeFromBudget);
+  const isOneTimeTx = tx.billType === 'onetime' || !!tx.fundingGoalId || (!tx.isBillPayment && !!tx.excludeFromBudget);
   const isExcluded = !!(tx.excludeFromBudget || tx.isExcludedFromBudget);
   if (amortizeCb) amortizeCb.checked = isExcluded;
   if (amortizeDetails) {
@@ -1029,10 +1189,9 @@ function openEditTxModal(id) {
     }
   }
 
-  const spreadMonths = parseInt(tx.spreadMonths, 10) || 3;
-  if (spreadInput) spreadInput.value = spreadMonths;
-  if (spreadLabel) spreadLabel.innerText = `${spreadMonths} мес.`;
-  updateTxSpreadPreview();
+  const activeGoals = (Cache?.goals || []).filter(g => g.status !== 'Выполнена' || (parseFloat(g.saved) || 0) > 0);
+  const targetGoalId = tx.fundingGoalId || activeGoals[0]?.id || (Cache?.goals || [])[0]?.id || '';
+  selectEditTxGoal(targetGoalId);
   handleEditTxAmountChange();
 
   if (typeof lockBodyScroll === 'function') lockBodyScroll();
@@ -1216,7 +1375,7 @@ function handleEditTxAmountChange() {
         badgeEl.innerText = `Крупная трата (от ${formatMoney(threshold)})`;
       }
       if (titleEl) titleEl.innerText = 'Сделать разовой тратой?';
-      if (descEl) descEl.innerText = 'Крупная покупка не будет искажать недельный бюджет и распределится частями в календаре';
+      if (descEl) descEl.innerText = 'Покупка не уменьшит недельный лимит трат на жизнь';
       amortizeWrap.classList.add('border-violet-500/35', 'bg-gradient-to-b', 'from-violet-950/25', 'to-[#12151C]');
       amortizeWrap.classList.remove('border-[rgba(255,255,255,0.06)]', 'bg-[#12151C]');
     } else {
@@ -1224,8 +1383,8 @@ function handleEditTxAmountChange() {
         noticeEl.classList.add('hidden');
         noticeEl.classList.remove('flex');
       }
-      if (titleEl) titleEl.innerText = 'Сделать разовой тратой';
-      if (descEl) descEl.innerText = 'Распределит нагрузку покупки на несколько месяцев в календаре';
+      if (titleEl) titleEl.innerText = 'Сделать разовой';
+      if (descEl) descEl.innerText = 'Исключает покупку из недельного лимита трат';
       amortizeWrap.classList.remove('border-violet-500/35', 'bg-gradient-to-b', 'from-violet-950/25');
       amortizeWrap.classList.add('border-[rgba(255,255,255,0.06)]', 'bg-[#12151C]');
     }
@@ -1239,38 +1398,139 @@ function handleEditTxAmountChange() {
     }
   }
 
-  updateTxSpreadPreview();
+  updateEditTxGoalPreview();
 }
 
 function toggleTxAmortizeSection(enabled) {
   const details = document.getElementById('edit-tx-amortize-details');
   if (details) {
     if (enabled) {
+      const activeGoals = (Cache?.goals || []).filter(g => g.status !== 'Выполнена' || (parseFloat(g.saved) || 0) > 0);
+      if (activeGoals.length === 0) {
+        document.getElementById('edit-tx-exclude-budget').checked = false;
+        showToast('Для разовой траты нужна финансовая цель. Создайте цель во вкладке «Цели»', true);
+        return;
+      }
       details.classList.remove('hidden');
-      updateTxSpreadPreview();
+      const goalInput = document.getElementById('edit-tx-goal-id');
+      if (!goalInput || !goalInput.value || !activeGoals.some(g => g.id === goalInput.value)) {
+        selectEditTxGoal(activeGoals[0].id);
+      } else {
+        updateEditTxGoalPreview();
+      }
     } else {
       details.classList.add('hidden');
     }
   }
 }
 
-function changeTxSpreadMonths(delta) {
-  const input = document.getElementById('edit-tx-spread-months');
-  if (!input) return;
-  let val = parseInt(input.value, 10) || 1;
-  val = Math.max(1, Math.min(12, val + delta));
-  input.value = val;
-  const label = document.getElementById('edit-tx-spread-months-label');
-  if (label) label.innerText = `${val} мес.`;
-  updateTxSpreadPreview();
+function renderEditTxGoalMenu() {
+  const menu = document.getElementById('edit-tx-goal-menu');
+  if (!menu) return;
+
+  const goals = (Cache?.goals || []).filter(g => g.status !== 'Выполнена' || (parseFloat(g.saved) || 0) > 0);
+  const selectedGoalId = document.getElementById('edit-tx-goal-id')?.value;
+
+  if (goals.length === 0) {
+    menu.innerHTML = `
+      <div class="p-3 text-center text-xs text-gray-400 space-y-1">
+        <div>Нет активных финансовых целей</div>
+        <button type="button" onclick="closeEditTxModal(); switchTab('deposits');" class="text-[#8C7DFF] hover:underline text-[11px] font-semibold cursor-pointer">
+          + Создать цель во вкладке «Цели»
+        </button>
+      </div>
+    `;
+    return;
+  }
+
+  let html = goals.map(g => {
+    const saved = parseFloat(g.saved) || 0;
+    const isSelected = (g.id === selectedGoalId);
+    return `
+      <button type="button" 
+              onclick="selectEditTxGoal('${g.id}')" 
+              class="w-full text-left px-3 py-2 text-xs rounded-xl hover:bg-[#212430] transition-colors flex items-center justify-between cursor-pointer group ${isSelected ? 'bg-[#6C5DD3]/15' : ''}">
+        <div class="min-w-0 pr-2">
+          <div class="font-semibold text-gray-200 truncate group-hover:text-white">${escapeHtml(g.name || g.title || 'Цель')}</div>
+          <div class="text-[10px] text-[#848D99]">Накоплено: <span class="text-amber-300 font-mono font-medium">${formatMoney(saved)}</span></div>
+        </div>
+        <i data-lucide="target" class="w-4 h-4 text-amber-400 flex-shrink-0"></i>
+      </button>
+    `;
+  }).join('');
+
+  menu.innerHTML = html;
+  if (typeof lucide !== 'undefined') lucide.createIcons({ root: menu });
 }
 
-function updateTxSpreadPreview() {
+function toggleEditTxGoalMenu(e) {
+  if (e) e.stopPropagation();
+  const menu = document.getElementById('edit-tx-goal-menu');
+  if (!menu) return;
+  const isClosed = menu.classList.contains('hidden');
+  document.querySelectorAll('.custom-dropdown-menu').forEach(m => m.classList.add('hidden'));
+  if (isClosed) {
+    renderEditTxGoalMenu();
+    menu.classList.remove('hidden');
+  }
+}
+
+function selectEditTxGoal(goalId) {
+  const input = document.getElementById('edit-tx-goal-id');
+  const label = document.getElementById('edit-tx-goal-label');
+  const menu = document.getElementById('edit-tx-goal-menu');
+  if (menu) menu.classList.add('hidden');
+
+  const goals = Cache?.goals || [];
+  const activeGoals = goals.filter(g => g.status !== 'Выполнена' || (parseFloat(g.saved) || 0) > 0);
+  const goal = goalId ? goals.find(g => g.id === goalId) : (activeGoals[0] || null);
+
+  if (goal) {
+    const goalTitle = goal.name || goal.title || 'Цель';
+    if (input) input.value = goal.id;
+    if (label) {
+      label.innerHTML = `
+        <i data-lucide="target" class="w-4 h-4 text-amber-400 flex-shrink-0"></i>
+        <span class="truncate text-white font-medium">${escapeHtml(goalTitle)}</span>
+        <span class="text-[10px] font-mono text-amber-300 ml-1">(${formatMoney(goal.saved || 0)})</span>
+      `;
+    }
+  } else {
+    if (input) input.value = '';
+    if (label) {
+      label.innerHTML = `
+        <i data-lucide="target" class="w-4 h-4 text-gray-400 flex-shrink-0"></i>
+        <span class="truncate text-gray-400">Выберите цель</span>
+      `;
+    }
+  }
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+  updateEditTxGoalPreview();
+}
+
+function updateEditTxGoalPreview() {
+  const goalId = document.getElementById('edit-tx-goal-id')?.value;
   const amount = getUnformattedVal(document.getElementById('edit-tx-amount')) || 0;
-  const spreadMonths = parseInt(document.getElementById('edit-tx-spread-months')?.value, 10) || 3;
-  const monthlyVal = spreadMonths > 0 ? Math.round(amount / spreadMonths) : amount;
-  const calcEl = document.getElementById('edit-tx-spread-calc');
-  if (calcEl) calcEl.innerText = `+${formatMoney(monthlyVal)}/мес`;
+  const previewBox = document.getElementById('edit-tx-goal-preview');
+  const calcEl = document.getElementById('edit-tx-goal-calc');
+  const balanceInfo = document.getElementById('edit-tx-goal-balance-info');
+
+  const goal = (Cache?.goals || []).find(g => g.id === goalId);
+  if (goal && previewBox && calcEl) {
+    const goalTitle = goal.name || goal.title || 'Цель';
+    previewBox.classList.remove('hidden');
+    calcEl.innerText = `-${formatMoney(amount)}`;
+
+    if (balanceInfo) {
+      const curSaved = parseFloat(goal.saved) || 0;
+      const remaining = Math.max(0, curSaved - amount);
+      balanceInfo.classList.remove('hidden');
+      balanceInfo.innerHTML = `В цели «${escapeHtml(goalTitle)}» останется: <span class="${curSaved < amount ? 'text-amber-400' : 'text-emerald-400'} font-bold">${formatMoney(remaining)}</span>`;
+    }
+  } else {
+    if (previewBox) previewBox.classList.add('hidden');
+    if (balanceInfo) balanceInfo.classList.add('hidden');
+  }
 }
 
 async function submitEditTxModal(e) {
@@ -1300,10 +1560,19 @@ async function submitEditTxModal(e) {
   const date = (typeof formatDateStr === 'function') ? formatDateStr(parsedDate, 'yyyy-MM-dd') : rawDate;
 
   const bill = billId ? (Cache?.calendarBills || []).find(b => b.id === billId) : null;
-  const isOneTimeBill = (bill && (bill.type === 'onetime' || bill.type === 'Разовый')) || (parseInt(document.getElementById('edit-tx-spread-months')?.value, 10) > 1 && !!document.getElementById('edit-tx-exclude-budget')?.checked);
-  const effectiveIsBillPayment = isBillPayment && !isOneTimeBill;
-  const excludeFromBudget = (type === 'Расход') && (isBillPayment || isOneTimeBill || !!document.getElementById('edit-tx-exclude-budget')?.checked);
-  const spreadMonths = (excludeFromBudget && (isOneTimeBill || !isBillPayment)) ? (parseInt(document.getElementById('edit-tx-spread-months')?.value, 10) || (bill ? parseInt(bill.spreadMonths, 10) : 1) || 3) : 1;
+  const isOneTime = (type === 'Расход') && !isBillPayment && !!document.getElementById('edit-tx-exclude-budget')?.checked;
+  const effectiveIsBillPayment = isBillPayment;
+  const excludeFromBudget = (type === 'Расход') && (isBillPayment || isOneTime);
+  const selectedGoalId = isOneTime ? (document.getElementById('edit-tx-goal-id')?.value || null) : null;
+  const targetGoal = (isOneTime && selectedGoalId) ? (Cache?.goals || []).find(g => g.id === selectedGoalId) : null;
+
+  if (isOneTime && !targetGoal) {
+    showDialog('Выберите цель', 'Для разовой траты необходимо выбрать цель, из которой будет списана сумма', false);
+    return;
+  }
+
+  const fundingGoalName = targetGoal ? (targetGoal.name || targetGoal.title || 'Цель') : '';
+  const fundingGoalAmount = (isOneTime && targetGoal) ? (parseFloat(amount) || 0) : 0;
 
   const tempTxId = id || `opt_tx_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
   const isNew = !id;
@@ -1316,6 +1585,30 @@ async function submitEditTxModal(e) {
     existing = allFlat.find(t => t.id === id);
     if (existing && existing.timestamp && (existing.formattedDate === formatDateStr(parsedDate, 'dd.MM.yyyy') || existing.date === date)) {
       itemTimestamp = existing.timestamp;
+    }
+  }
+
+  // Управление списанием/восполнением накоплений цели
+  const oldGoalId = existing ? existing.fundingGoalId : null;
+  const oldGoalAmt = existing ? (parseFloat(existing.fundingGoalAmount) || parseFloat(existing.amount) || 0) : 0;
+
+  if (isOneTime && selectedGoalId) {
+    if (oldGoalId && oldGoalId === selectedGoalId) {
+      const delta = amount - oldGoalAmt;
+      if (delta !== 0 && typeof adjustGoalSaved === 'function') {
+        adjustGoalSaved(selectedGoalId, -delta).catch(err => console.error(err));
+      }
+    } else {
+      if (oldGoalId && oldGoalAmt > 0 && typeof adjustGoalSaved === 'function') {
+        adjustGoalSaved(oldGoalId, oldGoalAmt).catch(err => console.error(err));
+      }
+      if (typeof adjustGoalSaved === 'function') {
+        adjustGoalSaved(selectedGoalId, -amount).catch(err => console.error(err));
+      }
+    }
+  } else if (oldGoalId && oldGoalAmt > 0) {
+    if (typeof adjustGoalSaved === 'function') {
+      adjustGoalSaved(oldGoalId, oldGoalAmt).catch(err => console.error(err));
     }
   }
 
@@ -1337,11 +1630,14 @@ async function submitEditTxModal(e) {
     rawDate: date,
     comment: comment || billName || '',
     excludeFromBudget: !!excludeFromBudget,
-    spreadMonths,
+    spreadMonths: 1,
     isBillPayment: !!effectiveIsBillPayment,
     billId: billId || null,
     billName: billName || '',
-    billType: isOneTimeBill ? 'onetime' : (effectiveIsBillPayment ? 'recurring' : ''),
+    billType: isOneTime ? 'onetime' : (effectiveIsBillPayment ? 'recurring' : ''),
+    fundingGoalId: isOneTime ? selectedGoalId : null,
+    fundingGoalName: isOneTime ? fundingGoalName : '',
+    fundingGoalAmount: isOneTime ? fundingGoalAmount : 0,
     timestamp: itemTimestamp,
     author: authorInfo
   };
@@ -1362,14 +1658,14 @@ async function submitEditTxModal(e) {
   }
 
   if (billId) {
-    const bill = (Cache?.calendarBills || []).find(b => b.id === billId);
-    if (bill) {
+    const b = (Cache?.calendarBills || []).find(item => item.id === billId);
+    if (b) {
       const monthKey = (typeof formatDateStr === 'function') ? formatDateStr(parsedDate, 'yyyy-MM') : '2026-09';
-      const paidMonths = { ...(bill.paidMonths || {}) };
+      const paidMonths = { ...(b.paidMonths || {}) };
       paidMonths[monthKey] = { paid: true, txId: tempTxId, amount: parseFloat(amount) || 0 };
-      bill.isPaid = true;
-      bill.linkedTxId = tempTxId;
-      bill.paidMonths = paidMonths;
+      b.isPaid = true;
+      b.linkedTxId = tempTxId;
+      b.paidMonths = paidMonths;
     }
   }
 
@@ -1389,7 +1685,7 @@ async function submitEditTxModal(e) {
   if (typeof renderTransactions === 'function') renderTransactions();
 
   document.getElementById('toast-container')?.classList.add('hidden');
-  showToast(id ? 'Операция сохранена' : (isBillPayment ? `Оплата «${billName || 'Счет'}» создана` : 'Операция создана'));
+  showToast(id ? 'Операция сохранена' : (isBillPayment ? `Оплата «${billName || 'Счет'}» создана` : (isOneTime ? (targetGoal ? `Разовая трата списана из цели «${fundingGoalName}»` : 'Операция сохранена как разовая') : 'Операция создана')));
 
   // 4. Фоновая отправка в Firestore
   try {
@@ -1402,47 +1698,23 @@ async function submitEditTxModal(e) {
         date,
         comment,
         excludeFromBudget,
-        spreadMonths,
+        spreadMonths: 1,
         isBillPayment: !!effectiveIsBillPayment,
         billId: billId || null,
         billName: billName || '',
-        billType: isOneTimeBill ? 'onetime' : (effectiveIsBillPayment ? 'recurring' : ''),
+        billType: isOneTime ? 'onetime' : (effectiveIsBillPayment ? 'recurring' : ''),
+        fundingGoalId: isOneTime ? selectedGoalId : null,
+        fundingGoalName: isOneTime ? fundingGoalName : '',
+        fundingGoalAmount: isOneTime ? fundingGoalAmount : 0,
         updatedAt: Date.now()
       });
 
-      // Синхронизация с CalendarBills при исключении/распределении
-      if (!isBillPayment) {
-        const billCol = getUserCol('CalendarBills');
-        const existingBill = (Cache.calendarBills || []).find(b => b.linkedTxId === id);
-
-        if (excludeFromBudget) {
-          const billData = {
-            name: comment || category || 'Разовая трата',
-            totalAmount: amount,
-            spreadMonths,
-            amount: Math.round(amount / spreadMonths),
-            day: parsedDate.getDate(),
-            month: formatDateStr(parsedDate, 'yyyy-MM'),
-            startMonth: formatDateStr(parsedDate, 'yyyy-MM'),
-            type: 'onetime',
-            linkedTxId: id,
-            updatedAt: Date.now()
-          };
-
-          if (existingBill) {
-            await billCol.doc(existingBill.id).update(billData);
-            Object.assign(existingBill, billData);
-          } else {
-            const newBill = { ...billData, isPaid: true, createdAt: Date.now() };
-            const docRef = await billCol.add(newBill);
-            newBill.id = docRef.id;
-            if (!Cache.calendarBills) Cache.calendarBills = [];
-            Cache.calendarBills.push(newBill);
-          }
-        } else if (existingBill) {
-          await billCol.doc(existingBill.id).delete();
-          Cache.calendarBills = (Cache.calendarBills || []).filter(b => b.id !== existingBill.id);
-        }
+      // Удаляем устаревшие связанные CalendarBills, если были
+      const billCol = getUserCol('CalendarBills');
+      const existingBill = (Cache.calendarBills || []).find(b => b.linkedTxId === id);
+      if (existingBill) {
+        await billCol.doc(existingBill.id).delete();
+        Cache.calendarBills = (Cache.calendarBills || []).filter(b => b.id !== existingBill.id);
       }
     } else {
       // 2. Создание новой транзакции в Firestore
@@ -1453,11 +1725,14 @@ async function submitEditTxModal(e) {
         date,
         comment: comment || billName || '',
         excludeFromBudget,
-        spreadMonths,
+        spreadMonths: 1,
         isBillPayment: !!effectiveIsBillPayment,
         billId: billId || null,
         billName: billName || '',
-        billType: isOneTimeBill ? 'onetime' : (effectiveIsBillPayment ? 'recurring' : ''),
+        billType: isOneTime ? 'onetime' : (effectiveIsBillPayment ? 'recurring' : ''),
+        fundingGoalId: isOneTime ? selectedGoalId : null,
+        fundingGoalName: isOneTime ? fundingGoalName : '',
+        fundingGoalAmount: isOneTime ? fundingGoalAmount : 0,
         author: authorInfo,
         createdAt: Date.now()
       };
@@ -1475,10 +1750,10 @@ async function submitEditTxModal(e) {
       }
 
       if (billId) {
-        const bill = (Cache?.calendarBills || []).find(b => b.id === billId);
-        if (bill) {
+        const b = (Cache?.calendarBills || []).find(item => item.id === billId);
+        if (b) {
           const monthKey = formatDateStr(parsedDate, 'yyyy-MM');
-          const paidMonths = { ...(bill.paidMonths || {}) };
+          const paidMonths = { ...(b.paidMonths || {}) };
           paidMonths[monthKey] = {
             paid: true,
             txId: newTxId,
@@ -1491,35 +1766,14 @@ async function submitEditTxModal(e) {
             paidMonths: paidMonths,
             updatedAt: Date.now()
           });
-          bill.linkedTxId = newTxId;
+          b.linkedTxId = newTxId;
         }
-      } else if (excludeFromBudget && !effectiveIsBillPayment) {
-        const billCol = getUserCol('CalendarBills');
-        const startMonth = (typeof formatDateStr === 'function') ? formatDateStr(parsedDate, 'yyyy-MM') : parsedDate.toISOString().slice(0, 7);
-        const billData = {
-          name: comment || billName || category || 'Разовая трата',
-          totalAmount: amount,
-          spreadMonths,
-          amount: Math.round(amount / spreadMonths),
-          day: parsedDate.getDate(),
-          month: startMonth,
-          startMonth: startMonth,
-          type: 'onetime',
-          linkedTxId: newTxId,
-          isPaid: true,
-          createdAt: Date.now(),
-          updatedAt: Date.now()
-        };
-        const docRef = await billCol.add(billData);
-        billData.id = docRef.id;
-        if (!Cache.calendarBills) Cache.calendarBills = [];
-        Cache.calendarBills.push(billData);
       }
     }
 
     if (typeof fetchCollection === 'function') {
       fetchCollection('Transactions').catch(() => {});
-      if (billId || excludeFromBudget) fetchCollection('CalendarBills').catch(() => {});
+      if (billId) fetchCollection('CalendarBills').catch(() => {});
     }
   } catch (err) {
     console.error('Ошибка при сохранении операции:', err);
@@ -1547,9 +1801,25 @@ function deleteTxFromModal() {
         }
       }
 
+      // Восполняем цель, если была списана разовая трата
+      if (deletedTx && deletedTx.fundingGoalId) {
+        const refundAmt = parseFloat(deletedTx.fundingGoalAmount) || parseFloat(deletedTx.amount) || 0;
+        if (refundAmt > 0 && typeof adjustGoalSaved === 'function') {
+          await adjustGoalSaved(deletedTx.fundingGoalId, refundAmt);
+        }
+      }
+
       // Переводим связанные счета в статус "не оплачено"
       if (typeof handleTransactionsDeleted === 'function') {
         await handleTransactionsDeleted([id], deletedTx ? [deletedTx] : []);
+      }
+
+      // Удаляем связанный счет в календаре, если был
+      const billCol = getUserCol('CalendarBills');
+      const existingBill = (Cache.calendarBills || []).find(b => b.linkedTxId === id);
+      if (existingBill) {
+        await billCol.doc(existingBill.id).delete();
+        Cache.calendarBills = (Cache.calendarBills || []).filter(b => b.id !== existingBill.id);
       }
 
       if (typeof triggerBudgetExpenseAnimation === 'function') {
@@ -1602,7 +1872,7 @@ function openTxContextMenu(e, txId) {
     } else {
       extraAction = {
         label: 'Сделать разовой',
-        icon: 'split',
+        icon: 'sparkles',
         handler: () => openQuickAmortizeModal(txId)
       };
     }
@@ -1617,7 +1887,7 @@ function openTxContextMenu(e, txId) {
   );
 }
 
-// Быстрое распределение разовой траты без полного редактирования
+// Быстрое списание разовой траты из цели
 function openQuickAmortizeModal(id) {
   let tx = null;
   if (Array.isArray(Cache?.transactions)) {
@@ -1630,6 +1900,12 @@ function openQuickAmortizeModal(id) {
   }
   if (!tx) return;
 
+  const activeGoals = (Cache?.goals || []).filter(g => g.status !== 'Выполнена' || (parseFloat(g.saved) || 0) > 0);
+  if (activeGoals.length === 0) {
+    showToast('Для разовой траты нужна финансовая цель. Создайте цель во вкладке «Цели»', true);
+    return;
+  }
+
   const dlg = document.getElementById('quick-amortize-modal');
   if (!dlg) return;
 
@@ -1638,13 +1914,11 @@ function openQuickAmortizeModal(id) {
   document.getElementById('quick-amortize-cat-name').innerText = tx.comment ? `${tx.category} • ${tx.comment}` : tx.category;
   document.getElementById('quick-amortize-total-display').innerText = formatMoney(tx.amount);
 
-  const spreadInput = document.getElementById('quick-amortize-spread-months');
-  const spreadLabel = document.getElementById('quick-amortize-months-label');
-  const initialMonths = parseInt(tx.spreadMonths, 10) || 3;
-  if (spreadInput) spreadInput.value = initialMonths;
-  if (spreadLabel) spreadLabel.innerText = `${initialMonths} мес.`;
+  const targetGoalId = (tx.fundingGoalId && activeGoals.some(g => g.id === tx.fundingGoalId)) ? tx.fundingGoalId : activeGoals[0].id;
 
-  updateQuickSpreadPreview();
+  renderQuickGoalMenu();
+  selectQuickGoal(targetGoalId);
+
   if (typeof lockBodyScroll === 'function') lockBodyScroll();
   dlg.classList.remove('hidden');
   if (typeof lucide !== 'undefined') lucide.createIcons({ root: dlg });
@@ -1658,28 +1932,130 @@ function closeQuickAmortizeModal() {
   }
 }
 
-function changeQuickSpreadMonths(delta) {
-  const input = document.getElementById('quick-amortize-spread-months');
-  if (!input) return;
-  let val = parseInt(input.value, 10) || 1;
-  val = Math.max(1, Math.min(12, val + delta));
-  input.value = val;
-  const label = document.getElementById('quick-amortize-months-label');
-  if (label) label.innerText = `${val} мес.`;
-  updateQuickSpreadPreview();
+function renderQuickGoalMenu() {
+  const menu = document.getElementById('quick-amortize-goal-menu');
+  if (!menu) return;
+
+  const goals = (Cache?.goals || []).filter(g => g.status !== 'Выполнена' || (parseFloat(g.saved) || 0) > 0);
+  const selectedGoalId = document.getElementById('quick-amortize-goal-id')?.value;
+
+  if (goals.length === 0) {
+    menu.innerHTML = `
+      <div class="p-3 text-center text-xs text-gray-400 space-y-1">
+        <div>Нет активных финансовых целей</div>
+        <button type="button" onclick="closeQuickAmortizeModal(); switchTab('deposits');" class="text-[#8C7DFF] hover:underline text-[11px] font-semibold cursor-pointer">
+          + Создать цель во вкладке «Цели»
+        </button>
+      </div>
+    `;
+    return;
+  }
+
+  let html = goals.map(g => {
+    const saved = parseFloat(g.saved) || 0;
+    const isSelected = (g.id === selectedGoalId);
+    return `
+      <button type="button" 
+              onclick="selectQuickGoal('${g.id}')" 
+              class="w-full text-left px-3 py-2 text-xs rounded-xl hover:bg-[#212430] transition-colors flex items-center justify-between cursor-pointer group ${isSelected ? 'bg-[#6C5DD3]/15' : ''}">
+        <div class="min-w-0 pr-2">
+          <div class="font-semibold text-gray-200 truncate group-hover:text-white">${escapeHtml(g.name || g.title || 'Цель')}</div>
+          <div class="text-[10px] text-[#848D99]">Накоплено: <span class="text-amber-300 font-mono font-medium">${formatMoney(saved)}</span></div>
+        </div>
+        <i data-lucide="target" class="w-4 h-4 text-amber-400 flex-shrink-0"></i>
+      </button>
+    `;
+  }).join('');
+
+  menu.innerHTML = html;
+  if (typeof lucide !== 'undefined') lucide.createIcons({ root: menu });
 }
 
-function updateQuickSpreadPreview() {
+function toggleQuickGoalMenu(e) {
+  if (e) e.stopPropagation();
+  const menu = document.getElementById('quick-amortize-goal-menu');
+  if (!menu) return;
+  const isClosed = menu.classList.contains('hidden');
+  document.querySelectorAll('.custom-dropdown-menu').forEach(m => m.classList.add('hidden'));
+  if (isClosed) {
+    renderQuickGoalMenu();
+    menu.classList.remove('hidden');
+  }
+}
+
+function selectQuickGoal(goalId) {
+  const input = document.getElementById('quick-amortize-goal-id');
+  const label = document.getElementById('quick-amortize-goal-label');
+  const menu = document.getElementById('quick-amortize-goal-menu');
+  if (menu) menu.classList.add('hidden');
+
+  const goals = Cache?.goals || [];
+  const activeGoals = goals.filter(g => g.status !== 'Выполнена' || (parseFloat(g.saved) || 0) > 0);
+  const goal = goalId ? goals.find(g => g.id === goalId) : (activeGoals[0] || null);
+
+  if (goal) {
+    const goalTitle = goal.name || goal.title || 'Цель';
+    if (input) input.value = goal.id;
+    if (label) {
+      label.innerHTML = `
+        <i data-lucide="target" class="w-4 h-4 text-amber-400 flex-shrink-0"></i>
+        <span class="truncate text-white font-medium">${escapeHtml(goalTitle)}</span>
+        <span class="text-[10px] font-mono text-amber-300 ml-1">(${formatMoney(goal.saved || 0)})</span>
+      `;
+    }
+  } else {
+    if (input) input.value = '';
+    if (label) {
+      label.innerHTML = `
+        <i data-lucide="target" class="w-4 h-4 text-gray-400 flex-shrink-0"></i>
+        <span class="truncate text-gray-400">Выберите цель</span>
+      `;
+    }
+  }
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+  updateQuickGoalPreview();
+}
+
+function updateQuickGoalPreview() {
+  const goalId = document.getElementById('quick-amortize-goal-id')?.value;
   const amount = parseFloat(document.getElementById('quick-amortize-amount')?.value) || 0;
-  const spreadMonths = parseInt(document.getElementById('quick-amortize-spread-months')?.value, 10) || 3;
-  const monthlyVal = spreadMonths > 0 ? Math.round(amount / spreadMonths) : amount;
-  const calcEl = document.getElementById('quick-amortize-monthly-calc');
-  if (calcEl) calcEl.innerText = `+${formatMoney(monthlyVal)}/мес`;
+  const calcBox = document.getElementById('quick-amortize-goal-calc');
+  const remainingEl = document.getElementById('quick-amortize-goal-remaining');
+
+  if (!calcBox || !remainingEl) return;
+
+  const goal = (Cache?.goals || []).find(g => g.id === goalId);
+  if (goal && amount > 0) {
+    const curSaved = parseFloat(goal.saved) || 0;
+    const remaining = Math.max(0, curSaved - amount);
+    calcBox.classList.remove('hidden');
+    calcBox.classList.add('flex');
+    remainingEl.innerText = formatMoney(remaining);
+    if (curSaved < amount) {
+      remainingEl.className = 'font-mono font-bold text-amber-400';
+    } else {
+      remainingEl.className = 'font-mono font-bold text-emerald-400';
+    }
+  } else {
+    calcBox.classList.add('hidden');
+    calcBox.classList.remove('flex');
+  }
 }
 
 async function submitQuickAmortize() {
   const id = document.getElementById('quick-amortize-tx-id')?.value;
   if (!id) return;
+
+  const goalId = document.getElementById('quick-amortize-goal-id')?.value || null;
+  const goals = Cache?.goals || [];
+  const targetGoal = goalId ? goals.find(g => g.id === goalId) : null;
+
+  if (!targetGoal) {
+    showDialog('Выберите цель', 'Для разовой траты необходимо выбрать цель, из которой будет списана сумма', false);
+    return;
+  }
+
+  const goalName = targetGoal.name || targetGoal.title || 'Цель';
 
   let tx = null;
   if (Array.isArray(Cache?.transactions)) {
@@ -1693,65 +2069,58 @@ async function submitQuickAmortize() {
   if (!tx) return;
 
   const amount = parseFloat(tx.amount) || 0;
-  const spreadMonths = parseInt(document.getElementById('quick-amortize-spread-months')?.value, 10) || 3;
-  const rawDate = tx.rawDate || tx.date || new Date().toISOString().split('T')[0];
-  const parsedDate = (typeof parseAnyDate === 'function' ? parseAnyDate(rawDate) : new Date(rawDate)) || new Date();
 
-  try {
-    await getUserCol('Transactions').doc(id).update({
-      excludeFromBudget: true,
-      spreadMonths
-    });
+  // 1. Мгновенное оптимистичное обновление состояния в памяти
+  tx.excludeFromBudget = true;
+  tx.spreadMonths = 1;
+  tx.billType = 'onetime';
+  tx.fundingGoalId = targetGoal.id;
+  tx.fundingGoalName = goalName;
+  tx.fundingGoalAmount = amount;
 
-    const billCol = getUserCol('CalendarBills');
-    const existingBill = (Cache.calendarBills || []).find(b => b.linkedTxId === id);
-
-    const billData = {
-      name: tx.comment || tx.category || 'Разовая трата',
-      totalAmount: amount,
-      spreadMonths,
-      amount: Math.round(amount / spreadMonths),
-      day: parsedDate.getDate(),
-      month: (typeof formatDateStr === 'function') ? formatDateStr(parsedDate, 'yyyy-MM') : parsedDate.toISOString().slice(0, 7),
-      startMonth: (typeof formatDateStr === 'function') ? formatDateStr(parsedDate, 'yyyy-MM') : parsedDate.toISOString().slice(0, 7),
-      type: 'onetime',
-      linkedTxId: id,
-      updatedAt: Date.now()
-    };
-
-    if (existingBill) {
-      await billCol.doc(existingBill.id).update(billData);
-      Object.assign(existingBill, billData);
-    } else {
-      const docRef = await billCol.add(billData);
-      billData.id = docRef.id;
-      if (!Cache.calendarBills) Cache.calendarBills = [];
-      Cache.calendarBills.push(billData);
-    }
-
-    tx.excludeFromBudget = true;
-    tx.spreadMonths = spreadMonths;
-
-    closeQuickAmortizeModal();
-    if (typeof triggerBudgetExpenseAnimation === 'function') triggerBudgetExpenseAnimation();
-    if (typeof markTabsDirty === 'function') markTabsDirty();
-    if (typeof renderBudgetTab === 'function') renderBudgetTab();
-    renderTransactions();
-    if (typeof renderBudgetCalendar === 'function') {
-      const today = (typeof getSelectedBudgetDate === 'function') ? getSelectedBudgetDate() : new Date();
-      const currentMonthStr = (typeof formatDateStr === 'function') ? formatDateStr(today, 'yyyy-MM') : today.toISOString().slice(0, 7);
-      const monthItems = (Cache.transactions || []).find(m => m.month === currentMonthStr)?.items || [];
-      renderBudgetCalendar(Cache.calendarBills || [], today, monthItems);
-      if (typeof updatePlanForecast === 'function') updatePlanForecast();
-      if (typeof renderBudgetMonthProgress === 'function') renderBudgetMonthProgress(Cache.budgetPlan || {}, monthItems);
-      if (typeof renderWeeklyPulse === 'function') renderWeeklyPulse(Cache.budgetPlan || {}, monthItems);
-    }
-
-    showToast(`Трата распределена в календаре на ${spreadMonths} мес.`);
-  } catch (err) {
-    console.error('Error submitting quick amortize:', err);
-    showToast('Ошибка при сохранении', true);
+  if (amount > 0) {
+    targetGoal.saved = Math.max(0, (parseFloat(targetGoal.saved) || 0) - amount);
   }
+
+  closeQuickAmortizeModal();
+  if (typeof triggerBudgetExpenseAnimation === 'function') triggerBudgetExpenseAnimation();
+  if (typeof markTabsDirty === 'function') markTabsDirty();
+  if (typeof renderBudgetTab === 'function') renderBudgetTab();
+  if (typeof renderTransactions === 'function') renderTransactions();
+  if (typeof renderGoals === 'function') renderGoals();
+
+  showToast(`Разовая трата списана из цели «${goalName}»`);
+
+  // 2. Асинхронная фоновая запись в Firestore
+  (async () => {
+    try {
+      const promises = [];
+      if (amount > 0 && typeof adjustGoalSaved === 'function') {
+        promises.push(adjustGoalSaved(targetGoal.id, -amount));
+      }
+      promises.push(
+        getUserCol('Transactions').doc(id).update({
+          excludeFromBudget: true,
+          spreadMonths: 1,
+          billType: 'onetime',
+          fundingGoalId: targetGoal.id,
+          fundingGoalName: goalName,
+          fundingGoalAmount: amount,
+          updatedAt: Date.now()
+        })
+      );
+
+      const existingBill = (Cache.calendarBills || []).find(b => b.linkedTxId === id);
+      if (existingBill) {
+        Cache.calendarBills = (Cache.calendarBills || []).filter(b => b.id !== existingBill.id);
+        promises.push(getUserCol('CalendarBills').doc(existingBill.id).delete());
+      }
+
+      await Promise.all(promises);
+    } catch (err) {
+      console.error('Background submitQuickAmortize error:', err);
+    }
+  })();
 }
 
 async function returnTxToBudget(id) {
@@ -1766,41 +2135,62 @@ async function returnTxToBudget(id) {
   }
   if (!tx) return;
 
-  try {
-    await getUserCol('Transactions').doc(id).update({
-      excludeFromBudget: false,
-      spreadMonths: 1
-    });
+  const oldGoalId = tx.fundingGoalId;
+  const refundAmt = parseFloat(tx.fundingGoalAmount) || parseFloat(tx.amount) || 0;
 
-    const billCol = getUserCol('CalendarBills');
-    const existingBill = (Cache.calendarBills || []).find(b => b.linkedTxId === id);
-    if (existingBill) {
-      await billCol.doc(existingBill.id).delete();
-      Cache.calendarBills = (Cache.calendarBills || []).filter(b => b.id !== existingBill.id);
+  // 1. Мгновенное оптимистичное обновление состояния в памяти
+  tx.excludeFromBudget = false;
+  tx.spreadMonths = 1;
+  tx.billType = '';
+  delete tx.fundingGoalId;
+  delete tx.fundingGoalName;
+  delete tx.fundingGoalAmount;
+
+  if (oldGoalId && refundAmt > 0) {
+    const targetGoal = (Cache?.goals || []).find(g => g.id === oldGoalId);
+    if (targetGoal) {
+      targetGoal.saved = (parseFloat(targetGoal.saved) || 0) + refundAmt;
     }
-
-    tx.excludeFromBudget = false;
-    tx.spreadMonths = 1;
-
-    if (typeof triggerBudgetExpenseAnimation === 'function') triggerBudgetExpenseAnimation();
-    if (typeof markTabsDirty === 'function') markTabsDirty();
-    if (typeof renderBudgetTab === 'function') renderBudgetTab();
-    renderTransactions();
-    if (typeof renderBudgetCalendar === 'function') {
-      const today = (typeof getSelectedBudgetDate === 'function') ? getSelectedBudgetDate() : new Date();
-      const currentMonthStr = (typeof formatDateStr === 'function') ? formatDateStr(today, 'yyyy-MM') : today.toISOString().slice(0, 7);
-      const monthItems = (Cache.transactions || []).find(m => m.month === currentMonthStr)?.items || [];
-      renderBudgetCalendar(Cache.calendarBills || [], today, monthItems);
-      if (typeof updatePlanForecast === 'function') updatePlanForecast();
-      if (typeof renderBudgetMonthProgress === 'function') renderBudgetMonthProgress(Cache.budgetPlan || {}, monthItems);
-      if (typeof renderWeeklyPulse === 'function') renderWeeklyPulse(Cache.budgetPlan || {}, monthItems);
-    }
-
-    showToast('Трата возвращена в месячный лимит');
-  } catch (err) {
-    console.error('Error returning tx to budget:', err);
-    showToast('Ошибка при возврате в бюджет', true);
   }
+
+  if (typeof triggerBudgetExpenseAnimation === 'function') triggerBudgetExpenseAnimation();
+  if (typeof markTabsDirty === 'function') markTabsDirty();
+  if (typeof renderBudgetTab === 'function') renderBudgetTab();
+  if (typeof renderTransactions === 'function') renderTransactions();
+  if (typeof renderGoals === 'function') renderGoals();
+
+  showToast('Трата возвращена в недельный лимит');
+
+  // 2. Асинхронная фоновая запись в Firestore
+  (async () => {
+    try {
+      const promises = [];
+      if (oldGoalId && refundAmt > 0 && typeof adjustGoalSaved === 'function') {
+        promises.push(adjustGoalSaved(oldGoalId, refundAmt));
+      }
+      promises.push(
+        getUserCol('Transactions').doc(id).update({
+          excludeFromBudget: false,
+          spreadMonths: 1,
+          billType: '',
+          fundingGoalId: null,
+          fundingGoalName: '',
+          fundingGoalAmount: 0,
+          updatedAt: Date.now()
+        })
+      );
+
+      const existingBill = (Cache.calendarBills || []).find(b => b.linkedTxId === id);
+      if (existingBill) {
+        Cache.calendarBills = (Cache.calendarBills || []).filter(b => b.id !== existingBill.id);
+        promises.push(getUserCol('CalendarBills').doc(existingBill.id).delete());
+      }
+
+      await Promise.all(promises);
+    } catch (err) {
+      console.error('Background returnTxToBudget error:', err);
+    }
+  })();
 }
 
 // ==========================================
@@ -1938,26 +2328,29 @@ function resetAllTxFilters() {
 
 function getLargeExpenseThresholdDetails() {
   const plan = Cache?.budgetPlan;
-  const monthlyLimit = parseFloat(plan?.monthlyVariableLimit) || 0;
-  if (monthlyLimit > 0) {
-    const weeklyBaseLimit = monthlyLimit / 4.33;
-    if (weeklyBaseLimit > 0) {
-      const val = Math.round((weeklyBaseLimit * 2) / 3);
+  const isConfigured = !!(plan && plan.isConfigured === true);
+  if (isConfigured) {
+    const monthlyLimit = parseFloat(plan?.monthlyVariableLimit) || 0;
+    if (monthlyLimit > 0) {
+      const weeklyBaseLimit = monthlyLimit / 4.33;
+      if (weeklyBaseLimit > 0) {
+        const val = Math.round((weeklyBaseLimit * 2) / 3);
+        return {
+          threshold: val,
+          isDynamic: true,
+          reason: 'порог бюджета (~65% недели)'
+        };
+      }
+    }
+    const monthlyIncome = parseFloat(plan?.monthlyIncome) || 0;
+    if (monthlyIncome > 0) {
+      const val = Math.round((monthlyIncome / 4.33) * 0.5);
       return {
         threshold: val,
         isDynamic: true,
-        reason: 'порог бюджета (~65% недели)'
+        reason: 'порог дохода (~50% недели)'
       };
     }
-  }
-  const monthlyIncome = parseFloat(plan?.monthlyIncome) || 0;
-  if (monthlyIncome > 0) {
-    const val = Math.round((monthlyIncome / 4.33) * 0.5);
-    return {
-      threshold: val,
-      isDynamic: true,
-      reason: 'порог дохода (~50% недели)'
-    };
   }
   return {
     threshold: 10000,
@@ -1978,9 +2371,12 @@ const TX_DAYS_PER_CHUNK = 8;
 
 function renderTxRowHtml(tx, largeThreshold, hasDynamicThreshold) {
   const isExp = tx.type === 'Расход';
-  const isOneTime = (tx.billType === 'onetime') || (tx.spreadMonths && parseInt(tx.spreadMonths, 10) > 1) || (!tx.isBillPayment && !!tx.excludeFromBudget);
+  const isOneTime = (tx.billType === 'onetime') || !!tx.fundingGoalId || (!tx.isBillPayment && !!tx.excludeFromBudget);
   const isBill = !isOneTime && (!!tx.isBillPayment || (!!tx.billId && tx.billType !== 'onetime'));
   const isAmortized = isOneTime && !!tx.excludeFromBudget;
+  const goalObj = tx.fundingGoalId ? (Cache?.goals || []).find(g => g.id === tx.fundingGoalId) : null;
+  const goalTitle = tx.fundingGoalName || (goalObj ? (goalObj.name || goalObj.title) : '') || '';
+  const goalBadgeLabel = goalTitle ? (goalTitle.length > 14 ? goalTitle.slice(0, 12) + '...' : goalTitle) : 'Разовая';
 
   let isTxMonthTracked = true;
   const pDate = (typeof parseAnyDate === 'function') ? parseAnyDate(tx.date) : new Date(tx.date);
@@ -2004,6 +2400,33 @@ function renderTxRowHtml(tx, largeThreshold, hasDynamicThreshold) {
 
   const isPending = !!(tx.isPendingTransfer || tx.transferStatus === 'pending');
   const isLarge = isExp && !isAmortized && !isBill && !isPending && hasDynamicThreshold && isTxMonthTracked && (parseFloat(tx.amount) >= largeThreshold);
+
+  let badgeHtml = '';
+  if (isPending) {
+    badgeHtml = `
+      <span class="h-5 px-1.5 rounded-md bg-[#6C5DD3]/20 text-[#A594FD] border border-[#6C5DD3]/30 text-[10px] font-bold flex items-center gap-1 flex-shrink-0 leading-none select-none">
+        <i data-lucide="arrow-left-right" class="w-2.5 h-2.5"></i>Перевод
+      </span>
+    `;
+  } else if (isBill) {
+    badgeHtml = `
+      <span class="h-5 px-1.5 rounded-md bg-[#6C5DD3]/15 text-[#a594fd] border border-[#6C5DD3]/25 text-[10px] font-medium flex items-center gap-1 flex-shrink-0 leading-none select-none" title="Ежемесячный счет: ${escapeHtml(tx.billName || 'Счет')}">
+        <i data-lucide="calendar" class="w-2.5 h-2.5"></i>Счет
+      </span>
+    `;
+  } else if (isAmortized) {
+    badgeHtml = `
+      <span class="h-5 px-1.5 rounded-md bg-amber-500/15 text-amber-300 border border-amber-500/25 text-[10px] font-medium flex items-center gap-1 flex-shrink-0 leading-none select-none" title="Разовая трата${goalTitle ? ' (списано из цели: ' + escapeHtml(goalTitle) + ')' : ''}">
+        <i data-lucide="sparkles" class="w-2.5 h-2.5 text-amber-400"></i>Разовая
+      </span>
+    `;
+  } else if (isLarge) {
+    badgeHtml = `
+      <span class="h-5 px-1.5 rounded-md bg-violet-500/15 text-violet-300 border border-violet-500/25 flex items-center justify-center flex-shrink-0 leading-none shadow-sm select-none" title="Крупная трата (от ${formatMoney(largeThreshold)})">
+        <i data-lucide="gem" class="w-3 h-3 stroke-[2]"></i>
+      </span>
+    `;
+  }
 
   const isTxTabVisible = !document.getElementById('transactions-tab')?.classList.contains('hidden');
   const isFresh = (Date.now() - (window.lastAddedTxTime || 0)) < 1800;
@@ -2078,31 +2501,12 @@ function renderTxRowHtml(tx, largeThreshold, hasDynamicThreshold) {
       <input type="checkbox" class="select-checkbox hidden" data-id="${tx.id}">
       ${authorBadgeHtml}
 
-      <div class="flex items-center gap-3.5 min-w-0">
+      <div class="flex items-center gap-3.5 min-w-0 flex-1 mr-2">
          <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${iconBg}">
             <i data-lucide="${iconStr}" class="w-[22px] h-[22px] stroke-[1.75px]"></i>
          </div>
-         <div class="min-w-0 flex flex-col justify-center">
-           <div class="flex items-center gap-1.5 min-w-0">
-             <span class="text-[15px] font-semibold text-gray-200 truncate leading-snug">${escapeHtml(mainTitle)}</span>
-             ${isPending ? `
-               <span class="px-1.5 py-0.5 rounded bg-[#6C5DD3]/20 text-[#A594FD] border border-[#6C5DD3]/30 text-[10px] font-bold flex items-center gap-1 flex-shrink-0 leading-none">
-                 <i data-lucide="arrow-left-right" class="w-2.5 h-2.5"></i>Перевод
-               </span>
-             ` : (isBill ? `
-               <span class="px-1.5 py-0.5 rounded bg-[#6C5DD3]/15 text-[#a594fd] border border-[#6C5DD3]/25 text-[10px] font-medium flex items-center gap-1 flex-shrink-0 leading-none" title="Ежемесячный счет: ${escapeHtml(tx.billName || 'Счет')}">
-                 <i data-lucide="calendar" class="w-2.5 h-2.5"></i>Счет
-               </span>
-             ` : (isAmortized ? `
-               <span class="px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/25 text-[10px] font-medium flex items-center gap-1 flex-shrink-0 leading-none" title="Исключена из месячного лимита и распределена на ${tx.spreadMonths || 1} мес.">
-                 <i data-lucide="split" class="w-2.5 h-2.5"></i>${tx.spreadMonths || 1} мес
-               </span>
-             ` : (isLarge ? `
-               <span class="px-1.5 py-0.5 rounded bg-violet-500/15 text-violet-300 border border-violet-500/25 flex items-center justify-center flex-shrink-0 leading-none shadow-sm" title="Крупная трата (от ${formatMoney(largeThreshold)})">
-                 <i data-lucide="gem" class="w-3 h-3 stroke-[2]"></i>
-               </span>
-             ` : '')))}
-           </div>
+         <div class="min-w-0 flex flex-col justify-center flex-1">
+           <span class="text-[15px] font-semibold text-gray-200 truncate leading-snug">${escapeHtml(mainTitle)}</span>
            ${isPending ? `
              <div class="flex items-center gap-1.5 mt-1" onclick="event.stopPropagation()">
                <button type="button" 
@@ -2124,18 +2528,21 @@ function renderTxRowHtml(tx, largeThreshold, hasDynamicThreshold) {
          </div>
       </div>
 
-      ${isPending ? `
-        <div class="tx-amount text-right flex flex-col items-end flex-shrink-0 ml-2 ${authorBadgeHtml ? 'mr-7' : ''}">
-          <span class="font-bold text-gray-200 text-[15px]">
+      <div class="tx-row-right flex items-center gap-2 flex-shrink-0 ml-2">
+        ${badgeHtml}
+        ${isPending ? `
+          <div class="tx-amount text-right flex flex-col items-end flex-shrink-0">
+            <span class="font-bold text-gray-200 text-[15px]">
+              ${window.isPrivacyModeEnabled ? '•••• ₽' : (isExp ? '-' : '+') + formatMoney(tx.amount)}
+            </span>
+            <span class="text-[9.5px] font-semibold text-[#A594FD] bg-[#6C5DD3]/20 border border-[#6C5DD3]/30 px-1.5 py-0.2 rounded-md mt-0.5">Ожидает</span>
+          </div>
+        ` : `
+          <div class="tx-amount text-right font-medium ${isExp ? 'text-gray-200' : 'text-[#30D158]'} text-[16px] whitespace-nowrap">
             ${window.isPrivacyModeEnabled ? '•••• ₽' : (isExp ? '-' : '+') + formatMoney(tx.amount)}
-          </span>
-          <span class="text-[9.5px] font-semibold text-[#A594FD] bg-[#6C5DD3]/20 border border-[#6C5DD3]/30 px-1.5 py-0.2 rounded-md mt-0.5">Ожидает</span>
-        </div>
-      ` : `
-        <div class="tx-amount text-right font-medium ${isExp ? 'text-gray-200' : 'text-[#30D158]'} text-[16px] flex-shrink-0 ml-2 ${authorBadgeHtml ? 'mr-7' : ''}">
-          ${window.isPrivacyModeEnabled ? '•••• ₽' : (isExp ? '-' : '+') + formatMoney(tx.amount)}
-        </div>
-      `}
+          </div>
+        `}
+      </div>
     </div>
   `;
 }
@@ -3050,6 +3457,8 @@ document.addEventListener('click', (e) => {
   }
   if (!target.closest('.custom-dropdown-wrap')) {
     document.querySelectorAll('.tx-category-menu').forEach(m => m.classList.add('hidden'));
+    document.querySelectorAll('.tx-goal-menu').forEach(m => m.classList.add('hidden'));
+    document.querySelectorAll('.custom-dropdown-menu').forEach(m => m.classList.add('hidden'));
     document.querySelectorAll('.tx-item').forEach(r => r.style.zIndex = '');
   }
 });
@@ -3196,6 +3605,10 @@ window.addTxRow = addTxRow;
 window.removeTxRow = removeTxRow;
 window.updateTxSubmitBtnText = updateTxSubmitBtnText;
 window.updateTxRowRemoveButtons = updateTxRowRemoveButtons;
+window.handleInlineTxAmountChange = handleInlineTxAmountChange;
+window.handleInlineTxGoalChange = handleInlineTxGoalChange;
+window.toggleInlineTxAmortize = toggleInlineTxAmortize;
+window.toggleInlineTxAmortizeHelp = toggleInlineTxAmortizeHelp;
 window.submitTransactions = submitTransactions;
 window.editTx = editTx;
 window.handleTxRowCommentInput = handleTxRowCommentInput;
@@ -3206,8 +3619,10 @@ window.learnMerchantCategory = learnMerchantCategory;
 window.openTxContextMenu = openTxContextMenu;
 window.openQuickAmortizeModal = openQuickAmortizeModal;
 window.closeQuickAmortizeModal = closeQuickAmortizeModal;
-window.changeQuickSpreadMonths = changeQuickSpreadMonths;
-window.updateQuickSpreadPreview = updateQuickSpreadPreview;
+window.renderQuickGoalMenu = renderQuickGoalMenu;
+window.toggleQuickGoalMenu = toggleQuickGoalMenu;
+window.selectQuickGoal = selectQuickGoal;
+window.updateQuickGoalPreview = updateQuickGoalPreview;
 window.submitQuickAmortize = submitQuickAmortize;
 window.returnTxToBudget = returnTxToBudget;
 window.openEditTxModal = openEditTxModal;
@@ -3217,8 +3632,10 @@ window.submitEditTxModal = submitEditTxModal;
 window.deleteTxFromModal = deleteTxFromModal;
 window.toggleTxAmortizeSection = toggleTxAmortizeSection;
 window.handleEditTxAmountChange = handleEditTxAmountChange;
-window.changeTxSpreadMonths = changeTxSpreadMonths;
-window.updateTxSpreadPreview = updateTxSpreadPreview;
+window.renderEditTxGoalMenu = renderEditTxGoalMenu;
+window.toggleEditTxGoalMenu = toggleEditTxGoalMenu;
+window.selectEditTxGoal = selectEditTxGoal;
+window.updateEditTxGoalPreview = updateEditTxGoalPreview;
 window.setEditTxType = setEditTxType;
 window.renderEditTxCategories = renderEditTxCategories;
 window.toggleEditTxCategoryMenu = toggleEditTxCategoryMenu;
@@ -3248,3 +3665,9 @@ window.togglePendingTransfersFilter = togglePendingTransfersFilter;
 window.confirmPendingTransfer = confirmPendingTransfer;
 window.dismissPendingTransfer = dismissPendingTransfer;
 window.dismissPendingTransferSilent = dismissPendingTransferSilent;
+
+window.renderInlineTxGoalMenu = renderInlineTxGoalMenu;
+window.toggleInlineTxGoalMenu = toggleInlineTxGoalMenu;
+window.selectInlineTxGoal = selectInlineTxGoal;
+window.updateInlineTxGoalRemaining = updateInlineTxGoalRemaining;
+

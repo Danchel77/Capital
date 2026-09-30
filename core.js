@@ -228,15 +228,52 @@ let currentEditTable = null;
 // Database CRUD & Sync Operations
 // ==========================================
 
+// Хелпер очистки объекта от undefined перед отправкой в Firestore
+function cleanFirestoreData(data) {
+  if (!data || typeof data !== 'object') return data;
+  if (data instanceof Date) return data;
+  const clean = Array.isArray(data) ? [] : {};
+  for (const [key, val] of Object.entries(data)) {
+    if (val === undefined) {
+      clean[key] = null;
+    } else if (val && typeof val === 'object' && !(val instanceof Date)) {
+      clean[key] = cleanFirestoreData(val);
+    } else {
+      clean[key] = val;
+    }
+  }
+  return clean;
+}
+
 // Хелпер доступа к коллекции: если подключен семейный бюджет — возвращает подколлекцию семьи, иначе личную
 function getUserCol(table) {
   const user = auth.currentUser;
   if (!user) throw new Error('Пользователь не авторизован');
   
+  let colRef;
   if (Cache?.family?.id) {
-    return db.collection('families').doc(Cache.family.id).collection(table);
+    colRef = db.collection('families').doc(Cache.family.id).collection(table);
+  } else {
+    colRef = db.collection('users').doc(user.uid).collection(table);
   }
-  return db.collection('users').doc(user.uid).collection(table);
+
+  // Защита от сбоя Firestore DocumentReference.update/set из-за undefined полей
+  const origDoc = colRef.doc.bind(colRef);
+  colRef.doc = function(docId) {
+    const docRef = origDoc(docId);
+    const origUpdate = docRef.update.bind(docRef);
+    const origSet = docRef.set.bind(docRef);
+
+    docRef.update = function(data, ...rest) {
+      return origUpdate(cleanFirestoreData(data), ...rest);
+    };
+    docRef.set = function(data, ...rest) {
+      return origSet(cleanFirestoreData(data), ...rest);
+    };
+    return docRef;
+  };
+
+  return colRef;
 }
 
 function hideLoadingScreen() {
@@ -295,9 +332,13 @@ async function fetchAllData(isSilent = false) {
   } catch (e) {}
 
   // ЭТАП 2: Фоновая синхронизация со свежими данными сервера
+  let syncToastTimer = null;
   try {
     if (!isSilent) {
       showToast("Синхронизация...", false, true);
+      syncToastTimer = setTimeout(() => {
+        if (typeof dismissToast === 'function') dismissToast(0);
+      }, 2500);
     }
     const serverSnaps = await Promise.all(
       tables.map(tbl => getUserCol(tbl).get())
@@ -307,8 +348,9 @@ async function fetchAllData(isSilent = false) {
     if (syncTimeEl) {
       syncTimeEl.innerText = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
-    if (!isSilent) {
-      document.getElementById('toast-container')?.classList.add('hidden');
+    if (syncToastTimer) clearTimeout(syncToastTimer);
+    if (!isSilent && typeof dismissToast === 'function') {
+      dismissToast(0);
     }
     hideLoadingScreen();
 
@@ -316,8 +358,9 @@ async function fetchAllData(isSilent = false) {
       checkFamilyBudgetReviewPrompt();
     }
   } catch (err) {
-    if (!isSilent) {
-      document.getElementById('toast-container')?.classList.add('hidden');
+    if (syncToastTimer) clearTimeout(syncToastTimer);
+    if (!isSilent && typeof dismissToast === 'function') {
+      dismissToast(0);
     }
     hideLoadingScreen();
     if (Cache) {
@@ -499,7 +542,9 @@ async function applySnapshotsToUI([txS, depS, brS, goalS, catS, rulesS, planS, b
     window._budgetTabRendered = true;
   }
 
-  if (typeof checkAndCreditMaturedDeposits === 'function') {
+  if (typeof updateDepositsBadge === 'function') {
+    updateDepositsBadge();
+  } else if (typeof checkAndCreditMaturedDeposits === 'function') {
     checkAndCreditMaturedDeposits();
   }
 
@@ -687,6 +732,16 @@ function deleteRecord(table, id) {
         if (typeof handleTransactionsDeleted === 'function') {
           handleTransactionsDeleted([id], deletedTx ? [deletedTx] : []).catch(() => {});
         }
+
+        // Если удаляемая операция была разовой тратой, покрытой из цели — восполняем цель
+        if (deletedTx && deletedTx.fundingGoalId) {
+          const refundAmt = parseFloat(deletedTx.fundingGoalAmount) || parseFloat(deletedTx.amount) || 0;
+          if (refundAmt > 0 && typeof adjustGoalSaved === 'function') {
+            adjustGoalSaved(deletedTx.fundingGoalId, refundAmt).catch(err => {
+              console.error('Ошибка восполнения цели при удалении операции:', err);
+            });
+          }
+        }
       } else if (table === 'Deposits') {
         if (Array.isArray(Cache?.deposits)) {
           Cache.deposits = Cache.deposits.filter(d => d.id !== id);
@@ -714,6 +769,55 @@ function deleteRecord(table, id) {
     }
   });
 }
+
+// Корректировка накоплений цели (списание при разовой покупке или возврат при удалении/отмене)
+async function adjustGoalSaved(goalId, deltaAmount, existingBatch = null) {
+  if (!goalId || !deltaAmount) return null;
+  const numDelta = typeof deltaAmount === 'number' ? deltaAmount : (parseFloat(String(deltaAmount || 0).replace(/\s/g, '').replace(/,/g, '.')) || 0);
+  if (numDelta === 0) return null;
+
+  const goals = Cache?.goals || [];
+  const goal = goals.find(g => g.id === goalId);
+  if (!goal) return null;
+
+  const oldSaved = parseFloat(goal.saved) || 0;
+  const newSaved = Math.max(0, Math.round(oldSaved + numDelta));
+  goal.saved = newSaved;
+
+  const target = parseFloat(goal.target) || 0;
+  let newStatus = goal.status || 'В процессе';
+  if (target > 0) {
+    if (newSaved >= target) newStatus = 'Выполнена';
+    else if (goal.status === 'Выполнена' && newSaved < target) newStatus = 'В процессе';
+  }
+  goal.status = newStatus;
+
+  try {
+    const col = getUserCol('Goals');
+    const updateData = {
+      saved: newSaved,
+      status: newStatus,
+      updatedAt: Date.now()
+    };
+
+    if (existingBatch) {
+      existingBatch.update(col.doc(goalId), updateData);
+    } else {
+      await col.doc(goalId).update(updateData);
+    }
+
+    if (typeof markTabsDirty === 'function') markTabsDirty();
+    if (typeof renderBudgetTab === 'function') renderBudgetTab();
+    if (typeof renderBudgetGoals === 'function' && Cache?.budgetPlan) {
+      renderBudgetGoals(Cache.goals, Cache.budgetPlan, Cache.calendarBills || []);
+    }
+  } catch (err) {
+    console.error('Ошибка обновления накоплений цели:', err);
+  }
+
+  return goal;
+}
+window.adjustGoalSaved = adjustGoalSaved;
 
 // Инициализация профиля ТОЛЬКО если это совершенно новый пользователь
 async function initNewUserIfNeeded(user) {
@@ -1490,11 +1594,13 @@ function isPwaStandalone() {
 window.db = db;
 window.auth = auth;
 window.getUserCol = getUserCol;
+window.cleanFirestoreData = cleanFirestoreData;
 window.fetchAllData = fetchAllData;
 window.fetchCollection = fetchCollection;
 window.applySnapshotsToUI = applySnapshotsToUI;
 window.submitAction = submitAction;
 window.deleteRecord = deleteRecord;
+window.adjustGoalSaved = adjustGoalSaved;
 window.formatMoney = formatMoney;
 window.animateNumber = animateNumber;
 window.animatePercentage = animatePercentage;
