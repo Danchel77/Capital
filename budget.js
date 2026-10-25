@@ -4,12 +4,10 @@
 let currentWizardStep = 1;
 let currentWizSelectedDay = null;
 let wizardActiveIncomeSources = new Set();
-let wizardCustomCategories = new Set();
-let wizardExcludedCategories = new Set();
+const wizardCustomCategories = new Set();
+const wizardExcludedCategories = new Set();
 window.wizardExcludedCategories = wizardExcludedCategories;
-let activeTopupGoalId = null;
 let activeEditCategory = null;
-let currentTopupMode = 'topup';
 let wizGoalIcon = null;
 
 // Состояние навигации по месяцам бюджета
@@ -43,6 +41,8 @@ function getBudgetStartMonthDate() {
   const today = new Date();
   return new Date(today.getFullYear(), today.getMonth(), 1);
 }
+window.getSelectedBudgetDate = getSelectedBudgetDate;
+window.getBudgetStartMonthDate = getBudgetStartMonthDate;
 
 function getBudgetMaxMonthDate() {
   const today = new Date();
@@ -50,7 +50,7 @@ function getBudgetMaxMonthDate() {
   const plan = Cache?.budgetPlan || {};
   const closedMonths = plan.closedMonths || {};
   const currentMonthKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
-  
+
   // Если текущий месяц уже закрыт — разрешаем перейти на следующий вперед
   if (closedMonths[currentMonthKey]) {
     return new Date(today.getFullYear(), today.getMonth() + 1, 1);
@@ -132,7 +132,8 @@ function renderBudgetTab() {
   const targetDate = getSelectedBudgetDate();
   const targetYear = targetDate.getFullYear();
   const targetMonth = targetDate.getMonth();
-  const isCurrentCalendarMonth = (targetYear === today.getFullYear() && targetMonth === today.getMonth());
+  const isCurrentCalendarMonth =
+    targetYear === today.getFullYear() && targetMonth === today.getMonth();
 
   // Проверка граничных месяцев для скрытия стрелок навигации
   const minDate = getBudgetStartMonthDate();
@@ -151,7 +152,20 @@ function renderBudgetTab() {
   }
 
   // Актуализация выбранного месяца в шапке
-  const monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+  const monthNames = [
+    'Январь',
+    'Февраль',
+    'Март',
+    'Апрель',
+    'Май',
+    'Июнь',
+    'Июль',
+    'Август',
+    'Сентябрь',
+    'Октябрь',
+    'Ноябрь',
+    'Декабрь',
+  ];
   const monthLabel = document.getElementById('budget-month-label');
   if (monthLabel) {
     monthLabel.innerText = `${monthNames[targetMonth]} ${targetYear}`;
@@ -162,11 +176,16 @@ function renderBudgetTab() {
   const isClosed = isBudgetMonthClosed(targetYear, targetMonth);
   if (statusBadge) {
     if (isClosed) {
-      statusBadge.className = 'text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 inline-block';
+      statusBadge.className =
+        'text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 inline-block';
       statusBadge.innerText = 'Закрыт';
       statusBadge.classList.remove('hidden');
-    } else if (!isCurrentCalendarMonth && targetDate.getTime() < new Date(today.getFullYear(), today.getMonth(), 1).getTime()) {
-      statusBadge.className = 'text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/25 inline-block';
+    } else if (
+      !isCurrentCalendarMonth &&
+      targetDate.getTime() < new Date(today.getFullYear(), today.getMonth(), 1).getTime()
+    ) {
+      statusBadge.className =
+        'text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/25 inline-block';
       statusBadge.innerText = 'Ожидает закрытия';
       statusBadge.classList.remove('hidden');
     } else {
@@ -177,8 +196,24 @@ function renderBudgetTab() {
   // Точный расчет недели (Пн-Вс) для текущего месяца
   const dayOfWeek = today.getDay();
   const diffToMonday = (dayOfWeek + 6) % 7;
-  const startOfWeek = new Date(today.getFullYear(), today.getMonth(), today.getDate() - diffToMonday, 0, 0, 0, 0);
-  const endOfWeek = new Date(today.getFullYear(), today.getMonth(), today.getDate() - diffToMonday + 6, 23, 59, 59, 999);
+  const startOfWeek = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate() - diffToMonday,
+    0,
+    0,
+    0,
+    0
+  );
+  const endOfWeek = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate() - diffToMonday + 6,
+    23,
+    59,
+    59,
+    999
+  );
 
   // Точный расчет выбранного месяца (с 1 по последний день)
   const startOfMonth = new Date(targetYear, targetMonth, 1, 0, 0, 0, 0);
@@ -198,16 +233,33 @@ function renderBudgetTab() {
   const targetMonthObj = (Cache.transactions || []).find(m => m.id === targetMonthKey);
   if (targetMonthObj && Array.isArray(targetMonthObj.items)) {
     targetMonthObj.items.forEach(tx => {
-      const isExpense = tx.type === 'Расход' || tx.type === 'expense' || String(tx.type || '').trim().toLowerCase() === 'расход';
+      const isExpense =
+        tx.type === 'Расход' ||
+        tx.type === 'expense' ||
+        String(tx.type || '')
+          .trim()
+          .toLowerCase() === 'расход';
       const isExcluded = !!(tx.excludeFromBudget || tx.isExcludedFromBudget);
       if (!isExpense || isExcluded) return;
 
-      const val = typeof tx.amount === 'number'
-        ? tx.amount
-        : (parseFloat(String(tx.amount || 0).replace(/\s/g, '').replace(/,/g, '.')) || 0);
+      const val =
+        typeof tx.amount === 'number'
+          ? tx.amount
+          : parseFloat(
+              String(tx.amount || 0)
+                .replace(/\s/g, '')
+                .replace(/,/g, '.')
+            ) || 0;
       if (val <= 0) return;
 
-      const txTime = tx.dayTimestamp || tx.timestamp || (tx.rawDate ? (typeof window.parseAnyDate === 'function' ? window.parseAnyDate(tx.rawDate)?.getTime() : new Date(tx.rawDate).getTime()) : 0);
+      const txTime =
+        tx.dayTimestamp ||
+        tx.timestamp ||
+        (tx.rawDate
+          ? typeof window.parseAnyDate === 'function'
+            ? window.parseAnyDate(tx.rawDate)?.getTime()
+            : new Date(tx.rawDate).getTime()
+          : 0);
       if (txTime >= startOfMonthTime && txTime <= endOfMonthTime) {
         monthlySpent += val;
         currentMonthItems.push(tx);
@@ -225,10 +277,22 @@ function renderBudgetTab() {
       const prevMonthObj = (Cache.transactions || []).find(m => m.id === startWeekMonthKey);
       if (prevMonthObj && Array.isArray(prevMonthObj.items)) {
         prevMonthObj.items.forEach(tx => {
-          const isExpense = tx.type === 'Расход' || tx.type === 'expense' || String(tx.type || '').trim().toLowerCase() === 'расход';
+          const isExpense =
+            tx.type === 'Расход' ||
+            tx.type === 'expense' ||
+            String(tx.type || '')
+              .trim()
+              .toLowerCase() === 'расход';
           const isExcluded = !!(tx.excludeFromBudget || tx.isExcludedFromBudget);
           if (!isExpense || isExcluded) return;
-          const val = typeof tx.amount === 'number' ? tx.amount : (parseFloat(String(tx.amount || 0).replace(/\s/g, '').replace(/,/g, '.')) || 0);
+          const val =
+            typeof tx.amount === 'number'
+              ? tx.amount
+              : parseFloat(
+                  String(tx.amount || 0)
+                    .replace(/\s/g, '')
+                    .replace(/,/g, '.')
+                ) || 0;
           if (val <= 0) return;
           const txTime = tx.dayTimestamp || tx.timestamp || 0;
           if (txTime >= startOfWeekTime && txTime <= endOfWeekTime) {
@@ -293,17 +357,26 @@ function renderBudgetTab() {
   const EXPENSE_ANIM_DURATION = 3000; // Размеренная благородная скорость наполнения/уменьшения (3.0 сек)
 
   // Базовые значения до внесения трат для анимации изменений от предыдущей точки
-  const baseline = (window._budgetBaselineState && window._budgetBaselineState.targetMonthKey === currentMonthKey)
-    ? window._budgetBaselineState
-    : ((window._budgetLastRenderedState && window._budgetLastRenderedState.targetMonthKey === currentMonthKey) ? window._budgetLastRenderedState : null);
+  const baseline =
+    window._budgetBaselineState && window._budgetBaselineState.targetMonthKey === currentMonthKey
+      ? window._budgetBaselineState
+      : window._budgetLastRenderedState &&
+          window._budgetLastRenderedState.targetMonthKey === currentMonthKey
+        ? window._budgetLastRenderedState
+        : null;
 
-  const baseWeeklySpent = baseline && baseline.weeklySpent !== undefined ? baseline.weeklySpent : weeklySpent;
-  const baseMonthlySpent = baseline && baseline.monthlySpent !== undefined ? baseline.monthlySpent : monthlySpent;
-  const baseWeeklyAvailable = baseline && baseline.weeklyAvailable !== undefined ? baseline.weeklyAvailable : weeklyAvailable;
+  const baseWeeklySpent =
+    baseline && baseline.weeklySpent !== undefined ? baseline.weeklySpent : weeklySpent;
+  const baseMonthlySpent =
+    baseline && baseline.monthlySpent !== undefined ? baseline.monthlySpent : monthlySpent;
+  const baseWeeklyAvailable =
+    baseline && baseline.weeklyAvailable !== undefined ? baseline.weeklyAvailable : weeklyAvailable;
   const baseWeekPct = baseline && baseline.weekPct !== undefined ? baseline.weekPct : weekPct;
   const baseMonthPct = baseline && baseline.monthPct !== undefined ? baseline.monthPct : mPct;
-  const baseCircleOffset = baseline && baseline.circleOffset !== undefined ? baseline.circleOffset : circleOffset;
-  const baseClampedMonthPct = baseline && baseline.clampedMonthPct !== undefined ? baseline.clampedMonthPct : mClampedPct;
+  const baseCircleOffset =
+    baseline && baseline.circleOffset !== undefined ? baseline.circleOffset : circleOffset;
+  const baseClampedMonthPct =
+    baseline && baseline.clampedMonthPct !== undefined ? baseline.clampedMonthPct : mClampedPct;
 
   if (shouldPlayExpenseAnimation) {
     // Сбрасываем флаги: анимация изменений проигрывается строго один раз после внесения трат
@@ -314,7 +387,7 @@ function renderBudgetTab() {
     if (weekAvailEl) {
       if (weeklyBaseLimit > 0 && weeklySpent > weeklyBaseLimit) {
         weekAvailEl.innerHTML = `<span class="text-white">${formatMoney(0)}</span> <span class="text-xs font-semibold text-[#FF453A] ml-2 block sm:inline">Лимит превышен на ${formatMoney(weeklySpent - weeklyBaseLimit)}</span>`;
-        weekAvailEl.dataset.animVal = "0";
+        weekAvailEl.dataset.animVal = '0';
       } else if (typeof animateNumber === 'function') {
         weekAvailEl.dataset.animVal = String(baseWeeklyAvailable);
         weekAvailEl.innerText = formatMoney(baseWeeklyAvailable);
@@ -327,7 +400,8 @@ function renderBudgetTab() {
     if (weekSpentText) {
       weekSpentText.dataset.animVal = String(baseWeeklySpent);
       weekSpentText.innerText = formatMoney(baseWeeklySpent);
-      if (typeof animateNumber === 'function') animateNumber(weekSpentText, weeklySpent, true, EXPENSE_ANIM_DURATION);
+      if (typeof animateNumber === 'function')
+        animateNumber(weekSpentText, weeklySpent, true, EXPENSE_ANIM_DURATION);
       else weekSpentText.innerText = formatMoney(weeklySpent);
     }
 
@@ -372,7 +446,7 @@ function renderBudgetTab() {
     // Исходное состояние шкалы месяца (ширина до добавления трат)
     if (monthBar) {
       monthBar.style.transition = 'none';
-      monthBar.style.width = `${monthlyLimit > 0 ? baseClampedMonthPct : (baseMonthlySpent > 0 ? 100 : 0)}%`;
+      monthBar.style.width = `${monthlyLimit > 0 ? baseClampedMonthPct : baseMonthlySpent > 0 ? 100 : 0}%`;
       monthBar.className = `h-full ${monthColor} rounded-full shadow-sm`;
     }
 
@@ -385,7 +459,7 @@ function renderBudgetTab() {
         }
         if (monthBar) {
           monthBar.style.transition = `width ${EXPENSE_ANIM_DURATION}ms cubic-bezier(0.16, 1, 0.3, 1), background-color 0.4s ease`;
-          monthBar.style.width = `${monthlyLimit > 0 ? mClampedPct : (monthlySpent > 0 ? 100 : 0)}%`;
+          monthBar.style.width = `${monthlyLimit > 0 ? mClampedPct : monthlySpent > 0 ? 100 : 0}%`;
         }
       });
     });
@@ -394,7 +468,7 @@ function renderBudgetTab() {
     if (weekAvailEl) {
       if (weeklyBaseLimit > 0 && weeklySpent > weeklyBaseLimit) {
         weekAvailEl.innerHTML = `<span class="text-white">${formatMoney(0)}</span> <span class="text-xs font-semibold text-[#FF453A] ml-2 block sm:inline">Лимит превышен на ${formatMoney(weeklySpent - weeklyBaseLimit)}</span>`;
-        weekAvailEl.dataset.animVal = "0";
+        weekAvailEl.dataset.animVal = '0';
       } else if (typeof animateNumber === 'function') {
         animateNumber(weekAvailEl, weeklyAvailable);
       } else {
@@ -436,7 +510,7 @@ function renderBudgetTab() {
 
     if (monthBar) {
       monthBar.style.transition = 'width 0.5s ease-out, background-color 0.4s ease';
-      monthBar.style.width = `${monthlyLimit > 0 ? mClampedPct : (monthlySpent > 0 ? 100 : 0)}%`;
+      monthBar.style.width = `${monthlyLimit > 0 ? mClampedPct : monthlySpent > 0 ? 100 : 0}%`;
       monthBar.className = `h-full ${monthColor} rounded-full shadow-sm`;
     }
   }
@@ -450,26 +524,30 @@ function renderBudgetTab() {
     monthPct: mPct,
     circleOffset,
     clampedMonthPct: mClampedPct,
-    targetMonthKey: currentMonthKey
+    targetMonthKey: currentMonthKey,
   };
 
   // Кнопка закрытия месяца на одной строке с процентом заполнения шкалы
   const closeMonthContainer = document.getElementById('budget-close-month-container');
   const closeMonthBtn = document.getElementById('budget-close-month-btn');
   const closeMonthBtnText = document.getElementById('budget-close-month-btn-text');
-  
+
   // Месяц завершился по дате устройства
-  const isMonthEnded = (today.getFullYear() > targetYear) || (today.getFullYear() === targetYear && today.getMonth() > targetMonth);
+  const isMonthEnded =
+    today.getFullYear() > targetYear ||
+    (today.getFullYear() === targetYear && today.getMonth() > targetMonth);
 
   if (closeMonthContainer && closeMonthBtn && closeMonthBtnText) {
     if (isClosed) {
       closeMonthContainer.classList.remove('hidden');
-      closeMonthBtn.className = 'py-1 px-2.5 rounded-lg bg-[#212430] hover:bg-[#2A2D3C] text-emerald-400 font-semibold text-[11px] border border-emerald-500/30 flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer';
+      closeMonthBtn.className =
+        'py-1 px-2.5 rounded-lg bg-[#212430] hover:bg-[#2A2D3C] text-emerald-400 font-semibold text-[11px] border border-emerald-500/30 flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer';
       closeMonthBtnText.innerText = 'Итоги закрытия';
       closeMonthBtn.onclick = () => openMonthCloseFlow(targetYear, targetMonth);
     } else if (isMonthEnded) {
       closeMonthContainer.classList.remove('hidden');
-      closeMonthBtn.className = 'py-1 px-3 rounded-lg bg-gradient-to-r from-[#6C5DD3] to-[#8C7DFF] hover:from-[#5e4fc9] hover:to-[#7b6ceb] text-white font-bold text-[11px] shadow-sm border border-[rgba(255,255,255,0.1)] flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer';
+      closeMonthBtn.className =
+        'py-1 px-3 rounded-lg bg-gradient-to-r from-[#6C5DD3] to-[#8C7DFF] hover:from-[#5e4fc9] hover:to-[#7b6ceb] text-white font-bold text-[11px] shadow-sm border border-[rgba(255,255,255,0.1)] flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer';
       closeMonthBtnText.innerText = 'Закрыть месяц';
       closeMonthBtn.onclick = () => openMonthCloseFlow(targetYear, targetMonth);
     } else {
@@ -498,10 +576,10 @@ function getOneTimeBillMonthInfo(bill, targetDate = new Date()) {
   }
   const spreadMonths = Math.max(1, parseInt(bill.spreadMonths, 10) || 1);
   const startMonthStr = bill.startMonth || bill.month || formatDateStr(targetDate, 'yyyy-MM');
-  
+
   const parts = String(startMonthStr).split('-');
   const startYear = parseInt(parts[0], 10) || targetDate.getFullYear();
-  const startM = parseInt(parts[1], 10) || (targetDate.getMonth() + 1);
+  const startM = parseInt(parts[1], 10) || targetDate.getMonth() + 1;
 
   const targetYear = targetDate.getFullYear();
   const targetM = targetDate.getMonth() + 1;
@@ -517,7 +595,7 @@ function getOneTimeBillMonthInfo(bill, targetDate = new Date()) {
     totalSteps: spreadMonths,
     isSpread: spreadMonths > 1,
     startMonthStr,
-    monthDiff
+    monthDiff,
   };
 }
 
@@ -526,7 +604,9 @@ function getOneTimeBillMonthInfo(bill, targetDate = new Date()) {
 // а в других месяцах сохраняется базовая запланированная сумма)
 function getEffectiveBillAmount(bill, targetDate = new Date(), monthItems = null) {
   if (!bill) return 0;
-  const d = targetDate || ((typeof getSelectedBudgetDate === 'function') ? getSelectedBudgetDate() : new Date());
+  const d =
+    targetDate ||
+    (typeof getSelectedBudgetDate === 'function' ? getSelectedBudgetDate() : new Date());
   const year = d.getFullYear();
   const month = d.getMonth();
   const monthKey = `${year}-${String(month + 1).padStart(2, '0')}`;
@@ -535,7 +615,9 @@ function getEffectiveBillAmount(bill, targetDate = new Date(), monthItems = null
   if (!info.isActive) return 0;
 
   // 1. Проверяем привязанную транзакцию в переданном массиве транзакций или в общем кэше
-  const allTxs = monthItems || (typeof getAllCachedTransactionsFlat === 'function' ? getAllCachedTransactionsFlat() : []);
+  const allTxs =
+    monthItems ||
+    (typeof getAllCachedTransactionsFlat === 'function' ? getAllCachedTransactionsFlat() : []);
   const linkedTx = allTxs.find(tx => {
     if (tx.type !== 'Расход') return false;
     if (tx.billId !== bill.id && tx.id !== bill.linkedTxId) return false;
@@ -545,7 +627,10 @@ function getEffectiveBillAmount(bill, targetDate = new Date(), monthItems = null
     if (tx.timestamp && typeof tx.timestamp === 'number') {
       txDate = new Date(tx.timestamp);
     } else if (tx.rawDate || tx.date) {
-      txDate = typeof window.parseAnyDate === 'function' ? window.parseAnyDate(tx.rawDate || tx.date) : new Date(tx.rawDate || tx.date);
+      txDate =
+        typeof window.parseAnyDate === 'function'
+          ? window.parseAnyDate(tx.rawDate || tx.date)
+          : new Date(tx.rawDate || tx.date);
     }
     if (!txDate || isNaN(txDate.getTime())) return false;
     return txDate.getFullYear() === year && txDate.getMonth() === month;
@@ -611,15 +696,31 @@ function renderBudgetCalendar(bills, today, monthItems) {
 
   if (Array.isArray(today)) {
     itemsList = today;
-    validToday = (typeof getSelectedBudgetDate === 'function') ? getSelectedBudgetDate() : new Date();
+    validToday = typeof getSelectedBudgetDate === 'function' ? getSelectedBudgetDate() : new Date();
   } else {
-    validToday = (today instanceof Date && !isNaN(today.getTime()))
-      ? today
-      : ((typeof getSelectedBudgetDate === 'function') ? getSelectedBudgetDate() : new Date());
+    validToday =
+      today instanceof Date && !isNaN(today.getTime())
+        ? today
+        : typeof getSelectedBudgetDate === 'function'
+          ? getSelectedBudgetDate()
+          : new Date();
     itemsList = monthItems || [];
   }
 
-  const monthShortNames = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+  const monthShortNames = [
+    'янв',
+    'фев',
+    'мар',
+    'апр',
+    'май',
+    'июн',
+    'июл',
+    'авг',
+    'сен',
+    'окт',
+    'ноя',
+    'дек',
+  ];
   const weekDayNames = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
   const currentMonthShort = monthShortNames[validToday.getMonth()];
 
@@ -639,8 +740,8 @@ function renderBudgetCalendar(bills, today, monthItems) {
     const infoA = getOneTimeBillMonthInfo(a, validToday);
     const infoB = getOneTimeBillMonthInfo(b, validToday);
 
-    const groupA = !infoA.isOneTime ? 0 : (infoA.currentStep === 1 ? 1 : 2);
-    const groupB = !infoB.isOneTime ? 0 : (infoB.currentStep === 1 ? 1 : 2);
+    const groupA = !infoA.isOneTime ? 0 : infoA.currentStep === 1 ? 1 : 2;
+    const groupB = !infoB.isOneTime ? 0 : infoB.currentStep === 1 ? 1 : 2;
 
     if (groupA !== groupB) {
       return groupA - groupB;
@@ -653,10 +754,12 @@ function renderBudgetCalendar(bills, today, monthItems) {
     return (parseInt(a.day, 10) || 1) - (parseInt(b.day, 10) || 1);
   });
 
-  const monthlyBillsSum = billsList.filter(b => {
-    const info = getOneTimeBillMonthInfo(b, validToday);
-    return !info.isOneTime;
-  }).reduce((s, b) => s + getEffectiveBillAmount(b, validToday, itemsList), 0);
+  const monthlyBillsSum = billsList
+    .filter(b => {
+      const info = getOneTimeBillMonthInfo(b, validToday);
+      return !info.isOneTime;
+    })
+    .reduce((s, b) => s + getEffectiveBillAmount(b, validToday, itemsList), 0);
 
   if (totalEl) totalEl.innerText = `Ежемесячные траты: ${formatMoney(monthlyBillsSum)}`;
 
@@ -680,20 +783,21 @@ function renderBudgetCalendar(bills, today, monthItems) {
     return;
   }
 
-  container.innerHTML = activeBills.map(b => {
-    const billDay = parseInt(b.day, 10) || 1;
-    const info = getOneTimeBillMonthInfo(b, validToday);
-    const isSubsequentPart = info.isOneTime && info.currentStep > 1;
-    const isPaid = isSubsequentPart ? true : isBillPaidInCurrentMonth(b, itemsList, validToday);
+  container.innerHTML = activeBills
+    .map(b => {
+      const billDay = parseInt(b.day, 10) || 1;
+      const info = getOneTimeBillMonthInfo(b, validToday);
+      const isSubsequentPart = info.isOneTime && info.currentStep > 1;
+      const isPaid = isSubsequentPart ? true : isBillPaidInCurrentMonth(b, itemsList, validToday);
 
-    const effectiveAmount = getEffectiveBillAmount(b, validToday, itemsList);
-    const baseAmount = parseFloat(b.amount) || 0;
-    const isAdjusted = isPaid && Math.abs(effectiveAmount - baseAmount) > 0.01;
+      const effectiveAmount = getEffectiveBillAmount(b, validToday, itemsList);
+      const baseAmount = parseFloat(b.amount) || 0;
+      const isAdjusted = isPaid && Math.abs(effectiveAmount - baseAmount) > 0.01;
 
-    const billDate = new Date(validToday.getFullYear(), validToday.getMonth(), billDay);
-    const dayOfWeek = weekDayNames[billDate.getDay()];
+      const billDate = new Date(validToday.getFullYear(), validToday.getMonth(), billDay);
+      const dayOfWeek = weekDayNames[billDate.getDay()];
 
-    return `
+      return `
       <div class="card group p-2.5 rounded-2xl border ${isPaid ? 'border-[#30D158]/30 bg-[#181B24]/75' : 'border-[rgba(255,255,255,0.06)] bg-[#181B24]'} hover:border-[rgba(255,255,255,0.18)] hover:bg-[#1C1F2B] flex flex-col justify-between transition-all cursor-pointer relative min-h-[82px] shadow-sm active:scale-[0.98]"
            data-id="${b.id}"
            data-table="CalendarBills"
@@ -703,14 +807,17 @@ function renderBudgetCalendar(bills, today, monthItems) {
 
         <!-- Верхняя строка: дата / статус -->
         <div class="flex items-center justify-between gap-1 min-w-0">
-          ${isSubsequentPart ? `
+          ${
+            isSubsequentPart
+              ? `
             <span class="text-[9.5px] font-bold text-amber-400/90 uppercase tracking-tight truncate flex-1 min-w-0">Доля ${info.currentStep} из ${info.totalSteps}</span>
             <!-- Для последующих частей — статус всегда оплачено -->
             <div class="bill-pay-status w-4 h-4 rounded-full border border-[#30D158] bg-[#30D158] text-black shadow-sm flex items-center justify-center flex-shrink-0" 
                  title="Оплачено (распределенная часть)">
               <i data-lucide="check" class="w-2.5 h-2.5 opacity-100 stroke-[3]"></i>
             </div>
-          ` : `
+          `
+              : `
             <span class="text-[9.5px] font-bold text-[#6C5DD3] uppercase tracking-tight truncate flex-1 min-w-0">${billDay} ${currentMonthShort} · <span class="text-[#848D99] font-normal">${dayOfWeek}</span></span>
             
             <!-- Круглый чекбокс оплаты для регулярных счетов и изначальных разовых трат -->
@@ -720,7 +827,8 @@ function renderBudgetCalendar(bills, today, monthItems) {
                     title="${isPaid ? 'Оплачено (нажмите для управления оплатой)' : 'Отметить как оплаченный'}">
               <i data-lucide="check" class="w-2.5 h-2.5 ${isPaid ? 'opacity-100' : 'opacity-0'} stroke-[3]"></i>
             </button>
-          `}
+          `
+          }
         </div>
 
         <!-- Средняя часть: название счета -->
@@ -731,184 +839,31 @@ function renderBudgetCalendar(bills, today, monthItems) {
         <!-- Нижняя строка: сумма слева и бейдж справа -->
         <div class="pt-1 border-t border-[rgba(255,255,255,0.04)] flex items-center justify-between gap-1 min-w-0">
           <span class="text-[10.5px] font-bold font-mono text-white tracking-tight truncate min-w-0 flex-1" title="${isAdjusted ? `Фактическая оплата по привязанной операции: ${formatMoney(effectiveAmount)} (по плану: ${formatMoney(baseAmount)})` : `Сумма: ${formatMoney(effectiveAmount)}`}">-${formatCompactBillAmount(effectiveAmount, info.isOneTime)}</span>
-          ${info.isOneTime ? `
-            ${info.isSpread ? `
+          ${
+            info.isOneTime
+              ? `
+            ${
+              info.isSpread
+                ? `
               <span class="text-[8.5px] font-mono font-bold text-amber-300 bg-amber-500/15 border border-amber-500/25 px-1 py-0.2 rounded flex items-center gap-0.5 flex-shrink-0 ml-auto" title="Распределено на ${info.totalSteps} мес. Доля текущего месяца: ${info.currentStep} из ${info.totalSteps}">
                 <i data-lucide="split" class="w-2 h-2"></i>${info.currentStep}/${info.totalSteps}
               </span>
-            ` : `
+            `
+                : `
               <span class="text-[8.5px] font-mono font-bold text-amber-300 bg-amber-500/15 border border-amber-500/25 px-1 py-0.2 rounded flex items-center gap-0.5 flex-shrink-0 ml-auto" title="Разовый расход">
                 <i data-lucide="zap" class="w-2 h-2"></i>Разовый
               </span>
-            `}
-          ` : ''}
+            `
+            }
+          `
+              : ''
+          }
         </div>
       </div>
     `;
-  }).join('');
+    })
+    .join('');
 
-  if (typeof lucide !== 'undefined') lucide.createIcons();
-}
-
-function renderBudgetGoals(goals, plan, bills, targetDate = getSelectedBudgetDate()) {
-  const container = document.getElementById('budget-goals-list');
-  const surplusEl = document.getElementById('budget-goals-surplus');
-  if (!container) return;
-
-  const monthlyIncome = plan.monthlyIncome || 0;
-  const monthlyLimit = plan.monthlyVariableLimit || 0;
-  const today = targetDate || getSelectedBudgetDate();
-  const activeBills = (bills || []).filter(b => getOneTimeBillMonthInfo(b, today).isActive);
-  const totalBills = activeBills.reduce((s, b) => s + getEffectiveBillAmount(b, today), 0);
-  const netSurplus = monthlyIncome - monthlyLimit - totalBills;
-
-  if (surplusEl) {
-    if (netSurplus < 0) {
-      surplusEl.innerText = `Дефицит по плану: -${formatMoney(Math.abs(netSurplus))}/мес`;
-      surplusEl.className = 'text-xs font-semibold text-[#FF453A]';
-    } else {
-      surplusEl.innerText = `Накопления по плану: +${formatMoney(netSurplus)}/мес`;
-      surplusEl.className = 'text-xs font-semibold text-[#30D158]';
-    }
-  }
-
-  if (goals.length === 0) {
-    container.innerHTML = `
-      <div class="card rounded-2xl p-5 text-center flex flex-col items-center justify-center gap-2.5 bg-[#181B24] border border-[rgba(255,255,255,0.06)]">
-        <div class="w-10 h-10 rounded-xl bg-[#6C5DD3]/15 text-[#727cff] flex items-center justify-center">
-          <i data-lucide="target" class="w-5 h-5"></i>
-        </div>
-        <div>
-          <p class="text-xs font-semibold text-gray-200">Целей пока нет</p>
-          <p class="text-[11px] text-[#848D99] mt-0.5">Создайте финансовую цель для накопления средств</p>
-        </div>
-        <button type="button" onclick="openGoalModal()" class="px-3.5 py-1.5 rounded-xl bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white text-xs font-semibold transition-all active:scale-95 cursor-pointer flex items-center gap-1.5">
-          <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-          <span>Создать цель</span>
-        </button>
-      </div>
-    `;
-    if (typeof lucide !== 'undefined') lucide.createIcons();
-    return;
-  }
-
-  // Активные вклады, привязанные к целям
-  const activeDeposits = (Cache.deposits || []).filter(d => !d.isClosed);
-
-  container.innerHTML = goals.map(g => {
-    const goalMonthlyAlloc = Math.round(netSurplus * (g.share / 100));
-
-    // Расчет условного ежемесячного прироста от процентов по привязанным вкладам
-    const linkedDeposits = activeDeposits.filter(d => d.goalId === g.id);
-    const monthlyDepInterest = Math.round(linkedDeposits.reduce((sum, d) => sum + ((d.amount * (d.rate / 100)) / 12), 0));
-    const totalMonthlyGrowth = goalMonthlyAlloc + monthlyDepInterest;
-
-    const remaining = Math.max(0, g.target - g.saved);
-    let monthsNeeded = 0;
-    let timeHint = '';
-
-    if (g.isAchieved || (g.target > 0 && g.saved >= g.target)) {
-      timeHint = 'Цель выполнена';
-    } else if (totalMonthlyGrowth > 0) {
-      monthsNeeded = Math.ceil(remaining / totalMonthlyGrowth);
-      timeHint = `~${monthsNeeded} мес. при текущем плане`;
-    } else if (totalMonthlyGrowth < 0) {
-      timeHint = 'Дефицит темпа';
-    } else {
-      timeHint = 'Увеличьте профицит';
-    }
-
-    let badgeText = '0 ₽/мес';
-    let badgeClass = 'bg-[#212430] text-[#848D99] hover:bg-[#2A2D3C] border-[rgba(255,255,255,0.06)]';
-    let tooltipHeaderClass = 'text-gray-400';
-
-    if (totalMonthlyGrowth > 0) {
-      badgeText = `+${formatMoney(totalMonthlyGrowth)}/мес`;
-      badgeClass = 'bg-[#30D158]/10 text-[#30D158] hover:bg-[#30D158]/20 border-[#30D158]/25';
-      tooltipHeaderClass = 'text-[#30D158]';
-    } else if (totalMonthlyGrowth < 0) {
-      badgeText = `-${formatMoney(Math.abs(totalMonthlyGrowth))}/мес`;
-      badgeClass = 'bg-[#FF453A]/10 text-[#FF453A] hover:bg-[#FF453A]/20 border-[#FF453A]/25';
-      tooltipHeaderClass = 'text-[#FF453A]';
-    }
-
-    return `
-      <div class="card bg-[#181B24] border border-[rgba(255,255,255,0.06)] rounded-2xl p-4 shadow-sm cursor-pointer relative hover:border-[rgba(255,255,255,0.12)] transition-all"
-           data-id="${g.id}"
-           data-table="Goals"
-           onclick="openEditGoalModal('${g.id}')">
-        
-        <input type="checkbox" class="select-checkbox hidden" data-id="${g.id}">
-
-        <div class="flex items-start justify-between mb-2 gap-2">
-          <div class="flex items-center gap-2.5 min-w-0 flex-1">
-            <div class="w-8 h-8 rounded-xl bg-[#6C5DD3]/15 text-[#6C5DD3] flex items-center justify-center flex-shrink-0">
-              <i data-lucide="${g.icon || 'target'}" class="w-4 h-4"></i>
-            </div>
-            <div class="min-w-0 flex-1">
-              <h4 class="text-sm font-bold text-white truncate">${escapeHtml(g.name)}</h4>
-              <p class="text-[11px] text-[#848D99] mt-0.5">${timeHint}</p>
-            </div>
-          </div>
-          
-          <button type="button" onclick="event.stopPropagation(); openGoalTopupModal('${g.id}', '${escapeHtml(g.name)}')" class="goal-topup-btn bg-[#212430] hover:bg-[#2A2D3C] text-gray-200 border border-[rgba(255,255,255,0.06)] text-xs font-semibold px-2.5 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1 flex-shrink-0 active:scale-95">
-            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-            <span>Пополнить</span>
-          </button>
-        </div>
-
-        <div class="flex items-center justify-between gap-2 mb-2 text-[11px]">
-          <span class="text-gray-400 font-medium">Доля в бюджете: <span class="text-[#6C5DD3] font-bold">${g.share}%</span></span>
-          <div class="relative inline-block" onclick="event.stopPropagation();" onmousedown="event.stopPropagation();" ontouchstart="event.stopPropagation();">
-            <button type="button" 
-                    onclick="event.stopPropagation(); toggleGoalPaceTooltip('${g.id}', event);" 
-                    onmousedown="event.stopPropagation();"
-                    ontouchstart="event.stopPropagation();"
-                    class="goal-pace-badge inline-flex items-center px-2 py-0.5 rounded-full ${badgeClass} font-semibold text-[10px] border flex-shrink-0 cursor-pointer transition-all active:scale-95" 
-                    title="Детализация темпа">
-              ${badgeText}
-            </button>
-            <div id="goal-pace-tooltip-${g.id}" class="goal-pace-tooltip hidden absolute right-0 z-50 w-56 bg-[#1E222D] border border-[rgba(255,255,255,0.15)] p-2.5 rounded-2xl shadow-2xl space-y-1.5 text-left pointer-events-auto" onclick="event.stopPropagation();" onmousedown="event.stopPropagation();" ontouchstart="event.stopPropagation();">
-              <div class="flex items-center justify-between border-b border-[rgba(255,255,255,0.06)] pb-1.5">
-                <span class="text-[10px] font-bold text-white">Темп накоплений</span>
-                <span class="text-[10px] font-mono font-bold ${tooltipHeaderClass}">${badgeText}</span>
-              </div>
-              <div class="text-[10px] space-y-1">
-                <div class="flex justify-between text-gray-400">
-                  <span>Из бюджета (${g.share}%):</span>
-                  <b class="font-mono ${goalMonthlyAlloc < 0 ? 'text-[#FF453A]' : (goalMonthlyAlloc > 0 ? 'text-[#30D158]' : 'text-gray-300')}">
-                    ${goalMonthlyAlloc < 0 ? '-' : (goalMonthlyAlloc > 0 ? '+' : '')}${formatMoney(Math.abs(goalMonthlyAlloc))}
-                  </b>
-                </div>
-                <div class="flex justify-between text-gray-400">
-                  <span>Со вкладов:</span>
-                  <b class="${monthlyDepInterest > 0 ? 'text-[#30D158]' : 'text-gray-400'} font-mono">+${formatMoney(monthlyDepInterest)}</b>
-                </div>
-              </div>
-              ${monthsNeeded > 0 ? `
-                <div class="pt-1 border-t border-[rgba(255,255,255,0.06)] text-[9px] text-[#848D99]">
-                  Срок достижения: ~${monthsNeeded} мес.
-                </div>
-              ` : (totalMonthlyGrowth < 0 ? `
-                <div class="pt-1 border-t border-[rgba(255,255,255,0.06)] text-[9px] text-[#FF453A]">
-                  При текущем дефиците цель недостижима
-                </div>
-              ` : '')}
-            </div>
-          </div>
-        </div>
-
-        <div class="flex justify-between items-end text-xs mb-2">
-          <span class="text-white font-bold font-mono text-sm">${formatMoney(g.saved)} <span class="text-[#848D99] font-normal text-xs">/ ${formatMoney(g.target)}</span></span>
-          <span class="text-[11px] font-semibold text-[#6C5DD3]">${g.progress}%</span>
-        </div>
-
-        <div class="w-full bg-[rgba(255,255,255,0.06)] h-2 rounded-full overflow-hidden">
-          <div class="bg-gradient-to-r from-[#6C5DD3] to-[#32ADE6] h-full rounded-full transition-all duration-500" style="width: ${g.progress}%"></div>
-        </div>
-      </div>
-    `;
-  }).join('');
   if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
@@ -927,8 +882,8 @@ function renderBudgetCategoryLimits(monthItems = [], categoryLimits = {}) {
 
   // Сортировка: пользовательские категории сверху, а "Прочие расходы / Прочие траты" всегда в самом конце
   activeLimitKeys.sort((a, b) => {
-    const isOtherA = (a === 'Прочие расходы' || a === 'Прочие траты');
-    const isOtherB = (b === 'Прочие расходы' || b === 'Прочие траты');
+    const isOtherA = a === 'Прочие расходы' || a === 'Прочие траты';
+    const isOtherB = b === 'Прочие расходы' || b === 'Прочие траты';
     if (isOtherA && !isOtherB) return 1;
     if (!isOtherA && isOtherB) return -1;
     return a.localeCompare(b, 'ru');
@@ -948,7 +903,9 @@ function renderBudgetCategoryLimits(monthItems = [], categoryLimits = {}) {
   }
 
   // Список категорий с индивидуальными лимитами (кроме 'Прочие расходы' / 'Прочие траты')
-  const specificLimitKeys = activeLimitKeys.filter(k => k !== 'Прочие расходы' && k !== 'Прочие траты');
+  const specificLimitKeys = activeLimitKeys.filter(
+    k => k !== 'Прочие расходы' && k !== 'Прочие траты'
+  );
 
   // Расчет фактических трат
   const spentMap = {};
@@ -967,23 +924,25 @@ function renderBudgetCategoryLimits(monthItems = [], categoryLimits = {}) {
     }
   });
 
-  container.innerHTML = activeLimitKeys.map(catName => {
-    const isOther = (catName === 'Прочие расходы' || catName === 'Прочие траты');
-    const spent = isOther ? otherSpent : (spentMap[catName] || 0);
-    const limit = parseFloat(safeLimits[catName]) || 0;
+  container.innerHTML = activeLimitKeys
+    .map(catName => {
+      const isOther = catName === 'Прочие расходы' || catName === 'Прочие траты';
+      const spent = isOther ? otherSpent : spentMap[catName] || 0;
+      const limit = parseFloat(safeLimits[catName]) || 0;
 
-    // Получаем иконку категории
-    const catObj = expenseCats.find(c => (typeof c === 'string' ? c : c?.name) === catName);
-    const icon = catObj?.icon || (typeof getCategoryIcon === 'function' ? getCategoryIcon(catName) : 'tag');
+      // Получаем иконку категории
+      const catObj = expenseCats.find(c => (typeof c === 'string' ? c : c?.name) === catName);
+      const icon =
+        catObj?.icon || (typeof getCategoryIcon === 'function' ? getCategoryIcon(catName) : 'tag');
 
-    const pct = limit > 0 ? Math.min(100, Math.round((spent / limit) * 100)) : 0;
-    const isOver = limit > 0 && spent > limit;
+      const pct = limit > 0 ? Math.min(100, Math.round((spent / limit) * 100)) : 0;
+      const isOver = limit > 0 && spent > limit;
 
-    let barColor = 'bg-[#30D158]';
-    if (isOver) barColor = 'bg-[#FF453A]';
-    else if (pct >= 80) barColor = 'bg-[#FF9F0A]';
+      let barColor = 'bg-[#30D158]';
+      if (isOver) barColor = 'bg-[#FF453A]';
+      else if (pct >= 80) barColor = 'bg-[#FF9F0A]';
 
-    return `
+      return `
       <div class="category-limit-card cursor-pointer py-3 px-3 rounded-2xl flex items-center justify-between gap-3 group hover:bg-[#1f222d]/60 active:scale-[0.99] transition-all select-none"
            data-budget-cat="${escapeHtml(catName)}"
            onclick="openCategoryLimitModal('${escapeHtml(catName)}', ${limit})">
@@ -1005,14 +964,17 @@ function renderBudgetCategoryLimits(monthItems = [], categoryLimits = {}) {
         </div>
       </div>
     `;
-  }).join('');
+    })
+    .join('');
 
   if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
 function isBillPaidInCurrentMonth(bill, monthItems, customDate) {
   if (!bill) return false;
-  const d = customDate || ((typeof getSelectedBudgetDate === 'function') ? getSelectedBudgetDate() : new Date());
+  const d =
+    customDate ||
+    (typeof getSelectedBudgetDate === 'function' ? getSelectedBudgetDate() : new Date());
   const info = getOneTimeBillMonthInfo(bill, d);
 
   // Для вторых и последующих частей распределенных трат — статус всегда оплачено
@@ -1033,10 +995,12 @@ function isBillPaidInCurrentMonth(bill, monthItems, customDate) {
 
   // 3. Проверяем наличие привязанной транзакции в рамках выбранного месяца
   if (Array.isArray(monthItems) && monthItems.length > 0) {
-    const hasLinked = (monthItems || []).some(tx => 
-      tx && tx.type === 'Расход' && 
-      tx.billId === bill.id && 
-      (tx.isBillPayment || tx.excludeFromBudget)
+    const hasLinked = (monthItems || []).some(
+      tx =>
+        tx &&
+        tx.type === 'Расход' &&
+        tx.billId === bill.id &&
+        (tx.isBillPayment || tx.excludeFromBudget)
     );
     if (hasLinked) return true;
   }
@@ -1086,10 +1050,11 @@ function updatePlanForecast() {
   const categoriesSum = Object.values(limits).reduce((s, v) => s + (parseFloat(v) || 0), 0);
 
   const bills = Cache?.calendarBills || [];
-  const today = (typeof getSelectedBudgetDate === 'function') ? getSelectedBudgetDate() : new Date();
+  const today = typeof getSelectedBudgetDate === 'function' ? getSelectedBudgetDate() : new Date();
 
   // Сумма только ежемесячных трат (регулярных счетов) с учетом фактической корректировки
-  const monthlyBillsSum = bills.filter(b => !getOneTimeBillMonthInfo(b, today).isOneTime)
+  const monthlyBillsSum = bills
+    .filter(b => !getOneTimeBillMonthInfo(b, today).isOneTime)
     .reduce((s, b) => s + getEffectiveBillAmount(b, today), 0);
 
   // Активные счета месяца для расчета свободного остатка
@@ -1134,7 +1099,7 @@ async function submitBudgetPlan(e) {
     const planData = {
       monthlyIncome: inc,
       monthlyVariableLimit: categoriesSum,
-      updatedAt: Date.now()
+      updatedAt: Date.now(),
     };
 
     if (snap.empty) {
@@ -1265,7 +1230,7 @@ function openEditBillModal(billId) {
   const dayInput = document.getElementById('bill-day');
   if (dayInput) dayInput.value = bill.day;
   currentWizSelectedDay = parseInt(bill.day, 10) || 1;
-  
+
   const typeInput = document.getElementById('bill-type');
   if (typeInput) typeInput.value = 'recurring';
 
@@ -1282,7 +1247,8 @@ async function submitCalendarBill(e) {
   const name = document.getElementById('bill-name')?.value.trim();
   const amount = getUnformattedVal(document.getElementById('bill-amount'));
   const dayInput = document.getElementById('bill-day');
-  const day = parseInt(dayInput ? dayInput.value : currentWizSelectedDay, 10) || currentWizSelectedDay || 1;
+  const day =
+    parseInt(dayInput ? dayInput.value : currentWizSelectedDay, 10) || currentWizSelectedDay || 1;
 
   if (!name || !amount) return;
 
@@ -1290,16 +1256,16 @@ async function submitCalendarBill(e) {
     const col = getUserCol('CalendarBills');
     const existingBill = editId ? (Cache?.calendarBills || []).find(b => b.id === editId) : null;
 
-    const billData = { 
-      name, 
+    const billData = {
+      name,
       amount: parseFloat(amount) || 0,
       totalAmount: parseFloat(amount) || 0,
       spreadMonths: 1,
-      day, 
-      type: 'recurring', 
+      day,
+      type: 'recurring',
       startMonth: null,
       month: null,
-      updatedAt: Date.now() 
+      updatedAt: Date.now(),
     };
 
     if (!Cache.calendarBills) Cache.calendarBills = [];
@@ -1317,7 +1283,7 @@ async function submitCalendarBill(e) {
     closeAddBillModal();
     document.getElementById('calendar-bill-form')?.reset();
     if (document.getElementById('bill-edit-id')) document.getElementById('bill-edit-id').value = '';
-    
+
     // Если открыт мастер или обычный дашборд
     const plan = Cache?.budgetPlan || {};
     if (!plan.isConfigured) {
@@ -1331,11 +1297,13 @@ async function submitCalendarBill(e) {
     }
 
     // Фоновая тихая синхронизация
-    fetchAllData(true).then(() => {
-      if (!plan.isConfigured) {
-        renderWizCalendar();
-      }
-    }).catch(() => {});
+    fetchAllData(true)
+      .then(() => {
+        if (!plan.isConfigured) {
+          renderWizCalendar();
+        }
+      })
+      .catch(() => {});
   } catch (err) {
     showToast('Ошибка: ' + err.message, true);
   }
@@ -1359,12 +1327,14 @@ async function toggleBillPaidStatus(billId, newStatus) {
     }
     renderBudgetTab();
 
-    await getUserCol('CalendarBills').doc(billId).update({ 
-      isPaid: newStatus,
-      paidAt: newStatus ? Date.now() : null
-    });
+    await getUserCol('CalendarBills')
+      .doc(billId)
+      .update({
+        isPaid: newStatus,
+        paidAt: newStatus ? Date.now() : null,
+      });
     fetchAllData();
-  } catch (e) {
+  } catch (_e) {
     showToast('Ошибка обновления статуса', true);
   }
 }
@@ -1380,15 +1350,19 @@ function openDayBillsModal(day) {
   if (dlg) dlg.classList.remove('hidden');
 
   const today = new Date();
-  const bills = (Cache?.calendarBills || []).filter(b => parseInt(b.day, 10) === parseInt(day, 10) && getOneTimeBillMonthInfo(b, today).isActive);
+  const bills = (Cache?.calendarBills || []).filter(
+    b => parseInt(b.day, 10) === parseInt(day, 10) && getOneTimeBillMonthInfo(b, today).isActive
+  );
 
   if (list) {
     if (bills.length === 0) {
-      list.innerHTML = '<div class="text-center py-4 text-xs text-[#848D99]">Счетов на этот день нет</div>';
+      list.innerHTML =
+        '<div class="text-center py-4 text-xs text-[#848D99]">Счетов на этот день нет</div>';
     } else {
-      list.innerHTML = bills.map(b => {
-        const info = getOneTimeBillMonthInfo(b, today);
-        return `
+      list.innerHTML = bills
+        .map(b => {
+          const info = getOneTimeBillMonthInfo(b, today);
+          return `
           <div class="flex items-center justify-between p-2.5 rounded-xl bg-[#12151C] border border-[rgba(255,255,255,0.04)] text-xs">
             <div>
               <div class="font-semibold text-white flex items-center gap-1.5">
@@ -1402,7 +1376,8 @@ function openDayBillsModal(day) {
             </button>
           </div>
         `;
-      }).join('');
+        })
+        .join('');
     }
   }
 
@@ -1431,7 +1406,9 @@ async function deleteCalendarBill(billId) {
   // Если этот счет был привязан к транзакции, возвращаем флаг в транзакции
   if (deletedBill?.linkedTxId) {
     try {
-      await getUserCol('Transactions').doc(deletedBill.linkedTxId).update({ excludeFromBudget: false });
+      await getUserCol('Transactions')
+        .doc(deletedBill.linkedTxId)
+        .update({ excludeFromBudget: false });
       (Cache.transactions || []).forEach(m => {
         (m.items || []).forEach(tx => {
           if (tx.id === deletedBill.linkedTxId) tx.excludeFromBudget = false;
@@ -1446,11 +1423,15 @@ async function deleteCalendarBill(billId) {
   renderBudgetTab();
 
   const plan = Cache?.budgetPlan || {};
-  const isWizard = !plan.isConfigured || document.getElementById('budget-wizard')?.classList.contains('hidden') === false;
+  const isWizard =
+    !plan.isConfigured ||
+    document.getElementById('budget-wizard')?.classList.contains('hidden') === false;
 
   if (isWizard) {
     if (currentWizSelectedDay) {
-      const remainingBills = (Cache?.calendarBills || []).filter(b => parseInt(b.day, 10) === currentWizSelectedDay);
+      const remainingBills = (Cache?.calendarBills || []).filter(
+        b => parseInt(b.day, 10) === currentWizSelectedDay
+      );
       if (remainingBills.length > 0) {
         const cell = document.querySelector(`[data-wiz-day="${currentWizSelectedDay}"]`);
         showWizDayTooltip(currentWizSelectedDay, remainingBills, cell);
@@ -1461,9 +1442,13 @@ async function deleteCalendarBill(billId) {
   } else {
     const modalCalendar = document.getElementById('budget-calendar-modal');
     if (modalCalendar && !modalCalendar.classList.contains('hidden') && currentWizSelectedDay) {
-      const remainingBills = (Cache?.calendarBills || []).filter(b => parseInt(b.day, 10) === currentWizSelectedDay);
+      const remainingBills = (Cache?.calendarBills || []).filter(
+        b => parseInt(b.day, 10) === currentWizSelectedDay
+      );
       if (remainingBills.length > 0) {
-        const cell = document.querySelector(`#budget-modal-calendar-grid [data-wiz-day="${currentWizSelectedDay}"]`);
+        const cell = document.querySelector(
+          `#budget-modal-calendar-grid [data-wiz-day="${currentWizSelectedDay}"]`
+        );
         showBudgetModalDayTooltip(currentWizSelectedDay, remainingBills, cell);
       } else {
         closeBudgetModalDayTooltip();
@@ -1472,7 +1457,9 @@ async function deleteCalendarBill(billId) {
 
     const dayDlg = document.getElementById('day-bills-dialog');
     if (dayDlg && !dayDlg.classList.contains('hidden') && window.currentDayBillsModalDay) {
-      const dayBills = (Cache?.calendarBills || []).filter(b => parseInt(b.day, 10) === window.currentDayBillsModalDay);
+      const dayBills = (Cache?.calendarBills || []).filter(
+        b => parseInt(b.day, 10) === window.currentDayBillsModalDay
+      );
       if (dayBills.length > 0) {
         openDayBillsModal(window.currentDayBillsModalDay);
       } else {
@@ -1491,682 +1478,6 @@ async function deleteCalendarBill(billId) {
       renderWizCalendar();
       renderBudgetTab();
     }
-  }
-}
-
-// ==========================================
-// 3. Budget Goals (Цели и Копилки)
-// ==========================================
-function processGoals(goals) {
-  return goals.map(g => {
-    const tar = parseFloat(g.target) || 0;
-    const sav = parseFloat(g.saved) || 0;
-    const share = parseFloat(g.share) || (goals.length > 0 ? Math.round(100 / goals.length) : 100);
-    const icon = g.icon || getGoalIcon(g.name) || 'target';
-    return {
-      id: g.id,
-      name: g.name,
-      target: tar,
-      saved: sav,
-      share: share,
-      icon: icon,
-      progress: Math.min(100, tar > 0 ? (sav / tar) * 100 : 0).toFixed(1),
-      isAchieved: tar > 0 && sav >= tar
-    };
-  });
-}
-
-function openBudgetGoalIconPicker(e) {
-  toggleBudgetGoalIconPicker(e);
-}
-
-function toggleBudgetGoalIconPicker(e) {
-  if (e) e.stopPropagation();
-  const picker = document.getElementById('goal-modal-icon-picker');
-  if (!picker) return;
-
-  const isHidden = picker.classList.contains('hidden');
-  if (isHidden) {
-    renderGoalModalIconGrid();
-    picker.classList.remove('hidden');
-
-    // Автоматическое закрытие при клике мимо поп-апа
-    setTimeout(() => {
-      const handleOutsideGoalIconClick = (evt) => {
-        const p = document.getElementById('goal-modal-icon-picker');
-        const btn = document.getElementById('goal-modal-icon-btn');
-        if (p && !p.classList.contains('hidden')) {
-          if (!p.contains(evt.target) && !btn?.contains(evt.target)) {
-            closeBudgetGoalIconPicker();
-            document.removeEventListener('click', handleOutsideGoalIconClick);
-          }
-        } else {
-          document.removeEventListener('click', handleOutsideGoalIconClick);
-        }
-      };
-      document.addEventListener('click', handleOutsideGoalIconClick);
-    }, 0);
-  } else {
-    closeBudgetGoalIconPicker();
-  }
-}
-
-function closeBudgetGoalIconPicker() {
-  const picker = document.getElementById('goal-modal-icon-picker');
-  if (picker) picker.classList.add('hidden');
-}
-
-function renderGoalModalIconGrid() {
-  const grid = document.getElementById('goal-modal-icon-grid');
-  if (!grid) return;
-  const currentVal = document.getElementById('goal-icon-input')?.value || 'target';
-
-  const iconsList = (typeof WIZARD_GOAL_ICONS !== 'undefined') ? WIZARD_GOAL_ICONS : [
-    { name: 'target', label: 'Цель' },
-    { name: 'home', label: 'Жилье' },
-    { name: 'car', label: 'Авто' },
-    { name: 'plane', label: 'Отпуск' },
-    { name: 'laptop', label: 'Ноутбук' },
-    { name: 'smartphone', label: 'Гаджет' },
-    { name: 'shield-check', label: 'Подушка' },
-    { name: 'graduation-cap', label: 'Учеба' },
-    { name: 'sparkles', label: 'Мечта' },
-    { name: 'heart-pulse', label: 'Здоровье' },
-    { name: 'gem', label: 'Подарок' },
-    { name: 'bike', label: 'Спорт' },
-    { name: 'baby', label: 'Семья' },
-    { name: 'briefcase', label: 'Бизнес' },
-    { name: 'sofa', label: 'Уют' },
-    { name: 'watch', label: 'Покупки' },
-    { name: 'wallet', label: 'Копилка' },
-    { name: 'trending-up', label: 'Инвестиции' }
-  ];
-
-  grid.innerHTML = iconsList.map(item => {
-    const isSelected = currentVal === item.name;
-    return `
-      <button type="button" 
-              onclick="selectGoalIcon('${item.name}')" 
-              class="h-10 rounded-xl ${isSelected ? 'bg-[#6C5DD3]/25 border-[#6C5DD3] text-[#727cff]' : 'hover:bg-[#212430] border-transparent text-gray-300 hover:text-white'} border flex flex-col items-center justify-center p-1 transition-all cursor-pointer group active:scale-95" 
-              title="${item.label}">
-        <i data-lucide="${item.name}" class="w-4 h-4 group-hover:scale-110 transition-transform"></i>
-        <span class="text-[8px] mt-0.5 truncate w-full text-center leading-none ${isSelected ? 'text-[#727cff] font-bold' : 'text-[#848D99]'}">${item.label}</span>
-      </button>
-    `;
-  }).join('');
-
-  if (typeof lucide !== 'undefined') lucide.createIcons();
-}
-
-function selectGoalIcon(iconName) {
-  const input = document.getElementById('goal-icon-input');
-  if (input) input.value = iconName;
-
-  const display = document.getElementById('goal-modal-icon-display');
-  const btn = document.getElementById('goal-modal-icon-btn');
-  const label = document.getElementById('goal-modal-icon-label');
-  const iconsList = (typeof WIZARD_GOAL_ICONS !== 'undefined') ? WIZARD_GOAL_ICONS : [];
-  const found = iconsList.find(i => i.name === iconName);
-
-  if (display) {
-    display.className = 'text-[#727cff] flex items-center justify-center transition-colors';
-    display.innerHTML = `<i data-lucide="${iconName}" class="w-6 h-6"></i>`;
-  }
-  if (btn) {
-    btn.className = 'w-14 h-14 rounded-2xl bg-[#6C5DD3]/15 border border-[#6C5DD3]/40 flex items-center justify-center transition-all cursor-pointer shadow-inner active:scale-95 group flex-shrink-0';
-  }
-  if (label) {
-    label.innerText = found ? found.label : 'Выбрать иконку';
-  }
-
-  // Обновляем иконку в списке долей, если он открыт
-  const isEditing = !!document.getElementById('goal-edit-id')?.value;
-  const targetId = isEditing ? document.getElementById('goal-edit-id').value : '__new__';
-  const shareIconEl = document.getElementById(`goal-share-icon-${targetId}`);
-  if (shareIconEl) {
-    shareIconEl.setAttribute('data-lucide', iconName);
-  }
-
-  closeBudgetGoalIconPicker();
-  if (typeof lucide !== 'undefined') lucide.createIcons();
-}
-
-function handleGoalNameInput(name) {
-  const currentVal = document.getElementById('goal-icon-input')?.value;
-  if (!currentVal || currentVal === 'target') {
-    const detected = getGoalIcon(name);
-    if (detected && detected !== currentVal) {
-      selectGoalIcon(detected);
-    }
-  }
-
-  const isEditing = !!document.getElementById('goal-edit-id')?.value;
-  const targetId = isEditing ? document.getElementById('goal-edit-id').value : '__new__';
-  const titleEl = document.getElementById(`goal-share-title-${targetId}`);
-  if (titleEl) {
-    titleEl.innerText = name?.trim() || (isEditing ? 'Цель' : 'Новая цель');
-  }
-}
-window.handleGoalNameInput = handleGoalNameInput;
-
-// Умный определитель векторной иконки цели по смыслу названия
-function getGoalIcon(name) {
-  const n = (name || '').toLowerCase();
-  if (/квартир|дом|ремонт|жиль/i.test(n)) return 'home';
-  if (/машин|авто|тачк|мото/i.test(n)) return 'car';
-  if (/отпуск|море|путешеств|билет|тур/i.test(n)) return 'plane';
-  if (/учеб|курс|образов/i.test(n)) return 'graduation-cap';
-  if (/подушк|безопасн|резерв/i.test(n)) return 'shield-check';
-  if (/инвест|акци/i.test(n)) return 'trending-up';
-  if (/телефон|ноут|комп|айфон|гаджет/i.test(n)) return 'smartphone';
-  return 'target';
-}
-
-// ==========================================
-// Управление долями целей в накоплениях
-// ==========================================
-let tempGoalShares = {};
-
-const GOAL_SHARE_TOTAL_VIRTUAL = 1000;
-
-function getGoalShareWeight(share) {
-  // Числа, кратные 5, имеют расширенную физическую область на шкале (в 2.5 раза легче поймать)
-  return (share % 5 === 0) ? 2.5 : 1.0;
-}
-
-const GOAL_SHARE_INTERVALS = (() => {
-  let totalW = 0;
-  for (let s = 1; s <= 99; s++) {
-    totalW += getGoalShareWeight(s);
-  }
-  const intervals = [];
-  let currentPos = 0;
-  for (let s = 1; s <= 99; s++) {
-    const w = getGoalShareWeight(s);
-    const start = currentPos;
-    const end = currentPos + (w / totalW) * GOAL_SHARE_TOTAL_VIRTUAL;
-    intervals.push({ share: s, start, end, center: (start + end) / 2 });
-    currentPos = end;
-  }
-  return intervals;
-})();
-
-function virtualPosToShare(pos) {
-  const p = Math.max(0, Math.min(GOAL_SHARE_TOTAL_VIRTUAL, pos));
-  for (let i = 0; i < GOAL_SHARE_INTERVALS.length; i++) {
-    if (p >= GOAL_SHARE_INTERVALS[i].start && p <= GOAL_SHARE_INTERVALS[i].end) {
-      return GOAL_SHARE_INTERVALS[i].share;
-    }
-  }
-  return p < GOAL_SHARE_INTERVALS[0].start ? 1 : 99;
-}
-
-function shareToVirtualPos(share) {
-  const s = Math.max(1, Math.min(99, Math.round(share)));
-  const found = GOAL_SHARE_INTERVALS.find(item => item.share === s);
-  return found ? found.center : (s / 100) * GOAL_SHARE_TOTAL_VIRTUAL;
-}
-
-function getMonthlyPlannedSavingsTotal() {
-  const plan = Cache?.budgetPlan || {};
-  if (!plan.isConfigured) return 0;
-
-  const income = parseFloat(plan.income) || 0;
-  const bills = Cache?.calendarBills || [];
-  const recurringBills = bills.filter(b => b.type !== 'onetime' && b.type !== 'Разовый');
-  const billsTotal = recurringBills.reduce((acc, b) => acc + (parseFloat(b.amount) || 0), 0);
-
-  const limits = plan.categoryLimits || {};
-  const limitsTotal = Object.values(limits).reduce((acc, val) => acc + (parseFloat(val) || 0), 0);
-
-  return Math.max(0, income - billsTotal - limitsTotal);
-}
-window.getMonthlyPlannedSavingsTotal = getMonthlyPlannedSavingsTotal;
-
-function renderGoalSharesManagerList(currentEditingId = null) {
-  const container = document.getElementById('goal-shares-list');
-  const section = document.getElementById('goal-shares-manager-section');
-  if (!container || !section) return;
-
-  const existingGoals = (Cache?.goals || []).filter(g => g.status !== 'Архив');
-  const isCreatingNew = !currentEditingId;
-  const totalCount = isCreatingNew ? (existingGoals.length + 1) : existingGoals.length;
-
-  // Одиночная цель: настройка долей скрыта, доля всегда 100%
-  if (totalCount <= 1) {
-    section.classList.add('hidden');
-    tempGoalShares = {};
-    if (isCreatingNew) {
-      tempGoalShares['__new__'] = 100;
-    } else if (existingGoals[0]) {
-      tempGoalShares[existingGoals[0].id] = 100;
-    }
-    return;
-  }
-
-  section.classList.remove('hidden');
-
-  const list = [];
-  const currentNameInput = document.getElementById('goal-name-input')?.value?.trim();
-  const currentIconInput = document.getElementById('goal-icon-input')?.value || 'target';
-
-  if (isCreatingNew) {
-    list.push({
-      id: '__new__',
-      name: currentNameInput || 'Новая цель',
-      icon: currentIconInput,
-      isCurrent: true
-    });
-  }
-
-  existingGoals.forEach(g => {
-    if (g.id === currentEditingId) {
-      list.push({
-        id: g.id,
-        name: currentNameInput || g.name || 'Цель',
-        icon: currentIconInput || g.icon || 'target',
-        isCurrent: true
-      });
-    } else {
-      list.push({
-        id: g.id,
-        name: g.name || 'Цель',
-        icon: g.icon || 'target',
-        isCurrent: false
-      });
-    }
-  });
-
-  // Инициализация tempGoalShares при открытии
-  const listIds = list.map(item => item.id);
-  const isFullyInit = listIds.every(id => typeof tempGoalShares[id] === 'number');
-
-  if (!isFullyInit) {
-    tempGoalShares = {};
-    if (isCreatingNew) {
-      const defaultNewShare = Math.round(100 / list.length);
-      tempGoalShares['__new__'] = defaultNewShare;
-      const remaining = 100 - defaultNewShare;
-      const sumExisting = existingGoals.reduce((s, g) => s + (parseFloat(g.share) || 0), 0) || 100;
-      let acc = 0;
-      existingGoals.forEach((g, idx) => {
-        if (idx === existingGoals.length - 1) {
-          tempGoalShares[g.id] = Math.max(1, remaining - acc);
-        } else {
-          const s = Math.max(1, Math.round(((parseFloat(g.share) || (100 / existingGoals.length)) / sumExisting) * remaining));
-          tempGoalShares[g.id] = s;
-          acc += s;
-        }
-      });
-    } else {
-      const sumShares = existingGoals.reduce((s, g) => s + (parseFloat(g.share) || 0), 0) || 100;
-      let acc = 0;
-      existingGoals.forEach((g, idx) => {
-        if (idx === existingGoals.length - 1) {
-          tempGoalShares[g.id] = Math.max(1, 100 - acc);
-        } else {
-          const s = Math.max(1, Math.round(((parseFloat(g.share) || (100 / existingGoals.length)) / sumShares) * 100));
-          tempGoalShares[g.id] = s;
-          acc += s;
-        }
-      });
-    }
-    normalizeTempGoalShares();
-  }
-
-  const plannedSavingsTotal = getMonthlyPlannedSavingsTotal();
-  const totalMonthlyEl = document.getElementById('goal-shares-total-monthly');
-  if (totalMonthlyEl) {
-    if (plannedSavingsTotal > 0) {
-      totalMonthlyEl.innerText = `План: +${formatMoney(plannedSavingsTotal)}/мес`;
-      totalMonthlyEl.classList.remove('hidden');
-    } else {
-      totalMonthlyEl.classList.add('hidden');
-    }
-  }
-
-  container.innerHTML = list.map(item => {
-    const shareVal = tempGoalShares[item.id] !== undefined ? tempGoalShares[item.id] : 0;
-    const plannedAmount = plannedSavingsTotal > 0 ? Math.round(plannedSavingsTotal * (shareVal / 100)) : 0;
-    const amountBadgeHtml = plannedSavingsTotal > 0 ? `
-      <span class="text-[10px] font-mono font-bold text-[#30D158]" id="goal-share-amount-${item.id}">
-        +${formatMoney(plannedAmount)}/мес
-      </span>
-    ` : '';
-
-    return `
-      <div class="px-3 py-2 rounded-xl bg-[#12151C] border border-[rgba(255,255,255,0.04)] space-y-1.5" data-share-goal-id="${item.id}">
-        <div class="flex items-center justify-between text-xs">
-          <div class="flex items-center gap-2 min-w-0 flex-1 mr-2">
-            <div class="w-5 h-5 rounded-lg bg-[#1E2330] text-[#8C7DFF] flex items-center justify-center flex-shrink-0">
-              <i data-lucide="${item.icon}" class="w-3 h-3" id="goal-share-icon-${item.id}"></i>
-            </div>
-            <span class="font-bold text-xs text-gray-200 truncate" id="goal-share-title-${item.id}">
-              ${escapeHtml(item.name)}
-            </span>
-          </div>
-          <div class="flex items-center gap-1.5 flex-shrink-0">
-            ${amountBadgeHtml}
-            <span class="font-mono font-bold text-xs text-[#8C7DFF] bg-[#6C5DD3]/15 px-2 py-0.5 rounded-lg border border-[#6C5DD3]/20" id="goal-share-val-${item.id}">
-              ${shareVal}%
-            </span>
-          </div>
-        </div>
-        <div class="flex items-center pt-0.5">
-          <input type="range" 
-                 min="0" 
-                 max="1000" 
-                 step="1" 
-                 value="${shareToVirtualPos(shareVal)}" 
-                 oninput="handleGoalShareVirtualSliderChange('${item.id}', parseFloat(this.value))"
-                 class="goal-share-slider w-full cursor-pointer">
-        </div>
-      </div>
-    `;
-  }).join('');
-
-  if (typeof lucide !== 'undefined') lucide.createIcons();
-}
-
-function normalizeTempGoalShares(targetLockedId = null) {
-  const ids = Object.keys(tempGoalShares);
-  if (ids.length === 0) return;
-  if (ids.length === 1) {
-    tempGoalShares[ids[0]] = 100;
-    return;
-  }
-
-  const total = ids.reduce((s, id) => s + (tempGoalShares[id] || 0), 0);
-  const diff = 100 - total;
-  if (diff !== 0) {
-    const adjustableIds = targetLockedId ? ids.filter(id => id !== targetLockedId) : ids;
-    if (adjustableIds.length > 0) {
-      tempGoalShares[adjustableIds[0]] = Math.max(1, tempGoalShares[adjustableIds[0]] + diff);
-    } else {
-      tempGoalShares[ids[0]] = Math.max(1, tempGoalShares[ids[0]] + diff);
-    }
-  }
-}
-
-function handleGoalShareVirtualSliderChange(targetId, virtualPos) {
-  const ids = Object.keys(tempGoalShares);
-  if (ids.length <= 1) return;
-
-  const newShare = virtualPosToShare(virtualPos);
-  const clampedVal = Math.max(1, Math.min(99, newShare));
-  if (tempGoalShares[targetId] === clampedVal) return;
-
-  tempGoalShares[targetId] = clampedVal;
-
-  const otherIds = ids.filter(id => id !== targetId);
-  const remaining = 100 - clampedVal;
-  const currentOthersSum = otherIds.reduce((sum, id) => sum + (tempGoalShares[id] || 0), 0);
-
-  if (currentOthersSum > 0) {
-    let allocated = 0;
-    otherIds.forEach((id, index) => {
-      if (index === otherIds.length - 1) {
-        tempGoalShares[id] = Math.max(1, remaining - allocated);
-      } else {
-        const proportional = Math.max(1, Math.round((tempGoalShares[id] / currentOthersSum) * remaining));
-        tempGoalShares[id] = proportional;
-        allocated += proportional;
-      }
-    });
-  } else {
-    const equalShare = Math.floor(remaining / otherIds.length);
-    let allocated = 0;
-    otherIds.forEach((id, index) => {
-      if (index === otherIds.length - 1) {
-        tempGoalShares[id] = Math.max(1, remaining - allocated);
-      } else {
-        tempGoalShares[id] = Math.max(1, equalShare);
-        allocated += equalShare;
-      }
-    });
-  }
-
-  normalizeTempGoalShares(targetId);
-
-  const plannedSavingsTotal = getMonthlyPlannedSavingsTotal();
-
-  ids.forEach(id => {
-    const valEl = document.getElementById(`goal-share-val-${id}`);
-    const amountEl = document.getElementById(`goal-share-amount-${id}`);
-    const slider = document.querySelector(`[data-share-goal-id="${id}"] input[type="range"]`);
-    if (valEl) valEl.innerText = `${tempGoalShares[id]}%`;
-    if (amountEl && plannedSavingsTotal > 0) {
-      const plannedAmount = Math.round(plannedSavingsTotal * (tempGoalShares[id] / 100));
-      amountEl.innerText = `+${formatMoney(plannedAmount)}/мес`;
-    }
-    if (slider && id !== targetId) {
-      slider.value = shareToVirtualPos(tempGoalShares[id]);
-    }
-  });
-}
-window.handleGoalShareVirtualSliderChange = handleGoalShareVirtualSliderChange;
-window.handleGoalShareSliderChange = handleGoalShareVirtualSliderChange;
-
-// Управление созданием и редактированием целей бюджета
-function openGoalModal() {
-  const form = document.getElementById('budget-goal-form');
-  if (form) form.reset();
-
-  document.getElementById('goal-edit-id').value = '';
-  document.getElementById('goal-delete-btn').classList.add('hidden');
-  document.getElementById('budget-goal-dialog-title').innerText = 'Новая цель';
-
-  closeBudgetGoalIconPicker();
-  selectGoalIcon('target');
-  const addGoalBtn = document.getElementById('goal-modal-icon-btn');
-  if (addGoalBtn) {
-    addGoalBtn.className = 'w-14 h-14 rounded-2xl bg-[#12151C] hover:bg-[#212430] border border-dashed border-[#727cff]/40 hover:border-[#727cff] flex items-center justify-center transition-all cursor-pointer shadow-inner active:scale-95 group flex-shrink-0';
-  }
-
-  tempGoalShares = {};
-  renderGoalSharesManagerList(null);
-
-  const dlg = document.getElementById('budget-goal-dialog');
-  if (dlg) dlg.classList.remove('hidden');
-}
-
-function closeGoalModal() {
-  const dlg = document.getElementById('budget-goal-dialog');
-  if (dlg) dlg.classList.add('hidden');
-  closeBudgetGoalIconPicker();
-  tempGoalShares = {};
-  document.querySelectorAll('.card[data-table="Goals"].context-active').forEach(el => el.classList.remove('context-active'));
-}
-
-function openEditGoalModal(goalId) {
-  if (typeof isSelectionMode === 'function' && isSelectionMode()) return;
-  if (window.isSelectionMode && window.isSelectionMode()) return;
-  const goal = Cache?.goals?.find(g => g.id === goalId);
-  if (!goal) return;
-
-  document.querySelectorAll('.card[data-table="Goals"].context-active').forEach(el => el.classList.remove('context-active'));
-  const goalCard = document.querySelector(`.card[data-table="Goals"][data-id="${goalId}"]`);
-  if (goalCard) goalCard.classList.add('context-active');
-
-  document.getElementById('goal-edit-id').value = goal.id;
-  document.getElementById('goal-name-input').value = goal.name;
-  setFormattedVal('goal-target-input', goal.target);
-  setFormattedVal('goal-saved-input', goal.saved);
-  document.getElementById('goal-delete-btn').classList.remove('hidden');
-  document.getElementById('budget-goal-dialog-title').innerText = 'Редактировать цель';
-
-  closeBudgetGoalIconPicker();
-  const initialIcon = goal.icon || getGoalIcon(goal.name) || 'target';
-  selectGoalIcon(initialIcon);
-
-  tempGoalShares = {};
-  renderGoalSharesManagerList(goalId);
-
-  const dlg = document.getElementById('budget-goal-dialog');
-  if (dlg) dlg.classList.remove('hidden');
-}
-
-async function submitBudgetGoal(e) {
-  e.preventDefault();
-  const editId = document.getElementById('goal-edit-id').value;
-  const name = document.getElementById('goal-name-input').value.trim();
-  const target = getUnformattedVal(document.getElementById('goal-target-input'));
-  const saved = getUnformattedVal(document.getElementById('goal-saved-input'));
-  const icon = document.getElementById('goal-icon-input')?.value || getGoalIcon(name) || 'target';
-
-  if (!name || !target) return;
-
-  const existingGoals = (Cache?.goals || []).filter(g => g.status !== 'Архив');
-  const isCreatingNew = !editId;
-  const totalCount = isCreatingNew ? (existingGoals.length + 1) : existingGoals.length;
-
-  let finalShare = 100;
-  if (totalCount > 1) {
-    normalizeTempGoalShares();
-    finalShare = isCreatingNew ? (tempGoalShares['__new__'] || 100) : (tempGoalShares[editId] || 100);
-  }
-
-  try {
-    const col = getUserCol('Goals');
-    const batch = db.batch();
-
-    const goalData = {
-      name,
-      target,
-      saved,
-      share: finalShare,
-      icon,
-      status: saved >= target ? 'Выполнена' : 'В процессе',
-      updatedAt: Date.now()
-    };
-
-    if (editId) {
-      batch.update(col.doc(editId), goalData);
-    } else {
-      const newDocRef = col.doc();
-      batch.set(newDocRef, { ...goalData, createdAt: Date.now() });
-    }
-
-    // Если несколько целей — пакетно сохраняем обновленные доли остальных целей
-    if (totalCount > 1) {
-      existingGoals.forEach(g => {
-        if (g.id !== editId && tempGoalShares[g.id] !== undefined) {
-          batch.update(col.doc(g.id), {
-            share: tempGoalShares[g.id],
-            updatedAt: Date.now()
-          });
-        }
-      });
-    }
-
-    await batch.commit();
-    closeGoalModal();
-    await fetchAllData();
-    showToast(editId ? 'Цель обновлена' : 'Цель создана');
-  } catch (err) {
-    console.error('Ошибка сохранения цели:', err);
-    showToast('Ошибка: ' + err.message, true);
-  }
-}
-
-async function deleteCurrentEditingGoal() {
-  const editId = document.getElementById('goal-edit-id')?.value;
-  const name = document.getElementById('goal-name-input')?.value || 'Цель';
-  if (!editId) return;
-  deleteBudgetGoal(editId, name);
-}
-
-function deleteBudgetGoal(goalId, goalName) {
-  showDialog('Удаление цели', `Удалить цель "${goalName}"? Накопленный прогресс будет удален.`, true, async () => {
-    try {
-      const batch = db.batch();
-      batch.delete(getUserCol('Goals').doc(goalId));
-
-      const remainingGoals = (Cache?.goals || []).filter(g => g.id !== goalId && g.status !== 'Архив');
-      if (remainingGoals.length === 1) {
-        batch.update(getUserCol('Goals').doc(remainingGoals[0].id), {
-          share: 100,
-          updatedAt: Date.now()
-        });
-      } else if (remainingGoals.length > 1) {
-        const sumShares = remainingGoals.reduce((s, g) => s + (parseFloat(g.share) || 0), 0) || 100;
-        let acc = 0;
-        remainingGoals.forEach((g, idx) => {
-          let newShare;
-          if (idx === remainingGoals.length - 1) {
-            newShare = Math.max(1, 100 - acc);
-          } else {
-            newShare = Math.max(1, Math.round(((parseFloat(g.share) || (100 / remainingGoals.length)) / sumShares) * 100));
-            acc += newShare;
-          }
-          batch.update(getUserCol('Goals').doc(g.id), {
-            share: newShare,
-            updatedAt: Date.now()
-          });
-        });
-      }
-
-      await batch.commit();
-      closeGoalModal();
-      await fetchAllData();
-      showToast('Цель удалена');
-    } catch (e) {
-      console.error('Ошибка удаления цели:', e);
-      showToast('Ошибка удаления', true);
-    }
-  });
-}
-
-function openGoalTopupModal(goalId, goalName) {
-  document.querySelectorAll('.card[data-table="Goals"].context-active').forEach(el => el.classList.remove('context-active'));
-  const goalCard = document.querySelector(`.card[data-table="Goals"][data-id="${goalId}"]`);
-  if (goalCard) goalCard.classList.add('context-active');
-
-  activeTopupGoalId = goalId;
-  const dlg = document.getElementById('goal-topup-dialog');
-  const title = document.getElementById('goal-topup-title');
-  if (title) title.innerText = goalName;
-  document.getElementById('goal-topup-amount').value = '';
-  setTopupMode('add');
-  if (dlg) dlg.classList.remove('hidden');
-}
-
-function closeGoalTopupModal() {
-  const dlg = document.getElementById('goal-topup-dialog');
-  if (dlg) dlg.classList.add('hidden');
-  document.querySelectorAll('.card[data-table="Goals"].context-active').forEach(el => el.classList.remove('context-active'));
-  activeTopupGoalId = null;
-}
-
-function setTopupMode(mode) {
-  currentTopupMode = mode;
-  const addBtn = document.getElementById('tab-topup-add');
-  const subBtn = document.getElementById('tab-topup-sub');
-  if (mode === 'add') {
-    addBtn.className = 'flex-1 py-1.5 rounded-lg font-semibold bg-[#212430] text-white transition-all';
-    subBtn.className = 'flex-1 py-1.5 rounded-lg font-medium text-[#848D99] hover:text-white transition-all';
-  } else {
-    subBtn.className = 'flex-1 py-1.5 rounded-lg font-semibold bg-[#212430] text-white transition-all';
-    addBtn.className = 'flex-1 py-1.5 rounded-lg font-medium text-[#848D99] hover:text-white transition-all';
-  }
-}
-
-async function submitGoalTopup() {
-  if (!activeTopupGoalId) return;
-  const amount = getUnformattedVal(document.getElementById('goal-topup-amount'));
-  if (!amount) return;
-
-  const goal = Cache?.goals?.find(g => g.id === activeTopupGoalId);
-  if (!goal) return;
-
-  let newSaved = currentTopupMode === 'add' ? (goal.saved + amount) : Math.max(0, goal.saved - amount);
-
-  try {
-    await getUserCol('Goals').doc(activeTopupGoalId).update({ saved: newSaved });
-    closeGoalTopupModal();
-    await fetchAllData();
-  } catch (err) {
-    showToast('Ошибка: ' + err.message, true);
   }
 }
 
@@ -2199,7 +1510,7 @@ const WIZARD_GOAL_ICONS = [
   { name: 'music', label: 'Музыка' },
   { name: 'coffee', label: 'Отдых' },
   { name: 'gift', label: 'Праздник' },
-  { name: 'key', label: 'Ключи' }
+  { name: 'key', label: 'Ключи' },
 ];
 
 function renderWizardIconGrid() {
@@ -2228,11 +1539,13 @@ function resetWizGoalIconDisplay() {
   const label = document.getElementById('wiz-goal-icon-label');
 
   if (display) {
-    display.className = 'text-gray-400 group-hover:text-[#727cff] flex items-center justify-center transition-colors';
+    display.className =
+      'text-gray-400 group-hover:text-[#727cff] flex items-center justify-center transition-colors';
     display.innerHTML = '<i data-lucide="image-plus" class="w-6 h-6"></i>';
   }
   if (btn) {
-    btn.className = 'w-14 h-14 rounded-2xl bg-[#212430] hover:bg-[#2A2D3C] border border-dashed border-[#727cff]/40 hover:border-[#727cff] flex items-center justify-center transition-all cursor-pointer shadow-inner active:scale-95 group flex-shrink-0';
+    btn.className =
+      'w-14 h-14 rounded-2xl bg-[#212430] hover:bg-[#2A2D3C] border border-dashed border-[#727cff]/40 hover:border-[#727cff] flex items-center justify-center transition-all cursor-pointer shadow-inner active:scale-95 group flex-shrink-0';
   }
   if (label) {
     label.innerText = 'Выбрать иконку';
@@ -2254,7 +1567,7 @@ function initBudgetWizard(forceReset = false) {
     localStorage.setItem('budget_wizard_step', '1');
   } else {
     const savedStep = parseInt(localStorage.getItem('budget_wizard_step'), 10);
-    currentWizardStep = (!isNaN(savedStep) && savedStep >= 1) ? savedStep : (currentWizardStep || 1);
+    currentWizardStep = !isNaN(savedStep) && savedStep >= 1 ? savedStep : currentWizardStep || 1;
   }
 
   // Заполняем доходы, если уже были сохранены и поле еще не заполнено пользователем
@@ -2264,7 +1577,13 @@ function initBudgetWizard(forceReset = false) {
 
   // Заполняем кастомные категории из сохраненного плана, если есть
   if (existingPlan.categoryLimits) {
-    const standardCats = ['Продукты', 'Кафе и рестораны', 'Развлечения', 'Прочие расходы', 'Прочие траты'];
+    const standardCats = [
+      'Продукты',
+      'Кафе и рестораны',
+      'Развлечения',
+      'Прочие расходы',
+      'Прочие траты',
+    ];
     Object.keys(existingPlan.categoryLimits).forEach(cat => {
       if (!standardCats.includes(cat)) {
         wizardCustomCategories.add(cat);
@@ -2295,8 +1614,10 @@ function initBudgetWizard(forceReset = false) {
     if (hasExistingGoal && gName && !gName.value) {
       const firstGoal = Cache.goals[0];
       if (gName && !gName.value) gName.value = firstGoal.name || '';
-      if (gTarget && !gTarget.value) gTarget.value = firstGoal.target ? formatMoney(firstGoal.target) : '';
-      if (gSaved && !gSaved.value) gSaved.value = firstGoal.saved ? formatMoney(firstGoal.saved) : '';
+      if (gTarget && !gTarget.value)
+        gTarget.value = firstGoal.target ? formatMoney(firstGoal.target) : '';
+      if (gSaved && !gSaved.value)
+        gSaved.value = firstGoal.saved ? formatMoney(firstGoal.saved) : '';
       if (firstGoal.icon && !wizGoalIcon) selectWizardGoalIcon(firstGoal.icon);
     }
   }
@@ -2342,9 +1663,10 @@ function goToWizardStep(step) {
       else stepEl.classList.add('hidden');
     }
     if (progEl) {
-      progEl.className = i <= step 
-        ? 'h-full rounded-full bg-[#6C5DD3] transition-colors duration-300' 
-        : 'h-full rounded-full bg-[rgba(255,255,255,0.08)] transition-colors duration-300';
+      progEl.className =
+        i <= step
+          ? 'h-full rounded-full bg-[#6C5DD3] transition-colors duration-300'
+          : 'h-full rounded-full bg-[rgba(255,255,255,0.08)] transition-colors duration-300';
     }
   }
 
@@ -2356,7 +1678,7 @@ function goToWizardStep(step) {
     'Планируемый доход',
     'Календарь обязательных счетов',
     'Месячные лимиты расходов',
-    'Итоговый план бюджета'
+    'Итоговый план бюджета',
   ];
 
   if (badge) badge.innerText = `Шаг ${step} из 5`;
@@ -2365,12 +1687,10 @@ function goToWizardStep(step) {
   if (step === 1) {
     updateWizGoalSlider();
     if (!wizGoalIcon) resetWizGoalIconDisplay();
-  }
-  else if (step === 2) {
+  } else if (step === 2) {
     renderWizardIncomeSources();
     calculateHistoricalIncomeForWizard();
-  }
-  else if (step === 3) renderWizCalendar();
+  } else if (step === 3) renderWizCalendar();
   else if (step === 4) renderWizLimitsEditor();
   else if (step === 5) calculateAndRenderWizSummary();
 
@@ -2398,7 +1718,8 @@ function selectWizardGoalIcon(icon) {
     display.innerHTML = `<i data-lucide="${icon}" class="w-6 h-6"></i>`;
   }
   if (btn) {
-    btn.className = 'w-14 h-14 rounded-2xl bg-[#6C5DD3]/15 border border-[#6C5DD3]/40 flex items-center justify-center transition-all cursor-pointer shadow-inner active:scale-95 group flex-shrink-0';
+    btn.className =
+      'w-14 h-14 rounded-2xl bg-[#6C5DD3]/15 border border-[#6C5DD3]/40 flex items-center justify-center transition-all cursor-pointer shadow-inner active:scale-95 group flex-shrink-0';
   }
   if (label) {
     label.innerText = 'Изменить иконку';
@@ -2446,17 +1767,20 @@ function recalculateWizardIncome() {
       if (tx.type === 'Доход') {
         const cat = tx.category || 'Другое';
         if (wizardActiveIncomeSources.has(cat)) {
-          const uid = tx.id || tx._id || `${tx.timestamp || tx.rawDate || ''}_${tx.amount}_${tx.merchant || tx.title || ''}`;
+          const uid =
+            tx.id ||
+            tx._id ||
+            `${tx.timestamp || tx.rawDate || ''}_${tx.amount}_${tx.merchant || tx.title || ''}`;
           if (window.wizardExcludedTxIds && window.wizardExcludedTxIds.has(uid)) return;
 
-          totalIncome += (parseFloat(tx.amount) || 0);
+          totalIncome += parseFloat(tx.amount) || 0;
         }
       }
     });
   }
 
   const avgIncome = Math.round(totalIncome / monthsCount);
-  
+
   if (calcEl) calcEl.innerText = `${formatMoney(avgIncome)}/мес`;
   if (inputEl && (!inputEl.value || inputEl.value === '0 ₽' || inputEl.value === '0')) {
     inputEl.value = formatMoney(avgIncome);
@@ -2544,7 +1868,9 @@ function closeBudgetModalDayTooltip() {
   const tooltip = document.getElementById('budget-modal-day-tooltip');
   if (tooltip) tooltip.classList.add('hidden');
   currentWizSelectedDay = null;
-  document.querySelectorAll('#budget-modal-calendar-grid .wiz-day-cell.is-selected').forEach(el => el.classList.remove('is-selected'));
+  document
+    .querySelectorAll('#budget-modal-calendar-grid .wiz-day-cell.is-selected')
+    .forEach(el => el.classList.remove('is-selected'));
 }
 
 function addAnotherBillFromBudgetModalTooltip() {
@@ -2559,7 +1885,7 @@ function renderWizCalendar() {
   const gridModal = document.getElementById('budget-modal-calendar-grid');
   const totalLabelWiz = document.getElementById('wiz-bills-total-label');
   const totalLabelModal = document.getElementById('budget-modal-bills-total');
-  
+
   if (!gridWiz && !gridModal) return;
 
   const today = new Date();
@@ -2584,19 +1910,29 @@ function renderWizCalendar() {
       const b = dayBills[0];
       const info = getOneTimeBillMonthInfo(b, today);
       const formatted = formatShortSum(b.amount, false);
-      const spreadHint = info.isSpread ? ` (${info.currentStep}/${info.totalSteps})` : (info.isOneTime ? ' (Разовый)' : ' (Ежемесячно)');
+      const spreadHint = info.isSpread
+        ? ` (${info.currentStep}/${info.totalSteps})`
+        : info.isOneTime
+          ? ' (Разовый)'
+          : ' (Ежемесячно)';
       chipsHtml = `
         <div class="wiz-chips-wrap">
           <span class="wiz-bill-chip is-single ${info.isOneTime ? 'is-onetime' : 'is-recurring'}" title="${escapeHtml(b.name)}: ${formatMoney(b.amount)}${spreadHint}">${formatted}</span>
         </div>
       `;
     } else if (count === 2) {
-      chipsHtml = `<div class="wiz-chips-wrap">${dayBills.map(b => {
-        const info = getOneTimeBillMonthInfo(b, today);
-        const formatted = formatShortSum(b.amount, true);
-        const spreadHint = info.isSpread ? ` (${info.currentStep}/${info.totalSteps})` : (info.isOneTime ? ' (Разовый)' : ' (Ежемесячно)');
-        return `<span class="wiz-bill-chip ${info.isOneTime ? 'is-onetime' : 'is-recurring'}" title="${escapeHtml(b.name)}: ${formatMoney(b.amount)}${spreadHint}">${formatted}</span>`;
-      }).join('')}</div>`;
+      chipsHtml = `<div class="wiz-chips-wrap">${dayBills
+        .map(b => {
+          const info = getOneTimeBillMonthInfo(b, today);
+          const formatted = formatShortSum(b.amount, true);
+          const spreadHint = info.isSpread
+            ? ` (${info.currentStep}/${info.totalSteps})`
+            : info.isOneTime
+              ? ' (Разовый)'
+              : ' (Ежемесячно)';
+          return `<span class="wiz-bill-chip ${info.isOneTime ? 'is-onetime' : 'is-recurring'}" title="${escapeHtml(b.name)}: ${formatMoney(b.amount)}${spreadHint}">${formatted}</span>`;
+        })
+        .join('')}</div>`;
     } else if (count > 2) {
       const totalDaySum = dayBills.reduce((acc, b) => acc + (parseFloat(b.amount) || 0), 0);
       const formatted = formatShortSum(totalDaySum, true);
@@ -2627,9 +1963,14 @@ function handleWizardDayClick(day, event) {
   const targetDay = parseInt(day, 10) || 1;
   currentWizSelectedDay = targetDay;
   const today = new Date();
-  const bills = (Cache?.calendarBills || []).filter(b => parseInt(b.day, 10) === targetDay && getOneTimeBillMonthInfo(b, today).isActive);
+  const bills = (Cache?.calendarBills || []).filter(
+    b => parseInt(b.day, 10) === targetDay && getOneTimeBillMonthInfo(b, today).isActive
+  );
 
-  const isModalCalendar = !!event?.target?.closest('#budget-modal-calendar-wrapper') || (!document.getElementById('wizard-step-3')?.classList.contains('hidden') === false && !document.getElementById('budget-calendar-modal')?.classList.contains('hidden'));
+  const isModalCalendar =
+    !!event?.target?.closest('#budget-modal-calendar-wrapper') ||
+    (!document.getElementById('wizard-step-3')?.classList.contains('hidden') === false &&
+      !document.getElementById('budget-calendar-modal')?.classList.contains('hidden'));
 
   if (bills.length === 0) {
     if (isModalCalendar) {
@@ -2640,10 +1981,12 @@ function handleWizardDayClick(day, event) {
     }
     openAddBillModal(targetDay);
   } else {
-    const targetEl = event?.currentTarget || (isModalCalendar 
-      ? document.querySelector(`#budget-modal-calendar-grid [data-wiz-day="${targetDay}"]`)
-      : document.querySelector(`#wiz-calendar-grid [data-wiz-day="${targetDay}"]`));
-    
+    const targetEl =
+      event?.currentTarget ||
+      (isModalCalendar
+        ? document.querySelector(`#budget-modal-calendar-grid [data-wiz-day="${targetDay}"]`)
+        : document.querySelector(`#wiz-calendar-grid [data-wiz-day="${targetDay}"]`));
+
     if (isModalCalendar) {
       showBudgetModalDayTooltip(targetDay, bills, targetEl);
     } else {
@@ -2668,24 +2011,25 @@ function showBudgetModalDayTooltip(day, bills, targetEl) {
   if (addLabel) addLabel.innerText = `Добавить еще платеж на ${day} число`;
 
   const today = new Date();
-  list.innerHTML = bills.map(b => {
-    const info = getOneTimeBillMonthInfo(b, today);
-    return `
+  list.innerHTML = bills
+    .map(b => {
+      const info = getOneTimeBillMonthInfo(b, today);
+      return `
       <div class="flex items-center justify-between p-2 rounded-xl bg-[#12151C] border border-[rgba(255,255,255,0.06)] hover:border-[rgba(255,255,255,0.12)] transition-all">
         <div class="min-w-0 pr-2 cursor-pointer flex-1" onclick="openEditBillModal('${b.id}')">
           <div class="flex items-center gap-1.5 mb-0.5">
             <span class="text-xs font-semibold text-white truncate block">${escapeHtml(b.name)}</span>
-            ${info.isSpread 
-              ? `<span class="text-[8px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-0.5 flex-shrink-0 font-medium font-mono"><i data-lucide="split" class="w-2.5 h-2.5"></i>${info.currentStep}/${info.totalSteps}</span>` 
-              : (info.isOneTime 
-                ? `<span class="text-[8px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-0.5 flex-shrink-0 font-medium"><i data-lucide="zap" class="w-2.5 h-2.5"></i>Разовый</span>` 
-                : `<span class="text-[8px] px-1.5 py-0.2 rounded bg-[#6C5DD3]/20 text-[#a594fd] border border-[#6C5DD3]/30 flex items-center gap-0.5 flex-shrink-0 font-medium">Ежемесячно</span>`
-              )
+            ${
+              info.isSpread
+                ? `<span class="text-[8px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-0.5 flex-shrink-0 font-medium font-mono"><i data-lucide="split" class="w-2.5 h-2.5"></i>${info.currentStep}/${info.totalSteps}</span>`
+                : info.isOneTime
+                  ? `<span class="text-[8px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-0.5 flex-shrink-0 font-medium"><i data-lucide="zap" class="w-2.5 h-2.5"></i>Разовый</span>`
+                  : `<span class="text-[8px] px-1.5 py-0.2 rounded bg-[#6C5DD3]/20 text-[#a594fd] border border-[#6C5DD3]/30 flex items-center gap-0.5 flex-shrink-0 font-medium">Ежемесячно</span>`
             }
           </div>
           <div class="flex items-center gap-1.5">
             <span class="text-[11px] font-mono font-bold text-gray-200">-${formatMoney(b.amount)}</span>
-            ${info.isSpread ? `<span class="text-[9px] text-[#848D99] font-mono">из ${formatMoney(b.totalAmount || (b.amount * b.spreadMonths))}</span>` : ''}
+            ${info.isSpread ? `<span class="text-[9px] text-[#848D99] font-mono">из ${formatMoney(b.totalAmount || b.amount * b.spreadMonths)}</span>` : ''}
           </div>
         </div>
         <div class="flex items-center gap-1 flex-shrink-0">
@@ -2698,13 +2042,15 @@ function showBudgetModalDayTooltip(day, bills, targetEl) {
         </div>
       </div>
     `;
-  }).join('');
+    })
+    .join('');
 
   if (typeof lucide !== 'undefined') lucide.createIcons();
 
   tooltip.classList.remove('hidden');
 
-  const cell = targetEl || document.querySelector(`#budget-modal-calendar-grid [data-wiz-day="${day}"]`);
+  const cell =
+    targetEl || document.querySelector(`#budget-modal-calendar-grid [data-wiz-day="${day}"]`);
   if (!cell) return;
 
   const wrapperRect = wrapper.getBoundingClientRect();
@@ -2718,7 +2064,7 @@ function showBudgetModalDayTooltip(day, bills, targetEl) {
   const tooltipWidth = tooltip.offsetWidth || 260;
   const tooltipHeight = tooltip.offsetHeight || 180;
 
-  let left = cellLeft + (cellWidth / 2) - (tooltipWidth / 2);
+  let left = cellLeft + cellWidth / 2 - tooltipWidth / 2;
   const minLeft = 8;
   const maxLeft = Math.max(minLeft, wrapperRect.width - tooltipWidth - 8);
   left = Math.max(minLeft, Math.min(left, maxLeft));
@@ -2752,24 +2098,25 @@ function showWizDayTooltip(day, bills, targetEl) {
   if (addLabel) addLabel.innerText = `Добавить еще платеж на ${day} число`;
 
   const today = new Date();
-  list.innerHTML = bills.map(b => {
-    const info = getOneTimeBillMonthInfo(b, today);
-    return `
+  list.innerHTML = bills
+    .map(b => {
+      const info = getOneTimeBillMonthInfo(b, today);
+      return `
       <div class="flex items-center justify-between p-2 rounded-xl bg-[#12151C] border border-[rgba(255,255,255,0.06)] hover:border-[rgba(255,255,255,0.12)] transition-all">
         <div class="min-w-0 pr-2 cursor-pointer flex-1" onclick="openEditBillModal('${b.id}')">
           <div class="flex items-center gap-1.5 mb-0.5">
             <span class="text-xs font-semibold text-white truncate block">${escapeHtml(b.name)}</span>
-            ${info.isSpread 
-              ? `<span class="text-[8px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-0.5 flex-shrink-0 font-medium font-mono"><i data-lucide="split" class="w-2.5 h-2.5"></i>${info.currentStep}/${info.totalSteps}</span>` 
-              : (info.isOneTime 
-                ? `<span class="text-[8px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-0.5 flex-shrink-0 font-medium"><i data-lucide="zap" class="w-2.5 h-2.5"></i>Разовый</span>` 
-                : `<span class="text-[8px] px-1.5 py-0.2 rounded bg-[#6C5DD3]/20 text-[#a594fd] border border-[#6C5DD3]/30 flex items-center gap-0.5 flex-shrink-0 font-medium">Ежемесячно</span>`
-              )
+            ${
+              info.isSpread
+                ? `<span class="text-[8px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-0.5 flex-shrink-0 font-medium font-mono"><i data-lucide="split" class="w-2.5 h-2.5"></i>${info.currentStep}/${info.totalSteps}</span>`
+                : info.isOneTime
+                  ? `<span class="text-[8px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-0.5 flex-shrink-0 font-medium"><i data-lucide="zap" class="w-2.5 h-2.5"></i>Разовый</span>`
+                  : `<span class="text-[8px] px-1.5 py-0.2 rounded bg-[#6C5DD3]/20 text-[#a594fd] border border-[#6C5DD3]/30 flex items-center gap-0.5 flex-shrink-0 font-medium">Ежемесячно</span>`
             }
           </div>
           <div class="flex items-center gap-1.5">
             <span class="text-[11px] font-mono font-bold text-gray-200">-${formatMoney(b.amount)}</span>
-            ${info.isSpread ? `<span class="text-[9px] text-[#848D99] font-mono">из ${formatMoney(b.totalAmount || (b.amount * b.spreadMonths))}</span>` : ''}
+            ${info.isSpread ? `<span class="text-[9px] text-[#848D99] font-mono">из ${formatMoney(b.totalAmount || b.amount * b.spreadMonths)}</span>` : ''}
           </div>
         </div>
         <div class="flex items-center gap-1 flex-shrink-0">
@@ -2782,7 +2129,8 @@ function showWizDayTooltip(day, bills, targetEl) {
         </div>
       </div>
     `;
-  }).join('');
+    })
+    .join('');
 
   if (typeof lucide !== 'undefined') lucide.createIcons();
 
@@ -2804,7 +2152,7 @@ function showWizDayTooltip(day, bills, targetEl) {
   const tooltipHeight = tooltip.offsetHeight || 180;
 
   // Центрируем по горизонтали относительно ячейки, но не даем вылезти за пределы календаря
-  let left = cellLeft + (cellWidth / 2) - (tooltipWidth / 2);
+  let left = cellLeft + cellWidth / 2 - tooltipWidth / 2;
   const minLeft = 8;
   const maxLeft = Math.max(minLeft, wrapperRect.width - tooltipWidth - 8);
   left = Math.max(minLeft, Math.min(left, maxLeft));
@@ -2828,25 +2176,35 @@ function closeWizDayTooltip() {
   const tooltip = document.getElementById('wiz-day-tooltip');
   if (tooltip) tooltip.classList.add('hidden');
   currentWizSelectedDay = null;
-  document.querySelectorAll('.wiz-day-cell.is-selected').forEach(el => el.classList.remove('is-selected'));
+  document
+    .querySelectorAll('.wiz-day-cell.is-selected')
+    .forEach(el => el.classList.remove('is-selected'));
 }
 
 // Закрытие тултипа при клике вне его области
 if (typeof document !== 'undefined') {
-  document.addEventListener('click', (e) => {
-    const target = (e?.target?.nodeType === 3) ? e.target.parentElement : e?.target;
+  document.addEventListener('click', e => {
+    const target = e?.target?.nodeType === 3 ? e.target.parentElement : e?.target;
     if (!target || typeof target.closest !== 'function') return;
 
     const tooltipWiz = document.getElementById('wiz-day-tooltip');
     if (tooltipWiz && !tooltipWiz.classList.contains('hidden')) {
-      if (!tooltipWiz.contains(target) && !target.closest('.wiz-day-cell') && !target.closest('#calendar-bill-dialog')) {
+      if (
+        !tooltipWiz.contains(target) &&
+        !target.closest('.wiz-day-cell') &&
+        !target.closest('#calendar-bill-dialog')
+      ) {
         closeWizDayTooltip();
       }
     }
 
     const tooltipModal = document.getElementById('budget-modal-day-tooltip');
     if (tooltipModal && !tooltipModal.classList.contains('hidden')) {
-      if (!tooltipModal.contains(target) && !target.closest('.wiz-day-cell') && !target.closest('#calendar-bill-dialog')) {
+      if (
+        !tooltipModal.contains(target) &&
+        !target.closest('.wiz-day-cell') &&
+        !target.closest('#calendar-bill-dialog')
+      ) {
         closeBudgetModalDayTooltip();
       }
     }
@@ -2879,7 +2237,7 @@ function renderWizLimitsEditor() {
   const defaultList = [
     { name: 'Продукты', icon: 'shopping-cart' },
     { name: 'Кафе и рестораны', icon: 'utensils' },
-    { name: 'Развлечения', icon: 'gamepad-2' }
+    { name: 'Развлечения', icon: 'gamepad-2' },
   ];
 
   const list = defaultList.filter(c => !window.wizardExcludedCategories.has(c.name));
@@ -2900,18 +2258,26 @@ function renderWizLimitsEditor() {
       othersAvg += avgMap[cat] || 0;
     }
   });
-  if (window._customCategoryAverages && (window._customCategoryAverages['Прочие расходы'] !== undefined || window._customCategoryAverages['Прочие траты'] !== undefined)) {
-    avgMap['Прочие расходы'] = window._customCategoryAverages['Прочие расходы'] !== undefined ? window._customCategoryAverages['Прочие расходы'] : window._customCategoryAverages['Прочие траты'];
+  if (
+    window._customCategoryAverages &&
+    (window._customCategoryAverages['Прочие расходы'] !== undefined ||
+      window._customCategoryAverages['Прочие траты'] !== undefined)
+  ) {
+    avgMap['Прочие расходы'] =
+      window._customCategoryAverages['Прочие расходы'] !== undefined
+        ? window._customCategoryAverages['Прочие расходы']
+        : window._customCategoryAverages['Прочие траты'];
   } else {
     avgMap['Прочие расходы'] = othersAvg;
   }
   list.push({ name: 'Прочие расходы', icon: 'package' });
 
-  container.innerHTML = list.map(cat => {
-    const avg = Math.round(avgMap[cat.name] || 0);
-    const existingVal = Cache.budgetPlan?.categoryLimits?.[cat.name] || (avg > 0 ? avg : '');
+  container.innerHTML = list
+    .map(cat => {
+      const avg = Math.round(avgMap[cat.name] || 0);
+      const existingVal = Cache.budgetPlan?.categoryLimits?.[cat.name] || (avg > 0 ? avg : '');
 
-    return `
+      return `
       <div class="py-2 px-3 rounded-2xl bg-[#12151C] border border-[rgba(255,255,255,0.04)] flex items-center justify-between gap-3">
         <div class="w-8 h-8 rounded-xl bg-[#1E2330] text-gray-300 flex items-center justify-center flex-shrink-0">
           <i data-lucide="${cat.icon}" class="w-4 h-4 text-[#848D99]"></i>
@@ -2922,7 +2288,9 @@ function renderWizLimitsEditor() {
             <span class="text-xs font-bold text-gray-200 truncate">${escapeHtml(cat.name)}</span>
             ${cat.isCustom ? `<button type="button" onclick="removeWizardCustomCat('${escapeHtml(cat.name)}')" class="text-gray-500 hover:text-[#FF453A] text-xs font-bold cursor-pointer">✕</button>` : ''}
           </div>
-          ${avg > 0 ? `
+          ${
+            avg > 0
+              ? `
             <div class="flex items-center gap-1 mt-0.5">
               <div onclick="applyWizCategoryAvg('${escapeHtml(cat.name)}', ${avg})" 
                    class="w-[100px] h-6 justify-between text-[10px] py-0.5 px-2 bg-[#6C5DD3]/10 text-[#727cff] hover:bg-[#6C5DD3]/20 border border-[#6C5DD3]/20 rounded-lg whitespace-nowrap flex items-center cursor-pointer transition-all active:scale-95 flex-shrink-0" 
@@ -2937,7 +2305,8 @@ function renderWizLimitsEditor() {
                 <i data-lucide="sliders-horizontal" class="w-3 h-3"></i>
               </button>
             </div>
-          ` : `
+          `
+              : `
             <div class="flex items-center gap-1 mt-0.5">
               <span class="text-[10px] text-[#848D99] w-[100px] block truncate">Ср: нет данных</span>
               <button type="button" 
@@ -2947,7 +2316,8 @@ function renderWizLimitsEditor() {
                 <i data-lucide="sliders-horizontal" class="w-3 h-3"></i>
               </button>
             </div>
-          `}
+          `
+          }
         </div>
 
         <div class="w-[92px] flex-shrink-0" style="width: 92px;">
@@ -2961,7 +2331,8 @@ function renderWizLimitsEditor() {
         </div>
       </div>
     `;
-  }).join('');
+    })
+    .join('');
 
   container.querySelectorAll('input[data-wiz-cat]').forEach(inp => fitWizLimitFont(inp));
   updateWizLiveTotal();
@@ -2970,13 +2341,23 @@ function renderWizLimitsEditor() {
 
 function openAddCategoryLimitPicker() {
   const allExpenseCats = Cache?.categories?.expense || [];
-  const standardNames = ['Продукты', 'Кафе и рестораны', 'Развлечения', 'Прочие расходы', 'Прочие траты'];
-  
+  const standardNames = [
+    'Продукты',
+    'Кафе и рестораны',
+    'Развлечения',
+    'Прочие расходы',
+    'Прочие траты',
+  ];
+
   // Определяем, открыто ли окно настроек лимитов или мастер
-  const isManagerOpen = document.getElementById('category-limits-manager-dialog') && !document.getElementById('category-limits-manager-dialog').classList.contains('hidden');
+  const isManagerOpen =
+    document.getElementById('category-limits-manager-dialog') &&
+    !document.getElementById('category-limits-manager-dialog').classList.contains('hidden');
   const activeSet = isManagerOpen ? managerCustomCategories : wizardCustomCategories;
 
-  const available = allExpenseCats.filter(c => !standardNames.includes(c.name) && !activeSet.has(c.name));
+  const available = allExpenseCats.filter(
+    c => !standardNames.includes(c.name) && !activeSet.has(c.name)
+  );
 
   if (available.length === 0) {
     showAddCategoryDialog('Расход', null);
@@ -2987,7 +2368,9 @@ function openAddCategoryLimitPicker() {
   const dlg = document.getElementById('wiz-category-picker-dialog');
   if (!listEl || !dlg) return;
 
-  listEl.innerHTML = available.map(c => `
+  listEl.innerHTML = available
+    .map(
+      c => `
     <button type="button" onclick="handleAddCategoryLimitChoice('${escapeHtml(c.name)}')" class="w-full flex items-center justify-between p-3 rounded-2xl bg-[#12151C] hover:bg-[#212430] border border-[rgba(255,255,255,0.04)] text-xs text-gray-200 transition-colors cursor-pointer active:scale-98">
       <div class="flex items-center gap-2.5 min-w-0">
         <div class="w-7 h-7 rounded-xl bg-[#1E2330] text-gray-300 flex items-center justify-center flex-shrink-0">
@@ -2997,7 +2380,9 @@ function openAddCategoryLimitPicker() {
       </div>
       <span class="w-6 h-6 rounded-lg bg-[#6C5DD3]/20 hover:bg-[#6C5DD3]/30 text-[#a594fd] font-bold text-sm flex items-center justify-center flex-shrink-0 ml-2 transition-colors">+</span>
     </button>
-  `).join('');
+  `
+    )
+    .join('');
 
   if (typeof lockBodyScroll === 'function') lockBodyScroll();
   dlg.classList.remove('hidden');
@@ -3013,8 +2398,12 @@ function closeAddCategoryLimitPicker() {
 }
 
 function handleAddCategoryLimitChoice(catName) {
-  const isManagerOpen = document.getElementById('category-limits-manager-dialog') && !document.getElementById('category-limits-manager-dialog').classList.contains('hidden');
-  const isWizardOpen = document.getElementById('budget-setup-wizard-modal') && !document.getElementById('budget-setup-wizard-modal').classList.contains('hidden');
+  const isManagerOpen =
+    document.getElementById('category-limits-manager-dialog') &&
+    !document.getElementById('category-limits-manager-dialog').classList.contains('hidden');
+  const isWizardOpen =
+    document.getElementById('budget-setup-wizard-modal') &&
+    !document.getElementById('budget-setup-wizard-modal').classList.contains('hidden');
 
   closeAddCategoryLimitPicker();
 
@@ -3061,7 +2450,12 @@ function updateWizLiveTotal() {
 // Вспомогательная функция определения счетов и разовых выплат
 function isBillOrOneTimeTx(tx) {
   if (!tx) return false;
-  const isOneTime = (tx.billType === 'onetime') || !!tx.fundingGoalId || (tx.spreadMonths && parseInt(tx.spreadMonths, 10) > 1) || (!tx.isBillPayment && !!tx.excludeFromBudget) || !!tx.isExcludedFromBudget;
+  const isOneTime =
+    tx.billType === 'onetime' ||
+    !!tx.fundingGoalId ||
+    (tx.spreadMonths && parseInt(tx.spreadMonths, 10) > 1) ||
+    (!tx.isBillPayment && !!tx.excludeFromBudget) ||
+    !!tx.isExcludedFromBudget;
   const isBill = !isOneTime && (!!tx.isBillPayment || (!!tx.billId && tx.billType !== 'onetime'));
   return isOneTime || isBill;
 }
@@ -3072,7 +2466,7 @@ function getTxEffectiveTimestamp(tx) {
   if (tx.dayTimestamp && typeof tx.dayTimestamp === 'number') return tx.dayTimestamp;
   const raw = tx.date || tx.rawDate || tx.formattedDate;
   if (raw) {
-    const d = (typeof parseAnyDate === 'function') ? parseAnyDate(raw) : new Date(raw);
+    const d = typeof parseAnyDate === 'function' ? parseAnyDate(raw) : new Date(raw);
     if (d && !isNaN(d.getTime())) return d.getTime();
   }
   if (tx.timestamp && typeof tx.timestamp === 'number') return tx.timestamp;
@@ -3113,7 +2507,7 @@ function calculateHistoricalCategoryAverages() {
 
       if (tx.type === 'Расход' && tx.category) {
         const uid = tx.id || tx._id || `${t}_${tx.amount}_${tx.merchant || tx.title || ''}`;
-        
+
         // Пропускаем вручную исключенные операции
         if (window.wizardExcludedTxIds && window.wizardExcludedTxIds.has(uid)) return;
 
@@ -3126,9 +2520,10 @@ function calculateHistoricalCategoryAverages() {
     });
   });
 
-  const diffDays = minTimeInWindow !== Infinity
-    ? Math.max(1, Math.round((maxTime - minTimeInWindow) / (1000 * 60 * 60 * 24)) + 1)
-    : 30;
+  const diffDays =
+    minTimeInWindow !== Infinity
+      ? Math.max(1, Math.round((maxTime - minTimeInWindow) / (1000 * 60 * 60 * 24)) + 1)
+      : 30;
   const effectiveDays = Math.min(90, diffDays);
   const monthFactor = 30.44 / effectiveDays;
 
@@ -3146,7 +2541,7 @@ function calculateHistoricalCategoryAverages() {
 // Расчет финансовой квитанции на Шаге 5
 function calculateAndRenderWizSummary() {
   const income = getUnformattedVal(document.getElementById('wiz-income-input')) || 0;
-  
+
   // Считаем обязательные регулярные платежи из календаря (разовые счета не учитываются в расчете ежемесячных трат)
   const bills = Cache.calendarBills || [];
   const recurringBills = bills.filter(b => b.type !== 'onetime' && b.type !== 'Разовый');
@@ -3169,7 +2564,8 @@ function calculateAndRenderWizSummary() {
   const goalTarget = getUnformattedVal(document.getElementById('wiz-goal-target')) || 0;
   const goalSaved = getUnformattedVal(document.getElementById('wiz-goal-saved')) || 0;
   const remainingToGoal = Math.max(0, goalTarget - goalSaved);
-  const monthsToGoal = surplus > 0 && remainingToGoal > 0 ? Math.ceil(remainingToGoal / surplus) : 0;
+  const monthsToGoal =
+    surplus > 0 && remainingToGoal > 0 ? Math.ceil(remainingToGoal / surplus) : 0;
 
   // Форматирование квитанции
   document.getElementById('wiz-sum-income').innerText = formatMoney(income);
@@ -3212,7 +2608,20 @@ function calculateAndRenderWizSummary() {
     } else {
       const now = new Date();
       const targetDate = new Date(now.getFullYear(), now.getMonth() + monthsToGoal, 1);
-      const monthsRu = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+      const monthsRu = [
+        'янв',
+        'фев',
+        'мар',
+        'апр',
+        'май',
+        'июн',
+        'июл',
+        'авг',
+        'сен',
+        'окт',
+        'ноя',
+        'дек',
+      ];
       const targetDateStr = `${monthsRu[targetDate.getMonth()]} ${targetDate.getFullYear()}`;
 
       timelineEl.innerText = `~${monthsToGoal} мес. (${targetDateStr})`;
@@ -3252,8 +2661,8 @@ async function finishBudgetOnboarding() {
   Cache.budgetPlan.categoryLimits = categoryLimits;
   Cache.budgetPlan.updatedAt = Date.now();
 
-  const existingGoal = (Cache.goals && Cache.goals.length > 0) ? Cache.goals[0] : null;
-  const goalStatus = (goalTarget > 0 && goalSaved >= goalTarget) ? 'Выполнена' : 'В процессе';
+  const existingGoal = Cache.goals && Cache.goals.length > 0 ? Cache.goals[0] : null;
+  const goalStatus = goalTarget > 0 && goalSaved >= goalTarget ? 'Выполнена' : 'В процессе';
 
   let goalObj;
   if (existingGoal) {
@@ -3265,7 +2674,7 @@ async function finishBudgetOnboarding() {
       icon: goalIcon,
       share: 100,
       status: goalStatus,
-      updatedAt: Date.now()
+      updatedAt: Date.now(),
     };
     Cache.goals[0] = goalObj;
   } else {
@@ -3278,7 +2687,7 @@ async function finishBudgetOnboarding() {
       share: 100,
       status: goalStatus,
       createdAt: Date.now(),
-      updatedAt: Date.now()
+      updatedAt: Date.now(),
     };
     Cache.goals = [goalObj];
   }
@@ -3311,20 +2720,24 @@ async function finishBudgetOnboarding() {
         icon: goalIcon,
         share: 100,
         status: goalStatus,
-        updatedAt: Date.now()
+        updatedAt: Date.now(),
       });
     } else {
       batch.set(targetGoalRef, goalObj);
     }
 
     const planRef = getUserCol('BudgetPlan').doc('plan');
-    batch.set(planRef, {
-      isConfigured: true,
-      monthlyIncome: income,
-      monthlyVariableLimit: varLimit,
-      categoryLimits: categoryLimits,
-      updatedAt: Date.now()
-    }, { merge: true });
+    batch.set(
+      planRef,
+      {
+        isConfigured: true,
+        monthlyIncome: income,
+        monthlyVariableLimit: varLimit,
+        categoryLimits: categoryLimits,
+        updatedAt: Date.now(),
+      },
+      { merge: true }
+    );
 
     await batch.commit();
   } catch (err) {
@@ -3339,10 +2752,10 @@ function getCategoryCurrentMonthTransactions(categoryName, targetDate = getSelec
   const d = targetDate || getSelectedBudgetDate();
   const startOfMonth = new Date(d.getFullYear(), d.getMonth(), 1, 0, 0, 0, 0);
   const endOfMonth = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999);
-  
-  const isOtherCategory = (categoryName === 'Прочие расходы' || categoryName === 'Прочие траты');
+
+  const isOtherCategory = categoryName === 'Прочие расходы' || categoryName === 'Прочие траты';
   const plan = Cache?.budgetPlan || {};
-  const safeLimits = (plan && typeof plan.categoryLimits === 'object') ? plan.categoryLimits : {};
+  const safeLimits = plan && typeof plan.categoryLimits === 'object' ? plan.categoryLimits : {};
   const specificLimitKeys = Object.keys(safeLimits).filter(k => {
     const lim = parseFloat(safeLimits[k]);
     return !isNaN(lim) && lim > 0 && k !== 'Прочие расходы' && k !== 'Прочие траты';
@@ -3356,7 +2769,12 @@ function getCategoryCurrentMonthTransactions(categoryName, targetDate = getSelec
 
   if (monthObj && Array.isArray(monthObj.items)) {
     monthObj.items.forEach(tx => {
-      const isExpense = tx.type === 'Расход' || tx.type === 'expense' || String(tx.type || '').trim().toLowerCase() === 'расход';
+      const isExpense =
+        tx.type === 'Расход' ||
+        tx.type === 'expense' ||
+        String(tx.type || '')
+          .trim()
+          .toLowerCase() === 'расход';
       if (!isExpense) return;
       if (tx.isBillPayment) return;
 
@@ -3367,7 +2785,14 @@ function getCategoryCurrentMonthTransactions(categoryName, targetDate = getSelec
         if (txCat !== categoryName) return;
       }
 
-      const txTime = tx.dayTimestamp || tx.timestamp || (tx.rawDate ? (typeof window.parseAnyDate === 'function' ? window.parseAnyDate(tx.rawDate)?.getTime() : new Date(tx.rawDate).getTime()) : 0);
+      const txTime =
+        tx.dayTimestamp ||
+        tx.timestamp ||
+        (tx.rawDate
+          ? typeof window.parseAnyDate === 'function'
+            ? window.parseAnyDate(tx.rawDate)?.getTime()
+            : new Date(tx.rawDate).getTime()
+          : 0);
 
       if (txTime >= startOfMonthTime && txTime <= endOfMonthTime) {
         txList.push({ ...tx, dateObj: new Date(txTime) });
@@ -3388,10 +2813,15 @@ function openCategoryLimitModal(catName, currentLimit) {
   const iconWrap = document.getElementById('category-limit-icon-wrap');
   const delBtn = document.getElementById('category-limit-delete-btn');
 
-  const catObj = Cache?.categories?.expense?.find(c => (typeof c === 'string' ? c : c?.name) === catName);
-  const iconName = (catObj && typeof catObj === 'object' && catObj.icon && catObj.icon !== '📦')
-    ? catObj.icon
-    : (typeof getCategoryIcon === 'function' ? getCategoryIcon(catName) : 'tag');
+  const catObj = Cache?.categories?.expense?.find(
+    c => (typeof c === 'string' ? c : c?.name) === catName
+  );
+  const iconName =
+    catObj && typeof catObj === 'object' && catObj.icon && catObj.icon !== 'package'
+      ? catObj.icon
+      : typeof getCategoryIcon === 'function'
+        ? getCategoryIcon(catName)
+        : 'tag';
 
   if (title) title.innerText = catName;
   if (iconWrap) {
@@ -3502,7 +2932,14 @@ function refreshCategoryLimitModalStats() {
   txList.forEach(tx => {
     const isExcluded = !!(tx.excludeFromBudget || tx.isExcludedFromBudget);
     if (!isExcluded) {
-      const val = typeof tx.amount === 'number' ? tx.amount : (parseFloat(String(tx.amount || 0).replace(/\s/g, '').replace(/,/g, '.')) || 0);
+      const val =
+        typeof tx.amount === 'number'
+          ? tx.amount
+          : parseFloat(
+              String(tx.amount || 0)
+                .replace(/\s/g, '')
+                .replace(/,/g, '.')
+            ) || 0;
       spent += val;
     }
   });
@@ -3523,7 +2960,7 @@ function refreshCategoryLimitModalStats() {
 
   if (progressBar) {
     progressBar.style.width = `${pct}%`;
-    progressBar.className = `h-full rounded-full transition-all duration-300 ${isOver ? 'bg-[#FF453A]' : (pct >= 80 ? 'bg-[#FF9F0A]' : 'bg-[#30D158]')}`;
+    progressBar.className = `h-full rounded-full transition-all duration-300 ${isOver ? 'bg-[#FF453A]' : pct >= 80 ? 'bg-[#FF9F0A]' : 'bg-[#30D158]'}`;
   }
 
   if (pctEl) {
@@ -3560,16 +2997,26 @@ function renderCategoryLimitTransactions() {
     return;
   }
 
-  const isOther = (activeEditCategory === 'Прочие расходы' || activeEditCategory === 'Прочие траты');
+  const isOther = activeEditCategory === 'Прочие расходы' || activeEditCategory === 'Прочие траты';
 
-  listEl.innerHTML = txList.map(tx => {
-    const isExcluded = !!(tx.excludeFromBudget || tx.isExcludedFromBudget);
-    const amountVal = typeof tx.amount === 'number' ? tx.amount : (parseFloat(String(tx.amount || 0).replace(/\s/g, '').replace(/,/g, '.')) || 0);
-    const dateStr = tx.dateObj ? `${tx.dateObj.getDate()} ${['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'][tx.dateObj.getMonth()]}` : (tx.date || '');
-    const comment = tx.comment ? escapeHtml(tx.comment) : 'Без комментария';
-    const catSubtitle = isOther && tx.category ? `${escapeHtml(tx.category)} · ` : '';
+  listEl.innerHTML = txList
+    .map(tx => {
+      const isExcluded = !!(tx.excludeFromBudget || tx.isExcludedFromBudget);
+      const amountVal =
+        typeof tx.amount === 'number'
+          ? tx.amount
+          : parseFloat(
+              String(tx.amount || 0)
+                .replace(/\s/g, '')
+                .replace(/,/g, '.')
+            ) || 0;
+      const dateStr = tx.dateObj
+        ? `${tx.dateObj.getDate()} ${['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'][tx.dateObj.getMonth()]}`
+        : tx.date || '';
+      const comment = tx.comment ? escapeHtml(tx.comment) : 'Без комментария';
+      const catSubtitle = isOther && tx.category ? `${escapeHtml(tx.category)} · ` : '';
 
-    return `
+      return `
       <div class="p-2.5 rounded-xl bg-[#12151C] border border-[rgba(255,255,255,0.04)] flex items-center justify-between gap-2.5 transition-all ${isExcluded ? 'opacity-50' : 'hover:border-[rgba(255,255,255,0.1)]'}">
         <label class="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer select-none">
           <input type="checkbox" 
@@ -3589,7 +3036,8 @@ function renderCategoryLimitTransactions() {
         </span>
       </div>
     `;
-  }).join('');
+    })
+    .join('');
 }
 
 async function toggleCategoryTxExclusion(txId, isChecked) {
@@ -3617,7 +3065,7 @@ async function toggleCategoryTxExclusion(txId, isChecked) {
   try {
     await getUserCol('Transactions').doc(txId).update({
       excludeFromBudget: isExcluded,
-      updatedAt: Date.now()
+      updatedAt: Date.now(),
     });
 
     // 4. Перерисовываем бюджет для синхронизации всех шкал и пульса
@@ -3640,13 +3088,18 @@ async function submitCategoryLimit() {
   const totalVarLimit = Object.values(limits).reduce((s, v) => s + v, 0);
 
   try {
-    await getUserCol('BudgetPlan').doc('plan').set({
-      ...plan,
-      isConfigured: true,
-      monthlyVariableLimit: totalVarLimit,
-      categoryLimits: limits,
-      updatedAt: Date.now()
-    }, { merge: true });
+    await getUserCol('BudgetPlan')
+      .doc('plan')
+      .set(
+        {
+          ...plan,
+          isConfigured: true,
+          monthlyVariableLimit: totalVarLimit,
+          categoryLimits: limits,
+          updatedAt: Date.now(),
+        },
+        { merge: true }
+      );
 
     closeCategoryLimitModal();
     await fetchAllData();
@@ -3685,7 +3138,10 @@ function renderCategoryLimitsManager() {
   const container = document.getElementById('category-limits-manager-list');
   if (!container) return;
 
-  const avgMap = typeof calculateHistoricalCategoryAverages === 'function' ? calculateHistoricalCategoryAverages() : {};
+  const avgMap =
+    typeof calculateHistoricalCategoryAverages === 'function'
+      ? calculateHistoricalCategoryAverages()
+      : {};
   const allExpenseCats = Cache?.categories?.expense || [];
   const plan = Cache.budgetPlan || {};
   const currentLimits = plan.categoryLimits || {};
@@ -3714,18 +3170,33 @@ function renderCategoryLimitsManager() {
       othersAvg += avgMap[cat] || 0;
     }
   });
-  if (window._customCategoryAverages && (window._customCategoryAverages['Прочие расходы'] !== undefined || window._customCategoryAverages['Прочие траты'] !== undefined)) {
-    avgMap['Прочие расходы'] = window._customCategoryAverages['Прочие расходы'] !== undefined ? window._customCategoryAverages['Прочие расходы'] : window._customCategoryAverages['Прочие траты'];
+  if (
+    window._customCategoryAverages &&
+    (window._customCategoryAverages['Прочие расходы'] !== undefined ||
+      window._customCategoryAverages['Прочие траты'] !== undefined)
+  ) {
+    avgMap['Прочие расходы'] =
+      window._customCategoryAverages['Прочие расходы'] !== undefined
+        ? window._customCategoryAverages['Прочие расходы']
+        : window._customCategoryAverages['Прочие траты'];
   } else {
     avgMap['Прочие расходы'] = othersAvg;
   }
   list.push({ name: 'Прочие расходы', icon: 'package', isCustom: false });
 
-  container.innerHTML = list.map(cat => {
-    const avg = Math.round(avgMap[cat.name] || 0);
-    const existingVal = currentLimits[cat.name] !== undefined ? currentLimits[cat.name] : (cat.isCustom ? '' : (avg > 0 ? avg : ''));
+  container.innerHTML = list
+    .map(cat => {
+      const avg = Math.round(avgMap[cat.name] || 0);
+      const existingVal =
+        currentLimits[cat.name] !== undefined
+          ? currentLimits[cat.name]
+          : cat.isCustom
+            ? ''
+            : avg > 0
+              ? avg
+              : '';
 
-    return `
+      return `
       <div class="py-2 px-3 rounded-2xl bg-[#12151C] border border-[rgba(255,255,255,0.04)] flex items-center justify-between gap-3">
         <div class="w-8 h-8 rounded-xl bg-[#1E2330] text-gray-300 flex items-center justify-center flex-shrink-0">
           <i data-lucide="${cat.icon || 'tag'}" class="w-4 h-4 text-[#848D99]"></i>
@@ -3736,7 +3207,9 @@ function renderCategoryLimitsManager() {
             <span class="text-xs font-bold text-gray-200 truncate">${escapeHtml(cat.name)}</span>
             ${cat.isCustom ? `<button type="button" onclick="removeManagerCustomCat('${escapeHtml(cat.name)}')" class="text-gray-500 hover:text-[#FF453A] text-xs font-bold cursor-pointer">✕</button>` : ''}
           </div>
-          ${avg > 0 ? `
+          ${
+            avg > 0
+              ? `
             <div class="flex items-center gap-1 mt-0.5">
               <div onclick="applyMgrCategoryAvg('${escapeHtml(cat.name)}', ${avg})" 
                    class="w-[100px] h-6 justify-between text-[10px] py-0.5 px-2 bg-[#6C5DD3]/10 text-[#727cff] hover:bg-[#6C5DD3]/20 border border-[#6C5DD3]/20 rounded-lg whitespace-nowrap flex items-center cursor-pointer transition-all active:scale-95 flex-shrink-0" 
@@ -3751,7 +3224,8 @@ function renderCategoryLimitsManager() {
                 <i data-lucide="sliders-horizontal" class="w-3 h-3"></i>
               </button>
             </div>
-          ` : `
+          `
+              : `
             <div class="flex items-center gap-1 mt-0.5">
               <span class="text-[10px] text-[#848D99] w-[100px] block truncate">Ср: нет данных</span>
               <button type="button" 
@@ -3761,7 +3235,8 @@ function renderCategoryLimitsManager() {
                 <i data-lucide="sliders-horizontal" class="w-3 h-3"></i>
               </button>
             </div>
-          `}
+          `
+          }
         </div>
 
         <div class="w-[96px] flex-shrink-0">
@@ -3775,7 +3250,8 @@ function renderCategoryLimitsManager() {
         </div>
       </div>
     `;
-  }).join('');
+    })
+    .join('');
 
   updateMgrLiveTotal();
   if (typeof lucide !== 'undefined') lucide.createIcons();
@@ -3830,7 +3306,7 @@ async function saveCategoryLimitsManager() {
       isConfigured: true,
       categoryLimits: limits,
       monthlyVariableLimit: totalVarLimit,
-      updatedAt: Date.now()
+      updatedAt: Date.now(),
     };
 
     if (snap.empty) {
@@ -3853,70 +3329,6 @@ async function saveCategoryLimitsManager() {
   } catch (err) {
     showToast('Ошибка сохранения лимитов: ' + err.message, true);
   }
-}
-
-function toggleGoalPaceTooltip(goalId, event) {
-  if (event) {
-    event.stopPropagation();
-    event.preventDefault();
-  }
-  const current = document.getElementById(`goal-pace-tooltip-${goalId}`);
-  const isHidden = current ? current.classList.contains('hidden') : true;
-  document.querySelectorAll('.goal-pace-tooltip').forEach(el => {
-    el.classList.add('hidden');
-    const card = el.closest('.card');
-    if (card) card.style.zIndex = '';
-  });
-  if (current && isHidden) {
-    window._hasOpenGoalPaceTooltips = true;
-    current.classList.remove('hidden');
-    const card = current.closest('.card');
-    if (card) card.style.zIndex = '50';
-
-    // Проверка свободного места сверху (если сверху места мало, открываем снизу чипа)
-    const trigger = (event && (event.currentTarget || event.target?.closest('.goal-pace-badge'))) || current.parentElement?.querySelector('.goal-pace-badge');
-    const rect = trigger ? trigger.getBoundingClientRect() : null;
-    const tooltipHeight = current.offsetHeight || 135;
-
-    if (rect && rect.top < tooltipHeight + 16) {
-      current.classList.remove('bottom-full', 'mb-2');
-      current.classList.add('top-full', 'mt-2');
-    } else {
-      current.classList.remove('top-full', 'mt-2');
-      current.classList.add('bottom-full', 'mb-2');
-    }
-  } else {
-    window._hasOpenGoalPaceTooltips = false;
-  }
-}
-
-// Функция скрытия всех тултипов темпа целей
-function hideGoalPaceTooltips() {
-  if (!window._hasOpenGoalPaceTooltips) return;
-  const visibleTooltips = document.querySelectorAll('.goal-pace-tooltip:not(.hidden)');
-  if (visibleTooltips.length > 0) {
-    visibleTooltips.forEach(el => {
-      el.classList.add('hidden');
-      const card = el.closest('.card');
-      if (card) card.style.zIndex = '';
-    });
-  }
-  window._hasOpenGoalPaceTooltips = false;
-}
-
-// Глобальное закрытие тултипов темпа целей при клике во внешнюю область
-if (typeof document !== 'undefined') {
-  document.addEventListener('click', (e) => {
-    const target = (e?.target?.nodeType === 3) ? e.target.parentElement : e?.target;
-    if (target && typeof target.closest === 'function' && !target.closest('.goal-pace-tooltip') && !target.closest('.goal-pace-badge')) {
-      hideGoalPaceTooltips();
-    }
-  });
-}
-
-// Скрытие тултипов при скролле страницы или любого контейнера
-if (typeof window !== 'undefined') {
-  window.addEventListener('scroll', hideGoalPaceTooltips, { passive: true, capture: true });
 }
 
 function applyWizCategoryAvg(catName, avg) {
@@ -3982,7 +3394,8 @@ function getCanonicalIncomeCategory(cat) {
   const trimmed = String(cat).trim();
   const lower = trimmed.toLowerCase();
   if (lower.startsWith('зарплат') || lower === 'аванс' || lower === 'премия') return 'Зарплата';
-  if (lower.includes('кэшб') || lower.includes('кэшбек') || lower.includes('кэшбэк')) return 'Кэшбек';
+  if (lower.includes('кэшб') || lower.includes('кэшбек') || lower.includes('кэшбэк'))
+    return 'Кэшбек';
   if (lower.startsWith('возврат')) return 'Возврат';
   if (lower === 'другое' || lower === 'прочее') return 'Другое';
   return trimmed;
@@ -4036,7 +3449,7 @@ function openWizAvgDetailsModal(type, categoryName, isInitialOpen = true) {
   // 1. Инициализация и рендеринг выпадающего фильтра категорий дохода
   if (type === 'income') {
     const detectedIncomeCats = new Set(['Зарплата', 'Кэшбек', 'Возврат', 'Другое']);
-    
+
     // Категории из базы/настроек пользователя
     (Cache?.categories?.income || []).forEach(c => {
       const name = typeof c === 'string' ? c : c?.name;
@@ -4066,15 +3479,19 @@ function openWizAvgDetailsModal(type, categoryName, isInitialOpen = true) {
 
     if (catFilterWrap) catFilterWrap.classList.remove('hidden');
     if (catFilterLabel) {
-      catFilterLabel.innerText = activeCount === detectedCatsList.length ? 'Все доходы' : `Доходы (${activeCount}/${detectedCatsList.length})`;
+      catFilterLabel.innerText =
+        activeCount === detectedCatsList.length
+          ? 'Все доходы'
+          : `Доходы (${activeCount}/${detectedCatsList.length})`;
     }
     updateWizAvgCatToggleAllButton(activeCount, detectedCatsList.length);
 
     if (catFilterList) {
-      catFilterList.innerHTML = detectedCatsList.map(cat => {
-        const isActive = wizardActiveIncomeSources.has(cat);
-        const icon = (typeof getCategoryIcon === 'function') ? getCategoryIcon(cat) : 'wallet';
-        return `
+      catFilterList.innerHTML = detectedCatsList
+        .map(cat => {
+          const isActive = wizardActiveIncomeSources.has(cat);
+          const icon = typeof getCategoryIcon === 'function' ? getCategoryIcon(cat) : 'wallet';
+          return `
           <div onclick="toggleWizAvgIncomeCategory('${escapeHtml(cat)}', event)" 
                class="flex items-center justify-between p-2 rounded-xl bg-[#12151C] hover:bg-[#212430] border border-[rgba(255,255,255,0.04)] cursor-pointer select-none transition-all ${isActive ? 'text-white' : 'text-gray-500 opacity-60'}">
             <div class="flex items-center gap-2 min-w-0">
@@ -4088,18 +3505,31 @@ function openWizAvgDetailsModal(type, categoryName, isInitialOpen = true) {
             </div>
           </div>
         `;
-      }).join('');
+        })
+        .join('');
     }
-  } 
+  }
   // 2. Инициализация и рендеринг выпадающего фильтра категорий для «Прочие расходы / траты»
   else if (categoryName === 'Прочие расходы' || categoryName === 'Прочие траты') {
     let mainExpenseCats = [];
     if (activeMonthCloseData && activeMonthCloseData.categoryLimits) {
-      mainExpenseCats = Object.keys(activeMonthCloseData.categoryLimits).filter(c => c !== 'Прочие расходы' && c !== 'Прочие траты');
-    } else if (Cache?.budgetPlan?.categoryLimits && Object.keys(Cache.budgetPlan.categoryLimits).length > 0) {
-      mainExpenseCats = Object.keys(Cache.budgetPlan.categoryLimits).filter(c => c !== 'Прочие расходы' && c !== 'Прочие траты');
+      mainExpenseCats = Object.keys(activeMonthCloseData.categoryLimits).filter(
+        c => c !== 'Прочие расходы' && c !== 'Прочие траты'
+      );
+    } else if (
+      Cache?.budgetPlan?.categoryLimits &&
+      Object.keys(Cache.budgetPlan.categoryLimits).length > 0
+    ) {
+      mainExpenseCats = Object.keys(Cache.budgetPlan.categoryLimits).filter(
+        c => c !== 'Прочие расходы' && c !== 'Прочие траты'
+      );
     } else {
-      mainExpenseCats = ['Продукты', 'Кафе и рестораны', 'Развлечения', ...(window.wizardCustomCategories || [])];
+      mainExpenseCats = [
+        'Продукты',
+        'Кафе и рестораны',
+        'Развлечения',
+        ...(window.wizardCustomCategories || []),
+      ];
     }
     if (mainExpenseCats.length === 0) {
       mainExpenseCats = ['Продукты', 'Кафе и рестораны', 'Развлечения'];
@@ -4108,7 +3538,12 @@ function openWizAvgDetailsModal(type, categoryName, isInitialOpen = true) {
     const detectedOtherCats = new Set();
     (Cache?.categories?.expense || []).forEach(c => {
       const name = typeof c === 'string' ? c : c?.name;
-      if (name && !mainExpenseCats.includes(name) && name !== 'Прочие расходы' && name !== 'Прочие траты') {
+      if (
+        name &&
+        !mainExpenseCats.includes(name) &&
+        name !== 'Прочие расходы' &&
+        name !== 'Прочие траты'
+      ) {
         detectedOtherCats.add(name);
       }
     });
@@ -4131,19 +3566,25 @@ function openWizAvgDetailsModal(type, categoryName, isInitialOpen = true) {
     }
 
     detectedCatsList = Array.from(detectedOtherCats);
-    const activeCount = detectedCatsList.filter(c => window.wizardActiveOtherCategories.has(c)).length;
+    const activeCount = detectedCatsList.filter(c =>
+      window.wizardActiveOtherCategories.has(c)
+    ).length;
 
     if (catFilterWrap) catFilterWrap.classList.remove('hidden');
     if (catFilterLabel) {
-      catFilterLabel.innerText = activeCount === detectedCatsList.length ? 'Все категории' : `Категории (${activeCount}/${detectedCatsList.length})`;
+      catFilterLabel.innerText =
+        activeCount === detectedCatsList.length
+          ? 'Все категории'
+          : `Категории (${activeCount}/${detectedCatsList.length})`;
     }
     updateWizAvgCatToggleAllButton(activeCount, detectedCatsList.length);
 
     if (catFilterList) {
-      catFilterList.innerHTML = detectedCatsList.map(cat => {
-        const isActive = window.wizardActiveOtherCategories.has(cat);
-        const icon = (typeof getCategoryIcon === 'function') ? getCategoryIcon(cat) : 'tag';
-        return `
+      catFilterList.innerHTML = detectedCatsList
+        .map(cat => {
+          const isActive = window.wizardActiveOtherCategories.has(cat);
+          const icon = typeof getCategoryIcon === 'function' ? getCategoryIcon(cat) : 'tag';
+          return `
           <div onclick="toggleWizAvgOtherCategory('${escapeHtml(cat)}', event)" 
                class="flex items-center justify-between p-2 rounded-xl bg-[#12151C] hover:bg-[#212430] border border-[rgba(255,255,255,0.04)] cursor-pointer select-none transition-all ${isActive ? 'text-white' : 'text-gray-500 opacity-60'}">
             <div class="flex items-center gap-2 min-w-0">
@@ -4157,7 +3598,8 @@ function openWizAvgDetailsModal(type, categoryName, isInitialOpen = true) {
             </div>
           </div>
         `;
-      }).join('');
+        })
+        .join('');
     }
   } else {
     if (catFilterWrap) catFilterWrap.classList.add('hidden');
@@ -4194,11 +3636,23 @@ function openWizAvgDetailsModal(type, categoryName, isInitialOpen = true) {
   let mainExpenseCats = [];
   if (categoryName === 'Прочие расходы' || categoryName === 'Прочие траты') {
     if (activeMonthCloseData && activeMonthCloseData.categoryLimits) {
-      mainExpenseCats = Object.keys(activeMonthCloseData.categoryLimits).filter(c => c !== 'Прочие расходы' && c !== 'Прочие траты');
-    } else if (Cache?.budgetPlan?.categoryLimits && Object.keys(Cache.budgetPlan.categoryLimits).length > 0) {
-      mainExpenseCats = Object.keys(Cache.budgetPlan.categoryLimits).filter(c => c !== 'Прочие расходы' && c !== 'Прочие траты');
+      mainExpenseCats = Object.keys(activeMonthCloseData.categoryLimits).filter(
+        c => c !== 'Прочие расходы' && c !== 'Прочие траты'
+      );
+    } else if (
+      Cache?.budgetPlan?.categoryLimits &&
+      Object.keys(Cache.budgetPlan.categoryLimits).length > 0
+    ) {
+      mainExpenseCats = Object.keys(Cache.budgetPlan.categoryLimits).filter(
+        c => c !== 'Прочие расходы' && c !== 'Прочие траты'
+      );
     } else {
-      mainExpenseCats = ['Продукты', 'Кафе и рестораны', 'Развлечения', ...(window.wizardCustomCategories || [])];
+      mainExpenseCats = [
+        'Продукты',
+        'Кафе и рестораны',
+        'Развлечения',
+        ...(window.wizardCustomCategories || []),
+      ];
     }
   }
 
@@ -4219,7 +3673,10 @@ function openWizAvgDetailsModal(type, categoryName, isInitialOpen = true) {
         if (tx.type === 'Расход' && t >= cutoffTime && t <= maxTime) {
           if (categoryName === 'Прочие расходы' || categoryName === 'Прочие траты') {
             const cat = (tx.category || 'Другое').trim() || 'Другое';
-            if (!mainExpenseCats.includes(cat) && (!window.wizardActiveOtherCategories || window.wizardActiveOtherCategories.has(cat))) {
+            if (
+              !mainExpenseCats.includes(cat) &&
+              (!window.wizardActiveOtherCategories || window.wizardActiveOtherCategories.has(cat))
+            ) {
               rawTxs.push(tx);
             }
           } else if (tx.category === categoryName) {
@@ -4238,9 +3695,10 @@ function openWizAvgDetailsModal(type, categoryName, isInitialOpen = true) {
     const mWord = incomeMonthsCount === 1 ? '1 месяц' : `${incomeMonthsCount} месяца`;
     effectivePeriodText = `за ${mWord}`;
   } else {
-    const diffDays = minTimeInWindow !== Infinity
-      ? Math.max(1, Math.round((maxTime - minTimeInWindow) / (1000 * 60 * 60 * 24)) + 1)
-      : 30;
+    const diffDays =
+      minTimeInWindow !== Infinity
+        ? Math.max(1, Math.round((maxTime - minTimeInWindow) / (1000 * 60 * 60 * 24)) + 1)
+        : 30;
     const effectiveDays = Math.min(90, diffDays);
     monthFactor = 30.44 / effectiveDays;
     effectivePeriodText = `за ${effectiveDays} дн.`;
@@ -4249,11 +3707,25 @@ function openWizAvgDetailsModal(type, categoryName, isInitialOpen = true) {
   // 2. Формируем карточки операций
   const items = rawTxs.map(tx => {
     const effectiveTime = getTxEffectiveTimestamp(tx);
-    const uid = tx.id || tx._id || `${effectiveTime || ''}_${tx.amount}_${tx.merchant || tx.title || ''}`;
+    const uid =
+      tx.id || tx._id || `${effectiveTime || ''}_${tx.amount}_${tx.merchant || tx.title || ''}`;
     const amount = parseFloat(tx.amount) || 0;
-    const dateObj = effectiveTime ? new Date(effectiveTime) : (tx.date ? (typeof parseAnyDate === 'function' ? parseAnyDate(tx.date) : new Date(tx.date)) : null);
-    const dateStr = dateObj ? dateObj.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }) : (tx.formattedDate || tx.displayDate || '—');
-    const isOneTime = (tx.billType === 'onetime') || !!tx.fundingGoalId || (tx.spreadMonths && parseInt(tx.spreadMonths, 10) > 1) || (!tx.isBillPayment && !!tx.excludeFromBudget) || !!tx.isExcludedFromBudget;
+    const dateObj = effectiveTime
+      ? new Date(effectiveTime)
+      : tx.date
+        ? typeof parseAnyDate === 'function'
+          ? parseAnyDate(tx.date)
+          : new Date(tx.date)
+        : null;
+    const dateStr = dateObj
+      ? dateObj.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })
+      : tx.formattedDate || tx.displayDate || '—';
+    const isOneTime =
+      tx.billType === 'onetime' ||
+      !!tx.fundingGoalId ||
+      (tx.spreadMonths && parseInt(tx.spreadMonths, 10) > 1) ||
+      (!tx.isBillPayment && !!tx.excludeFromBudget) ||
+      !!tx.isExcludedFromBudget;
     const isBill = !isOneTime && (!!tx.isBillPayment || (!!tx.billId && tx.billType !== 'onetime'));
     const isBillOrOneTime = isOneTime || isBill;
 
@@ -4261,15 +3733,17 @@ function openWizAvgDetailsModal(type, categoryName, isInitialOpen = true) {
       uid,
       amount,
       dateStr,
-      timestamp: dateObj ? dateObj.getTime() : (effectiveTime || 0),
+      timestamp: dateObj ? dateObj.getTime() : effectiveTime || 0,
       bank: tx.bank || '',
       category: tx.category || '',
-      title: typeof cleanMerchantTitle === 'function' 
-        ? (cleanMerchantTitle(tx.merchant || tx.title || tx.comment) || (type === 'income' ? 'Поступление' : 'Расход'))
-        : (tx.merchant || tx.title || tx.comment || (type === 'income' ? 'Поступление' : 'Расход')),
+      title:
+        typeof cleanMerchantTitle === 'function'
+          ? cleanMerchantTitle(tx.merchant || tx.title || tx.comment) ||
+            (type === 'income' ? 'Поступление' : 'Расход')
+          : tx.merchant || tx.title || tx.comment || (type === 'income' ? 'Поступление' : 'Расход'),
       isBill,
       isOneTime,
-      isBillOrOneTime
+      isBillOrOneTime,
     };
   });
 
@@ -4281,14 +3755,14 @@ function openWizAvgDetailsModal(type, categoryName, isInitialOpen = true) {
     }
   });
 
-  wizAvgCurrentContext = { 
-    type, 
-    categoryName, 
-    items, 
-    monthFactor, 
+  wizAvgCurrentContext = {
+    type,
+    categoryName,
+    items,
+    monthFactor,
     effectivePeriodText,
     sortOrder: wizAvgCurrentContext?.sortOrder || 'date-desc',
-    detectedCats: detectedCatsList
+    detectedCats: detectedCatsList,
   };
 
   // 4. Шапка
@@ -4296,7 +3770,8 @@ function openWizAvgDetailsModal(type, categoryName, isInitialOpen = true) {
     if (titleEl) titleEl.innerText = 'Расчет среднего дохода';
     if (subtitleEl) subtitleEl.innerText = `Учтенные поступления ${effectivePeriodText}`;
     if (iconWrap) {
-      iconWrap.className = 'w-8 h-8 rounded-xl bg-[#30D158]/15 text-[#30D158] flex items-center justify-center flex-shrink-0';
+      iconWrap.className =
+        'w-8 h-8 rounded-xl bg-[#30D158]/15 text-[#30D158] flex items-center justify-center flex-shrink-0';
       iconWrap.innerHTML = '<i data-lucide="trending-up" class="w-4 h-4"></i>';
     }
   } else {
@@ -4305,7 +3780,8 @@ function openWizAvgDetailsModal(type, categoryName, isInitialOpen = true) {
     if (titleEl) titleEl.innerText = `Расчет: ${categoryName}`;
     if (subtitleEl) subtitleEl.innerText = `Учтенные траты ${effectivePeriodText}`;
     if (iconWrap) {
-      iconWrap.className = 'w-8 h-8 rounded-xl bg-[#6C5DD3]/15 text-[#727cff] flex items-center justify-center flex-shrink-0';
+      iconWrap.className =
+        'w-8 h-8 rounded-xl bg-[#6C5DD3]/15 text-[#727cff] flex items-center justify-center flex-shrink-0';
       iconWrap.innerHTML = `<i data-lucide="${iconName}" class="w-4 h-4"></i>`;
     }
   }
@@ -4313,7 +3789,12 @@ function openWizAvgDetailsModal(type, categoryName, isInitialOpen = true) {
   // 5. Показываем/скрываем кнопку удаления категории
   const delBtn = document.getElementById('wiz-avg-delete-cat-btn');
   if (delBtn) {
-    if (type === 'expense' && categoryName && categoryName !== 'Прочие расходы' && categoryName !== 'Прочие траты') {
+    if (
+      type === 'expense' &&
+      categoryName &&
+      categoryName !== 'Прочие расходы' &&
+      categoryName !== 'Прочие траты'
+    ) {
       delBtn.classList.remove('hidden');
     } else {
       delBtn.classList.add('hidden');
@@ -4333,7 +3814,7 @@ const WIZ_SORT_LABELS = {
   'date-desc': 'Дата (новые)',
   'date-asc': 'Дата (старые)',
   'amount-desc': 'Сумма (большие)',
-  'amount-asc': 'Сумма (меньшие)'
+  'amount-asc': 'Сумма (меньшие)',
 };
 
 function wizAvgToggleSortDropdown(e) {
@@ -4363,7 +3844,10 @@ function closeWizAvgSortDropdownOnClickOutside(e) {
   const btn = document.getElementById('wiz-avg-sort-wrap')?.querySelector('button');
   if (!menu || menu.classList.contains('hidden')) return;
 
-  if (e.target.closest && (e.target.closest('#wiz-avg-sort-menu') || e.target.closest('#wiz-avg-sort-wrap'))) {
+  if (
+    e.target.closest &&
+    (e.target.closest('#wiz-avg-sort-menu') || e.target.closest('#wiz-avg-sort-wrap'))
+  ) {
     return;
   }
   if (menu.contains(e.target) || btn?.contains(e.target)) {
@@ -4401,7 +3885,10 @@ function closeWizAvgCatFilterDropdownOnClickOutside(e) {
   const btn = document.getElementById('wiz-avg-cat-filter-btn');
   if (!menu || menu.classList.contains('hidden')) return;
 
-  if (e.target.closest && (e.target.closest('#wiz-avg-cat-filter-menu') || e.target.closest('#wiz-avg-cat-filter-btn'))) {
+  if (
+    e.target.closest &&
+    (e.target.closest('#wiz-avg-cat-filter-menu') || e.target.closest('#wiz-avg-cat-filter-btn'))
+  ) {
     return;
   }
   if (menu.contains(e.target) || btn?.contains(e.target)) {
@@ -4443,7 +3930,7 @@ function wizAvgToggleAllFilterCategories(e, forceVal) {
 function wizAvgSelectSort(sortVal) {
   if (!wizAvgCurrentContext) return;
   wizAvgCurrentContext.sortOrder = sortVal;
-  
+
   const menu = document.getElementById('wiz-avg-sort-menu');
   if (menu) menu.classList.add('hidden');
   document.removeEventListener('click', closeWizAvgSortDropdownOnClickOutside);
@@ -4459,7 +3946,7 @@ function renderWizAvgTxList() {
   if (!listEl) return;
 
   const sortOrder = ctx.sortOrder || 'date-desc';
-  
+
   // Обновляем метку кнопки
   const labelEl = document.getElementById('wiz-avg-sort-label');
   if (labelEl) labelEl.innerText = WIZ_SORT_LABELS[sortOrder] || 'Сортировка';
@@ -4502,11 +3989,12 @@ function renderWizAvgTxList() {
 
   const totalAmount = items.reduce((s, it) => s + it.amount, 0);
 
-  listEl.innerHTML = items.map(it => {
-    const isSelected = wizAvgSelectedIds.has(it.uid);
-    const isLarge = (it.amount > 15000) || (items.length > 2 && it.amount >= totalAmount * 0.35);
+  listEl.innerHTML = items
+    .map(it => {
+      const isSelected = wizAvgSelectedIds.has(it.uid);
+      const isLarge = it.amount > 15000 || (items.length > 2 && it.amount >= totalAmount * 0.35);
 
-    return `
+      return `
       <div id="wiz-avg-row-${it.uid}" 
            onclick="wizAvgToggleTx('${it.uid}')" 
            class="card-parsed-row bg-[#181B24] border border-[rgba(255,255,255,0.06)] px-3 py-2.5 rounded-2xl flex flex-col gap-1.5 transition-all cursor-pointer select-none ${isSelected ? 'hover:border-[rgba(255,255,255,0.12)]' : 'bg-[#12151C] opacity-50'}">
@@ -4536,7 +4024,8 @@ function renderWizAvgTxList() {
         </div>
       </div>
     `;
-  }).join('');
+    })
+    .join('');
 
   if (typeof lucide !== 'undefined') lucide.createIcons({ root: listEl });
   updateWizAvgToggleAllButton();
@@ -4657,9 +4146,10 @@ function recalculateWizAvgModal() {
 
   if (resultEl) {
     resultEl.innerText = `~${formatMoney(avg)}`;
-    resultEl.className = ctx.type === 'income' 
-      ? 'text-base sm:text-lg font-bold font-mono text-[#30D158] whitespace-nowrap' 
-      : 'text-base sm:text-lg font-bold font-mono text-[#727cff] whitespace-nowrap';
+    resultEl.className =
+      ctx.type === 'income'
+        ? 'text-base sm:text-lg font-bold font-mono text-[#30D158] whitespace-nowrap'
+        : 'text-base sm:text-lg font-bold font-mono text-[#727cff] whitespace-nowrap';
   }
   if (typeLabelEl) {
     typeLabelEl.innerText = ctx.type === 'income' ? 'Средний доход' : 'Среднее в месяц';
@@ -4671,7 +4161,8 @@ function recalculateWizAvgModal() {
     sumEl.innerText = formatMoney(selectedSum);
   }
   if (periodEl) {
-    periodEl.innerText = ctx.effectivePeriodText || (ctx.type === 'income' ? 'за 3 мес.' : 'за 90 дн.');
+    periodEl.innerText =
+      ctx.effectivePeriodText || (ctx.type === 'income' ? 'за 3 мес.' : 'за 90 дн.');
   }
 
   if (btnEl) {
@@ -4806,7 +4297,7 @@ function calculate3MonthAverages(refYear, refMonth) {
   const result = {
     avgIncome: 0,
     avgCategorySpending: {},
-    activeMonthsCount: 0
+    activeMonthsCount: 0,
   };
 
   const allMonths = Cache?.transactions || [];
@@ -4821,23 +4312,51 @@ function calculate3MonthAverages(refYear, refMonth) {
       start: new Date(d.getFullYear(), d.getMonth(), 1, 0, 0, 0, 0).getTime(),
       end: new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999).getTime(),
       income: 0,
-      cats: {}
+      cats: {},
     });
   }
 
   // Сбор данных по операциям
   allMonths.forEach(m => {
     (m.items || []).forEach(tx => {
-      let t = tx.timestamp || (tx.rawDate ? new Date(tx.rawDate).getTime() : (tx.date ? new Date(tx.date).getTime() : null));
+      const t =
+        tx.timestamp ||
+        (tx.rawDate
+          ? new Date(tx.rawDate).getTime()
+          : tx.date
+            ? new Date(tx.date).getTime()
+            : null);
       if (!t || isNaN(t)) return;
 
-      const val = typeof tx.amount === 'number' ? tx.amount : (parseFloat(String(tx.amount || 0).replace(/\s/g, '').replace(/,/g, '.')) || 0);
+      const val =
+        typeof tx.amount === 'number'
+          ? tx.amount
+          : parseFloat(
+              String(tx.amount || 0)
+                .replace(/\s/g, '')
+                .replace(/,/g, '.')
+            ) || 0;
       if (val <= 0) return;
 
-      const isIncome = tx.type === 'Доход' || tx.type === 'income' || String(tx.type || '').trim().toLowerCase() === 'доход';
-      const isExpense = tx.type === 'Расход' || tx.type === 'expense' || String(tx.type || '').trim().toLowerCase() === 'расход';
-      const uid = tx.id || tx._id || `${tx.timestamp || tx.rawDate || ''}_${tx.amount}_${tx.merchant || tx.title || ''}`;
-      const isExcluded = !!(window.wizardExcludedTxIds && window.wizardExcludedTxIds.has(uid)) || isBillOrOneTimeTx(tx);
+      const isIncome =
+        tx.type === 'Доход' ||
+        tx.type === 'income' ||
+        String(tx.type || '')
+          .trim()
+          .toLowerCase() === 'доход';
+      const isExpense =
+        tx.type === 'Расход' ||
+        tx.type === 'expense' ||
+        String(tx.type || '')
+          .trim()
+          .toLowerCase() === 'расход';
+      const uid =
+        tx.id ||
+        tx._id ||
+        `${tx.timestamp || tx.rawDate || ''}_${tx.amount}_${tx.merchant || tx.title || ''}`;
+      const isExcluded =
+        !!(window.wizardExcludedTxIds && window.wizardExcludedTxIds.has(uid)) ||
+        isBillOrOneTimeTx(tx);
 
       targetMonths.forEach(tm => {
         if (t >= tm.start && t <= tm.end) {
@@ -4879,7 +4398,20 @@ function calculateMonthCloseData(year, month) {
   const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59, 999);
   const plan = Cache?.budgetPlan || {};
   const bills = Cache?.calendarBills || [];
-  const monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+  const monthNames = [
+    'Январь',
+    'Февраль',
+    'Март',
+    'Апрель',
+    'Май',
+    'Июнь',
+    'Июль',
+    'Август',
+    'Сентябрь',
+    'Октябрь',
+    'Ноябрь',
+    'Декабрь',
+  ];
 
   let actualIncome = 0;
   let actualExpense = 0;
@@ -4887,15 +4419,38 @@ function calculateMonthCloseData(year, month) {
 
   (Cache?.transactions || []).forEach(m => {
     (m.items || []).forEach(tx => {
-      let t = tx.timestamp || (tx.rawDate ? new Date(tx.rawDate).getTime() : (tx.date ? new Date(tx.date).getTime() : null));
+      const t =
+        tx.timestamp ||
+        (tx.rawDate
+          ? new Date(tx.rawDate).getTime()
+          : tx.date
+            ? new Date(tx.date).getTime()
+            : null);
       if (!t || isNaN(t)) return;
       if (t < startOfMonth.getTime() || t > endOfMonth.getTime()) return;
 
-      const val = typeof tx.amount === 'number' ? tx.amount : (parseFloat(String(tx.amount || 0).replace(/\s/g, '').replace(/,/g, '.')) || 0);
+      const val =
+        typeof tx.amount === 'number'
+          ? tx.amount
+          : parseFloat(
+              String(tx.amount || 0)
+                .replace(/\s/g, '')
+                .replace(/,/g, '.')
+            ) || 0;
       if (val <= 0) return;
 
-      const isIncome = tx.type === 'Доход' || tx.type === 'income' || String(tx.type || '').trim().toLowerCase() === 'доход';
-      const isExpense = tx.type === 'Расход' || tx.type === 'expense' || String(tx.type || '').trim().toLowerCase() === 'расход';
+      const isIncome =
+        tx.type === 'Доход' ||
+        tx.type === 'income' ||
+        String(tx.type || '')
+          .trim()
+          .toLowerCase() === 'доход';
+      const isExpense =
+        tx.type === 'Расход' ||
+        tx.type === 'expense' ||
+        String(tx.type || '')
+          .trim()
+          .toLowerCase() === 'расход';
       const isExcluded = !!(tx.excludeFromBudget || tx.isExcludedFromBudget);
 
       if (isIncome) {
@@ -4923,8 +4478,10 @@ function calculateMonthCloseData(year, month) {
 
   // В статистике закрытия месяца отображаются ТОЛЬКО назначенные пользователем категории.
   // Все остальные траты автоматически аккумулируются в "Прочие расходы".
-  const assignedCats = Object.keys(planCategoryLimits).filter(k => k !== 'Прочие расходы' && (parseFloat(planCategoryLimits[k]) || 0) > 0);
-  
+  const assignedCats = Object.keys(planCategoryLimits).filter(
+    k => k !== 'Прочие расходы' && (parseFloat(planCategoryLimits[k]) || 0) > 0
+  );
+
   const categoryStats = [];
   assignedCats.forEach(cat => {
     const spent = categorySpentMap[cat] || 0;
@@ -4948,7 +4505,7 @@ function calculateMonthCloseData(year, month) {
       spent: otherSpent,
       limit: otherLimit,
       diff: otherLimit - otherSpent,
-      pct: otherLimit > 0 ? Math.round((otherSpent / otherLimit) * 100) : 0
+      pct: otherLimit > 0 ? Math.round((otherSpent / otherLimit) * 100) : 0,
     });
   }
 
@@ -4973,7 +4530,7 @@ function calculateMonthCloseData(year, month) {
     extraSaved,
     categoryStats,
     averages,
-    isClosed: isBudgetMonthClosed(year, month)
+    isClosed: isBudgetMonthClosed(year, month),
   };
 }
 
@@ -4991,13 +4548,17 @@ function openMonthCloseFlow(year, month) {
   const titleEl = document.getElementById('close-summary-title');
   const subtitleEl = document.getElementById('close-summary-subtitle');
   if (titleEl) titleEl.innerText = `Итоги за ${data.monthName} ${data.year}`;
-  if (subtitleEl) subtitleEl.innerText = data.isClosed ? 'Месяц успешно закрыт' : 'Сводка выполнения финансового плана';
+  if (subtitleEl)
+    subtitleEl.innerText = data.isClosed
+      ? 'Месяц успешно закрыт'
+      : 'Сводка выполнения финансового плана';
 
   // Главный баннер (Награда за экономию)
   const heroCard = document.getElementById('close-summary-hero-card');
   if (heroCard) {
     if (data.actualSurplus > 0) {
-      heroCard.className = 'p-4 rounded-2xl border bg-gradient-to-br from-amber-500/15 via-[#181B24] to-emerald-500/15 border-amber-500/40 text-left shadow-lg relative overflow-hidden';
+      heroCard.className =
+        'p-4 rounded-2xl border bg-gradient-to-br from-amber-500/15 via-[#181B24] to-emerald-500/15 border-amber-500/40 text-left shadow-lg relative overflow-hidden';
       heroCard.innerHTML = `
         <div class="flex items-start justify-between gap-3">
           <div>
@@ -5007,9 +4568,11 @@ function openMonthCloseFlow(year, month) {
             </span>
             <p class="text-2xl sm:text-3xl font-black font-mono text-emerald-400">+${formatMoney(data.actualSurplus)}</p>
             <p class="text-xs text-gray-200 mt-1.5 leading-relaxed">
-              ${data.extraSaved > 0 
-                ? `Отличная работа! Вы сэкономили <b class="text-emerald-400">+${formatMoney(data.extraSaved)}</b> сверх запланированного плана.` 
-                : 'План накоплений выполнен! Средства готовы к распределению по вашим целям.'}
+              ${
+                data.extraSaved > 0
+                  ? `Отличная работа! Вы сэкономили <b class="text-emerald-400">+${formatMoney(data.extraSaved)}</b> сверх запланированного плана.`
+                  : 'План накоплений выполнен! Средства готовы к распределению по вашим целям.'
+              }
             </p>
           </div>
           <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500/20 to-emerald-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 flex-shrink-0 shadow-md">
@@ -5018,7 +4581,8 @@ function openMonthCloseFlow(year, month) {
         </div>
       `;
     } else if (data.actualSurplus < 0) {
-      heroCard.className = 'p-4 rounded-2xl border bg-gradient-to-br from-red-950/40 via-[#181B24] to-rose-900/20 border-red-500/30 text-left';
+      heroCard.className =
+        'p-4 rounded-2xl border bg-gradient-to-br from-red-950/40 via-[#181B24] to-rose-900/20 border-red-500/30 text-left';
       heroCard.innerHTML = `
         <div class="flex items-start justify-between gap-3">
           <div>
@@ -5032,7 +4596,8 @@ function openMonthCloseFlow(year, month) {
         </div>
       `;
     } else {
-      heroCard.className = 'p-4 rounded-2xl border bg-[#12151C] border-[rgba(255,255,255,0.08)] text-left';
+      heroCard.className =
+        'p-4 rounded-2xl border bg-[#12151C] border-[rgba(255,255,255,0.08)] text-left';
       heroCard.innerHTML = `
         <span class="text-[10px] text-[#848D99] font-bold uppercase tracking-wider block mb-1">Баланс месяца</span>
         <p class="text-2xl sm:text-3xl font-black font-mono text-white">0 ₽</p>
@@ -5102,13 +4667,15 @@ function openMonthCloseFlow(year, month) {
   if (catCountEl) catCountEl.innerText = `${data.categoryStats.length} категорий`;
   if (catListEl) {
     if (data.categoryStats.length === 0) {
-      catListEl.innerHTML = '<div class="text-xs text-[#848D99] text-center py-2">Нет трат по категориям</div>';
+      catListEl.innerHTML =
+        '<div class="text-xs text-[#848D99] text-center py-2">Нет трат по категориям</div>';
     } else {
-      catListEl.innerHTML = data.categoryStats.map(c => {
-        const icon = getCategoryIcon(c.category);
-        const isOver = c.limit > 0 && c.spent > c.limit;
-        const hasLimit = c.limit > 0;
-        return `
+      catListEl.innerHTML = data.categoryStats
+        .map(c => {
+          const icon = getCategoryIcon(c.category);
+          const isOver = c.limit > 0 && c.spent > c.limit;
+          const hasLimit = c.limit > 0;
+          return `
           <div class="p-2.5 rounded-xl bg-[#12151C] border border-[rgba(255,255,255,0.04)] flex items-center justify-between gap-2">
             <div class="flex items-center gap-2 min-w-0 flex-1">
               <div class="w-7 h-7 rounded-lg bg-[#212430] flex items-center justify-center text-[#727cff] flex-shrink-0">
@@ -5120,16 +4687,18 @@ function openMonthCloseFlow(year, month) {
               </div>
             </div>
             <div class="text-right flex-shrink-0">
-              ${hasLimit 
-                ? (isOver 
-                    ? `<span class="text-[10px] font-mono font-bold text-[#FF453A] px-2 py-0.5 rounded-md bg-red-500/10 border border-red-500/20">+${formatMoney(c.spent - c.limit)}</span>` 
-                    : `<span class="text-[10px] font-mono font-bold text-emerald-400 px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20">-${formatMoney(c.diff)}</span>`)
-                : `<span class="text-[10px] font-mono text-gray-400">${formatMoney(c.spent)}</span>`
+              ${
+                hasLimit
+                  ? isOver
+                    ? `<span class="text-[10px] font-mono font-bold text-[#FF453A] px-2 py-0.5 rounded-md bg-red-500/10 border border-red-500/20">+${formatMoney(c.spent - c.limit)}</span>`
+                    : `<span class="text-[10px] font-mono font-bold text-emerald-400 px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20">-${formatMoney(c.diff)}</span>`
+                  : `<span class="text-[10px] font-mono text-gray-400">${formatMoney(c.spent)}</span>`
               }
             </div>
           </div>
         `;
-      }).join('');
+        })
+        .join('');
     }
   }
 
@@ -5171,7 +4740,20 @@ function proceedToMonthAdjustStep() {
 
   const data = activeMonthCloseData;
   const nextMonthDate = new Date(data.year, data.month + 1, 1);
-  const monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+  const monthNames = [
+    'Январь',
+    'Февраль',
+    'Март',
+    'Апрель',
+    'Май',
+    'Июнь',
+    'Июль',
+    'Август',
+    'Сентябрь',
+    'Октябрь',
+    'Ноябрь',
+    'Декабрь',
+  ];
   const nextMonthName = monthNames[nextMonthDate.getMonth()];
 
   const titleEl = document.getElementById('close-adjust-title');
@@ -5195,7 +4777,7 @@ function proceedToMonthAdjustStep() {
   const plan = Cache?.budgetPlan || {};
   const currentLimits = plan.categoryLimits || {};
   const assigned = Object.keys(currentLimits).filter(k => (parseFloat(currentLimits[k]) || 0) > 0);
-  
+
   if (assigned.length > 0) {
     adjustActiveCategories = [...assigned];
   } else {
@@ -5220,30 +4802,32 @@ function renderAdjustCategoriesList() {
   const allExpenseCats = Cache?.categories?.expense || [];
 
   if (adjustActiveCategories.length === 0) {
-    catContainer.innerHTML = '<div class="text-xs text-[#848D99] text-center py-3 bg-[#12151C] rounded-2xl border border-[rgba(255,255,255,0.04)]">Нет выбранных категорий. Добавьте категории кнопкой ниже.</div>';
+    catContainer.innerHTML =
+      '<div class="text-xs text-[#848D99] text-center py-3 bg-[#12151C] rounded-2xl border border-[rgba(255,255,255,0.04)]">Нет выбранных категорий. Добавьте категории кнопкой ниже.</div>';
     return;
   }
 
-  catContainer.innerHTML = adjustActiveCategories.map(cat => {
-    const catObj = allExpenseCats.find(c => (typeof c === 'string' ? c : c?.name) === cat);
-    const icon = catObj?.icon || getCategoryIcon(cat);
-    const existingVal = document.querySelector(`input[data-close-cat="${cat}"]`);
-    const curLimit = existingVal ? (getUnformattedVal(existingVal) || 0) : (currentLimits[cat] || 0);
+  catContainer.innerHTML = adjustActiveCategories
+    .map(cat => {
+      const catObj = allExpenseCats.find(c => (typeof c === 'string' ? c : c?.name) === cat);
+      const icon = catObj?.icon || getCategoryIcon(cat);
+      const existingVal = document.querySelector(`input[data-close-cat="${cat}"]`);
+      const curLimit = existingVal ? getUnformattedVal(existingVal) || 0 : currentLimits[cat] || 0;
 
-    // Расчет среднего значения (с корректной аккумуляцией невыделенных категорий в "Прочие расходы")
-    let avgSpend = 0;
-    if (cat === 'Прочие расходы') {
-      Object.keys(data.averages.avgCategorySpending || {}).forEach(k => {
-        if (!adjustActiveCategories.includes(k)) {
-          avgSpend += data.averages.avgCategorySpending[k] || 0;
-        }
-      });
-    } else {
-      avgSpend = data.averages.avgCategorySpending[cat] || 0;
-    }
-    avgSpend = Math.round(avgSpend);
+      // Расчет среднего значения (с корректной аккумуляцией невыделенных категорий в "Прочие расходы")
+      let avgSpend = 0;
+      if (cat === 'Прочие расходы') {
+        Object.keys(data.averages.avgCategorySpending || {}).forEach(k => {
+          if (!adjustActiveCategories.includes(k)) {
+            avgSpend += data.averages.avgCategorySpending[k] || 0;
+          }
+        });
+      } else {
+        avgSpend = data.averages.avgCategorySpending[cat] || 0;
+      }
+      avgSpend = Math.round(avgSpend);
 
-    return `
+      return `
       <div class="py-2 px-3 rounded-2xl bg-[#12151C] border border-[rgba(255,255,255,0.04)] flex items-center justify-between gap-3">
         <div class="w-8 h-8 rounded-xl bg-[#1E2330] text-gray-300 flex items-center justify-center flex-shrink-0">
           <i data-lucide="${icon}" class="w-4 h-4 text-[#848D99]"></i>
@@ -5253,7 +4837,9 @@ function renderAdjustCategoriesList() {
           <div class="flex items-center gap-1.5">
             <span class="text-xs font-bold text-gray-200 truncate">${escapeHtml(cat)}</span>
           </div>
-          ${avgSpend > 0 ? `
+          ${
+            avgSpend > 0
+              ? `
             <div class="flex items-center gap-1 mt-0.5">
               <div onclick="applyAdjustAverageCategoryLimit('${escapeHtml(cat)}', ${avgSpend})" 
                    class="w-[100px] h-6 justify-between text-[10px] py-0.5 px-2 bg-[#6C5DD3]/10 text-[#727cff] hover:bg-[#6C5DD3]/20 border border-[#6C5DD3]/20 rounded-lg whitespace-nowrap flex items-center cursor-pointer transition-all active:scale-95 flex-shrink-0" 
@@ -5268,7 +4854,8 @@ function renderAdjustCategoriesList() {
                 <i data-lucide="sliders-horizontal" class="w-3 h-3"></i>
               </button>
             </div>
-          ` : `
+          `
+              : `
             <div class="flex items-center gap-1 mt-0.5">
               <span class="text-[10px] text-[#848D99] w-[100px] block truncate">Ср: нет данных</span>
               <button type="button" 
@@ -5278,7 +4865,8 @@ function renderAdjustCategoriesList() {
                 <i data-lucide="sliders-horizontal" class="w-3 h-3"></i>
               </button>
             </div>
-          `}
+          `
+          }
         </div>
 
         <div class="w-[96px] flex-shrink-0">
@@ -5292,7 +4880,8 @@ function renderAdjustCategoriesList() {
         </div>
       </div>
     `;
-  }).join('');
+    })
+    .join('');
 
   if (typeof lucide !== 'undefined') lucide.createIcons();
 }
@@ -5302,16 +4891,32 @@ function openAddAdjustCategoryPicker() {
   const listEl = document.getElementById('month-adjust-category-picker-list');
   if (!dlg || !listEl) return;
 
-  const expenseCats = (Cache?.categories?.expense || []).map(c => typeof c === 'string' ? c : (c?.name || '')).filter(Boolean);
-  const standardCats = ['Продукты', 'Кафе и рестораны', 'Маркетплейсы', 'Транспорт', 'Жилье', 'Одежда', 'Здоровье', 'Развлечения', 'Другое'];
-  const allAvailable = Array.from(new Set([...expenseCats, ...standardCats])).filter(c => !adjustActiveCategories.includes(c));
+  const expenseCats = (Cache?.categories?.expense || [])
+    .map(c => (typeof c === 'string' ? c : c?.name || ''))
+    .filter(Boolean);
+  const standardCats = [
+    'Продукты',
+    'Кафе и рестораны',
+    'Маркетплейсы',
+    'Транспорт',
+    'Жилье',
+    'Одежда',
+    'Здоровье',
+    'Развлечения',
+    'Другое',
+  ];
+  const allAvailable = Array.from(new Set([...expenseCats, ...standardCats])).filter(
+    c => !adjustActiveCategories.includes(c)
+  );
 
   if (allAvailable.length === 0) {
-    listEl.innerHTML = '<div class="text-xs text-[#848D99] text-center py-4">Все доступные категории уже добавлены в план.</div>';
+    listEl.innerHTML =
+      '<div class="text-xs text-[#848D99] text-center py-4">Все доступные категории уже добавлены в план.</div>';
   } else {
-    listEl.innerHTML = allAvailable.map(cat => {
-      const icon = getCategoryIcon(cat);
-      return `
+    listEl.innerHTML = allAvailable
+      .map(cat => {
+        const icon = getCategoryIcon(cat);
+        return `
         <button type="button" 
                 onclick="selectAdjustCategoryToAdd('${escapeHtml(cat)}')" 
                 class="w-full p-2.5 rounded-xl bg-[#12151C] hover:bg-[#212430] border border-[rgba(255,255,255,0.04)] flex items-center justify-between text-left transition-colors cursor-pointer group">
@@ -5324,7 +4929,8 @@ function openAddAdjustCategoryPicker() {
           <i data-lucide="plus" class="w-4 h-4 text-gray-400 group-hover:text-[#6C5DD3]"></i>
         </button>
       `;
-    }).join('');
+      })
+      .join('');
   }
 
   dlg.classList.remove('hidden');
@@ -5370,7 +4976,7 @@ function backToMonthSummaryStep() {
 
 function updateMonthCloseForecast() {
   const incInput = document.getElementById('close-adjust-income-input');
-  const income = incInput ? (getUnformattedVal(incInput) || 0) : 0;
+  const income = incInput ? getUnformattedVal(incInput) || 0 : 0;
 
   let totalLimits = 0;
   document.querySelectorAll('[data-close-cat]').forEach(inp => {
@@ -5397,13 +5003,16 @@ function updateMonthCloseForecast() {
   if (forecastSurplus) {
     if (surplus > 0) {
       forecastSurplus.innerText = `+${formatMoney(surplus)} / мес`;
-      forecastSurplus.className = 'text-xs sm:text-sm font-black font-mono text-emerald-400 whitespace-nowrap flex-shrink-0';
+      forecastSurplus.className =
+        'text-xs sm:text-sm font-black font-mono text-emerald-400 whitespace-nowrap flex-shrink-0';
     } else if (surplus < 0) {
       forecastSurplus.innerText = `-${formatMoney(Math.abs(surplus))} / мес`;
-      forecastSurplus.className = 'text-xs sm:text-sm font-black font-mono text-[#FF453A] whitespace-nowrap flex-shrink-0';
+      forecastSurplus.className =
+        'text-xs sm:text-sm font-black font-mono text-[#FF453A] whitespace-nowrap flex-shrink-0';
     } else {
       forecastSurplus.innerText = '0 ₽ / мес';
-      forecastSurplus.className = 'text-xs sm:text-sm font-black font-mono text-gray-300 whitespace-nowrap flex-shrink-0';
+      forecastSurplus.className =
+        'text-xs sm:text-sm font-black font-mono text-gray-300 whitespace-nowrap flex-shrink-0';
     }
   }
 }
@@ -5416,39 +5025,38 @@ function deleteCurrentWizCategory() {
     return;
   }
 
-  showDialog(
-    'Удаление категории',
-    `Удалить категорию «${catName}» из лимитов?`,
-    true,
-    async () => {
-      // 1. Если это Шаг 4 мастера первоначальной настройки:
-      const step4 = document.getElementById('wizard-step-4');
-      if (step4 && !step4.classList.contains('hidden')) {
-        removeWizardCustomCat(catName);
-        closeWizAvgDetailsModal();
-        return;
-      }
-
-      // 2. Если это окно закрытия месяца:
-      if (typeof adjustActiveCategories !== 'undefined' && Array.isArray(adjustActiveCategories) && adjustActiveCategories.includes(catName)) {
-        if (typeof removeAdjustCategory === 'function') removeAdjustCategory(catName);
-        closeWizAvgDetailsModal();
-        return;
-      }
-
-      // 3. Если это менеджер лимитов:
-      if (typeof managerCustomCategories !== 'undefined' && managerCustomCategories.has(catName)) {
-        if (typeof removeManagerCustomCat === 'function') removeManagerCustomCat(catName);
-        closeWizAvgDetailsModal();
-        return;
-      }
-
-      // 4. Иначе это настроенный бюджетный план:
+  showDialog('Удаление категории', `Удалить категорию «${catName}» из лимитов?`, true, async () => {
+    // 1. Если это Шаг 4 мастера первоначальной настройки:
+    const step4 = document.getElementById('wizard-step-4');
+    if (step4 && !step4.classList.contains('hidden')) {
       removeWizardCustomCat(catName);
-      await deleteBudgetCategoryLimit(catName);
       closeWizAvgDetailsModal();
+      return;
     }
-  );
+
+    // 2. Если это окно закрытия месяца:
+    if (
+      typeof adjustActiveCategories !== 'undefined' &&
+      Array.isArray(adjustActiveCategories) &&
+      adjustActiveCategories.includes(catName)
+    ) {
+      if (typeof removeAdjustCategory === 'function') removeAdjustCategory(catName);
+      closeWizAvgDetailsModal();
+      return;
+    }
+
+    // 3. Если это менеджер лимитов:
+    if (typeof managerCustomCategories !== 'undefined' && managerCustomCategories.has(catName)) {
+      if (typeof removeManagerCustomCat === 'function') removeManagerCustomCat(catName);
+      closeWizAvgDetailsModal();
+      return;
+    }
+
+    // 4. Иначе это настроенный бюджетный план:
+    removeWizardCustomCat(catName);
+    await deleteBudgetCategoryLimit(catName);
+    closeWizAvgDetailsModal();
+  });
 }
 window.deleteCurrentWizCategory = deleteCurrentWizCategory;
 
@@ -5506,7 +5114,8 @@ function openBillPaymentMatchModal(billId, preserveSelection = false) {
   const dlg = document.getElementById('bill-payment-match-dialog');
   if (!bill || !dlg) return;
 
-  const targetDate = (typeof getSelectedBudgetDate === 'function') ? getSelectedBudgetDate() : new Date();
+  const targetDate =
+    typeof getSelectedBudgetDate === 'function' ? getSelectedBudgetDate() : new Date();
   const year = targetDate.getFullYear();
   const month = targetDate.getMonth();
   const monthKey = `${year}-${String(month + 1).padStart(2, '0')}`;
@@ -5523,7 +5132,9 @@ function openBillPaymentMatchModal(billId, preserveSelection = false) {
   }
   if (nameEl) nameEl.innerText = bill.name || 'Счет';
   if (dateEl) {
-    dateEl.innerText = info.isOneTime ? `${bill.day || 1} число` : `${bill.day || 1} число каждого месяца`;
+    dateEl.innerText = info.isOneTime
+      ? `${bill.day || 1} число`
+      : `${bill.day || 1} число каждого месяца`;
   }
 
   // Получаем транзакции текущего месяца
@@ -5551,7 +5162,12 @@ function openBillPaymentMatchModal(billId, preserveSelection = false) {
   const monthTxs = allTxs.filter(t => {
     if (t.type !== 'Расход') return false;
     const dateStr = t.rawDate || t.date || '';
-    const d = typeof parseAnyDate === 'function' ? parseAnyDate(dateStr) : (dateStr ? new Date(dateStr) : null);
+    const d =
+      typeof parseAnyDate === 'function'
+        ? parseAnyDate(dateStr)
+        : dateStr
+          ? new Date(dateStr)
+          : null;
     if (!d || isNaN(d.getTime())) return false;
     if (d.getFullYear() !== year || d.getMonth() !== month) return false;
 
@@ -5565,7 +5181,11 @@ function openBillPaymentMatchModal(billId, preserveSelection = false) {
   });
 
   // Проверяем, есть ли уже связанная транзакция
-  const linkedTx = monthTxs.find(tx => (tx.billId === bill.id || tx.id === bill.linkedTxId) && (tx.isBillPayment || tx.excludeFromBudget));
+  const linkedTx = monthTxs.find(
+    tx =>
+      (tx.billId === bill.id || tx.id === bill.linkedTxId) &&
+      (tx.isBillPayment || tx.excludeFromBudget)
+  );
   const isPaid = (bill.paidMonths && bill.paidMonths[monthKey]) || bill.isPaid || !!linkedTx;
 
   if (!preserveSelection && linkedTx) {
@@ -5599,8 +5219,8 @@ function openBillPaymentMatchModal(billId, preserveSelection = false) {
     }
   });
 
-  const renderTxItem = (tx) => {
-    const isSelected = (selectedMatchingTxId === tx.id);
+  const renderTxItem = tx => {
+    const isSelected = selectedMatchingTxId === tx.id;
     const icon = getCategoryIcon(tx.category);
     return `
       <div onclick="selectBillMatchTx('${tx.id}')" 
@@ -5626,7 +5246,8 @@ function openBillPaymentMatchModal(billId, preserveSelection = false) {
 
   if (suggestedListEl) {
     if (suggestedTxs.length === 0) {
-      suggestedListEl.innerHTML = '<div class="text-[11px] text-[#848D99] text-center py-2 px-3 bg-[#12151C] rounded-xl border border-[rgba(255,255,255,0.04)]">Подходящих операций нет. Вы можете создать новую операцию или выбрать из списка ниже.</div>';
+      suggestedListEl.innerHTML =
+        '<div class="text-[11px] text-[#848D99] text-center py-2 px-3 bg-[#12151C] rounded-xl border border-[rgba(255,255,255,0.04)]">Подходящих операций нет. Вы можете создать новую операцию или выбрать из списка ниже.</div>';
     } else {
       suggestedListEl.innerHTML = suggestedTxs.map(renderTxItem).join('');
     }
@@ -5634,7 +5255,8 @@ function openBillPaymentMatchModal(billId, preserveSelection = false) {
 
   if (otherListEl) {
     if (otherTxs.length === 0) {
-      otherListEl.innerHTML = '<div class="text-[11px] text-[#848D99] text-center py-2">Нет других операций в этом месяце.</div>';
+      otherListEl.innerHTML =
+        '<div class="text-[11px] text-[#848D99] text-center py-2">Нет других операций в этом месяце.</div>';
     } else {
       otherListEl.innerHTML = otherTxs.map(renderTxItem).join('');
     }
@@ -5667,7 +5289,7 @@ function closeBillPaymentMatchModal() {
 }
 
 function selectBillMatchTx(txId) {
-  selectedMatchingTxId = (selectedMatchingTxId === txId) ? null : txId;
+  selectedMatchingTxId = selectedMatchingTxId === txId ? null : txId;
   const bill = (Cache?.calendarBills || []).find(b => b.id === activeMatchingBillId);
   if (bill) openBillPaymentMatchModal(bill.id, true);
 }
@@ -5677,7 +5299,8 @@ function createAndLinkBillTransaction() {
   const bill = (Cache?.calendarBills || []).find(b => b.id === activeMatchingBillId);
   if (!bill) return;
 
-  const targetDate = (typeof getSelectedBudgetDate === 'function') ? getSelectedBudgetDate() : new Date();
+  const targetDate =
+    typeof getSelectedBudgetDate === 'function' ? getSelectedBudgetDate() : new Date();
   const year = targetDate.getFullYear();
   const month = targetDate.getMonth();
   const maxDay = new Date(year, month + 1, 0).getDate();
@@ -5685,7 +5308,10 @@ function createAndLinkBillTransaction() {
   const plannedDate = new Date(year, month, billDay);
 
   const isOneTime = bill.type === 'onetime' || bill.type === 'Разовый';
-  const totalAmount = isOneTime && bill.totalAmount ? (parseFloat(bill.totalAmount) || parseFloat(bill.amount) || 0) : (parseFloat(bill.amount) || 0);
+  const totalAmount =
+    isOneTime && bill.totalAmount
+      ? parseFloat(bill.totalAmount) || parseFloat(bill.amount) || 0
+      : parseFloat(bill.amount) || 0;
   const spreadMonths = parseInt(bill.spreadMonths, 10) || 1;
 
   closeBillPaymentMatchModal();
@@ -5704,7 +5330,7 @@ function createAndLinkBillTransaction() {
       billId: bill.id,
       billName: bill.name || '',
       title: isOneTime ? 'Оплата разовой траты' : 'Оплата счета',
-      subtitle: `Создание операции для «${bill.name}»`
+      subtitle: `Создание операции для «${bill.name}»`,
     });
   }
 }
@@ -5726,7 +5352,8 @@ async function applySelectedBillMatch() {
     return;
   }
 
-  const targetDate = (typeof getSelectedBudgetDate === 'function') ? getSelectedBudgetDate() : new Date();
+  const targetDate =
+    typeof getSelectedBudgetDate === 'function' ? getSelectedBudgetDate() : new Date();
   const year = targetDate.getFullYear();
   const month = targetDate.getMonth();
   const monthKey = `${year}-${String(month + 1).padStart(2, '0')}`;
@@ -5746,7 +5373,7 @@ async function applySelectedBillMatch() {
       excludeFromBudget: true,
       billId: bill.id,
       billName: bill.name || '',
-      updatedAt: Date.now()
+      updatedAt: Date.now(),
     });
 
     // 2. Помечаем счет как оплаченный с сохранением фактической суммы чека для текущего месяца
@@ -5755,7 +5382,7 @@ async function applySelectedBillMatch() {
     paidMonths[monthKey] = {
       paid: true,
       txId: tx.id,
-      amount: txAmount
+      amount: txAmount,
     };
 
     const billRef = getUserCol('CalendarBills').doc(bill.id);
@@ -5763,7 +5390,7 @@ async function applySelectedBillMatch() {
       isPaid: true,
       linkedTxId: tx.id,
       paidMonths: paidMonths,
-      updatedAt: Date.now()
+      updatedAt: Date.now(),
     });
 
     // Мгновенное оптимистичное обновление локального кэша и интерфейса
@@ -5800,7 +5427,8 @@ async function unlinkCurrentBillPayment() {
   const bill = (Cache?.calendarBills || []).find(b => b.id === activeMatchingBillId);
   if (!bill) return;
 
-  const targetDate = (typeof getSelectedBudgetDate === 'function') ? getSelectedBudgetDate() : new Date();
+  const targetDate =
+    typeof getSelectedBudgetDate === 'function' ? getSelectedBudgetDate() : new Date();
   const year = targetDate.getFullYear();
   const month = targetDate.getMonth();
   const monthKey = `${year}-${String(month + 1).padStart(2, '0')}`;
@@ -5827,7 +5455,7 @@ async function unlinkCurrentBillPayment() {
           billType: null,
           billId: null,
           billName: null,
-          updatedAt: Date.now()
+          updatedAt: Date.now(),
         });
       }
     });
@@ -5841,7 +5469,7 @@ async function unlinkCurrentBillPayment() {
       isPaid: false,
       linkedTxId: null,
       paidMonths: paidMonths,
-      updatedAt: Date.now()
+      updatedAt: Date.now(),
     });
 
     bill.isPaid = false;
@@ -5874,7 +5502,8 @@ async function handleTransactionsDeleted(txIds, deletedTxs = [], existingBatch =
   const bills = Cache?.calendarBills || [];
   if (!bills.length) return;
 
-  const targetDate = (typeof getSelectedBudgetDate === 'function') ? getSelectedBudgetDate() : new Date();
+  const targetDate =
+    typeof getSelectedBudgetDate === 'function' ? getSelectedBudgetDate() : new Date();
   const fallbackYear = targetDate.getFullYear();
   const fallbackMonth = targetDate.getMonth();
   const fallbackMonthKey = `${fallbackYear}-${String(fallbackMonth + 1).padStart(2, '0')}`;
@@ -5895,7 +5524,8 @@ async function handleTransactionsDeleted(txIds, deletedTxs = [], existingBatch =
       if (matchingTxs.length > 0) {
         matchingTxs.forEach(tx => {
           const raw = tx.rawDate || tx.date;
-          const txDateObj = (typeof parseAnyDate === 'function' ? parseAnyDate(raw) : new Date(raw)) || targetDate;
+          const txDateObj =
+            (typeof parseAnyDate === 'function' ? parseAnyDate(raw) : new Date(raw)) || targetDate;
           const mk = `${txDateObj.getFullYear()}-${String(txDateObj.getMonth() + 1).padStart(2, '0')}`;
           delete paidMonths[mk];
         });
@@ -5904,7 +5534,10 @@ async function handleTransactionsDeleted(txIds, deletedTxs = [], existingBatch =
       }
 
       bill.isPaid = false;
-      if (isLinkedByBillTxId || (Array.isArray(matchingTxs) && matchingTxs.some(t => t && t.id === bill.linkedTxId))) {
+      if (
+        isLinkedByBillTxId ||
+        (Array.isArray(matchingTxs) && matchingTxs.some(t => t && t.id === bill.linkedTxId))
+      ) {
         bill.linkedTxId = null;
       }
       bill.paidMonths = paidMonths;
@@ -5914,7 +5547,7 @@ async function handleTransactionsDeleted(txIds, deletedTxs = [], existingBatch =
         isPaid: false,
         linkedTxId: bill.linkedTxId,
         paidMonths: paidMonths,
-        updatedAt: Date.now()
+        updatedAt: Date.now(),
       });
     }
   });
@@ -5959,7 +5592,10 @@ async function finalizeMonthClose() {
     // 1. Обновление целей на основе доли (share %)
     if (actualSurplus !== 0 && goals.length > 0) {
       const activeGoals = goals.filter(g => g.status !== 'Архив');
-      const totalExplicitShares = activeGoals.reduce((sum, g) => sum + (parseFloat(g.share) || 0), 0);
+      const totalExplicitShares = activeGoals.reduce(
+        (sum, g) => sum + (parseFloat(g.share) || 0),
+        0
+      );
 
       activeGoals.forEach(g => {
         let sharePct = parseFloat(g.share) || 0;
@@ -5973,18 +5609,26 @@ async function finalizeMonthClose() {
             const newSaved = Math.max(0, oldSaved + changeAmount);
             const actualDeducted = Math.abs(oldSaved - newSaved);
             const target = parseFloat(g.target) || 0;
-            const isAchieved = (target > 0 && newSaved >= target);
+            const isAchieved = target > 0 && newSaved >= target;
 
             const goalRef = getUserCol('Goals').doc(g.id);
             batch.update(goalRef, {
               saved: newSaved,
-              status: isAchieved ? 'Выполнена' : (newSaved < target && g.status === 'Выполнена' ? 'В процессе' : (g.status || 'В процессе')),
-              updatedAt: Date.now()
+              status: isAchieved
+                ? 'Выполнена'
+                : newSaved < target && g.status === 'Выполнена'
+                  ? 'В процессе'
+                  : g.status || 'В процессе',
+              updatedAt: Date.now(),
             });
 
             // Обновляем локально
             g.saved = newSaved;
-            g.status = isAchieved ? 'Выполнена' : (newSaved < target && g.status === 'Выполнена' ? 'В процессе' : (g.status || 'В процессе'));
+            g.status = isAchieved
+              ? 'Выполнена'
+              : newSaved < target && g.status === 'Выполнена'
+                ? 'В процессе'
+                : g.status || 'В процессе';
 
             goalIncrements.push({
               id: g.id,
@@ -5992,7 +5636,7 @@ async function finalizeMonthClose() {
               changeAmount: actualSurplus < 0 ? -actualDeducted : changeAmount,
               oldSaved,
               newSaved,
-              target
+              target,
             });
           }
         }
@@ -6009,20 +5653,24 @@ async function finalizeMonthClose() {
       actualBills: data.actualBills,
       actualSurplus: data.actualSurplus,
       planIncome: data.planIncome,
-      planExpense: data.planExpense
+      planExpense: data.planExpense,
     };
 
     // 3. Обновление генерального плана
     const planRef = getUserCol('BudgetPlan').doc('plan');
-    batch.set(planRef, {
-      ...plan,
-      isConfigured: true,
-      monthlyIncome: income,
-      monthlyVariableLimit: totalLimits,
-      categoryLimits: categoryLimits,
-      closedMonths: closedMonths,
-      updatedAt: Date.now()
-    }, { merge: true });
+    batch.set(
+      planRef,
+      {
+        ...plan,
+        isConfigured: true,
+        monthlyIncome: income,
+        monthlyVariableLimit: totalLimits,
+        categoryLimits: categoryLimits,
+        closedMonths: closedMonths,
+        updatedAt: Date.now(),
+      },
+      { merge: true }
+    );
 
     await batch.commit();
 
@@ -6041,147 +5689,6 @@ async function finalizeMonthClose() {
     showToast('Ошибка закрытия: ' + err.message, true);
   }
 }
-
-function playGoalFlowAnimation(amount, goalIncrements = []) {
-  const overlay = document.getElementById('goal-flow-animation-overlay');
-  const card = document.getElementById('goal-flow-card');
-  if (!overlay || !card) return;
-
-  const isPositive = amount > 0;
-  const isNegative = amount < 0;
-
-  let goalsListHtml = '';
-  if (goalIncrements.length > 0) {
-    goalsListHtml = `
-      <div class="w-full space-y-2 my-3 text-left">
-        ${goalIncrements.map(g => {
-          const oldPct = g.target > 0 ? Math.min(100, Math.round((g.oldSaved / g.target) * 100)) : 0;
-          const newPct = g.target > 0 ? Math.min(100, Math.round((g.newSaved / g.target) * 100)) : 0;
-          const isInc = g.changeAmount > 0;
-          const diffStr = isInc ? `+${formatMoney(g.changeAmount)}` : `-${formatMoney(Math.abs(g.changeAmount))}`;
-
-          return `
-            <div class="p-3 rounded-2xl bg-[#12151C] border border-[rgba(255,255,255,0.06)] space-y-1.5">
-              <div class="flex items-center justify-between text-xs">
-                <span class="font-bold text-white truncate max-w-[170px]">${escapeHtml(g.name)}</span>
-                <span class="font-mono font-bold ${isInc ? 'text-emerald-400' : 'text-[#FF453A]'}">${diffStr}</span>
-              </div>
-              <div class="w-full bg-[rgba(255,255,255,0.08)] h-2 rounded-full overflow-hidden relative">
-                <div id="anim-goal-bar-${g.id}" class="h-full ${isInc ? 'bg-gradient-to-r from-emerald-500 to-teal-400' : 'bg-gradient-to-r from-rose-500 to-red-400'} rounded-full transition-all duration-1000 ease-out" style="width: ${oldPct}%"></div>
-              </div>
-              <div class="flex justify-between items-center text-[10px] text-[#848D99] font-mono">
-                <span>Было: ${oldPct}%</span>
-                <span class="font-bold ${isInc ? 'text-emerald-400' : 'text-[#FF453A]'}">Стало: ${newPct}%</span>
-              </div>
-            </div>
-          `;
-        }).join('')}
-      </div>
-    `;
-  } else {
-    goalsListHtml = `
-      <div class="w-full p-3 rounded-2xl bg-[#12151C] border border-[rgba(255,255,255,0.06)] my-3 text-center">
-        <p class="text-xs text-gray-400 leading-relaxed">
-          ${isNegative 
-            ? 'Активных целей для списания дефицита нет. Баланс целей не изменился.' 
-            : 'У вас пока нет активных финансовых целей для автоматического зачисления сбережений.'}
-        </p>
-      </div>
-    `;
-  }
-
-  if (isPositive) {
-    card.className = "bg-[#181B24]/95 border border-emerald-500/40 rounded-3xl p-5 shadow-2xl backdrop-blur-xl flex flex-col items-center text-center max-w-sm w-full mx-4 transform scale-100 transition-all duration-300 pointer-events-auto border-emerald-500/30";
-    card.innerHTML = `
-      <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-500/20 to-teal-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 mb-2 shadow-lg animate-bounce">
-        <i data-lucide="award" class="w-7 h-7"></i>
-      </div>
-      <h3 class="text-base font-black text-white tracking-tight">Средства переведены в цели!</h3>
-      <p class="text-2xl font-black font-mono text-emerald-400 my-1">+${formatMoney(amount)}</p>
-      <p class="text-[11px] text-[#848D99] leading-tight">
-        Отложенный профицит успешно пополнил накопления по вашим финансовым целям.
-      </p>
-      ${goalsListHtml}
-      
-      <!-- Подсказка о размещении средств на вклад или накопительный счет -->
-      <div class="w-full my-2.5 p-3 rounded-2xl bg-[#12151C] border border-[#6C5DD3]/25 flex items-start gap-2.5 text-left">
-        <div class="w-7 h-7 rounded-xl bg-[#6C5DD3]/20 flex items-center justify-center text-[#8C7DFF] flex-shrink-0 mt-0.5">
-          <i data-lucide="piggy-bank" class="w-4 h-4"></i>
-        </div>
-        <div class="text-[11px] leading-relaxed text-gray-300 flex-1 min-w-0">
-          <span class="font-bold text-white block mb-0.5">Совет по накоплениям</span>
-          Средства можно положить на вклад или накопительный счет — так вы быстрее сможете достичь поставленных целей!
-        </div>
-      </div>
-
-      <button type="button" onclick="closeGoalFlowAnimationOverlay()" class="w-full mt-2 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-all active:scale-95 cursor-pointer">
-        Отлично!
-      </button>
-    `;
-  } else if (isNegative) {
-    card.className = "bg-[#181B24]/95 border border-red-500/40 rounded-3xl p-5 shadow-2xl backdrop-blur-xl flex flex-col items-center text-center max-w-sm w-full mx-4 transform scale-100 transition-all duration-300 pointer-events-auto border-red-500/30";
-    card.innerHTML = `
-      <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-red-500/20 to-rose-500/20 border border-red-500/40 flex items-center justify-center text-[#FF453A] mb-2 shadow-lg">
-        <i data-lucide="trending-down" class="w-7 h-7"></i>
-      </div>
-      <h3 class="text-base font-black text-white tracking-tight">Корректировка накоплений</h3>
-      <p class="text-2xl font-black font-mono text-[#FF453A] my-1">-${formatMoney(Math.abs(amount))}</p>
-      <p class="text-[11px] text-[#848D99] leading-tight">
-        Из-за дефицита бюджета сумма автоматически вычтена из целей в соответствии с выставленными долями.
-      </p>
-      ${goalsListHtml}
-      <p class="text-[10px] text-gray-400 mt-1 italic leading-tight">
-        При необходимости вы можете скорректировать баланс целей в разделе «Вклады и Цели».
-      </p>
-      <button type="button" onclick="closeGoalFlowAnimationOverlay()" class="w-full mt-3 py-2.5 rounded-xl bg-[#212430] hover:bg-[#2A2D3C] text-gray-200 font-bold text-xs border border-[rgba(255,255,255,0.08)] transition-all active:scale-95 cursor-pointer">
-        Понятно
-      </button>
-    `;
-  } else {
-    card.className = "bg-[#181B24]/95 border border-[rgba(255,255,255,0.1)] rounded-3xl p-5 shadow-2xl backdrop-blur-xl flex flex-col items-center text-center max-w-sm w-full mx-4 transform scale-100 transition-all duration-300 pointer-events-auto";
-    card.innerHTML = `
-      <div class="w-14 h-14 rounded-2xl bg-[#212430] border border-[rgba(255,255,255,0.08)] flex items-center justify-center text-gray-300 mb-2 shadow-lg">
-        <i data-lucide="check-circle-2" class="w-7 h-7 text-[#30D158]"></i>
-      </div>
-      <h3 class="text-base font-black text-white tracking-tight">Месяц успешно закрыт!</h3>
-      <p class="text-[11px] text-[#848D99] my-2">Все расходы в точности сошлись с доходами.</p>
-      <button type="button" onclick="closeGoalFlowAnimationOverlay()" class="w-full mt-2 py-2.5 rounded-xl bg-[#212430] hover:bg-[#2A2D3C] text-gray-200 font-bold text-xs border border-[rgba(255,255,255,0.08)] transition-all active:scale-95 cursor-pointer">
-        Продолжить
-      </button>
-    `;
-  }
-
-  overlay.classList.remove('hidden');
-  if (typeof lucide !== 'undefined') lucide.createIcons();
-
-  // Плавная анимация шкалы
-  setTimeout(() => {
-    goalIncrements.forEach(g => {
-      const bar = document.getElementById(`anim-goal-bar-${g.id}`);
-      if (bar) {
-        const newPct = g.target > 0 ? Math.min(100, Math.round((g.newSaved / g.target) * 100)) : 0;
-        bar.style.width = `${newPct}%`;
-      }
-    });
-  }, 120);
-
-  if (window.goalFlowAnimTimeout) clearTimeout(window.goalFlowAnimTimeout);
-  window.goalFlowAnimTimeout = setTimeout(() => {
-    closeGoalFlowAnimationOverlay();
-  }, 18000);
-}
-
-function closeGoalFlowAnimationOverlay() {
-  const overlay = document.getElementById('goal-flow-animation-overlay');
-  if (overlay) {
-    overlay.classList.add('animate-fade-out');
-    setTimeout(() => {
-      overlay.classList.add('hidden');
-      overlay.classList.remove('animate-fade-out');
-    }, 300);
-  }
-}
-window.closeGoalFlowAnimationOverlay = closeGoalFlowAnimationOverlay;
 
 // Мастер (Онбординг)
 window.initBudgetWizard = initBudgetWizard;
@@ -6267,19 +5774,19 @@ function getCategoryIcon(catName) {
   if (foundInc && typeof foundInc === 'object' && foundInc.icon) return foundInc.icon;
 
   const map = {
-    'Продукты': 'shopping-cart',
+    Продукты: 'shopping-cart',
     'Кафе и рестораны': 'utensils',
-    'Маркетплейсы': 'shopping-bag',
-    'Транспорт': 'car',
-    'Жилье': 'home',
-    'Одежда': 'shirt',
-    'Здоровье': 'heart-pulse',
-    'Развлечения': 'gamepad-2',
-    'Другое': 'package',
+    Маркетплейсы: 'shopping-bag',
+    Транспорт: 'car',
+    Жилье: 'home',
+    Одежда: 'shirt',
+    Здоровье: 'heart-pulse',
+    Развлечения: 'gamepad-2',
+    Другое: 'package',
     'Прочие расходы': 'package',
-    'Зарплата': 'wallet',
-    'Возврат': 'undo-2',
-    'Кэшбек': 'coins'
+    Зарплата: 'wallet',
+    Возврат: 'undo-2',
+    Кэшбек: 'coins',
   };
   return map[catName] || 'tag';
 }
