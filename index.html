@@ -1363,110 +1363,55 @@
       <div id="deposits-list" class="space-y-4 pb-6"></div>
     </div>
 
-    <!-- ЭКРАН БРОКЕРА -->
-    <div id="broker-tab" class="tab-pane hidden space-y-4">
-      <!-- Красивая заглушка если данных нет (в едином стиле с вкладами и целями) -->
-      <div id="broker-empty-state" class="hidden card rounded-2xl p-6 text-center flex flex-col items-center justify-center gap-3 mt-1 border border-[rgba(255,255,255,0.06)] bg-[#181B24]">
-        <div class="w-12 h-12 rounded-2xl bg-[#6C5DD3]/15 text-[#727cff] flex items-center justify-center">
+    <!-- ЭКРАН БРОКЕРА (Т-БАНК СТИЛЬ) -->
+    <div id="broker-tab" class="tab-pane hidden space-y-3.5">
+      <!-- Лаконичное пустое состояние -->
+      <div id="broker-empty-state" class="hidden card bg-[#181B24] rounded-3xl p-6 text-center flex flex-col items-center justify-center gap-3 border border-[rgba(255,255,255,0.06)] shadow-sm">
+        <div class="w-12 h-12 rounded-2xl bg-[#6C5DD3]/15 text-[#8C7DFF] flex items-center justify-center">
           <i data-lucide="trending-up" class="w-6 h-6"></i>
         </div>
         <div>
-          <p class="text-sm font-semibold text-gray-200">Брокерский портфель пока пуст</p>
-          <p class="text-xs text-[#848D99] mt-1.5 max-w-[320px] leading-relaxed">Внесите первое пополнение брокерского счета или зафиксируйте текущий баланс, чтобы отслеживать доходность, чистую прибыль и динамику капитала на графике.</p>
+          <h3 class="text-base font-bold text-white">Портфель пуст</h3>
+          <p class="text-xs text-[#848D99] mt-1">Добавьте акции, фонды или рубли</p>
         </div>
-        <div class="grid grid-cols-2 gap-2.5 mt-2 w-full max-w-xs sm:max-w-sm">
-          <button type="button" onclick="openBrokerActionFromEmpty('deposit', event)" class="w-full py-2.5 px-2 rounded-xl bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white text-xs font-semibold transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-1.5 shadow-md truncate">
-            <i data-lucide="plus" class="w-3.5 h-3.5 flex-shrink-0"></i>
-            <span class="truncate">Пополнить</span>
-          </button>
-          <button type="button" onclick="openBrokerActionFromEmpty('balance', event)" class="w-full py-2.5 px-2 rounded-xl bg-[#212430] hover:bg-[#2A2D3C] text-gray-200 border border-[rgba(255,255,255,0.06)] text-xs font-semibold transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-1.5 truncate">
-            <i data-lucide="scale" class="w-3.5 h-3.5 text-gray-400 flex-shrink-0"></i>
-            <span class="truncate">Указать баланс</span>
-          </button>
-        </div>
+        <button type="button" onclick="openAddMoexAssetModal()" class="py-2.5 px-5 rounded-2xl bg-[#6C5DD3] hover:bg-[#5b4ec2] active:scale-95 text-white text-xs font-semibold transition-all shadow-md flex items-center gap-1.5 cursor-pointer mt-1">
+          <i data-lucide="plus" class="w-4 h-4"></i>
+          <span>Добавить актив</span>
+        </button>
       </div>
 
+      <!-- Главная карточка портфеля -->
       <div id="broker-main-card" class="bg-[#181B24] p-5 rounded-3xl border border-[rgba(255,255,255,0.06)] shadow-sm relative">
-        <p class="text-[11px] text-[#848D99] uppercase tracking-wider font-bold mb-1">Брокерский портфель</p>
-        
-        <!-- Основной баланс -->
-        <p id="broker-balance" class="text-3xl font-bold text-white tracking-tight">0 ₽</p>
-        
-        <!-- Финтех-бейдж доходности -->
-        <div class="flex items-center gap-2 mt-2 mb-5 flex-wrap">
-          <span id="broker-yield-badge" class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#30D158]/15 text-[#30D158]">
-            +0% (+0 ₽) за всё время
-          </span>
-          <span class="text-xs text-[#848D99]">
-            Внесено: <span id="broker-deposits" class="text-gray-300 font-medium">0 ₽</span>
-          </span>
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] text-[#848D99] uppercase tracking-wider font-bold">Брокерский портфель</span>
+          <div class="flex items-center gap-1.5">
+            <button type="button" 
+                    id="btn-refresh-moex-quotes" 
+                    onclick="refreshMoexQuotes()" 
+                    class="p-2 rounded-xl bg-[#212430] hover:bg-[#2A2D3C] text-gray-400 hover:text-white transition-all cursor-pointer active:scale-95 border border-white/5" 
+                    title="Обновить котировки Мосбиржи">
+              <i data-lucide="refresh-cw" class="w-4 h-4 text-cyan-400"></i>
+            </button>
+            <button type="button" 
+                    onclick="openAddMoexAssetModal()" 
+                    class="py-2 px-3.5 rounded-xl bg-[#6C5DD3] hover:bg-[#5b4ec2] active:scale-95 text-white text-xs font-semibold transition-all shadow-md flex items-center gap-1.5 cursor-pointer">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+              <span>Добавить</span>
+            </button>
+          </div>
         </div>
         
-        <!-- Иерархия действий с аккуратными поповерами под кнопками -->
-        <div class="flex gap-2 mb-4 relative z-30">
-          <!-- Кнопка и поповер: Пополнение -->
-          <div class="relative flex-1">
-            <button type="button" id="broker-deposit-btn" onclick="toggleBrokerPopover('deposit', event)" class="w-full bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white text-xs font-semibold py-2.5 rounded-xl transition-all shadow-md active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer">
-              <i data-lucide="plus" class="w-4 h-4"></i> Пополнить
-            </button>
-            
-            <div id="broker-popover-deposit" class="broker-popover hidden absolute left-0 top-full mt-1.5 w-[calc(100vw-32px)] max-w-[290px] sm:w-72 bg-[#181B24] border border-[rgba(255,255,255,0.08)] rounded-2xl shadow-[0_16px_40px_rgba(0,0,0,0.85)] p-3 z-50 animate-fade-in">
-              <div class="flex items-center justify-between mb-2">
-                <h4 class="text-xs font-bold text-white">Внести пополнение</h4>
-                <button type="button" onclick="closeAllBrokerPopovers()" class="text-gray-400 hover:text-white p-1 -mr-1 rounded-lg transition-colors cursor-pointer" title="Закрыть">
-                  <i data-lucide="x" class="w-3.5 h-3.5"></i>
-                </button>
-              </div>
-              <div class="space-y-2 mb-3">
-                <div>
-                  <label class="block text-[10px] text-[#848D99] uppercase font-bold mb-0.5">Дата</label>
-                  <input type="text" id="popover-dep-date" data-datepicker="true" readonly placeholder="ДД.ММ.ГГГГ" class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] text-white rounded-xl px-2.5 py-1.5 outline-none text-xs cursor-pointer">
-                </div>
-                <div>
-                  <label class="block text-[10px] text-[#848D99] uppercase font-bold mb-0.5">Сумма пополнения (₽)</label>
-                  <input type="text" inputmode="decimal" oninput="formatSumInput(this)" id="popover-dep-amount" placeholder="0 ₽" class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] text-white rounded-xl px-2.5 py-1.5 outline-none text-xs font-bold">
-                </div>
-                <div>
-                  <label class="block text-[10px] text-[#848D99] uppercase font-bold mb-0.5">Баланс после пополнения (₽)</label>
-                  <input type="text" inputmode="decimal" oninput="formatSumInput(this)" id="popover-dep-balance" placeholder="0 ₽" class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] text-white rounded-xl px-2.5 py-1.5 outline-none text-xs font-bold">
-                </div>
-              </div>
-              <div class="flex gap-2">
-                <button type="button" onclick="closeAllBrokerPopovers()" class="flex-1 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer">Отмена</button>
-                <button type="button" onclick="submitBrokerPopover('Пополнение')" class="flex-1 bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white py-1.5 rounded-xl text-xs font-semibold shadow-md transition-all active:scale-95 cursor-pointer">Сохранить</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Кнопка и поповер: Баланс -->
-          <div class="relative flex-1">
-            <button type="button" id="broker-balance-btn" onclick="toggleBrokerPopover('balance', event)" class="w-full bg-[#212430] hover:bg-[#2A2D3C] text-gray-200 border border-[rgba(255,255,255,0.06)] text-xs font-medium py-2.5 rounded-xl transition-all active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer">
-              <i data-lucide="scale" class="w-4 h-4 text-gray-400"></i> Баланс
-            </button>
-
-            <div id="broker-popover-balance" class="broker-popover hidden absolute right-0 top-full mt-1.5 w-[calc(100vw-32px)] max-w-[270px] sm:w-64 bg-[#181B24] border border-[rgba(255,255,255,0.08)] rounded-2xl shadow-[0_16px_40px_rgba(0,0,0,0.85)] p-3 z-50 animate-fade-in">
-              <div class="flex items-center justify-between mb-2">
-                <h4 class="text-xs font-bold text-white">Зафиксировать баланс</h4>
-                <button type="button" onclick="closeAllBrokerPopovers()" class="text-gray-400 hover:text-white p-1 -mr-1 rounded-lg transition-colors cursor-pointer" title="Закрыть">
-                  <i data-lucide="x" class="w-3.5 h-3.5"></i>
-                </button>
-              </div>
-              <div class="space-y-2 mb-3">
-                <div>
-                  <label class="block text-[10px] text-[#848D99] uppercase font-bold mb-0.5">Дата</label>
-                  <input type="text" id="popover-bal-date" data-datepicker="true" readonly placeholder="ДД.ММ.ГГГГ" class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] text-white rounded-xl px-2.5 py-1.5 outline-none text-xs cursor-pointer">
-                </div>
-                <div>
-                  <label class="block text-[10px] text-[#848D99] uppercase font-bold mb-0.5">Баланс на дату (₽)</label>
-                  <input type="text" inputmode="decimal" oninput="formatSumInput(this)" id="popover-bal-input" placeholder="0 ₽" class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] text-white rounded-xl px-2.5 py-1.5 outline-none text-xs font-bold">
-                </div>
-              </div>
-              <div class="flex gap-2">
-                <button type="button" onclick="closeAllBrokerPopovers()" class="flex-1 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer">Отмена</button>
-                <button type="button" onclick="submitBrokerPopover('Баланс')" class="flex-1 bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white py-1.5 rounded-xl text-xs font-semibold shadow-md transition-all active:scale-95 cursor-pointer">Сохранить</button>
-              </div>
-            </div>
-          </div>
+        <!-- Основной баланс портфеля -->
+        <p id="broker-balance" class="text-3xl font-black font-mono text-white tracking-tight mt-1">0 ₽</p>
+        
+        <!-- Финтех-бейдж доходности / дневной динамики -->
+        <div class="flex items-center gap-2 mt-2 mb-4 flex-wrap">
+          <span id="broker-yield-badge" class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#30D158]/15 text-[#30D158]">
+            0% (0 ₽)
+          </span>
+          <span id="broker-sub-stats" class="text-xs text-[#848D99]">
+            Активы: <span id="broker-assets-sum" class="text-gray-300 font-medium font-mono">0 ₽</span> • Рубли: <span id="broker-cash-sum" class="text-gray-300 font-medium font-mono">0 ₽</span>
+          </span>
         </div>
 
         <!-- Переключатель таймфреймов -->
@@ -1478,17 +1423,14 @@
           <button type="button" onclick="setBrokerTimeframe('ALL')" class="broker-tf-btn flex-1 py-1 text-center rounded-lg bg-[#212430] text-white transition-all cursor-pointer" data-tf="ALL">Всё</button>
         </div>
 
-        <!-- Холст графика с поддержкой скраббинга -->
+        <!-- Холст графика -->
         <div class="w-full h-44 relative">
           <canvas id="brokerChart"></canvas>
         </div>
       </div>
 
-      <!-- СЕКЦИЯ: ПОРТФЕЛЬ АКЦИЙ И БПИФОВ (МОСКОВСКАЯ БИРЖА) -->
-      <div id="moex-portfolio-container" class="space-y-3"></div>
-
-      <!-- Контейнер для карточек пополнений брокера -->
-      <div id="broker-deposits-list" class="space-y-3 pb-6"></div>
+      <!-- СЕКЦИЯ: СОСТАВ ПОРТФЕЛЯ (МОСКОВСКАЯ БИРЖА + РУБЛИ) -->
+      <div id="moex-portfolio-container" class="space-y-3 pb-6"></div>
     </div>
 
     <!-- ЭКРАН ЦЕЛЕЙ -->
@@ -2708,86 +2650,119 @@
     </div>
   </div>
    
-  <!-- МОДАЛКА: ДОБАВЛЕНИЕ / РЕДАКТИРОВАНИЕ АКТИВА МОСБИРЖИ -->
+  <!-- МОДАЛКА: ДОБАВЛЕНИЕ / РЕДАКТИРОВАНИЕ АКТИВА (Т-БАНК СТИЛЬ) -->
   <div id="moex-asset-modal" class="fixed inset-0 bg-black/80 z-[120] hidden flex flex-col justify-center items-center p-4 backdrop-blur-sm animate-fade-in" onclick="if (event.target === this) closeMoexAssetModal();">
     <div class="bg-[#181B24] border border-[rgba(255,255,255,0.08)] w-full max-w-md rounded-3xl p-5 shadow-2xl relative" onclick="event.stopPropagation()">
-      <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center justify-between mb-3.5">
         <div class="flex items-center gap-2">
           <div class="w-8 h-8 rounded-xl bg-cyan-500/15 text-cyan-400 flex items-center justify-center">
             <i data-lucide="trending-up" class="w-4 h-4"></i>
           </div>
-          <h3 id="moex-modal-title" class="text-base font-bold text-white">Добавить актив Мосбиржи</h3>
+          <h3 id="moex-modal-title" class="text-base font-bold text-white">Добавить в портфель</h3>
         </div>
         <button type="button" onclick="closeMoexAssetModal()" class="w-8 h-8 rounded-full bg-[#212430] hover:bg-[#2A2D3C] text-gray-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors text-xs" title="Закрыть">✕</button>
+      </div>
+
+      <!-- Переключатель типа актива: Ценная бумага / Свободные рубли -->
+      <div class="grid grid-cols-2 bg-[#12151C] p-1 rounded-2xl border border-white/5 gap-1 mb-3.5">
+        <button type="button" id="tab-moex-security" onclick="setMoexModalMode('security')" class="py-2 px-2 rounded-xl text-xs font-semibold bg-[#212430] text-white transition-all cursor-pointer">
+          Ценная бумага
+        </button>
+        <button type="button" id="tab-moex-cash" onclick="setMoexModalMode('cash')" class="py-2 px-2 rounded-xl text-xs font-medium text-gray-400 hover:text-white transition-all cursor-pointer">
+          Свободные рубли
+        </button>
       </div>
 
       <form id="moex-asset-form" onsubmit="submitMoexAsset(event)" class="space-y-3.5">
         <input type="hidden" id="moex-asset-id" value="">
         <input type="hidden" id="moex-asset-type" value="stock">
 
-        <!-- Поиск бумаги -->
-        <div class="relative">
-          <label class="block text-[10px] text-[#848D99] uppercase font-bold mb-1">Поиск акции или БПИФ (тикер / название)</label>
+        <!-- БЛОК 1: ДЛЯ ЦЕННЫХ БУМАГ (МОСКОВСКАЯ БИРЖА) -->
+        <div id="moex-security-fields" class="space-y-3.5">
+          <!-- Поиск бумаги -->
           <div class="relative">
+            <label class="block text-[10px] text-[#848D99] uppercase font-bold mb-1">Поиск бумаги на Мосбирже</label>
+            <div class="relative">
+              <input type="text" 
+                     id="moex-asset-search" 
+                     placeholder="SBER, LKOH, TMOS, LQDT..." 
+                     autocomplete="off"
+                     oninput="handleMoexSearchInput(this.value)"
+                     class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white rounded-xl px-3 py-2.5 text-xs outline-none uppercase font-mono">
+              <div id="moex-search-spinner" class="hidden absolute right-3 top-3">
+                <i data-lucide="loader-2" class="w-3.5 h-3.5 text-gray-400 animate-spin"></i>
+              </div>
+            </div>
+            <!-- Выпадающий список результатов поиска -->
+            <div id="moex-search-results" class="hidden absolute left-0 right-0 top-full mt-1 bg-[#181B24] border border-[rgba(255,255,255,0.12)] rounded-xl shadow-2xl z-50 max-h-48 overflow-y-auto custom-scrollbar divide-y divide-white/5"></div>
+          </div>
+
+          <!-- Выбранная бумага (карточка подтверждения) -->
+          <div id="moex-selected-preview" class="hidden p-3 rounded-xl bg-[#12151C] border border-cyan-500/30 flex items-center justify-between">
+            <div class="min-w-0">
+              <div class="flex items-center gap-1.5">
+                <b id="moex-preview-ticker" class="text-white text-xs font-mono font-bold">SBER</b>
+                <span id="moex-preview-badge" class="text-[9px] px-1.5 py-0.5 rounded font-semibold bg-cyan-500/20 text-cyan-300">Акция</span>
+              </div>
+              <p id="moex-preview-name" class="text-[11px] text-gray-300 truncate mt-0.5">Сбербанк</p>
+            </div>
+            <div class="text-right">
+              <span class="text-[10px] text-gray-400 block">Котировка</span>
+              <b id="moex-preview-price" class="text-xs text-white font-mono">0 ₽</b>
+            </div>
+          </div>
+
+          <!-- Количество штук -->
+          <div>
+            <label class="block text-[10px] text-[#848D99] uppercase font-bold mb-1">Количество (шт.)</label>
+            <input type="number" 
+                   id="moex-asset-qty" 
+                   step="any" 
+                   min="0.0001" 
+                   placeholder="10" 
+                   oninput="updateMoexAssetCalculations()"
+                   class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white rounded-xl px-3 py-2 text-xs font-mono font-bold outline-none">
+          </div>
+
+          <!-- Средняя цена покупки (опционально) -->
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <label class="block text-[10px] text-[#848D99] uppercase font-bold">Цена покупки (₽/шт.)</label>
+              <span class="text-[10px] text-gray-500">Опционально</span>
+            </div>
             <input type="text" 
-                   id="moex-asset-search" 
-                   placeholder="Например: SBER, LKOH, TMOS, LQDT..." 
-                   autocomplete="off"
-                   oninput="handleMoexSearchInput(this.value)"
-                   class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white rounded-xl px-3 py-2 text-xs outline-none uppercase font-mono">
-            <div id="moex-search-spinner" class="hidden absolute right-3 top-2.5">
-              <i data-lucide="loader-2" class="w-3.5 h-3.5 text-gray-400 animate-spin"></i>
-            </div>
-          </div>
-          <!-- Выпадающий список результатов поиска -->
-          <div id="moex-search-results" class="hidden absolute left-0 right-0 top-full mt-1 bg-[#181B24] border border-[rgba(255,255,255,0.12)] rounded-xl shadow-2xl z-50 max-h-48 overflow-y-auto custom-scrollbar divide-y divide-white/5"></div>
-        </div>
-
-        <!-- Выбранная бумага (карточка подтверждения) -->
-        <div id="moex-selected-preview" class="hidden p-3 rounded-xl bg-[#12151C] border border-cyan-500/30 flex items-center justify-between">
-          <div class="min-w-0">
-            <div class="flex items-center gap-1.5">
-              <b id="moex-preview-ticker" class="text-white text-xs font-mono font-bold">SBER</b>
-              <span id="moex-preview-badge" class="text-[9px] px-1.5 py-0.5 rounded font-semibold bg-cyan-500/20 text-cyan-300">Акция</span>
-            </div>
-            <p id="moex-preview-name" class="text-[11px] text-gray-300 truncate mt-0.5">Сбербанк</p>
-          </div>
-          <div class="text-right">
-            <span class="text-[10px] text-gray-400 block">Текущая цена</span>
-            <b id="moex-preview-price" class="text-xs text-white font-mono">0 ₽</b>
+                   inputmode="decimal" 
+                   id="moex-asset-buy-price" 
+                   placeholder="Для расчета личной доходности" 
+                   oninput="formatSumInput(this); updateMoexAssetCalculations()"
+                   class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white rounded-xl px-3 py-2 text-xs font-mono outline-none">
           </div>
         </div>
 
-        <!-- Количество штук -->
-        <div>
-          <label class="block text-[10px] text-[#848D99] uppercase font-bold mb-1">Количество (шт.)</label>
-          <input type="number" 
-                 id="moex-asset-qty" 
-                 step="any" 
-                 min="0.0001" 
-                 placeholder="100" 
-                 required 
-                 oninput="updateMoexAssetCalculations()"
-                 class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white rounded-xl px-3 py-2 text-xs font-mono font-bold outline-none">
-        </div>
-
-        <!-- Средняя цена покупки (опционально) -->
-        <div>
-          <div class="flex items-center justify-between mb-1">
-            <label class="block text-[10px] text-[#848D99] uppercase font-bold">Средняя цена покупки (₽/шт.)</label>
-            <span class="text-[10px] text-gray-500">Необязательно</span>
+        <!-- БЛОК 2: ДЛЯ СВОБОДНЫХ ДЕНЕГ (КЭШ В РУБЛЯХ) -->
+        <div id="moex-cash-fields" class="hidden space-y-3.5">
+          <div>
+            <label class="block text-[10px] text-[#848D99] uppercase font-bold mb-1">Свободная сумма в портфеле (₽)</label>
+            <input type="text" 
+                   inputmode="decimal" 
+                   id="moex-cash-amount" 
+                   placeholder="0 ₽" 
+                   oninput="formatSumInput(this); updateMoexAssetCalculations()"
+                   class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white rounded-xl px-3 py-2.5 text-sm font-mono font-bold outline-none">
           </div>
-          <input type="text" 
-                 inputmode="decimal" 
-                 id="moex-asset-buy-price" 
-                 placeholder="Например: 275.50 ₽" 
-                 oninput="formatSumInput(this); updateMoexAssetCalculations()"
-                 class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white rounded-xl px-3 py-2 text-xs font-mono outline-none">
+          <div>
+            <label class="block text-[10px] text-[#848D99] uppercase font-bold mb-1">Название счета / остатка</label>
+            <input type="text" 
+                   id="moex-cash-name" 
+                   value="Свободные рубли" 
+                   placeholder="Например: Рубли (кэш), Остаток на счете" 
+                   class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white rounded-xl px-3 py-2 text-xs outline-none">
+          </div>
         </div>
 
         <!-- Итог позиции -->
         <div class="p-3 rounded-xl bg-[#12151C] border border-white/5 flex items-center justify-between text-xs">
-          <span class="text-[#848D99]">Рыночная стоимость:</span>
+          <span class="text-[#848D99]">Стоимость позиции:</span>
           <b id="moex-asset-total-value" class="text-sm font-bold text-white font-mono">0 ₽</b>
         </div>
 
@@ -3758,49 +3733,6 @@
   </div>
 
   <!-- МОДАЛЬНОЕ ОКНО РЕДАКТИРОВАНИЯ ТОЧКИ НА ГРАФИКЕ БРОКЕРА -->
-  <div id="broker-point-modal" onclick="if(event.target === this) closeEditBrokerPointModal()" class="fixed inset-0 bg-black/80 z-[150] hidden flex flex-col justify-center items-center p-4 animate-fade-in">
-    <div class="bg-[#181B24] border border-[rgba(255,255,255,0.08)] w-full max-w-sm rounded-3xl p-5 shadow-2xl">
-      <div class="flex items-center justify-between mb-3 pb-2 border-b border-[rgba(255,255,255,0.06)]">
-        <div>
-          <h3 id="edit-broker-title" class="font-bold text-white text-base">Точка на графике</h3>
-          <p id="edit-broker-subtitle" class="text-xs text-[#848D99] mt-0.5">Операция по брокерскому счету</p>
-        </div>
-        <button type="button" onclick="closeEditBrokerPointModal()" class="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-[#212430] cursor-pointer">
-          <i data-lucide="x" class="w-4 h-4"></i>
-        </button>
-      </div>
-
-      <form id="edit-broker-form" onsubmit="submitEditBrokerPoint(event)">
-        <input type="hidden" id="edit-broker-id" value="">
-        <input type="hidden" id="edit-broker-type" value="">
-
-        <div class="mb-3.5">
-          <label class="block text-[10px] text-[#848D99] uppercase font-bold mb-1">Дата операции</label>
-          <input type="text" id="edit-broker-date" data-datepicker="true" readonly required class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white rounded-xl p-3 outline-none text-xs cursor-pointer">
-        </div>
-
-        <div id="edit-broker-amount-wrap" class="mb-3.5 hidden">
-          <label class="block text-[10px] text-[#848D99] uppercase font-bold mb-1">Сумма пополнения (₽)</label>
-          <input type="text" inputmode="decimal" oninput="formatSumInput(this)" id="edit-broker-amount" placeholder="0 ₽" class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white rounded-xl p-3 outline-none text-sm font-bold">
-        </div>
-
-        <div class="mb-5">
-          <label id="edit-broker-balance-label" class="block text-[10px] text-[#848D99] uppercase font-bold mb-1">Баланс (₽)</label>
-          <input type="text" inputmode="decimal" oninput="formatSumInput(this)" id="edit-broker-balance" placeholder="0 ₽" required class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white rounded-xl p-3 outline-none text-sm font-bold">
-        </div>
-
-        <div class="flex items-center gap-2">
-          <button type="button" onclick="deleteBrokerPoint()" class="px-3.5 py-2.5 bg-[#FF453A]/15 hover:bg-[#FF453A]/25 text-[#FF453A] border border-[#FF453A]/20 rounded-xl text-xs font-semibold transition-colors cursor-pointer flex items-center justify-center gap-1 active:scale-95" title="Удалить точку">
-            <i data-lucide="trash-2" class="w-4 h-4"></i>
-            <span>Удалить</span>
-          </button>
-          <button type="button" onclick="closeEditBrokerPointModal()" class="flex-1 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 py-2.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer">Отмена</button>
-          <button type="submit" class="flex-1 bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white py-2.5 rounded-xl text-xs font-semibold shadow-md transition-all active:scale-95 cursor-pointer">Сохранить</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
   <!-- МОДАЛЬНОЕ ОКНО РЕДАКТИРОВАНИЯ ОПЕРАЦИИ (ТРАНЗАКЦИИ) -->
   <div id="tx-edit-modal" onclick="if(event.target === this) closeEditTxModal()" class="fixed inset-0 bg-black/80 z-[150] hidden flex flex-col justify-center items-center p-4 backdrop-blur-sm animate-fade-in">
     <div class="bg-[#181B24] border border-[rgba(255,255,255,0.08)] w-full max-w-sm rounded-3xl p-5 shadow-2xl max-h-[92dvh] flex flex-col">

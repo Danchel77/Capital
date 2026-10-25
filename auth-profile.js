@@ -93,7 +93,7 @@ async function loginWithGoogle() {
 
       await GoogleAuth.initialize({
         clientId: '129164761119-0collp5th27qd9o4ah8dronfctcfp3pv.apps.googleusercontent.com',
-        scopes: ['profile', 'email', 'https://www.googleapis.com/auth/generative-language'],
+        scopes: ['profile', 'email'],
         grantOfflineAccess: true
       });
 
@@ -138,7 +138,6 @@ async function loginWithGoogle() {
     const provider = new firebase.auth.GoogleAuthProvider();
     provider.addScope('profile');
     provider.addScope('email');
-    provider.addScope('https://www.googleapis.com/auth/generative-language');
     provider.setCustomParameters({
       prompt: 'select_account'
     });
