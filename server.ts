@@ -34,7 +34,7 @@ const server = http.createServer((req, res) => {
   }
 
   // Prevent directory traversal
-  const safePath = path.normalize(pathname).replace(/^(\.\.[\/\\])+/, '');
+  const safePath = path.normalize(pathname).replace(/^(\.\.[/\\|/])+/, '');
   let filePath = path.join(__dirname, safePath);
 
   // If path is a directory, check for index.html

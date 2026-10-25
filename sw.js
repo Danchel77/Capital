@@ -16,6 +16,7 @@ const STATIC_SHELL = [
   './investments.js',
   './budget.js',
   './statement-parser.js',
+  './gemini-service.js',
   './default-rules.js',
   './iconsSVG.js',
   './apk-features.js',

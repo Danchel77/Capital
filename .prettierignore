@@ -1,0 +1,10 @@
+node_modules
+.next
+android
+www
+bun.lock
+package-lock.json
+public
+dist
+build
+.husky

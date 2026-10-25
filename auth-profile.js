@@ -93,7 +93,7 @@ async function loginWithGoogle() {
 
       await GoogleAuth.initialize({
         clientId: '129164761119-0collp5th27qd9o4ah8dronfctcfp3pv.apps.googleusercontent.com',
-        scopes: ['profile', 'email'],
+        scopes: ['profile', 'email', 'https://www.googleapis.com/auth/generative-language'],
         grantOfflineAccess: true
       });
 
@@ -116,6 +116,16 @@ async function loginWithGoogle() {
         throw new Error('Android не вернул токен idToken от Google');
       }
 
+      const nativeAccessToken = googleUser?.authentication?.accessToken || googleUser?.accessToken;
+      if (nativeAccessToken) {
+        try {
+          localStorage.setItem('budget_google_access_token', nativeAccessToken);
+          window._googleAccessToken = nativeAccessToken;
+        } catch (_) {
+          /* ignore */
+        }
+      }
+
       const credential = firebase.auth.GoogleAuthProvider.credential(idToken);
       await auth.signInWithCredential(credential);
       const toast = document.getElementById('toast-container');
@@ -128,6 +138,7 @@ async function loginWithGoogle() {
     const provider = new firebase.auth.GoogleAuthProvider();
     provider.addScope('profile');
     provider.addScope('email');
+    provider.addScope('https://www.googleapis.com/auth/generative-language');
     provider.setCustomParameters({
       prompt: 'select_account'
     });
@@ -135,6 +146,15 @@ async function loginWithGoogle() {
     try {
       const result = await auth.signInWithPopup(provider);
       if (result && result.user) {
+        const webAccessToken = result.credential?.accessToken;
+        if (webAccessToken) {
+          try {
+            localStorage.setItem('budget_google_access_token', webAccessToken);
+            window._googleAccessToken = webAccessToken;
+          } catch (_) {
+            /* ignore */
+          }
+        }
         const toast = document.getElementById('toast-container');
         if (toast) toast.classList.add('hidden');
         showToast('Успешный вход через Google!');
@@ -229,6 +249,12 @@ function logoutUser() {
     try {
       if (typeof closeProfileModal === 'function') closeProfileModal();
       if (typeof resetGlobalCache === 'function') resetGlobalCache();
+      try {
+        localStorage.removeItem('budget_google_access_token');
+        window._googleAccessToken = null;
+      } catch (_) {
+        /* ignore */
+      }
       
       const txList = document.getElementById('transactions-list');
       if (txList) txList.innerHTML = '';
@@ -293,6 +319,12 @@ async function loadUserSettings(user) {
             await db.collection('users').doc(user.uid).update({ familyId: firebase.firestore.FieldValue.delete() });
             Cache.family = null;
           } else {
+            // Авто-миграция: если memberUids еще нет в документе семьи, обновляем его
+            if (!Array.isArray(famData.memberUids) || famData.memberUids.length === 0) {
+              const uids = members.map(m => m && m.uid).filter(Boolean);
+              famDoc.ref.update({ memberUids: uids }).catch(() => {});
+              famData.memberUids = uids;
+            }
             Cache.family = { id: famDoc.id, ...famData, members };
           }
         } else {
@@ -510,6 +542,7 @@ function openProfileModal() {
 
   // Обновляем блок семейного доступа
   renderFamilySettingsUI();
+  renderGeminiSettingsUI();
 
   if (dialog) {
     dialog.classList.remove('hidden');
@@ -664,8 +697,10 @@ async function saveProfileInfo(showToastSuccess = true) {
           }
           return m;
         });
-        await famRef.update({ members: updatedMembers });
+        const memberUids = updatedMembers.map(m => m && m.uid).filter(Boolean);
+        await famRef.update({ members: updatedMembers, memberUids });
         Cache.family.members = updatedMembers;
+        Cache.family.memberUids = memberUids;
       }
     }
 
@@ -1031,6 +1066,7 @@ async function submitCreateFamily() {
       code: code,
       ownerUid: user.uid,
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      memberUids: [user.uid],
       members: [
         {
           uid: user.uid,
@@ -1281,8 +1317,10 @@ async function submitJoinFamily() {
       });
 
       // Обновляем семью и выставляем флаг предложения перенастройки бюджета создателю
+      const memberUids = members.map(m => m && m.uid).filter(Boolean);
       await famDoc.ref.update({
         members: members,
+        memberUids: memberUids,
         needsBudgetReview: true,
         lastJoinedMember: {
           uid: user.uid,
@@ -1372,12 +1410,15 @@ function leaveFamilyGroup() {
               if (idx === 0) m.role = 'owner';
               else if (m.role === 'owner') m.role = 'member';
             });
+            const memberUids = members.map(m => m && m.uid).filter(Boolean);
             await db.collection('families').doc(famId).update({
               ownerUid: newOwner.uid,
-              members: members
+              members: members,
+              memberUids: memberUids
             });
           } else {
-            await db.collection('families').doc(famId).update({ members });
+            const memberUids = members.map(m => m && m.uid).filter(Boolean);
+            await db.collection('families').doc(famId).update({ members, memberUids });
           }
         }
       }
@@ -1526,14 +1567,18 @@ async function purgeUserDataAndAuthUser(user) {
                 if (idx === 0) m.role = 'owner';
                 else if (m.role === 'owner') m.role = 'member';
               });
+              const remainingUids = remainingMembers.map(m => m && m.uid).filter(Boolean);
               await db.collection('families').doc(familyId).update({
                 ownerUid: newOwner.uid,
-                members: remainingMembers
+                members: remainingMembers,
+                memberUids: remainingUids
               });
             } else {
               // Сценарий 1: Простой участник удаляет аккаунт -> выходит из группы
+              const remainingUids = remainingMembers.map(m => m && m.uid).filter(Boolean);
               await db.collection('families').doc(familyId).update({
-                members: remainingMembers
+                members: remainingMembers,
+                memberUids: remainingUids
               });
             }
           }
@@ -1749,6 +1794,78 @@ function openSubModalFromProfile(type) {
     if (typeof openBankPushModal === 'function') openBankPushModal({ fromProfile: true });
   }
 }
+
+function renderGeminiSettingsUI() {
+  if (typeof window.GeminiService === 'undefined') return;
+
+  const status = window.GeminiService.getStatus();
+  const badgeEl = document.getElementById('gemini-status-badge');
+  const descEl = document.getElementById('gemini-status-desc');
+  const keyInput = document.getElementById('gemini-api-key-input');
+
+  if (badgeEl) {
+    if (status.connected) {
+      badgeEl.textContent = status.label;
+      badgeEl.className =
+        'text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full whitespace-nowrap';
+    } else {
+      badgeEl.textContent = 'Не подключено';
+      badgeEl.className =
+        'text-[10px] font-bold text-gray-400 bg-white/5 border border-white/10 px-2 py-0.5 rounded-full whitespace-nowrap';
+    }
+  }
+
+  if (descEl) {
+    descEl.textContent = status.description;
+  }
+
+  if (keyInput) {
+    const savedKey =
+      window.Cache?.settings?.geminiApiKey ||
+      localStorage.getItem('budget_gemini_api_key') ||
+      '';
+    keyInput.value = savedKey;
+  }
+}
+
+function toggleGeminiManualKeyInput() {
+  const row = document.getElementById('gemini-manual-key-row');
+  if (row) {
+    row.classList.toggle('hidden');
+    if (!row.classList.contains('hidden')) {
+      const input = document.getElementById('gemini-api-key-input');
+      if (input) input.focus();
+    }
+  }
+}
+
+async function saveGeminiApiKey() {
+  const input = document.getElementById('gemini-api-key-input');
+  const key = (input?.value || '').trim();
+
+  try {
+    if (key) {
+      localStorage.setItem('budget_gemini_api_key', key);
+      if (window.Cache?.settings) {
+        window.Cache.settings.geminiApiKey = key;
+      }
+      showToast('API-ключ Gemini сохранен');
+    } else {
+      localStorage.removeItem('budget_gemini_api_key');
+      if (window.Cache?.settings) {
+        delete window.Cache.settings.geminiApiKey;
+      }
+      showToast('API-ключ удален');
+    }
+    renderGeminiSettingsUI();
+  } catch (_err) {
+    showToast('Ошибка сохранения ключа', true);
+  }
+}
+
+window.renderGeminiSettingsUI = renderGeminiSettingsUI;
+window.toggleGeminiManualKeyInput = toggleGeminiManualKeyInput;
+window.saveGeminiApiKey = saveGeminiApiKey;
 
 // ==========================================
 // Global Scope Exports

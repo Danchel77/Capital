@@ -3061,8 +3061,10 @@ function renderFilteredRows(transactions) {
               <span class="text-[13px] text-gray-100 font-semibold truncate leading-tight" title="${escapeHtml(tx.merchant)}">
                 ${escapeHtml(tx.merchant)}
               </span>
+              ${tx.processedByAi ? '<span class="inline-flex items-center gap-1 text-[10px] font-semibold text-indigo-300 bg-indigo-500/15 px-1.5 py-0.5 rounded-lg border border-indigo-500/25 whitespace-nowrap ml-1 flex-shrink-0" title="Очищено и сопоставлено через Gemini AI"><i data-lucide="sparkles" class="w-3 h-3 text-indigo-400"></i> AI</span>' : ''}
               ${tx.isTransfer ? '<span class="text-[10px] font-bold text-amber-300 bg-amber-500/15 px-2 py-0.5 rounded-lg border border-amber-500/30 whitespace-nowrap ml-auto">Перевод</span>' : ''}
               ${tx.isDuplicate ? `<span class="text-[10px] font-bold text-sky-200 bg-sky-500/15 px-2 py-0.5 rounded-lg border border-sky-400/30 whitespace-nowrap ml-auto" title="${escapeHtml(tx.duplicateReason || 'В базе')}">${escapeHtml(tx.duplicateReason || 'В базе')}</span>` : ''}
+              ${tx.aiAmbiguousDuplicate && !tx._aiDuplicateResolved ? '<span class="text-[10px] font-bold text-amber-200 bg-amber-500/20 px-2 py-0.5 rounded-lg border border-amber-400/40 whitespace-nowrap ml-auto">Похож на дубль</span>' : ''}
             </div>
           </div>
 
@@ -3148,6 +3150,178 @@ function renderFilteredRows(transactions) {
   if (typeof renderBankIcons === 'function') renderBankIcons();
   if (typeof lucide !== 'undefined') lucide.createIcons();
 }
+
+function renderAiDuplicateReviewCards(transactions) {
+  const container = document.getElementById('pdf-ai-duplicates-container');
+  if (!container) return;
+
+  const ambiguousTxs = (transactions || []).filter(
+    t => t && t.aiAmbiguousDuplicate && !t._aiDuplicateResolved
+  );
+  if (ambiguousTxs.length === 0) {
+    container.classList.add('hidden');
+    container.innerHTML = '';
+    return;
+  }
+
+  container.classList.remove('hidden');
+  let cardsHtml = `
+    <div class="p-3 rounded-2xl bg-gradient-to-r from-indigo-950/40 to-[#181B24] border border-indigo-500/30 shadow-lg space-y-2.5">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="w-6 h-6 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+          </div>
+          <span class="text-xs font-bold text-indigo-200">Нейросеть нашла похожие операции (${ambiguousTxs.length})</span>
+        </div>
+        <span class="text-[10px] text-gray-400">Проверьте, не дубликат ли это:</span>
+      </div>
+  `;
+
+  ambiguousTxs.forEach(tx => {
+    const dbItem = tx.aiAmbiguousDuplicate.dbItem || {};
+    const expl = tx.aiAmbiguousDuplicate.explanation || 'Совпадают дата и сумма покупки';
+    cardsHtml += `
+      <div class="p-2.5 rounded-xl bg-[#12151C] border border-white/5 space-y-2" id="ai-review-card-${tx._id}">
+        <div class="flex items-start justify-between gap-2 text-xs">
+          <div class="min-w-0 flex-1 space-y-1">
+            <div class="flex items-center gap-1.5 text-gray-300">
+              <span class="text-[#848D99] text-[11px]">В выписке:</span>
+              <b class="text-white truncate">${escapeHtml(tx.merchant)}</b>
+              <span class="font-mono text-gray-400 text-[11px]">${formatMoney(tx.amount)}</span>
+            </div>
+            <div class="flex items-center gap-1.5 text-gray-300">
+              <span class="text-[#848D99] text-[11px]">В базе:</span>
+              <b class="text-indigo-300 truncate">${escapeHtml(dbItem.comment || dbItem.merchant || 'Запись в базе')}</b>
+              <span class="font-mono text-gray-400 text-[11px]">${formatMoney(dbItem.amount || tx.amount)}</span>
+            </div>
+            <p class="text-[10px] text-gray-400 italic">${escapeHtml(expl)}</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 pt-1 border-t border-white/[0.04]">
+          <button type="button" onclick="resolveAiDuplicate('${tx._id}', true)" class="flex-1 py-1 px-2 rounded-lg bg-sky-500/15 hover:bg-sky-500/25 active:scale-95 text-sky-300 text-[11px] font-semibold transition-all border border-sky-500/25 cursor-pointer">
+            ✓ Да, это дубликат (не вносить)
+          </button>
+          <button type="button" onclick="resolveAiDuplicate('${tx._id}', false)" class="flex-1 py-1 px-2 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 active:scale-95 text-emerald-300 text-[11px] font-semibold transition-all border border-emerald-500/25 cursor-pointer">
+            + Нет, отдельная покупка
+          </button>
+        </div>
+      </div>
+    `;
+  });
+
+  cardsHtml += '</div>';
+  container.innerHTML = cardsHtml;
+  if (typeof lucide !== 'undefined') lucide.createIcons({ root: container });
+}
+
+function resolveAiDuplicate(txId, isDuplicate) {
+  const tx = (window._lastParsedTransactions || []).find(t => t._id === txId);
+  if (!tx) return;
+
+  tx._aiDuplicateResolved = true;
+  if (isDuplicate) {
+    tx.isDuplicate = true;
+    tx.duplicateReason = 'Дубликат (AI)';
+    tx.selected = false;
+  } else {
+    tx.isDuplicate = false;
+    delete tx.aiAmbiguousDuplicate;
+    tx.selected = true;
+  }
+
+  renderAiDuplicateReviewCards(window._lastParsedTransactions);
+  renderFilteredRows(window._lastParsedTransactions);
+  if (typeof window._updateHeaderSummary === 'function') {
+    window._updateHeaderSummary();
+  }
+}
+
+async function triggerGeminiEnhancement(transactions) {
+  if (!window.GeminiService || !window.GeminiService.isAvailable()) return;
+  if (!Array.isArray(transactions) || transactions.length === 0) return;
+
+  const categories = window.Cache?.categories?.expense || [];
+
+  try {
+    const aiResults = await window.GeminiService.batchCleanAndCategorize(transactions, categories);
+    transactions.forEach(tx => {
+      const ai = aiResults[tx._id];
+      if (ai) {
+        if (ai.merchant) tx.merchant = ai.merchant;
+        if (ai.category && ai.category !== 'Прочее') tx.category = ai.category;
+        if (ai.isTransfer) {
+          tx.isTransfer = true;
+          tx.selected = false;
+        }
+        tx.processedByAi = true;
+      }
+    });
+
+    const allDbItems = typeof getAllCachedTransactionsFlat === 'function'
+      ? getAllCachedTransactionsFlat()
+      : ((window.Cache?.transactions || []).flatMap(m => Array.isArray(m.items) ? m.items : []));
+
+    if (allDbItems && allDbItems.length > 0) {
+      const ambiguousPairs = [];
+      transactions.forEach(tx => {
+        if (tx.isDuplicate || tx.isTransfer) return;
+        const txDate = extractIsoDate(tx.date || tx.displayDate || tx.rawDate);
+        const txAmount = Math.abs(typeof parseAmount === 'function' ? parseAmount(tx.amount) : parseFloat(tx.amount) || 0);
+
+        const candidateDb = allDbItems.find(item => {
+          const itemDate = extractIsoDate(item.date || item.rawDate);
+          const itemAmount = Math.abs(typeof parseAmount === 'function' ? parseAmount(item.amount) : parseFloat(item.amount) || 0);
+          return itemDate === txDate && Math.abs(itemAmount - txAmount) < 0.05;
+        });
+
+        if (candidateDb) {
+          const dbText = (typeof getTxComment === 'function' ? getTxComment(candidateDb) : (candidateDb.comment || candidateDb.merchant || '')).trim();
+          const txText = (tx.merchant || tx.rawDetails || '').trim();
+          if (dbText && txText && dbText.toLowerCase() !== txText.toLowerCase()) {
+            ambiguousPairs.push({
+              pairId: tx._id,
+              date: txDate,
+              amount: txAmount,
+              statementText: txText,
+              dbComment: dbText,
+              candidateDbItem: candidateDb,
+            });
+          }
+        }
+      });
+
+      if (ambiguousPairs.length > 0) {
+        const dupEvaluations = await window.GeminiService.evaluateAmbiguousDuplicates(ambiguousPairs);
+        ambiguousPairs.forEach(pair => {
+          const evalRes = dupEvaluations[pair.pairId];
+          if (evalRes && evalRes.isSameExpense && evalRes.confidence >= 0.7) {
+            const tx = transactions.find(t => t._id === pair.pairId);
+            if (tx) {
+              tx.aiAmbiguousDuplicate = {
+                dbItem: pair.candidateDbItem,
+                explanation: evalRes.explanation,
+                confidence: evalRes.confidence,
+              };
+            }
+          }
+        });
+      }
+    }
+
+    renderAiDuplicateReviewCards(transactions);
+    renderFilteredRows(transactions);
+    if (typeof window._updateHeaderSummary === 'function') {
+      window._updateHeaderSummary();
+    }
+  } catch (err) {
+    console.warn('Gemini enhancement warning:', err);
+  }
+}
+
+window.renderAiDuplicateReviewCards = renderAiDuplicateReviewCards;
+window.resolveAiDuplicate = resolveAiDuplicate;
+window.triggerGeminiEnhancement = triggerGeminiEnhancement;
 
 function renderParsedTransactionsView(loadedStatementsOrFileName, transactions, bankConfig) {
   let loadedStatements = [];
@@ -3339,6 +3513,10 @@ function renderParsedTransactionsView(loadedStatementsOrFileName, transactions, 
   }
   if (typeof renderBankIcons === 'function') renderBankIcons();
   if (typeof lucide !== 'undefined') lucide.createIcons();
+
+  if (typeof triggerGeminiEnhancement === 'function') {
+    triggerGeminiEnhancement(transactions);
+  }
 }
 
 function toggleImportCatMenu(txId) {

@@ -147,6 +147,7 @@ window.Cache = {
 let Cache = window.Cache;
 
 function resetGlobalCache() {
+  stopRealtimeListeners();
   window.Cache = {
     transactions: [],
     categories: { expense: [], income: [] },
@@ -357,6 +358,7 @@ async function fetchAllData(isSilent = false) {
     if (typeof checkFamilyBudgetReviewPrompt === 'function') {
       checkFamilyBudgetReviewPrompt();
     }
+    initRealtimeListeners();
   } catch (err) {
     if (syncToastTimer) clearTimeout(syncToastTimer);
     if (!isSilent && typeof dismissToast === 'function') {
@@ -369,8 +371,141 @@ async function fetchAllData(isSilent = false) {
     } else if (!isSilent) {
       showToast("Нет подключения к сети", true);
     }
+    initRealtimeListeners();
   }
 }
+
+// ==========================================
+// Real-time Firestore Listeners (Family Sync)
+// ==========================================
+let _realtimeUnsubscribes = [];
+
+function stopRealtimeListeners() {
+  if (Array.isArray(_realtimeUnsubscribes) && _realtimeUnsubscribes.length > 0) {
+    _realtimeUnsubscribes.forEach(unsub => {
+      try {
+        if (typeof unsub === 'function') unsub();
+      } catch {}
+    });
+    _realtimeUnsubscribes = [];
+  }
+}
+
+function initRealtimeListeners() {
+  stopRealtimeListeners();
+
+  const user = auth?.currentUser;
+  if (!user || !db) return;
+
+  // 1. Слушатель транзакций (Transactions)
+  try {
+    const unsubTx = getUserCol('Transactions').onSnapshot(
+      { includeMetadataChanges: true },
+      (snapshot) => {
+        // Пропускаем незавершенные локальные записи — Optimistic UI уже обновил экран
+        if (snapshot.metadata.hasPendingWrites) return;
+
+        const changes = snapshot.docChanges();
+        if (changes.length === 0) return;
+
+        const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        Cache.transactions = processTransactions(data);
+
+        markTabsDirty();
+        const currentTab = (typeof window.getCurrentActiveTab === 'function')
+          ? window.getCurrentActiveTab()
+          : (localStorage.getItem('budget_active_tab') || 'budget');
+
+        if (currentTab === 'transactions' && typeof renderTransactions === 'function') {
+          renderTransactions();
+        } else if (currentTab === 'budget' && typeof renderBudgetTab === 'function') {
+          renderBudgetTab();
+        }
+
+        if (typeof window.syncWidgetData === 'function') {
+          window.syncWidgetData();
+        }
+
+        const syncTimeEl = document.getElementById('last-sync');
+        if (syncTimeEl) {
+          syncTimeEl.innerText = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+      },
+      (err) => {
+        console.warn('Realtime Transactions listener warning:', err);
+      }
+    );
+    _realtimeUnsubscribes.push(unsubTx);
+  } catch (err) {
+    console.warn('Не удалось подключить Realtime-слушатель Transactions:', err);
+  }
+
+  // 2. Слушатель бюджетного плана (BudgetPlan)
+  try {
+    const unsubPlan = getUserCol('BudgetPlan').onSnapshot(
+      { includeMetadataChanges: true },
+      (snapshot) => {
+        if (snapshot.metadata.hasPendingWrites) return;
+        const changes = snapshot.docChanges();
+        if (changes.length === 0) return;
+
+        Cache.budgetPlan = (!snapshot.empty && snapshot.docs[0]) ? snapshot.docs[0].data() : {};
+        if (typeof renderBudgetTab === 'function') {
+          renderBudgetTab();
+        }
+      },
+      (err) => console.warn('Realtime BudgetPlan listener warning:', err)
+    );
+    _realtimeUnsubscribes.push(unsubPlan);
+  } catch (err) {
+    console.warn('Не удалось подключить Realtime-слушатель BudgetPlan:', err);
+  }
+
+  // 3. Слушатель счетов и календаря (CalendarBills)
+  try {
+    const unsubBills = getUserCol('CalendarBills').onSnapshot(
+      { includeMetadataChanges: true },
+      (snapshot) => {
+        if (snapshot.metadata.hasPendingWrites) return;
+        const changes = snapshot.docChanges();
+        if (changes.length === 0) return;
+
+        Cache.calendarBills = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        if (typeof renderBudgetTab === 'function') {
+          renderBudgetTab();
+        }
+      },
+      (err) => console.warn('Realtime CalendarBills listener warning:', err)
+    );
+    _realtimeUnsubscribes.push(unsubBills);
+  } catch (err) {
+    console.warn('Не удалось подключить Realtime-слушатель CalendarBills:', err);
+  }
+
+  // 4. Слушатель документа семьи (если пользователь в семье)
+  if (Cache?.family?.id) {
+    try {
+      const unsubFam = db.collection('families').doc(Cache.family.id).onSnapshot(
+        (docSnap) => {
+          if (docSnap.exists) {
+            const famData = docSnap.data() || {};
+            const members = Array.isArray(famData.members) ? famData.members : [];
+            Cache.family = { id: docSnap.id, ...famData, members };
+            if (typeof updateHeaderProfileUI === 'function') updateHeaderProfileUI();
+            if (typeof renderFamilySettingsUI === 'function') renderFamilySettingsUI();
+          }
+        },
+        (err) => console.warn('Realtime Family listener warning:', err)
+      );
+      _realtimeUnsubscribes.push(unsubFam);
+    } catch (err) {
+      console.warn('Не удалось подключить Realtime-слушатель Family:', err);
+    }
+  }
+}
+
+window.initRealtimeListeners = initRealtimeListeners;
+window.stopRealtimeListeners = stopRealtimeListeners;
 
 // --- БД И ЛОГИКА ---
 async function fetchCollection(table) {

@@ -313,6 +313,7 @@
   <link rel="stylesheet" href="style.css?v=141">
   <script defer src="iconsSVG.js?v=141"></script>
   <script defer src="default-rules.js?v=141"></script>
+  <script defer src="gemini-service.js?v=141"></script>
   <script defer src="statement-parser.js?v=141"></script>
   
   <!-- Модули приложения -->
@@ -2458,6 +2459,9 @@
           </button>
         </div>
 
+        <!-- Контейнер карточек сверки сомнительных дублей от нейросети (Level 3 AI Review) -->
+        <div id="pdf-ai-duplicates-container" class="hidden space-y-2"></div>
+
         <!-- Уплотненный список строк -->
         <div id="pdf-debug-output" class="space-y-1.5 select-text pb-2">
           <!-- Сюда динамически выводятся компактные строки высотой ~52px -->
@@ -2849,6 +2853,39 @@
               <div class="w-11 h-6 bg-[#2A2D3C] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-[#30D158] after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
             </div>
           </label>
+
+          <!-- Интеллектуальный помощник (Google Gemini) -->
+          <div id="profile-gemini-card" class="p-3 sm:p-3.5 hover:bg-white/[0.01] transition-colors space-y-2.5">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="p-2 rounded-xl bg-indigo-500/15 text-indigo-400">
+                  <i data-lucide="sparkles" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+                </div>
+                <div class="text-left">
+                  <div class="flex items-center gap-2">
+                    <span class="text-[14px] sm:text-[15px] font-medium text-gray-200 block">Помощник Gemini AI</span>
+                    <span id="gemini-status-badge" class="text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap bg-white/5 text-gray-400">Проверка...</span>
+                  </div>
+                  <span id="gemini-status-desc" class="text-[11px] text-[#848D99] leading-tight block mt-0.5">Умная очистка выписок и дедупликация</span>
+                </div>
+              </div>
+              <button type="button" onclick="toggleGeminiManualKeyInput()" class="p-1.5 rounded-xl hover:bg-white/10 text-gray-400 hover:text-white transition-colors cursor-pointer" title="Настроить ключ вручную">
+                <i data-lucide="key-round" class="w-4 h-4"></i>
+              </button>
+            </div>
+
+            <!-- Раскрывающееся поле ввода ручного API-ключа -->
+            <div id="gemini-manual-key-row" class="hidden pt-2 border-t border-white/[0.04] space-y-2">
+              <div class="flex items-center gap-2">
+                <input type="password" id="gemini-api-key-input" placeholder="Ключ Google AI Studio (AIza...)" class="flex-1 bg-[#12151C] border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:border-[#6C5DD3] outline-none font-mono">
+                <button type="button" onclick="saveGeminiApiKey()" class="px-3 py-1.5 rounded-xl bg-[#6C5DD3] hover:bg-[#5E4FC9] active:scale-95 text-white text-xs font-semibold transition-all cursor-pointer">Сохранить</button>
+              </div>
+              <p class="text-[10px] text-gray-400 leading-normal">
+                При входе через Google подключение работает автоматически. Для ручного ввода можно бесплатно получить ключ в 
+                <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener" class="text-[#8C7DFF] underline hover:text-white">Google AI Studio</a>.
+              </p>
+            </div>
+          </div>
 
           <!-- Словарь категорий -->
           <button type="button" onclick="openSubModalFromProfile('rules')" class="w-full flex items-center justify-between p-3 sm:p-3.5 hover:bg-white/[0.01] transition-colors cursor-pointer">
