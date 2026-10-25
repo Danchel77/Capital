@@ -17,6 +17,7 @@ const STATIC_SHELL = [
   './broker.js',
   './moex-service.js',
   './goals.js',
+  './calendar-bills.js',
   './budget.js',
   './statement-parser.js',
   './banks/sber.js',
