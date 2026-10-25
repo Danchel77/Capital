@@ -142,7 +142,8 @@ window.Cache = {
   calendarBills: [],
   settings: {},
   userProfile: { displayName: 'Пользователь', avatarId: '' },
-  family: null
+  family: null,
+  brokerAssets: []
 };
 let Cache = window.Cache;
 
@@ -153,6 +154,7 @@ function resetGlobalCache() {
     categories: { expense: [], income: [] },
     deposits: [],
     broker: null,
+    brokerAssets: [],
     goals: [],
     categoryRules: [],
     budgetPlan: {},
@@ -319,7 +321,7 @@ function showLoadingScreen() {
 }
 
 async function fetchAllData(isSilent = false) {
-  const tables = ['Transactions', 'Deposits', 'Broker', 'Goals', 'Categories', 'CategoryRules', 'BudgetPlan', 'CalendarBills'];
+  const tables = ['Transactions', 'Deposits', 'Broker', 'Goals', 'Categories', 'CategoryRules', 'BudgetPlan', 'CalendarBills', 'BrokerAssets'];
 
   // ЭТАП 1: Мгновенное чтение из локального кэша IndexedDB (15-40 мс)
   try {
@@ -482,7 +484,28 @@ function initRealtimeListeners() {
     console.warn('Не удалось подключить Realtime-слушатель CalendarBills:', err);
   }
 
-  // 4. Слушатель документа семьи (если пользователь в семье)
+  // 4. Слушатель активов брокерского портфеля (BrokerAssets)
+  try {
+    const unsubAssets = getUserCol('BrokerAssets').onSnapshot(
+      { includeMetadataChanges: true },
+      (snapshot) => {
+        if (snapshot.metadata.hasPendingWrites) return;
+        const changes = snapshot.docChanges();
+        if (changes.length === 0) return;
+
+        Cache.brokerAssets = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        if (typeof renderBroker === 'function') {
+          renderBroker();
+        }
+      },
+      (err) => console.warn('Realtime BrokerAssets listener warning:', err)
+    );
+    _realtimeUnsubscribes.push(unsubAssets);
+  } catch (err) {
+    console.warn('Не удалось подключить Realtime-слушатель BrokerAssets:', err);
+  }
+
+  // 5. Слушатель документа семьи (если пользователь в семье)
   if (Cache?.family?.id) {
     try {
       const unsubFam = db.collection('families').doc(Cache.family.id).onSnapshot(
@@ -616,13 +639,14 @@ async function processOrSeedRules(snapshot) {
   return combined;
 }
 
-async function applySnapshotsToUI([txS, depS, brS, goalS, catS, rulesS, planS, billsS], fromServer = false) {
+async function applySnapshotsToUI([txS, depS, brS, goalS, catS, rulesS, planS, billsS, assetsS], fromServer = false) {
   const txData = txS.docs.map(d => ({ id: d.id, ...d.data() }));
   const depData = depS.docs.map(d => ({ id: d.id, ...d.data() }));
   const brData = brS.docs.map(d => ({ id: d.id, ...d.data() }));
   const goalData = goalS ? goalS.docs.map(d => ({ id: d.id, ...d.data() })) : [];
   const planData = planS && !planS.empty ? planS.docs[0].data() : {};
   const billsData = billsS ? billsS.docs.map(d => ({ id: d.id, ...d.data() })) : [];
+  const assetsData = assetsS && assetsS.docs ? assetsS.docs.map(d => ({ id: d.id, ...d.data() })) : [];
   
   const processedDeposits = processDeposits(depData, goalData);
   const processedBroker = processBroker(brData, goalData);
@@ -643,6 +667,7 @@ async function applySnapshotsToUI([txS, depS, brS, goalS, catS, rulesS, planS, b
     transactions: processTransactions(txData),
     deposits: processedDeposits,
     broker: processedBroker,
+    brokerAssets: assetsData,
     goals: processGoals(goalData),
     categories: categories,
     categoryRules: await processOrSeedRules(rulesS),

@@ -324,6 +324,7 @@
   <script defer src="app-updater.js?v=141"></script>
   <script defer src="apk-features.js?v=141"></script>
   <script defer src="transactions.js?v=141"></script>
+  <script defer src="moex-service.js?v=141"></script>
   <script defer src="investments.js?v=141"></script>
   <script defer src="budget.js?v=141"></script>
   <script defer src="app.js?v=141"></script>
@@ -1482,6 +1483,9 @@
           <canvas id="brokerChart"></canvas>
         </div>
       </div>
+
+      <!-- СЕКЦИЯ: ПОРТФЕЛЬ АКЦИЙ И БПИФОВ (МОСКОВСКАЯ БИРЖА) -->
+      <div id="moex-portfolio-container" class="space-y-3"></div>
 
       <!-- Контейнер для карточек пополнений брокера -->
       <div id="broker-deposits-list" class="space-y-3 pb-6"></div>
@@ -2704,6 +2708,112 @@
     </div>
   </div>
    
+  <!-- МОДАЛКА: ДОБАВЛЕНИЕ / РЕДАКТИРОВАНИЕ АКТИВА МОСБИРЖИ -->
+  <div id="moex-asset-modal" class="fixed inset-0 bg-black/80 z-[120] hidden flex flex-col justify-center items-center p-4 backdrop-blur-sm animate-fade-in" onclick="if (event.target === this) closeMoexAssetModal();">
+    <div class="bg-[#181B24] border border-[rgba(255,255,255,0.08)] w-full max-w-md rounded-3xl p-5 shadow-2xl relative" onclick="event.stopPropagation()">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-cyan-500/15 text-cyan-400 flex items-center justify-center">
+            <i data-lucide="trending-up" class="w-4 h-4"></i>
+          </div>
+          <h3 id="moex-modal-title" class="text-base font-bold text-white">Добавить актив Мосбиржи</h3>
+        </div>
+        <button type="button" onclick="closeMoexAssetModal()" class="w-8 h-8 rounded-full bg-[#212430] hover:bg-[#2A2D3C] text-gray-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors text-xs" title="Закрыть">✕</button>
+      </div>
+
+      <form id="moex-asset-form" onsubmit="submitMoexAsset(event)" class="space-y-3.5">
+        <input type="hidden" id="moex-asset-id" value="">
+        <input type="hidden" id="moex-asset-type" value="stock">
+
+        <!-- Поиск бумаги -->
+        <div class="relative">
+          <label class="block text-[10px] text-[#848D99] uppercase font-bold mb-1">Поиск акции или БПИФ (тикер / название)</label>
+          <div class="relative">
+            <input type="text" 
+                   id="moex-asset-search" 
+                   placeholder="Например: SBER, LKOH, TMOS, LQDT..." 
+                   autocomplete="off"
+                   oninput="handleMoexSearchInput(this.value)"
+                   class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white rounded-xl px-3 py-2 text-xs outline-none uppercase font-mono">
+            <div id="moex-search-spinner" class="hidden absolute right-3 top-2.5">
+              <i data-lucide="loader-2" class="w-3.5 h-3.5 text-gray-400 animate-spin"></i>
+            </div>
+          </div>
+          <!-- Выпадающий список результатов поиска -->
+          <div id="moex-search-results" class="hidden absolute left-0 right-0 top-full mt-1 bg-[#181B24] border border-[rgba(255,255,255,0.12)] rounded-xl shadow-2xl z-50 max-h-48 overflow-y-auto custom-scrollbar divide-y divide-white/5"></div>
+        </div>
+
+        <!-- Выбранная бумага (карточка подтверждения) -->
+        <div id="moex-selected-preview" class="hidden p-3 rounded-xl bg-[#12151C] border border-cyan-500/30 flex items-center justify-between">
+          <div class="min-w-0">
+            <div class="flex items-center gap-1.5">
+              <b id="moex-preview-ticker" class="text-white text-xs font-mono font-bold">SBER</b>
+              <span id="moex-preview-badge" class="text-[9px] px-1.5 py-0.5 rounded font-semibold bg-cyan-500/20 text-cyan-300">Акция</span>
+            </div>
+            <p id="moex-preview-name" class="text-[11px] text-gray-300 truncate mt-0.5">Сбербанк</p>
+          </div>
+          <div class="text-right">
+            <span class="text-[10px] text-gray-400 block">Текущая цена</span>
+            <b id="moex-preview-price" class="text-xs text-white font-mono">0 ₽</b>
+          </div>
+        </div>
+
+        <!-- Количество штук -->
+        <div>
+          <label class="block text-[10px] text-[#848D99] uppercase font-bold mb-1">Количество (шт.)</label>
+          <input type="number" 
+                 id="moex-asset-qty" 
+                 step="any" 
+                 min="0.0001" 
+                 placeholder="100" 
+                 required 
+                 oninput="updateMoexAssetCalculations()"
+                 class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white rounded-xl px-3 py-2 text-xs font-mono font-bold outline-none">
+        </div>
+
+        <!-- Средняя цена покупки (опционально) -->
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="block text-[10px] text-[#848D99] uppercase font-bold">Средняя цена покупки (₽/шт.)</label>
+            <span class="text-[10px] text-gray-500">Необязательно</span>
+          </div>
+          <input type="text" 
+                 inputmode="decimal" 
+                 id="moex-asset-buy-price" 
+                 placeholder="Например: 275.50 ₽" 
+                 oninput="formatSumInput(this); updateMoexAssetCalculations()"
+                 class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white rounded-xl px-3 py-2 text-xs font-mono outline-none">
+        </div>
+
+        <!-- Итог позиции -->
+        <div class="p-3 rounded-xl bg-[#12151C] border border-white/5 flex items-center justify-between text-xs">
+          <span class="text-[#848D99]">Рыночная стоимость:</span>
+          <b id="moex-asset-total-value" class="text-sm font-bold text-white font-mono">0 ₽</b>
+        </div>
+
+        <!-- Кнопки действий -->
+        <div class="flex gap-2 pt-2">
+          <button type="button" 
+                  id="moex-asset-delete-btn" 
+                  onclick="deleteCurrentMoexAsset()" 
+                  class="hidden py-2.5 px-3 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 active:scale-95 text-rose-300 text-xs font-semibold transition-all border border-rose-500/30 cursor-pointer">
+            Удалить
+          </button>
+          <button type="button" 
+                  onclick="closeMoexAssetModal()" 
+                  class="flex-1 py-2.5 px-3 rounded-xl bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 text-xs font-semibold transition-all cursor-pointer">
+            Отмена
+          </button>
+          <button type="submit" 
+                  id="moex-asset-save-btn" 
+                  class="flex-1 py-2.5 px-3 rounded-xl bg-[#6C5DD3] hover:bg-[#5b4ec2] active:scale-95 text-white text-xs font-semibold transition-all shadow-md shadow-[#6C5DD3]/25 cursor-pointer">
+            Сохранить
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Модальное окно Личного кабинета -->
   <div id="profile-dialog" class="fixed inset-0 bg-[#0F1117]/95 sm:bg-black/80 z-[150] hidden flex flex-col items-center justify-start overflow-y-auto overscroll-contain custom-scrollbar animate-fade-in p-0 sm:py-6 sm:px-4" onclick="if (event.target === this) closeProfileModal();">
     <div class="w-full max-w-[760px] mx-auto min-h-full sm:min-h-0 bg-[#0F1117] sm:bg-[#181B24] sm:border sm:border-[rgba(255,255,255,0.08)] sm:rounded-3xl sm:shadow-2xl flex flex-col relative pb-safe">

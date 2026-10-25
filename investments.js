@@ -843,11 +843,18 @@ function processBroker(ops) {
 function renderBroker() {
   const br = Cache?.broker;
   const history = br?.history || br?.deposits || [];
+  const assets = Cache?.brokerAssets || [];
   const mainCard = document.getElementById('broker-main-card');
   const emptyState = document.getElementById('broker-empty-state');
   const list = document.getElementById('broker-deposits-list');
 
-  if (!br || history.length === 0) {
+  // Отрисовка секции акций и БПИФов Мосбиржи
+  if (typeof renderMoexPortfolio === 'function') {
+    renderMoexPortfolio();
+  }
+
+  const hasAnyData = history.length > 0 || assets.length > 0;
+  if (!hasAnyData) {
     if (mainCard) mainCard.classList.add('hidden');
     if (emptyState) emptyState.classList.remove('hidden');
     if (list) {
@@ -862,9 +869,21 @@ function renderBroker() {
     return;
   }
 
-  if (mainCard) mainCard.classList.remove('hidden');
+  if (mainCard) {
+    if (history.length > 0) {
+      mainCard.classList.remove('hidden');
+    } else {
+      mainCard.classList.add('hidden');
+    }
+  }
   if (emptyState) emptyState.classList.add('hidden');
-  if (list) list.classList.remove('hidden');
+  if (list) {
+    if (history.length > 0) {
+      list.classList.remove('hidden');
+    } else {
+      list.classList.add('hidden');
+    }
+  }
 
   // Основной баланс
   const balEl = document.getElementById('broker-balance');
@@ -1882,3 +1901,548 @@ window.openEditBrokerPointModal = openEditBrokerPointModal;
 window.closeEditBrokerPointModal = closeEditBrokerPointModal;
 window.submitEditBrokerPoint = submitEditBrokerPoint;
 window.deleteBrokerPoint = deleteBrokerPoint;
+
+// ==========================================
+// MOEX Portfolio & Live Securities Engine
+// ==========================================
+let _moexSearchTimeout = null;
+let _currentSelectedMoexSecurity = null;
+
+function renderMoexPortfolio() {
+  const container = document.getElementById('moex-portfolio-container');
+  if (!container) return;
+
+  const assets = window.Cache?.brokerAssets || [];
+  if (assets.length === 0) {
+    container.innerHTML = `
+      <div class="card bg-[#181B24] border border-[rgba(255,255,255,0.06)] rounded-3xl p-5 shadow-sm space-y-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-xl bg-cyan-500/15 text-cyan-400 flex items-center justify-center">
+              <i data-lucide="building-2" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <h3 class="text-sm font-bold text-white leading-tight">Портфель Мосбиржи</h3>
+              <p class="text-[11px] text-[#848D99]">Акции и биржевые фонды (БПИФ)</p>
+            </div>
+          </div>
+          <button type="button" 
+                  onclick="openAddMoexAssetModal()" 
+                  class="py-2 px-3 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 active:scale-95 text-cyan-300 text-xs font-semibold transition-all border border-cyan-500/30 flex items-center gap-1.5 cursor-pointer shadow-sm">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+            <span>Добавить актив</span>
+          </button>
+        </div>
+        <p class="text-xs text-gray-400 leading-relaxed">
+          Добавьте ваши акции (SBER, LKOH...) и фонды (TMOS, LQDT...), чтобы отслеживать рыночную стоимость портфеля и дневную динамику в реальном времени.
+        </p>
+      </div>
+    `;
+    if (typeof lucide !== 'undefined') lucide.createIcons({ root: container });
+    return;
+  }
+
+  // Calculate totals
+  let totalValue = 0;
+  let totalCost = 0;
+  let hasAnyCost = false;
+
+  assets.forEach(asset => {
+    const qty = parseFloat(asset.quantity) || 0;
+    const price = parseFloat(asset.currentPrice) || parseFloat(asset.price) || 0;
+    const val = qty * price;
+    totalValue += val;
+
+    const buyPrice = parseFloat(asset.buyPrice) || 0;
+    if (buyPrice > 0) {
+      totalCost += qty * buyPrice;
+      hasAnyCost = true;
+    } else {
+      totalCost += val;
+    }
+  });
+
+  const totalProfit = totalValue - totalCost;
+  const totalProfitPct = totalCost > 0 ? (totalProfit / totalCost) * 100 : 0;
+  const isProfitPositive = totalProfit >= 0;
+
+  let html = `
+    <div class="card bg-[#181B24] border border-[rgba(255,255,255,0.06)] rounded-3xl p-5 shadow-sm space-y-4">
+      <!-- Верхняя сводка портфеля -->
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="text-[11px] text-[#848D99] uppercase tracking-wider font-bold">Активы на Мосбирже</span>
+            <span class="text-[10px] font-mono text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 px-2 py-0.5 rounded-full">
+              ${assets.length} поз.
+            </span>
+          </div>
+          <p class="text-2xl font-bold text-white tracking-tight mt-1 font-mono">${formatMoney(totalValue)}</p>
+          ${
+            hasAnyCost
+              ? `
+            <div class="flex items-center gap-2 mt-1">
+              <span class="text-xs font-semibold ${isProfitPositive ? 'text-[#30D158]' : 'text-[#FF453A]'}">
+                ${isProfitPositive ? '+' : ''}${totalProfitPct.toFixed(1)}% (${isProfitPositive ? '+' : ''}${formatMoney(totalProfit)})
+              </span>
+              <span class="text-[11px] text-[#848D99]">прибыль</span>
+            </div>
+          `
+              : ''
+          }
+        </div>
+
+        <!-- Кнопки действий -->
+        <div class="flex items-center gap-1.5 flex-shrink-0">
+          <button type="button" 
+                  id="btn-refresh-moex-quotes"
+                  onclick="refreshMoexQuotes()" 
+                  class="p-2 rounded-xl bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 hover:text-white transition-all cursor-pointer active:scale-95 border border-white/5" 
+                  title="Обновить котировки">
+            <i data-lucide="refresh-cw" class="w-4 h-4 text-cyan-400"></i>
+          </button>
+          <button type="button" 
+                  onclick="openAddMoexAssetModal()" 
+                  class="py-2 px-3 rounded-xl bg-[#6C5DD3] hover:bg-[#5b4ec2] active:scale-95 text-white text-xs font-semibold transition-all shadow-md flex items-center gap-1.5 cursor-pointer">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+            <span>Актив</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Быстрое действие: фиксация стоимости в историю баланса -->
+      <button type="button" 
+              onclick="syncMoexTotalToBrokerBalance()" 
+              class="w-full py-2 px-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/5 active:scale-[0.99] text-gray-300 hover:text-white text-xs transition-all flex items-center justify-between cursor-pointer">
+        <span class="flex items-center gap-1.5 text-[11px]">
+          <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-400"></i>
+          Зафиксировать эту стоимость в историю графика
+        </span>
+        <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-gray-500"></i>
+      </button>
+
+      <!-- Список позиций -->
+      <div class="space-y-2 pt-1 border-t border-[rgba(255,255,255,0.04)]">
+  `;
+
+  assets.forEach(asset => {
+    const qty = parseFloat(asset.quantity) || 0;
+    const price = parseFloat(asset.currentPrice) || parseFloat(asset.price) || 0;
+    const posValue = qty * price;
+    const sharePct = totalValue > 0 ? ((posValue / totalValue) * 100).toFixed(1) : 0;
+    const changePct = parseFloat(asset.changePct24h) || 0;
+    const isChangePos = changePct >= 0;
+    const isFund = asset.type === 'fund' || !!asset.isFund;
+
+    const buyPrice = parseFloat(asset.buyPrice) || 0;
+    let profitBadge = '';
+    if (buyPrice > 0) {
+      const posCost = qty * buyPrice;
+      const posProfit = posValue - posCost;
+      const posProfitPct = posCost > 0 ? (posProfit / posCost) * 100 : 0;
+      const isPosProfit = posProfit >= 0;
+      profitBadge = `<span class="text-[10px] font-semibold ${isPosProfit ? 'text-emerald-400' : 'text-rose-400'}">${isPosProfit ? '+' : ''}${posProfitPct.toFixed(1)}%</span>`;
+    }
+
+    html += `
+      <div class="p-3 rounded-2xl bg-[#12151C] border border-[rgba(255,255,255,0.04)] hover:border-cyan-500/30 transition-all cursor-pointer flex items-center justify-between gap-3 active:scale-[0.99]"
+           onclick="openEditMoexAssetModal('${asset.id}')">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-9 h-9 rounded-xl ${isFund ? 'bg-amber-500/15 text-amber-400' : 'bg-cyan-500/15 text-cyan-400'} flex items-center justify-center flex-shrink-0">
+            <i data-lucide="${isFund ? 'pie-chart' : 'building-2'}" class="w-4 h-4"></i>
+          </div>
+          <div class="min-w-0">
+            <div class="flex items-center gap-2">
+              <span class="text-sm font-bold text-white font-mono tracking-tight">${escapeHtml(asset.ticker)}</span>
+              <span class="text-[9px] px-1.5 py-0.5 rounded font-semibold ${isFund ? 'bg-amber-500/20 text-amber-300' : 'bg-cyan-500/20 text-cyan-300'}">
+                ${isFund ? 'БПИФ' : 'Акция'}
+              </span>
+              <span class="text-[10px] text-gray-500 font-mono">${sharePct}%</span>
+            </div>
+            <p class="text-xs text-[#848D99] truncate mt-0.5">${escapeHtml(asset.name || asset.shortName || asset.ticker)} • ${qty} шт.</p>
+          </div>
+        </div>
+
+        <div class="text-right flex-shrink-0">
+          <p class="text-sm font-bold text-white font-mono leading-tight">${formatMoney(posValue)}</p>
+          <div class="flex items-center justify-end gap-1.5 mt-0.5">
+            <span class="text-[10px] font-mono ${isChangePos ? 'text-[#30D158]' : 'text-[#FF453A]'}">
+              ${isChangePos ? '+' : ''}${changePct.toFixed(2)}%
+            </span>
+            ${profitBadge}
+          </div>
+        </div>
+      </div>
+    `;
+  });
+
+  html += `
+      </div>
+    </div>
+  `;
+
+  container.innerHTML = html;
+  if (typeof lucide !== 'undefined') lucide.createIcons({ root: container });
+}
+
+async function refreshMoexQuotes() {
+  const assets = window.Cache?.brokerAssets || [];
+  if (assets.length === 0) {
+    showToast('Нет активов для обновления');
+    return;
+  }
+
+  const btn = document.getElementById('btn-refresh-moex-quotes');
+  if (btn) {
+    const icon = btn.querySelector('svg, i');
+    if (icon) icon.classList.add('animate-spin');
+  }
+
+  showToast('Обновление котировок с Мосбиржи...', false, true);
+
+  try {
+    const tickers = assets.map(a => a.ticker);
+    const quotes = await window.MoexService.fetchBatchPrices(tickers);
+
+    let updatedCount = 0;
+    const updatePromises = [];
+
+    assets.forEach(asset => {
+      const q = quotes[asset.ticker];
+      if (q && q.price > 0) {
+        asset.currentPrice = q.price;
+        asset.changePct24h = q.changePct;
+        asset.updatedAt = Date.now();
+        updatedCount++;
+
+        const ref = getUserCol('BrokerAssets').doc(asset.id);
+        updatePromises.push(
+          ref.update({
+            currentPrice: q.price,
+            changePct24h: q.changePct,
+            updatedAt: Date.now(),
+          })
+        );
+      }
+    });
+
+    await Promise.all(updatePromises);
+    renderMoexPortfolio();
+    showToast(`Котировки обновлены (${updatedCount} бумаг)`);
+  } catch (err) {
+    console.warn('Ошибка обновления котировок MOEX:', err);
+    showToast('Не удалось обновить котировки Мосбиржи', true);
+  } finally {
+    if (btn) {
+      const icon = btn.querySelector('svg, i');
+      if (icon) icon.classList.remove('animate-spin');
+    }
+  }
+}
+
+async function syncMoexTotalToBrokerBalance() {
+  const assets = window.Cache?.brokerAssets || [];
+  if (assets.length === 0) return;
+
+  let totalValue = 0;
+  assets.forEach(asset => {
+    const qty = parseFloat(asset.quantity) || 0;
+    const price = parseFloat(asset.currentPrice) || parseFloat(asset.price) || 0;
+    totalValue += qty * price;
+  });
+
+  if (totalValue <= 0) return;
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  showDialog(
+    'Фиксация баланса',
+    `Зафиксировать текущую стоимость акций (${formatMoney(totalValue)}) как новую точку баланса на сегодня (${todayStr})?`,
+    true,
+    async () => {
+      try {
+        const docRef = getUserCol('Broker').doc();
+        await docRef.set({
+          type: 'Баланс',
+          date: todayStr,
+          amount: totalValue,
+          balance: totalValue,
+          timestamp: Date.now(),
+        });
+        showToast('Баланс портфеля зафиксирован в графике!');
+        if (typeof fetchAllData === 'function') {
+          await fetchAllData(true);
+        }
+      } catch (err) {
+        console.warn('Ошибка фиксации баланса:', err);
+        showToast('Не удалось сохранить баланс', true);
+      }
+    }
+  );
+}
+
+function openAddMoexAssetModal() {
+  _currentSelectedMoexSecurity = null;
+  const modal = document.getElementById('moex-asset-modal');
+  const form = document.getElementById('moex-asset-form');
+  const title = document.getElementById('moex-modal-title');
+  const deleteBtn = document.getElementById('moex-asset-delete-btn');
+  const searchInput = document.getElementById('moex-asset-search');
+  const preview = document.getElementById('moex-selected-preview');
+
+  if (form) form.reset();
+  document.getElementById('moex-asset-id').value = '';
+  if (title) title.textContent = 'Добавить актив Мосбиржи';
+  if (deleteBtn) deleteBtn.classList.add('hidden');
+  if (preview) preview.classList.add('hidden');
+  if (searchInput) searchInput.disabled = false;
+
+  document.getElementById('moex-asset-total-value').textContent = '0 ₽';
+
+  if (modal) {
+    modal.classList.remove('hidden');
+    if (searchInput) searchInput.focus();
+  }
+  if (typeof lucide !== 'undefined') lucide.createIcons({ root: modal });
+}
+
+function openEditMoexAssetModal(assetId) {
+  const asset = (window.Cache?.brokerAssets || []).find(a => a.id === assetId);
+  if (!asset) return;
+
+  _currentSelectedMoexSecurity = {
+    ticker: asset.ticker,
+    shortName: asset.name || asset.ticker,
+    fullName: asset.fullName || asset.name,
+    isFund: asset.type === 'fund',
+    currentPrice: asset.currentPrice || 0,
+    changePct: asset.changePct24h || 0,
+  };
+
+  const modal = document.getElementById('moex-asset-modal');
+  const title = document.getElementById('moex-modal-title');
+  const deleteBtn = document.getElementById('moex-asset-delete-btn');
+  const searchInput = document.getElementById('moex-asset-search');
+  const preview = document.getElementById('moex-selected-preview');
+
+  document.getElementById('moex-asset-id').value = asset.id;
+  document.getElementById('moex-asset-type').value = asset.type || 'stock';
+  if (searchInput) {
+    searchInput.value = asset.ticker;
+    searchInput.disabled = true; // При редактировании тикер фиксирован
+  }
+
+  if (preview) {
+    preview.classList.remove('hidden');
+    document.getElementById('moex-preview-ticker').textContent = asset.ticker;
+    document.getElementById('moex-preview-name').textContent = asset.name || asset.ticker;
+    document.getElementById('moex-preview-badge').textContent = asset.type === 'fund' ? 'БПИФ' : 'Акция';
+    document.getElementById('moex-preview-price').textContent = `${formatMoney(asset.currentPrice || 0)}/шт.`;
+  }
+
+  document.getElementById('moex-asset-qty').value = asset.quantity || 1;
+  const buyInput = document.getElementById('moex-asset-buy-price');
+  if (buyInput) {
+    buyInput.value = asset.buyPrice ? `${formatMoney(asset.buyPrice)}` : '';
+  }
+
+  if (title) title.textContent = `Редактировать ${asset.ticker}`;
+  if (deleteBtn) deleteBtn.classList.remove('hidden');
+
+  updateMoexAssetCalculations();
+
+  if (modal) modal.classList.remove('hidden');
+  if (typeof lucide !== 'undefined') lucide.createIcons({ root: modal });
+}
+
+function closeMoexAssetModal() {
+  const modal = document.getElementById('moex-asset-modal');
+  if (modal) modal.classList.add('hidden');
+  const results = document.getElementById('moex-search-results');
+  if (results) results.classList.add('hidden');
+}
+
+function handleMoexSearchInput(value) {
+  clearTimeout(_moexSearchTimeout);
+  const resultsDiv = document.getElementById('moex-search-results');
+  const spinner = document.getElementById('moex-search-spinner');
+
+  if (!value || value.trim().length < 2) {
+    if (resultsDiv) resultsDiv.classList.add('hidden');
+    if (spinner) spinner.classList.add('hidden');
+    return;
+  }
+
+  if (spinner) spinner.classList.remove('hidden');
+
+  _moexSearchTimeout = setTimeout(async () => {
+    try {
+      const items = await window.MoexService.searchSecurities(value);
+      if (spinner) spinner.classList.add('hidden');
+
+      if (!resultsDiv) return;
+      if (items.length === 0) {
+        resultsDiv.innerHTML = '<div class="p-3 text-center text-xs text-gray-400">Ничего не найдено на Мосбирже</div>';
+        resultsDiv.classList.remove('hidden');
+        return;
+      }
+
+      resultsDiv.innerHTML = items
+        .map(
+          item => `
+          <div class="p-2.5 hover:bg-white/5 active:bg-white/10 transition-colors cursor-pointer flex items-center justify-between"
+               onclick="selectMoexSearchResult('${escapeHtml(item.ticker)}', '${escapeHtml(item.shortName)}', ${item.isFund})">
+            <div>
+              <div class="flex items-center gap-1.5">
+                <b class="text-xs text-white font-mono">${escapeHtml(item.ticker)}</b>
+                <span class="text-[9px] px-1 py-0.5 rounded font-semibold ${item.isFund ? 'bg-amber-500/20 text-amber-300' : 'bg-cyan-500/20 text-cyan-300'}">
+                  ${item.isFund ? 'БПИФ' : 'Акция'}
+                </span>
+              </div>
+              <p class="text-[11px] text-gray-400 truncate max-w-[240px]">${escapeHtml(item.fullName || item.shortName)}</p>
+            </div>
+            <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-gray-500"></i>
+          </div>
+        `
+        )
+        .join('');
+
+      resultsDiv.classList.remove('hidden');
+      if (typeof lucide !== 'undefined') lucide.createIcons({ root: resultsDiv });
+    } catch (_e) {
+      if (spinner) spinner.classList.add('hidden');
+    }
+  }, 250);
+}
+
+async function selectMoexSearchResult(ticker, shortName, isFund) {
+  _currentSelectedMoexSecurity = { ticker, shortName, isFund };
+
+  const resultsDiv = document.getElementById('moex-search-results');
+  if (resultsDiv) resultsDiv.classList.add('hidden');
+
+  const searchInput = document.getElementById('moex-asset-search');
+  if (searchInput) searchInput.value = ticker;
+
+  document.getElementById('moex-asset-type').value = isFund ? 'fund' : 'stock';
+
+  const preview = document.getElementById('moex-selected-preview');
+  if (preview) {
+    preview.classList.remove('hidden');
+    document.getElementById('moex-preview-ticker').textContent = ticker;
+    document.getElementById('moex-preview-name').textContent = shortName;
+    document.getElementById('moex-preview-badge').textContent = isFund ? 'БПИФ' : 'Акция';
+    document.getElementById('moex-preview-price').textContent = 'Загрузка...';
+  }
+
+  // Fetch live price immediately
+  const quote = await window.MoexService.fetchSecurityPrice(ticker);
+  if (quote && quote.price > 0) {
+    _currentSelectedMoexSecurity.currentPrice = quote.price;
+    _currentSelectedMoexSecurity.changePct = quote.changePct;
+    document.getElementById('moex-preview-price').textContent = `${formatMoney(quote.price)}/шт.`;
+  } else {
+    document.getElementById('moex-preview-price').textContent = '—';
+  }
+
+  updateMoexAssetCalculations();
+}
+
+function updateMoexAssetCalculations() {
+  const qtyInput = document.getElementById('moex-asset-qty');
+  const qty = parseFloat(qtyInput?.value) || 0;
+  const price = _currentSelectedMoexSecurity?.currentPrice || 0;
+  const total = qty * price;
+
+  const totalEl = document.getElementById('moex-asset-total-value');
+  if (totalEl) totalEl.textContent = formatMoney(total);
+}
+
+async function submitMoexAsset(e) {
+  e.preventDefault();
+  const idInput = document.getElementById('moex-asset-id');
+  const existingId = idInput?.value || null;
+
+  if (!_currentSelectedMoexSecurity?.ticker) {
+    showToast('Выберите ценную бумагу из списка поиска', true);
+    return;
+  }
+
+  const qty = parseFloat(document.getElementById('moex-asset-qty')?.value) || 0;
+  if (qty <= 0) {
+    showToast('Укажите количество бумаг больше 0', true);
+    return;
+  }
+
+  const buyPriceRaw = document.getElementById('moex-asset-buy-price')?.value;
+  const buyPrice = typeof parseAmount === 'function' ? parseAmount(buyPriceRaw) : parseFloat(buyPriceRaw) || 0;
+
+  const assetData = {
+    ticker: _currentSelectedMoexSecurity.ticker,
+    name: _currentSelectedMoexSecurity.shortName || _currentSelectedMoexSecurity.ticker,
+    type: document.getElementById('moex-asset-type')?.value || 'stock',
+    quantity: qty,
+    buyPrice: buyPrice || 0,
+    currentPrice: _currentSelectedMoexSecurity.currentPrice || 0,
+    changePct24h: _currentSelectedMoexSecurity.changePct || 0,
+    updatedAt: Date.now(),
+  };
+
+  const saveBtn = document.getElementById('moex-asset-save-btn');
+  if (saveBtn) saveBtn.disabled = true;
+
+  try {
+    const col = getUserCol('BrokerAssets');
+    if (existingId) {
+      await col.doc(existingId).update(assetData);
+      showToast(`${assetData.ticker} обновлен`);
+    } else {
+      await col.add(assetData);
+      showToast(`${assetData.ticker} добавлен в портфель`);
+    }
+
+    closeMoexAssetModal();
+    if (typeof fetchAllData === 'function') {
+      await fetchAllData(true);
+    }
+  } catch (err) {
+    console.warn('Ошибка сохранения актива:', err);
+    showToast('Не удалось сохранить актив', true);
+  } finally {
+    if (saveBtn) saveBtn.disabled = false;
+  }
+}
+
+async function deleteCurrentMoexAsset() {
+  const id = document.getElementById('moex-asset-id')?.value;
+  if (!id) return;
+
+  const asset = (window.Cache?.brokerAssets || []).find(a => a.id === id);
+  const ticker = asset?.ticker || 'актив';
+
+  showDialog('Удаление', `Удалить ${ticker} из портфеля?`, true, async () => {
+    try {
+      await getUserCol('BrokerAssets').doc(id).delete();
+      closeMoexAssetModal();
+      showToast(`${ticker} удален`);
+      if (typeof fetchAllData === 'function') {
+        await fetchAllData(true);
+      }
+    } catch (err) {
+      console.warn('Ошибка удаления актива:', err);
+      showToast('Не удалось удалить актив', true);
+    }
+  });
+}
+
+window.renderMoexPortfolio = renderMoexPortfolio;
+window.refreshMoexQuotes = refreshMoexQuotes;
+window.syncMoexTotalToBrokerBalance = syncMoexTotalToBrokerBalance;
+window.openAddMoexAssetModal = openAddMoexAssetModal;
+window.openEditMoexAssetModal = openEditMoexAssetModal;
+window.closeMoexAssetModal = closeMoexAssetModal;
+window.handleMoexSearchInput = handleMoexSearchInput;
+window.selectMoexSearchResult = selectMoexSearchResult;
+window.updateMoexAssetCalculations = updateMoexAssetCalculations;
+window.submitMoexAsset = submitMoexAsset;
+window.deleteCurrentMoexAsset = deleteCurrentMoexAsset;
+
