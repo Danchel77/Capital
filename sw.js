@@ -18,6 +18,13 @@ const STATIC_SHELL = [
   './moex-service.js',
   './budget.js',
   './statement-parser.js',
+  './banks/sber.js',
+  './banks/tbank.js',
+  './banks/alfa.js',
+  './banks/vtb.js',
+  './banks/ozon.js',
+  './banks/gpb.js',
+  './banks/yandex.js',
   './gemini-service.js',
   './default-rules.js',
   './iconsSVG.js',
@@ -28,51 +35,54 @@ const STATIC_SHELL = [
   './favicon.svg',
   './icon.svg',
   './icon-pwa.svg',
-  './icon-pwa-maskable.svg'
+  './icon-pwa-maskable.svg',
 ];
 
 // Установка: Предзагрузка критического App Shell в Cache Storage
-self.addEventListener('install', (event) => {
+self.addEventListener('install', event => {
   self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
+    caches.open(CACHE_NAME).then(cache => {
       return cache.addAll(STATIC_SHELL);
     })
   );
 });
 
 // Активация: Очистка старых версий кэша и немедленный перехват управления клиентами
-self.addEventListener('activate', (event) => {
+self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys.map((key) => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key);
-          }
-        })
-      );
-    }).then(() => {
-      return self.clients.claim();
-    })
+    caches
+      .keys()
+      .then(keys => {
+        return Promise.all(
+          keys.map(key => {
+            if (key !== CACHE_NAME) {
+              return caches.delete(key);
+            }
+          })
+        );
+      })
+      .then(() => {
+        return self.clients.claim();
+      })
   );
 });
 
 // Прием сообщений от клиентских вкладок (мгновенная активация по требованию)
-self.addEventListener('message', (event) => {
+self.addEventListener('message', event => {
   if (event.data && (event.data === 'skipWaiting' || event.data.type === 'SKIP_WAITING')) {
     self.skipWaiting();
   }
 });
 
 // Обработка клика по уведомлению: переход в приложение и открытие нужной вкладки
-self.addEventListener('notificationclick', (event) => {
+self.addEventListener('notificationclick', event => {
   event.notification.close();
   const targetTab = event.notification.data?.tab || '';
   const urlToOpen = event.notification.data?.url || './';
 
   event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(windowClients => {
       for (const client of windowClients) {
         if (client.url.includes(self.location.origin) && 'focus' in client) {
           if (targetTab) {
@@ -89,7 +99,7 @@ self.addEventListener('notificationclick', (event) => {
 });
 
 // Обработка сетевых запросов
-self.addEventListener('fetch', (event) => {
+self.addEventListener('fetch', event => {
   const request = event.request;
   const url = new URL(request.url);
 
@@ -107,20 +117,22 @@ self.addEventListener('fetch', (event) => {
   // 1. Для внешних CDN скриптов и шрифтов (Lucide, Chart.js, PDF.js, Google Fonts, Tailwind)
   if (url.origin !== self.location.origin) {
     event.respondWith(
-      caches.match(request).then((cachedResponse) => {
+      caches.match(request).then(cachedResponse => {
         if (cachedResponse) return cachedResponse;
 
-        return fetch(request).then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            const responseClone = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(request, responseClone);
-            });
-          }
-          return networkResponse;
-        }).catch(() => {
-          return cachedResponse || new Response('', { status: 408, statusText: 'Offline' });
-        });
+        return fetch(request)
+          .then(networkResponse => {
+            if (networkResponse && networkResponse.status === 200) {
+              const responseClone = networkResponse.clone();
+              caches.open(CACHE_NAME).then(cache => {
+                cache.put(request, responseClone);
+              });
+            }
+            return networkResponse;
+          })
+          .catch(() => {
+            return cachedResponse || new Response('', { status: 408, statusText: 'Offline' });
+          });
       })
     );
     return;
@@ -129,32 +141,39 @@ self.addEventListener('fetch', (event) => {
   // 2. Для навигации (HTML страницы): Network-First с немедленным обновлением кэша
   if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request).then((networkResponse) => {
-        if (networkResponse && networkResponse.status === 200) {
-          const responseClone = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, responseClone));
-        }
-        return networkResponse;
-      }).catch(async () => {
-        const cached = await caches.match(request);
-        return cached || (await caches.match('./index.html')) || (await caches.match('./'));
-      })
+      fetch(request)
+        .then(networkResponse => {
+          if (networkResponse && networkResponse.status === 200) {
+            const responseClone = networkResponse.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(request, responseClone));
+          }
+          return networkResponse;
+        })
+        .catch(async () => {
+          const cached = await caches.match(request);
+          return cached || (await caches.match('./index.html')) || (await caches.match('./'));
+        })
     );
     return;
   }
 
   // 3. Для локальных статических файлов (JS, CSS, SVG, JSON): Network-First с мгновенным переключением на Cache в офлайне
   event.respondWith(
-    fetch(request).then((networkResponse) => {
-      if (networkResponse && networkResponse.status === 200) {
-        const responseClone = networkResponse.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(request, responseClone));
-      }
-      return networkResponse;
-    }).catch(async () => {
-      const cached = await caches.match(request);
-      if (cached) return cached;
-      return (await caches.match(request, { ignoreSearch: true })) || (await caches.match('./index.html'));
-    })
+    fetch(request)
+      .then(networkResponse => {
+        if (networkResponse && networkResponse.status === 200) {
+          const responseClone = networkResponse.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(request, responseClone));
+        }
+        return networkResponse;
+      })
+      .catch(async () => {
+        const cached = await caches.match(request);
+        if (cached) return cached;
+        return (
+          (await caches.match(request, { ignoreSearch: true })) ||
+          (await caches.match('./index.html'))
+        );
+      })
   );
 });

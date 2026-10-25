@@ -113,7 +113,7 @@ export default [
 
   // Browser Vanilla JS scripts
   {
-    files: ['*.js'],
+    files: ['*.js', 'banks/**/*.js'],
     plugins: {
       custom: customEmojiPlugin,
     },

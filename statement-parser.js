@@ -4,7 +4,8 @@
  */
 
 if (window.pdfjsLib) {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 }
 
 // -------------------------------------------------------------
@@ -21,7 +22,7 @@ class StatementExtractor {
     for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
       const page = await pdf.getPage(pageNum);
       const textContent = await page.getTextContent();
-      
+
       const sortedItems = textContent.items.filter(it => it.str && it.str.trim().length > 0);
       sortedItems.sort((a, b) => {
         if (Math.abs(a.transform[5] - b.transform[5]) > Y_TOLERANCE) {
@@ -69,7 +70,7 @@ function getActiveCategories(type = 'Расход') {
   if (!cats) {
     return type === 'Доход' ? ['Зарплата', 'Другое'] : ['Продукты', 'Другое'];
   }
-  const list = type === 'Доход' ? (cats.income || []) : (cats.expense || []);
+  const list = type === 'Доход' ? cats.income || [] : cats.expense || [];
   const names = list.map(c => (typeof c === 'string' ? c : c?.name)).filter(Boolean);
   return [...new Set(names)];
 }
@@ -85,48 +86,52 @@ function getDynamicCategoryIcon(catName) {
     const found = all.find(c => (typeof c === 'string' ? c === catName : c?.name === catName));
     if (found) {
       const rawIcon = typeof found === 'object' ? found.icon : null;
-      if (rawIcon && rawIcon !== '📦' && rawIcon !== 'package') return rawIcon;
+      if (rawIcon && rawIcon !== 'package') return rawIcon;
     }
   }
   const defaultIcons = {
-    'Продукты': 'shopping-cart',
+    Продукты: 'shopping-cart',
     'Кафе и рестораны': 'utensils',
-    'Маркетплейсы': 'shopping-bag',
-    'Транспорт': 'car',
-    'Жилье': 'home',
-    'ЖКХ': 'home',
-    'Одежда': 'shirt',
-    'Здоровье': 'heart-pulse',
-    'Развлечения': 'film',
-    'Другое': 'tag',
-    'Зарплата': 'wallet',
-    'Возврат': 'rotate-ccw',
-    'Кэшбек': 'sparkles',
+    Маркетплейсы: 'shopping-bag',
+    Транспорт: 'car',
+    Жилье: 'home',
+    ЖКХ: 'home',
+    Одежда: 'shirt',
+    Здоровье: 'heart-pulse',
+    Развлечения: 'film',
+    Другое: 'tag',
+    Зарплата: 'wallet',
+    Возврат: 'rotate-ccw',
+    Кэшбек: 'sparkles',
     'Начисление процентов': 'percent',
-    'Проценты': 'percent',
-    'Капитализация': 'percent',
+    Проценты: 'percent',
+    Капитализация: 'percent',
     'Капитализация процентов': 'percent',
-    'Вклады': 'landmark',
-    'Дивиденды': 'trending-up',
-    'Инвестиции': 'line-chart',
-    'Подписки': 'credit-card',
-    'Связь': 'phone',
-    'Образование': 'graduation-cap',
-    'Подарки': 'gift',
-    'Семья': 'users',
-    'Дети': 'baby',
-    'Красота': 'sparkles',
-    'Спорт': 'dumbbell',
-    'Авто': 'car',
-    'Путешествия': 'plane',
-    'Ремонт': 'hammer',
-    'Техника': 'smartphone',
-    'Перевод': 'arrow-left-right'
+    Вклады: 'landmark',
+    Дивиденды: 'trending-up',
+    Инвестиции: 'line-chart',
+    Подписки: 'credit-card',
+    Связь: 'phone',
+    Образование: 'graduation-cap',
+    Подарки: 'gift',
+    Семья: 'users',
+    Дети: 'baby',
+    Красота: 'sparkles',
+    Спорт: 'dumbbell',
+    Авто: 'car',
+    Путешествия: 'plane',
+    Ремонт: 'hammer',
+    Техника: 'smartphone',
+    Перевод: 'arrow-left-right',
   };
   if (defaultIcons[catName]) return defaultIcons[catName];
   const lower = String(catName).toLowerCase();
   for (const [k, v] of Object.entries(defaultIcons)) {
-    if (k.toLowerCase() === lower || lower.includes(k.toLowerCase()) || k.toLowerCase().includes(lower)) {
+    if (
+      k.toLowerCase() === lower ||
+      lower.includes(k.toLowerCase()) ||
+      k.toLowerCase().includes(lower)
+    ) {
       return v;
     }
   }
@@ -144,29 +149,62 @@ function getDynamicCategoryIcon(catName) {
 
 // Единый список признаков переводов и движения наличных для всех банков
 const UNIVERSAL_TRANSFER_KEYWORDS = [
-  'перевод', 'сбп', 'между счетами', 'снятие наличных', 'внесение наличных',
-  'взнос наличными', 'зачисление наличных', 'пополнение наличными', 'наличными',
-  'vklad-karta', 'karta-vklad', 'bpwww', 'брокер', 'vb24'
+  'перевод',
+  'сбп',
+  'между счетами',
+  'снятие наличных',
+  'внесение наличных',
+  'взнос наличными',
+  'зачисление наличных',
+  'пополнение наличными',
+  'наличными',
+  'vklad-karta',
+  'karta-vklad',
+  'bpwww',
+  'брокер',
+  'vb24',
 ];
 
 // Общие служебные строки (шапки, подвалы документов)
 const COMMON_SERVICE_LINES = [
-  'страница', 'выписка по', 'справка о движении', 'входящий остаток',
-  'исходящий остаток', 'итого зачислений', 'итого списаний', 'итого оборотов',
-  'с уважением', 'руководитель департамента', 'начальник отдела', 'сопровождения кредитов',
-  'кредитов и депозитов', 'е.в. самохвалова', 'самохвалова',
-  'лицензия банка россии', 'генеральная лицензия', 'номер лицевого счёта',
-  'продолжение на', 'продолжение следующей', 'продолжение выписки', 'продолжение таблицы',
-  'продолжение на следующей', 'окончание таблицы', 'ао «яндекс банк»', 'яндекс банк',
-  'ул. садовническая', 'yabank.yandex.ru', 'welcome@bank.yandex.ru'
+  'страница',
+  'выписка по',
+  'справка о движении',
+  'входящий остаток',
+  'исходящий остаток',
+  'итого зачислений',
+  'итого списаний',
+  'итого оборотов',
+  'с уважением',
+  'руководитель департамента',
+  'начальник отдела',
+  'сопровождения кредитов',
+  'кредитов и депозитов',
+  'е.в. самохвалова',
+  'самохвалова',
+  'лицензия банка россии',
+  'генеральная лицензия',
+  'номер лицевого счёта',
+  'продолжение на',
+  'продолжение следующей',
+  'продолжение выписки',
+  'продолжение таблицы',
+  'продолжение на следующей',
+  'окончание таблицы',
+  'ао «яндекс банк»',
+  'яндекс банк',
+  'ул. садовническая',
+  'yabank.yandex.ru',
+  'welcome@bank.yandex.ru',
 ];
 
 // Утилита очистки суммы из строки в число
 function cleanAmount(str) {
   if (!str) return 0;
-  const clean = str.replace(/[+−–—\-\u2012\u2013\u2014\u2212]/g, '')
-                   .replace(/[^\d.,]/g, '')
-                   .replace(',', '.');
+  const clean = str
+    .replace(/[+−–—\-\u2012\u2013\u2014\u2212]/g, '')
+    .replace(/[^\d.,]/g, '')
+    .replace(',', '.');
   return Math.abs(parseFloat(clean)) || 0;
 }
 
@@ -176,16 +214,34 @@ function cleanAmount(str) {
 function cleanMerchantTitle(str) {
   if (!str) return '';
   return String(str)
-    .replace(/продолжение\s*(на\s*)?(след(ующей|ующем|ующих|\.))?\s*(страниц[еаы]|листе|стр\.?|таблицы|выписки)?(\.{3})?/gi, ' ')
+    .replace(
+      /продолжение\s*(на\s*)?(след(ующей|ующем|ующих|\.))?\s*(страниц[еаы]|листе|стр\.?|таблицы|выписки)?(\.{3})?/gi,
+      ' '
+    )
     .replace(/окончание\s+таблицы/gi, ' ')
     .replace(/(?:страница|стр\.?|лист)\s*\d+(\s*из\s*\d+)?/gi, ' ')
-    .replace(/(?:^|[^\wа-яёА-ЯЁ])\.?\s*операци[яиею](?:\s+(?:по\s+карте|по\s+счету|со\s+счетом|в\s+системе))?(?=[^\wа-яёА-ЯЁ]|$)/gi, ' ')
+    .replace(
+      /(?:^|[^\wа-яёА-ЯЁ])\.?\s*операци[яиею](?:\s+(?:по\s+карте|по\s+счету|со\s+счетом|в\s+системе))?(?=[^\wа-яёА-ЯЁ]|$)/gi,
+      ' '
+    )
     .replace(/(?:^|[^\wа-яёА-ЯЁ])\.?\s*операци[яиею](?=[^\wа-яёА-ЯЁ]|$)/gi, ' ')
-    .replace(/(?:^|[^\wа-яёА-ЯЁ])(?:операции\s+обработки|операции\s+договора|договора\s+мск|номер\s+договора|номер\s+карты|валюта\s+операции:?|валюта\s+счета:?|сумма\s+в\s+валюте|сумма\s+операции|дата\s+операции|дата\s+обработки|дата\s+проводки)(?=[^\wа-яёА-ЯЁ]|$)/gi, ' ')
-    .replace(/(?:^|[^\wа-яёА-ЯЁ])(?:операции|операция|операцию|обработки|договора)(?=[^\wа-яёА-ЯЁ]|$)/gi, ' ')
+    .replace(
+      /(?:^|[^\wа-яёА-ЯЁ])(?:операции\s+обработки|операции\s+договора|договора\s+мск|номер\s+договора|номер\s+карты|валюта\s+операции:?|валюта\s+счета:?|сумма\s+в\s+валюте|сумма\s+операции|дата\s+операции|дата\s+обработки|дата\s+проводки)(?=[^\wа-яёА-ЯЁ]|$)/gi,
+      ' '
+    )
+    .replace(
+      /(?:^|[^\wа-яёА-ЯЁ])(?:операции|операция|операцию|обработки|договора)(?=[^\wа-яёА-ЯЁ]|$)/gi,
+      ' '
+    )
     .replace(/(?:^|[^\wа-яёА-ЯЁ])(?:мск|utc|gmt)(?=[^\wа-яёА-ЯЁ]|$)/gi, ' ')
-    .replace(/(?:российские\s+рубли|российский\s+рубль|выписка\s+по\s+карте|выписка\s+по\s+счету)/gi, ' ')
-    .replace(/(?:с\s+уважением|вице[- ]президент|главный\s+бухгалтер|ответственный\s+исполнитель|исходящий\s+остаток|итого\s+списаний|итого\s+зачислений|дата\s+формирования(?:\s+выписки)?|должность:?)/gi, ' ')
+    .replace(
+      /(?:российские\s+рубли|российский\s+рубль|выписка\s+по\s+карте|выписка\s+по\s+счету)/gi,
+      ' '
+    )
+    .replace(
+      /(?:с\s+уважением|вице[- ]президент|главный\s+бухгалтер|ответственный\s+исполнитель|исходящий\s+остаток|итого\s+списаний|итого\s+зачислений|дата\s+формирования(?:\s+выписки)?|должность:?)/gi,
+      ' '
+    )
     .replace(/^[.,:;\-_/\\«"'#*&()]|[.,:;\-_/\\»"'#*&()]$/g, '')
     .replace(/\s+/g, ' ')
     .trim();
@@ -221,9 +277,11 @@ function extractWebsiteLink(text) {
 
   // 3. Домены без схемы (например: lk.ugmk-telecom.ru, vezaruspro.ru, sberbank.ru, dns-shop.ru)
   // Исключаем денежные суммы вроде 450.00, даты 24.09.2025 и номера счетов
-  const domainMatch = str.match(/\b(?![0-9]+[.,][0-9]+)(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+(?:ru|рф|com|org|net|io|pro|me|cc|biz|info|site|online|store|shop|app|dev|su|by|kz|[a-zA-Z]{2,10})(?:\/[^\s<>"'()[\]{}]*)?\b/i);
+  const domainMatch = str.match(
+    /\b(?![0-9]+[.,][0-9]+)(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+(?:ru|рф|com|org|net|io|pro|me|cc|biz|info|site|online|store|shop|app|dev|su|by|kz|[a-zA-Z]{2,10})(?:\/[^\s<>"'()[\]{}]*)?\b/i
+  );
   if (domainMatch) {
-    let dom = domainMatch[0].replace(/[.,;:!?]+$/, '').trim();
+    const dom = domainMatch[0].replace(/[.,;:!?]+$/, '').trim();
     if (!/^\d{2}\.\d{2}\.\d{2,4}$/.test(dom)) {
       return dom;
     }
@@ -252,24 +310,37 @@ function extractDeviceField(text) {
     const urlInDevice = extractWebsiteLink(afterDevice.slice(0, 180));
     if (urlInDevice) {
       // Проверяем, был ли префикс перед ссылкой (например: "SBP " или "ПАО ")
-      const prefixMatch = afterDevice.match(/^([A-Za-zА-Яа-яЁё0-9_\-\s]{2,12}?)\s+(https?:\/\/|[a-zA-Z0-9-]+\.[a-zA-Z0-9-.])/i);
-      if (prefixMatch && prefixMatch[1] && !/^(город|сумма|валюта|карта)$/i.test(prefixMatch[1].trim())) {
+      const prefixMatch = afterDevice.match(
+        /^([A-Za-zА-Яа-яЁё0-9_\-\s]{2,12}?)\s+(https?:\/\/|[a-zA-Z0-9-]+\.[a-zA-Z0-9-.])/i
+      );
+      if (
+        prefixMatch &&
+        prefixMatch[1] &&
+        !/^(город|сумма|валюта|карта)$/i.test(prefixMatch[1].trim())
+      ) {
         return `${prefixMatch[1].trim()} ${urlInDevice}`;
       }
       return urlInDevice;
     }
 
     // Если ссылки нет, стандартно извлекаем терминал устройства до следующего поля выписки
-    const m = afterDevice.match(/^([\s\S]+?)(?=(?:\.\s*(?:Город|Сумма|Валюта|Карта|MCC|Код|Терминал|Дата|Банкомат|Пункт)|\b(?:Город|Сумма|Валюта|Карта|MCC|Код|Терминал|Дата):|\.\s*[А-ЯA-Z][а-яa-z]+:|\.\s*$|$))/i);
+    const m = afterDevice.match(
+      /^([\s\S]+?)(?=(?:\.\s*(?:Город|Сумма|Валюта|Карта|MCC|Код|Терминал|Дата|Банкомат|Пункт)|\b(?:Город|Сумма|Валюта|Карта|MCC|Код|Терминал|Дата):|\.\s*[А-ЯA-Z][а-яa-z]+:|\.\s*$|$))/i
+    );
     if (m && m[1]) {
-      let dev = m[1].trim().replace(/\.+$/, '').trim();
+      const dev = m[1].trim().replace(/\.+$/, '').trim();
       return dev;
     }
   }
 
   // 2. Если отдельного ключевого слова "Устройство:" нет, но в строке есть веб-ссылка
   const standaloneUrl = extractWebsiteLink(fullStr);
-  if (standaloneUrl && (fullStr.toLowerCase().includes('оплата') || fullStr.toLowerCase().includes('pos') || fullStr.toLowerCase().includes('retail'))) {
+  if (
+    standaloneUrl &&
+    (fullStr.toLowerCase().includes('оплата') ||
+      fullStr.toLowerCase().includes('pos') ||
+      fullStr.toLowerCase().includes('retail'))
+  ) {
     return standaloneUrl;
   }
 
@@ -282,24 +353,38 @@ window.extractDeviceField = extractDeviceField;
  */
 function stripCardTokens(str) {
   if (!str) return '';
-  return String(str)
-    // 0. Фразы операций по картам и счетам (например: ". Операция по карте ****1234", "Операция по счету ****1234", "Операция по счету", "Операция по карте", ". Операция")
-    .replace(/(?:^|[^\wа-яёА-ЯЁ])\.?\s*операци[яиею]\s+(?:по\s+карте|по\s+счету|со\s+счетом|с\s+карты|на\s+карту)(?:\s*[*xX.\-]*\s*\d{4})?(?=[^\wа-яёА-ЯЁ]|$)/gi, ' ')
-    .replace(/(?:^|[^\wа-яёА-ЯЁ])\.?\s*(?:по\s+карте|со\s+счета|на\s+счет|по\s+счету)\s*[*xX.\-]*\s*\d{4}(?=[^\wа-яёА-ЯЁ]|$)/gi, ' ')
-    // 1. Длинные маски карт (например: 2200********1234, 4276**1234, 548410******1234)
-    .replace(/\b\d{4,6}[\s*xX.\-]{2,12}\d{4}\b/g, ' ')
-    // 2. Системные префиксы карт (например: MC *1234, MIR *1234, ECMC 1234, VISA *1234, MIR_1234, CRD 1234, PAN 1234)
-    .replace(/(?:MC|MIR|VISA|ECMC|MASTERCARD|МИР|CARD|CRD|PAN|T-PAY|MIR\s*PAY|SBERPAY)\s*[-_:]?\s*[*xX.\-]*\s*\d{4}/gi, ' ')
-    // 3. Фразы с упоминанием карты (например: карта: *1234, по карте 1234, с карты *1234, на карту *1234, номер карты: *1234)
-    .replace(/(?:по\s+карте|с\s+карты|на\s+карту|номер\s+карты:?|карта:?|карте:?)\s*[*xX.\-]*\s*\d{4}/gi, ' ')
-    // 4. Любые маски с звездочками, крестиками или точками (например: *1234, ** 1234, ..1234, ****1234, *1234*)
-    .replace(/(?:^|[^\wа-яёА-ЯЁ])[*xX.\-]{1,6}\s*\d{4}(?=[^\wа-яёА-ЯЁ]|$)/g, ' ')
-    // 5. Оставшиеся изолированные маски
-    .replace(/(?:^|\s)[*xX.\-]+\d{4}(?=[^\wа-яёА-ЯЁ]|$)/g, ' ')
-    // 6. Хвосты слова "операция", ". операция", "операции", "операцию"
-    .replace(/(?:^|[^\wа-яёА-ЯЁ])\.?\s*операци[яиею](?=[^\wа-яёА-ЯЁ]|$)/gi, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
+  return (
+    String(str)
+      // 0. Фразы операций по картам и счетам (например: ". Операция по карте ****1234", "Операция по счету ****1234", "Операция по счету", "Операция по карте", ". Операция")
+      .replace(
+        /(?:^|[^\wа-яёА-ЯЁ])\.?\s*операци[яиею]\s+(?:по\s+карте|по\s+счету|со\s+счетом|с\s+карты|на\s+карту)(?:\s*[*xX.-]*\s*\d{4})?(?=[^\wа-яёА-ЯЁ]|$)/gi,
+        ' '
+      )
+      .replace(
+        /(?:^|[^\wа-яёА-ЯЁ])\.?\s*(?:по\s+карте|со\s+счета|на\s+счет|по\s+счету)\s*[*xX.-]*\s*\d{4}(?=[^\wа-яёА-ЯЁ]|$)/gi,
+        ' '
+      )
+      // 1. Длинные маски карт (например: 2200********1234, 4276**1234, 548410******1234)
+      .replace(/\b\d{4,6}[\s*xX.-]{2,12}\d{4}\b/g, ' ')
+      // 2. Системные префиксы карт (например: MC *1234, MIR *1234, ECMC 1234, VISA *1234, MIR_1234, CRD 1234, PAN 1234)
+      .replace(
+        /(?:MC|MIR|VISA|ECMC|MASTERCARD|МИР|CARD|CRD|PAN|T-PAY|MIR\s*PAY|SBERPAY)\s*[-_:]?\s*[*xX.-]*\s*\d{4}/gi,
+        ' '
+      )
+      // 3. Фразы с упоминанием карты (например: карта: *1234, по карте 1234, с карты *1234, на карту *1234, номер карты: *1234)
+      .replace(
+        /(?:по\s+карте|с\s+карты|на\s+карту|номер\s+карты:?|карта:?|карте:?)\s*[*xX.-]*\s*\d{4}/gi,
+        ' '
+      )
+      // 4. Любые маски с звездочками, крестиками или точками (например: *1234, ** 1234, ..1234, ****1234, *1234*)
+      .replace(/(?:^|[^\wа-яёА-ЯЁ])[*xX.-]{1,6}\s*\d{4}(?=[^\wа-яёА-ЯЁ]|$)/g, ' ')
+      // 5. Оставшиеся изолированные маски
+      .replace(/(?:^|\s)[*xX.-]+\d{4}(?=[^\wа-яёА-ЯЁ]|$)/g, ' ')
+      // 6. Хвосты слова "операция", ". операция", "операции", "операцию"
+      .replace(/(?:^|[^\wа-яёА-ЯЁ])\.?\s*операци[яиею](?=[^\wа-яёА-ЯЁ]|$)/gi, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+  );
 }
 window.stripCardTokens = stripCardTokens;
 
@@ -414,225 +499,464 @@ const PROTECTED_ENGLISH_BRANDS = new Map([
   ['lamoda', 'Lamoda'],
   ['avito', 'Авито'],
   ['cian', 'Циан'],
-  ['amazon', 'Amazon']
+  ['amazon', 'Amazon'],
 ]);
 
 const COMMON_ENGLISH_WORDS = new Set([
-  'to', 'go', 'at', 'for', 'by', 'with', 'from', 'of', 'and', 'or', 'the', 'a', 'an',
-  'store', 'market', 'shop', 'purchase', 'payment', 'game', 'pay', 'delivery',
-  'online', 'drive', 'station', 'club', 'bar', 'pub', 'coffee', 'tea', 'food', 'cafe',
-  'hotel', 'service', 'services', 'center', 'media', 'digital', 'travel', 'card', 'express',
-  'line', 'group', 'auto', 'petrol', 'beauty', 'fitness', 'sport', 'music',
-  'play', 'plus', 'life', 'world', 'fast', 'direct', 'smart', 'gold', 'black', 'white',
-  'red', 'blue', 'green', 'one', 'two', 'city', 'park', 'tour', 'air', 'aero', 'taxi', 'cinema',
-  'bank', 'finance', 'holding', 'free', 'mobile', 'tech', 'soft', 'net', 'web', 'point',
-  'price', 'fix', 'time', 'like', 'love', 'good', 'best', 'top', 'super', 'mini', 'max', 'pro',
-  'fresh', 'clean', 'eco', 'bio', 'consulting', 'motors', 'logistics', 'development', 'global', 'international',
-  'capital', 'lab', 'labs', 'studio', 'space', 'hub', 'box', 'mall', 'plaza', 'street', 'road', 'way',
-  'boost', 'boosty', 'donat', 'donate', 'patreon', 'grill', 'burger', 'pizza', 'kitchen', 'sweet'
+  'to',
+  'go',
+  'at',
+  'for',
+  'by',
+  'with',
+  'from',
+  'of',
+  'and',
+  'or',
+  'the',
+  'a',
+  'an',
+  'store',
+  'market',
+  'shop',
+  'purchase',
+  'payment',
+  'game',
+  'pay',
+  'delivery',
+  'online',
+  'drive',
+  'station',
+  'club',
+  'bar',
+  'pub',
+  'coffee',
+  'tea',
+  'food',
+  'cafe',
+  'hotel',
+  'service',
+  'services',
+  'center',
+  'media',
+  'digital',
+  'travel',
+  'card',
+  'express',
+  'line',
+  'group',
+  'auto',
+  'petrol',
+  'beauty',
+  'fitness',
+  'sport',
+  'music',
+  'play',
+  'plus',
+  'life',
+  'world',
+  'fast',
+  'direct',
+  'smart',
+  'gold',
+  'black',
+  'white',
+  'red',
+  'blue',
+  'green',
+  'one',
+  'two',
+  'city',
+  'park',
+  'tour',
+  'air',
+  'aero',
+  'taxi',
+  'cinema',
+  'bank',
+  'finance',
+  'holding',
+  'free',
+  'mobile',
+  'tech',
+  'soft',
+  'net',
+  'web',
+  'point',
+  'price',
+  'fix',
+  'time',
+  'like',
+  'love',
+  'good',
+  'best',
+  'top',
+  'super',
+  'mini',
+  'max',
+  'pro',
+  'fresh',
+  'clean',
+  'eco',
+  'bio',
+  'consulting',
+  'motors',
+  'logistics',
+  'development',
+  'global',
+  'international',
+  'capital',
+  'lab',
+  'labs',
+  'studio',
+  'space',
+  'hub',
+  'box',
+  'mall',
+  'plaza',
+  'street',
+  'road',
+  'way',
+  'boost',
+  'boosty',
+  'donat',
+  'donate',
+  'patreon',
+  'grill',
+  'burger',
+  'pizza',
+  'kitchen',
+  'sweet',
 ]);
 
 const KNOWN_RETAIL_TRANSLIT = {
-  'moi': 'Мои',
-  'moya': 'Моя',
-  'moe': 'Мое',
-  'documenty': 'Документы',
-  'dokumenty': 'Документы',
-  'dokumenti': 'Документы',
-  'documenti': 'Документы',
-  'gosuslugi': 'Госуслуги',
-  'pochta': 'Почта',
-  'rossii': 'России',
-  'rossiya': 'Россия',
-  'dostavka': 'Доставка',
-  'dostavki': 'Доставки',
-  'iz': 'из',
-  'dlya': 'для',
-  'bez': 'без',
-  'ot': 'от',
-  'pri': 'при',
-  'pod': 'под',
-  'nad': 'над',
-  'cherez': 'через',
-  'so': 'со',
-  'vo': 'во',
-  'ko': 'ко',
-  'ob': 'об',
-  'obo': 'обо',
-  'uslugi': 'Услуги',
-  'platezh': 'Платеж',
-  'perevod': 'Перевод',
-  'perek': 'Перекресток',
-  'perekrestok': 'Перекресток',
-  'pyaterochka': 'Пятерочка',
-  'pyaterochki': 'Пятерочки',
-  'pyaterochk': 'Пятерочка',
+  moi: 'Мои',
+  moya: 'Моя',
+  moe: 'Мое',
+  documenty: 'Документы',
+  dokumenty: 'Документы',
+  dokumenti: 'Документы',
+  documenti: 'Документы',
+  gosuslugi: 'Госуслуги',
+  pochta: 'Почта',
+  rossii: 'России',
+  rossiya: 'Россия',
+  dostavka: 'Доставка',
+  dostavki: 'Доставки',
+  iz: 'из',
+  dlya: 'для',
+  bez: 'без',
+  ot: 'от',
+  pri: 'при',
+  pod: 'под',
+  nad: 'над',
+  cherez: 'через',
+  so: 'со',
+  vo: 'во',
+  ko: 'ко',
+  ob: 'об',
+  obo: 'обо',
+  uslugi: 'Услуги',
+  platezh: 'Платеж',
+  perevod: 'Перевод',
+  perek: 'Перекресток',
+  perekrestok: 'Перекресток',
+  pyaterochka: 'Пятерочка',
+  pyaterochki: 'Пятерочки',
+  pyaterochk: 'Пятерочка',
   '5ka': 'Пятерочка',
-  'magnit': 'Магнит',
-  'vkusvill': 'ВкусВилл',
-  'lenta': 'Лента',
-  'diksi': 'Дикси',
-  'samokat': 'Самокат',
-  'kuper': 'Купер',
-  'chizhik': 'Чижик',
-  'krasnoe': 'Красное',
-  'beloe': 'Белое',
-  'apteka': 'Аптека',
-  'aprel': 'Апрель',
-  'stolichki': 'Столички',
-  'rigla': 'Ригла',
-  'gorzdrav': 'Горздрав',
-  'vita': 'Вита',
-  'voda': 'Вода',
-  'zhivaya': 'Живая',
-  'krendel': 'Крендель',
-  'krendelya': 'Кренделя',
-  'krendelva': 'Кренделя',
-  'transkom': 'Транском',
-  'mezhdunarodnyj': 'Международный',
-  'lunda': 'Лунда',
-  'khozyaystvennyy': 'Хозяйственный',
-  'khozyaystvennye': 'Хозяйственные',
-  'khozyaystvenny': 'Хозяйственный',
-  'khoztovary': 'Хозтовары',
-  'produkty': 'Продукты',
-  'produkti': 'Продукты',
-  'avtozapchasti': 'Автозапчасти',
-  'zapchasti': 'Запчасти',
-  'avtotovary': 'Автотовары',
-  'magazin': 'Магазин',
-  'tsvety': 'Цветы',
-  'tsvetov': 'Цветов',
-  'stomatologiya': 'Стоматология',
-  'pekarnya': 'Пекарня',
-  'stolovaya': 'Столовая',
-  'kafe': 'Кафе',
-  'restoran': 'Ресторан',
-  'shkola': 'Школа',
-  'sadik': 'Садик',
-  'deti': 'Дети',
-  'kvartira': 'Квартира',
-  'leasing': 'Лизинг',
-  'lizing': 'Лизинг',
-  'rayona': 'Района',
-  'rayon': 'Район',
-  'dom': 'Дом',
-  'muzei': 'Музей',
-  'muzey': 'Музей',
-  'krem': 'Крем',
-  'hleb': 'Хлеб',
-  'sever': 'Север',
-  'dent': 'Дент',
-  'sankt': 'Санкт',
-  'peterburg': 'Петербург',
-  'petrograd': 'Петроград',
-  'moskva': 'Москва',
-  'moscow': 'Москва',
-  'rostov': 'Ростов',
-  'donu': 'Дону',
-  'na': 'на',
-  'i': 'и',
-  'krasnodar': 'Краснодар',
-  'kazan': 'Казань',
-  'novosibirsk': 'Новосибирск',
-  'ekaterinburg': 'Екатеринбург',
-  'chelyabinsk': 'Челябинск',
-  'dostaevsky': 'Достаевский',
-  'dostaevskiy': 'Достаевский',
-  'dostaevskij': 'Достаевский',
-  'teatr': 'Театр',
-  'burgerrus': 'Burger King',
-  'burgerking': 'Burger King',
-  'kofe': 'Кофе',
-  'vypechka': 'Выпечка',
-  'chay': 'Чай',
-  'lavka': 'Лавка',
-  'eda': 'Еда',
-  'okey': 'Окей',
-  'vkustime': 'Вкустайм',
-  'passaghiram': 'Пассажирам',
-  'passazhiram': 'Пассажирам',
-  'nesselbek': 'Несселбек',
-  'nesselbeck': 'Несселбек',
-  'varochnaya': 'Варочная',
-  'gbuz': 'ГБУЗ',
-  'gp': 'ГП',
-  'dzm': 'ДЗМ',
-  'gku': 'ГКУ',
-  'is': 'ИС',
-  'mbu': 'МБУ',
-  'do': 'ДО',
-  'dshi': 'ДШИ',
-  'tszh': 'ТСЖ',
-  'snt': 'СНТ',
-  'fns': 'ФНС',
-  'eirc': 'ЕИРЦ',
-  'reu': 'РЭУ',
-  'mfc': 'МФЦ',
-  'mfz': 'МФЦ',
-  'gibdd': 'ГИБДД',
-  'mvd': 'МВД',
-  'mchs': 'МЧС',
-  'fok': 'ФОК',
-  'nii': 'НИИ',
-  'ran': 'РАН',
-  'mgu': 'МГУ',
-  'vshe': 'ВШЭ',
-  'mai': 'МАИ',
-  'mgtu': 'МГТУ',
-  'mifi': 'МИФИ',
-  'mfti': 'МФТИ',
-  'mpgu': 'МПГУ',
-  'rggu': 'РГГУ',
-  'rudn': 'РУДН',
-  'mgimo': 'МГИМО',
-  'ranhigs': 'РАНХИГС',
-  'sbp': 'СБП',
-  'zhkh': 'ЖКХ',
-  'azs': 'АЗС',
-  'sto': 'СТО',
-  'tsum': 'ЦУМ',
-  'gum': 'ГУМ',
-  'smu': 'СМУ',
-  'chop': 'ЧОП',
-  'fgup': 'ФГУП',
-  'mup': 'МУП',
-  'gup': 'ГУП',
-  'okb': 'ОКБ',
-  'kb': 'КБ',
-  'tskb': 'ЦКБ',
-  'dgkb': 'ДГКБ',
-  'gkb': 'ГКБ',
-  'kdc': 'КДЦ',
-  'crb': 'ЦРБ',
-  'kvd': 'КВД',
-  'ses': 'СЭС',
-  'rzd': 'РЖД',
-  'mtppk': 'МТППК',
-  'szppk': 'СЗППК',
-  'cppk': 'ЦППК',
-  'mcd': 'МЦД',
-  'mck': 'МЦК',
-  'bkad': 'БКАД',
-  'omvd': 'ОМВД',
-  'ufk': 'УФК',
-  'ufns': 'УФНС',
-  'fss': 'ФСС',
-  'pfr': 'ПФР',
-  'sfr': 'СФР'
+  magnit: 'Магнит',
+  vkusvill: 'ВкусВилл',
+  lenta: 'Лента',
+  diksi: 'Дикси',
+  samokat: 'Самокат',
+  kuper: 'Купер',
+  chizhik: 'Чижик',
+  krasnoe: 'Красное',
+  beloe: 'Белое',
+  apteka: 'Аптека',
+  aprel: 'Апрель',
+  stolichki: 'Столички',
+  rigla: 'Ригла',
+  gorzdrav: 'Горздрав',
+  vita: 'Вита',
+  voda: 'Вода',
+  zhivaya: 'Живая',
+  krendel: 'Крендель',
+  krendelya: 'Кренделя',
+  krendelva: 'Кренделя',
+  transkom: 'Транском',
+  mezhdunarodnyj: 'Международный',
+  lunda: 'Лунда',
+  khozyaystvennyy: 'Хозяйственный',
+  khozyaystvennye: 'Хозяйственные',
+  khozyaystvenny: 'Хозяйственный',
+  khoztovary: 'Хозтовары',
+  produkty: 'Продукты',
+  produkti: 'Продукты',
+  avtozapchasti: 'Автозапчасти',
+  zapchasti: 'Запчасти',
+  avtotovary: 'Автотовары',
+  magazin: 'Магазин',
+  tsvety: 'Цветы',
+  tsvetov: 'Цветов',
+  stomatologiya: 'Стоматология',
+  pekarnya: 'Пекарня',
+  stolovaya: 'Столовая',
+  kafe: 'Кафе',
+  restoran: 'Ресторан',
+  shkola: 'Школа',
+  sadik: 'Садик',
+  deti: 'Дети',
+  kvartira: 'Квартира',
+  leasing: 'Лизинг',
+  lizing: 'Лизинг',
+  rayona: 'Района',
+  rayon: 'Район',
+  dom: 'Дом',
+  muzei: 'Музей',
+  muzey: 'Музей',
+  krem: 'Крем',
+  hleb: 'Хлеб',
+  sever: 'Север',
+  dent: 'Дент',
+  sankt: 'Санкт',
+  peterburg: 'Петербург',
+  petrograd: 'Петроград',
+  moskva: 'Москва',
+  moscow: 'Москва',
+  rostov: 'Ростов',
+  donu: 'Дону',
+  na: 'на',
+  i: 'и',
+  krasnodar: 'Краснодар',
+  kazan: 'Казань',
+  novosibirsk: 'Новосибирск',
+  ekaterinburg: 'Екатеринбург',
+  chelyabinsk: 'Челябинск',
+  dostaevsky: 'Достаевский',
+  dostaevskiy: 'Достаевский',
+  dostaevskij: 'Достаевский',
+  teatr: 'Театр',
+  burgerrus: 'Burger King',
+  burgerking: 'Burger King',
+  kofe: 'Кофе',
+  vypechka: 'Выпечка',
+  chay: 'Чай',
+  lavka: 'Лавка',
+  eda: 'Еда',
+  okey: 'Окей',
+  vkustime: 'Вкустайм',
+  passaghiram: 'Пассажирам',
+  passazhiram: 'Пассажирам',
+  nesselbek: 'Несселбек',
+  nesselbeck: 'Несселбек',
+  varochnaya: 'Варочная',
+  gbuz: 'ГБУЗ',
+  gp: 'ГП',
+  dzm: 'ДЗМ',
+  gku: 'ГКУ',
+  is: 'ИС',
+  mbu: 'МБУ',
+  do: 'ДО',
+  dshi: 'ДШИ',
+  tszh: 'ТСЖ',
+  snt: 'СНТ',
+  fns: 'ФНС',
+  eirc: 'ЕИРЦ',
+  reu: 'РЭУ',
+  mfc: 'МФЦ',
+  mfz: 'МФЦ',
+  gibdd: 'ГИБДД',
+  mvd: 'МВД',
+  mchs: 'МЧС',
+  fok: 'ФОК',
+  nii: 'НИИ',
+  ran: 'РАН',
+  mgu: 'МГУ',
+  vshe: 'ВШЭ',
+  mai: 'МАИ',
+  mgtu: 'МГТУ',
+  mifi: 'МИФИ',
+  mfti: 'МФТИ',
+  mpgu: 'МПГУ',
+  rggu: 'РГГУ',
+  rudn: 'РУДН',
+  mgimo: 'МГИМО',
+  ranhigs: 'РАНХИГС',
+  sbp: 'СБП',
+  zhkh: 'ЖКХ',
+  azs: 'АЗС',
+  sto: 'СТО',
+  tsum: 'ЦУМ',
+  gum: 'ГУМ',
+  smu: 'СМУ',
+  chop: 'ЧОП',
+  fgup: 'ФГУП',
+  mup: 'МУП',
+  gup: 'ГУП',
+  okb: 'ОКБ',
+  kb: 'КБ',
+  tskb: 'ЦКБ',
+  dgkb: 'ДГКБ',
+  gkb: 'ГКБ',
+  kdc: 'КДЦ',
+  crb: 'ЦРБ',
+  kvd: 'КВД',
+  ses: 'СЭС',
+  rzd: 'РЖД',
+  mtppk: 'МТППК',
+  szppk: 'СЗППК',
+  cppk: 'ЦППК',
+  mcd: 'МЦД',
+  mck: 'МЦК',
+  bkad: 'БКАД',
+  omvd: 'ОМВД',
+  ufk: 'УФК',
+  ufns: 'УФНС',
+  fss: 'ФСС',
+  pfr: 'ПФР',
+  sfr: 'СФР',
 };
 
 const RUSSIAN_ABBREVIATIONS = new Set([
-  'ГБУЗ', 'ГП', 'ДЗМ', 'ГКУ', 'ИС', 'МБУ', 'ДО', 'ДШИ', 'ТСЖ', 'СНТ', 'ФНС', 'УК', 'ЦАО', 'ЗАО', 'МФЦ',
-  'РЭУ', 'ЕИРЦ', 'ГИБДД', 'МВД', 'МЧС', 'ФОК', 'ФОЦ', 'НИИ', 'РАН', 'МГУ', 'СПБГУ', 'ВШЭ', 'МАИ', 'МГТУ',
-  'МИФИ', 'МФТИ', 'МПГУ', 'РГГУ', 'РУДН', 'МГИМО', 'РАНХИГС', 'СБП', 'ЖКХ', 'АЗС', 'СТО', 'ТЦ', 'ТРЦ', 'ТРК',
-  'БЦ', 'ЦУМ', 'ГУМ', 'ДЛТ', 'СМУ', 'УПТК', 'ЧОП', 'ОАО', 'ЗАО', 'ПАО', 'ООО', 'ИП', 'НКО', 'АНО', 'ФГУП',
-  'МУП', 'ГУП', 'МАУ', 'КДУ', 'ОКБ', 'КБ', 'ЦКБ', 'ДГКБ', 'ГКБ', 'КДЦ', 'ЦРБ', 'КВД', 'СЭС', 'РЖД',
-  'МТППК', 'СЗППК', 'ЦППК', 'МЦД', 'МЦК', 'БКАД', 'ОМВД', 'УФК', 'УФНС', 'ФСС', 'ПФР', 'СФР', 'МТС',
-  'ВТБ', 'ГПБ', 'СПБ', 'СБЕР', 'СБ', 'Т-БАНК', 'Т2', 'DNS', 'KFC', 'WB', 'RZD', 'MTC', 'MTS', 'VTB', 'GPB',
-  'SPB', 'SMS', 'QR', 'POS', 'ATM', 'PRO', 'FM', 'VIP', 'ID', 'AI', 'IT', 'HR', 'PR', 'API', 'SDK', 'USB',
-  'LED', 'LCD', 'OLED', 'SIM', 'VPN', 'PIN', 'P2P', 'SBP', 'C2C', 'C2B', 'B2B', 'SZP', 'SZPP', 'SZPPK',
-  'ИНН', 'КПП', 'БИК', 'ОГРН', 'СНИЛС', 'РФ', 'ТВ'
+  'ГБУЗ',
+  'ГП',
+  'ДЗМ',
+  'ГКУ',
+  'ИС',
+  'МБУ',
+  'ДО',
+  'ДШИ',
+  'ТСЖ',
+  'СНТ',
+  'ФНС',
+  'УК',
+  'ЦАО',
+  'ЗАО',
+  'МФЦ',
+  'РЭУ',
+  'ЕИРЦ',
+  'ГИБДД',
+  'МВД',
+  'МЧС',
+  'ФОК',
+  'ФОЦ',
+  'НИИ',
+  'РАН',
+  'МГУ',
+  'СПБГУ',
+  'ВШЭ',
+  'МАИ',
+  'МГТУ',
+  'МИФИ',
+  'МФТИ',
+  'МПГУ',
+  'РГГУ',
+  'РУДН',
+  'МГИМО',
+  'РАНХИГС',
+  'СБП',
+  'ЖКХ',
+  'АЗС',
+  'СТО',
+  'ТЦ',
+  'ТРЦ',
+  'ТРК',
+  'БЦ',
+  'ЦУМ',
+  'ГУМ',
+  'ДЛТ',
+  'СМУ',
+  'УПТК',
+  'ЧОП',
+  'ОАО',
+  'ЗАО',
+  'ПАО',
+  'ООО',
+  'ИП',
+  'НКО',
+  'АНО',
+  'ФГУП',
+  'МУП',
+  'ГУП',
+  'МАУ',
+  'КДУ',
+  'ОКБ',
+  'КБ',
+  'ЦКБ',
+  'ДГКБ',
+  'ГКБ',
+  'КДЦ',
+  'ЦРБ',
+  'КВД',
+  'СЭС',
+  'РЖД',
+  'МТППК',
+  'СЗППК',
+  'ЦППК',
+  'МЦД',
+  'МЦК',
+  'БКАД',
+  'ОМВД',
+  'УФК',
+  'УФНС',
+  'ФСС',
+  'ПФР',
+  'СФР',
+  'МТС',
+  'ВТБ',
+  'ГПБ',
+  'СПБ',
+  'СБЕР',
+  'СБ',
+  'Т-БАНК',
+  'Т2',
+  'DNS',
+  'KFC',
+  'WB',
+  'RZD',
+  'MTC',
+  'MTS',
+  'VTB',
+  'GPB',
+  'SPB',
+  'SMS',
+  'QR',
+  'POS',
+  'ATM',
+  'PRO',
+  'FM',
+  'VIP',
+  'ID',
+  'AI',
+  'IT',
+  'HR',
+  'PR',
+  'API',
+  'SDK',
+  'USB',
+  'LED',
+  'LCD',
+  'OLED',
+  'SIM',
+  'VPN',
+  'PIN',
+  'P2P',
+  'SBP',
+  'C2C',
+  'C2B',
+  'B2B',
+  'SZP',
+  'SZPP',
+  'SZPPK',
+  'ИНН',
+  'КПП',
+  'БИК',
+  'ОГРН',
+  'СНИЛС',
+  'РФ',
+  'ТВ',
 ]);
 
 function isEnglishWordOrBrand(w) {
@@ -660,23 +984,43 @@ function getRussianTranslitConfidence(word, context = {}) {
   let score = 0;
 
   // 1. Морфологические окончания прилагательных и существительных РФ (+40-55)
-  if (/(?:naya|noe|nye|nyy|nyj|aya|oe|ye|ogo|ego|omu|emu|ykh|ikh|ym|im|ymi|imi|uyu|skoe|skaja|skaya|skiy|skij|skie|ovoe|evoe|inaya|inyy)$/i.test(lower)) {
+  if (
+    /(?:naya|noe|nye|nyy|nyj|aya|oe|ye|ogo|ego|omu|emu|ykh|ikh|ym|im|ymi|imi|uyu|skoe|skaja|skaya|skiy|skij|skie|ovoe|evoe|inaya|inyy)$/i.test(
+      lower
+    )
+  ) {
     score += 55;
-  } else if (/(?:stvo|stvie|tsiya|tsii|tsiyu|tsiey|nik|nitsa|shchik|chik|itsa|ovka|evka|ishche|yami|ami|akh|yakh|am|om|em|ey|ka|ko|ok|ik|ets|nya)$/i.test(lower)) {
+  } else if (
+    /(?:stvo|stvie|tsiya|tsii|tsiyu|tsiey|nik|nitsa|shchik|chik|itsa|ovka|evka|ishche|yami|ami|akh|yakh|am|om|em|ey|ka|ko|ok|ik|ets|nya)$/i.test(
+      lower
+    )
+  ) {
     score += 40;
-  } else if (/^[a-z]+(?:ov|ev|in|ova|eva|ina|skiy|sky|tsky|tskiy|itsky)$/i.test(lower) && lower.length >= 5) {
+  } else if (
+    /^[a-z]+(?:ov|ev|in|ova|eva|ina|skiy|sky|tsky|tskiy|itsky)$/i.test(lower) &&
+    lower.length >= 5
+  ) {
     score += 50;
   }
 
   // 2. Русские характерные n-граммы буквосочетаний (+25-60)
   if (/shch/i.test(lower)) score += 60;
   if (/zhiv|mezh|khoz|tsvet|tsentr|dostav|passagh|passazh/i.test(lower)) score += 50;
-  if (/\b(?:zh|kh|ts|cz|tc|tz|ch|sh)/i.test(lower) || /(?:zh|kh|ts|cz|tc|tz|ch|sh)\b/i.test(lower) || /zh|kh|ch|sh/i.test(lower)) score += 35;
+  if (
+    /\b(?:zh|kh|ts|cz|tc|tz|ch|sh)/i.test(lower) ||
+    /(?:zh|kh|ts|cz|tc|tz|ch|sh)\b/i.test(lower) ||
+    /zh|kh|ch|sh/i.test(lower)
+  )
+    score += 35;
   if (/yu|ya|yo|ye/i.test(lower)) score += 25;
   if (/nyj|nyy|iy|yy|yj|ij|jj/i.test(lower)) score += 35;
 
   // 3. Характерные русские приставки и корни (+45)
-  if (/^(?:avto|stroy|prom|sbyt|torg|snab|farm|med|dor|mezh|zhiv|pod|nad|pri|bez|vse|dlya|khoz|pekar|stolov|shkol|sadik|vy|pere|pro|za|ros|mos|spb)/i.test(lower)) {
+  if (
+    /^(?:avto|stroy|prom|sbyt|torg|snab|farm|med|dor|mezh|zhiv|pod|nad|pri|bez|vse|dlya|khoz|pekar|stolov|shkol|sadik|vy|pere|pro|za|ros|mos|spb)/i.test(
+      lower
+    )
+  ) {
     score += 45;
   }
 
@@ -700,13 +1044,40 @@ function transliterateRussianWord(word) {
 
   // Словарь слов с мягким знаком
   const SOFT_SIGN_WORDS = {
-    'aprel': 'апрель', 'rubl': 'рубль', 'svyaz': 'связь', 'set': 'сеть', 'neft': 'нефть',
-    'stroy': 'строй', 'byt': 'быт', 'put': 'путь', 'zhizn': 'жизнь', 'sol': 'соль',
-    'stal': 'сталь', 'med': 'медь', 'gost': 'гость', 'dver': 'дверь', 'tserkov': 'церковь',
-    'lyubov': 'любовь', 'sibir': 'сибирь', 'tver': 'тверь', 'perm': 'пермь', 'kazan': 'казань',
-    'ryazan': 'рязань', 'yaroslavl': 'ярославль', 'fevral': 'февраль', 'iyul': 'июль', 'iyun': 'июнь',
-    'sentyabr': 'сентябрь', 'oktyabr': 'октябрь', 'noyabr': 'ноябрь', 'dekabr': 'декабрь',
-    'otel': 'отель', 'kartofel': 'картофель', 'mebel': 'мебель', 'stil': 'стиль', 'avtomobil': 'автомобиль'
+    aprel: 'апрель',
+    rubl: 'рубль',
+    svyaz: 'связь',
+    set: 'сеть',
+    neft: 'нефть',
+    stroy: 'строй',
+    byt: 'быт',
+    put: 'путь',
+    zhizn: 'жизнь',
+    sol: 'соль',
+    stal: 'сталь',
+    med: 'медь',
+    gost: 'гость',
+    dver: 'дверь',
+    tserkov: 'церковь',
+    lyubov: 'любовь',
+    sibir: 'сибирь',
+    tver: 'тверь',
+    perm: 'пермь',
+    kazan: 'казань',
+    ryazan: 'рязань',
+    yaroslavl: 'ярославль',
+    fevral: 'февраль',
+    iyul: 'июль',
+    iyun: 'июнь',
+    sentyabr: 'сентябрь',
+    oktyabr: 'октябрь',
+    noyabr: 'ноябрь',
+    dekabr: 'декабрь',
+    otel: 'отель',
+    kartofel: 'картофель',
+    mebel: 'мебель',
+    stil: 'стиль',
+    avtomobil: 'автомобиль',
   };
   if (SOFT_SIGN_WORDS[lower]) {
     const res = SOFT_SIGN_WORDS[lower];
@@ -747,7 +1118,7 @@ function transliterateRussianWord(word) {
     ['yy', 'ый'],
     ['yj', 'ый'],
     ['ij', 'ий'],
-    ['jj', 'й']
+    ['jj', 'й'],
   ];
 
   for (const [lat, cyr] of MULTI) {
@@ -755,10 +1126,32 @@ function transliterateRussianWord(word) {
   }
 
   const SINGLE = {
-    'a': 'а', 'b': 'б', 'v': 'в', 'w': 'в', 'g': 'г', 'd': 'д', 'e': 'е',
-    'z': 'з', 'i': 'и', 'j': 'й', 'k': 'к', 'l': 'л', 'm': 'м', 'n': 'н',
-    'o': 'о', 'p': 'п', 'r': 'р', 's': 'с', 't': 'т', 'u': 'у', 'f': 'ф',
-    'h': 'х', 'c': 'к', 'y': 'ы', 'x': 'кс', 'q': 'к'
+    a: 'а',
+    b: 'б',
+    v: 'в',
+    w: 'в',
+    g: 'г',
+    d: 'д',
+    e: 'е',
+    z: 'з',
+    i: 'и',
+    j: 'й',
+    k: 'к',
+    l: 'л',
+    m: 'м',
+    n: 'н',
+    o: 'о',
+    p: 'п',
+    r: 'р',
+    s: 'с',
+    t: 'т',
+    u: 'у',
+    f: 'ф',
+    h: 'х',
+    c: 'к',
+    y: 'ы',
+    x: 'кс',
+    q: 'к',
   };
 
   let out = '';
@@ -803,74 +1196,80 @@ function smartTransliterateMerchant(title) {
   const lowerS = s.toLowerCase();
   for (const [key, val] of PROTECTED_ENGLISH_BRANDS.entries()) {
     if ((key.includes(' ') || key.includes('-')) && lowerS.includes(key)) {
-      const reg = new RegExp('(^|[^a-zA-Z0-9а-яёА-ЯЁ])' + key.replace(/[- ]/g, '[- ]') + '($|[^a-zA-Z0-9а-яёА-ЯЁ])', 'gi');
+      const reg = new RegExp(
+        '(^|[^a-zA-Z0-9а-яёА-ЯЁ])' + key.replace(/[- ]/g, '[- ]') + '($|[^a-zA-Z0-9а-яёА-ЯЁ])',
+        'gi'
+      );
       s = s.replace(reg, `$1${val}$2`);
     }
   }
 
   const hasRussianOrg = /\b(?:ООО|ПАО|ЗАО|ИП)\b/.test(s);
-  const hasRussianCity = /\b(?:MOSKVA|MOSCOW|SANKT|PETERBURG|CHELYABINSK|KAZAN|ROSTOV|SAMARA|UFA|PERM)\b/i.test(s);
+  const hasRussianCity =
+    /\b(?:MOSKVA|MOSCOW|SANKT|PETERBURG|CHELYABINSK|KAZAN|ROSTOV|SAMARA|UFA|PERM)\b/i.test(s);
   const context = { hasRussianOrg, hasRussianCity };
 
   // Разбиваем по пробелам, дефисам и нижним подчеркиваниям
   const words = s.split(/(\s+|[-/_])/);
 
-  return words.map(w => {
-    if (/^[\s\-/_]+$/.test(w)) {
-      return w === '_' ? ' ' : w;
-    }
-
-    // Инициалы латиницей (например: "I.I." или "A." или "I.") -> кириллические заглавные инициалы
-    if (/^[a-zA-Z]\.([a-zA-Z]\.?)*$/i.test(w)) {
-      let outInit = '';
-      for (let i = 0; i < w.length; i++) {
-        const c = w[i].toLowerCase();
-        if (c === '.') outInit += '.';
-        else {
-          const trans = transliterateRussianWord(c);
-          outInit += trans.toUpperCase();
-        }
+  return words
+    .map(w => {
+      if (/^[\s\-/_]+$/.test(w)) {
+        return w === '_' ? ' ' : w;
       }
-      return outInit;
-    }
 
-    const prefixMatch = w.match(/^[^a-zA-Z0-9а-яёА-ЯЁ]+/);
-    const suffixMatch = w.match(/[^a-zA-Z0-9а-яёА-ЯЁ]+$/);
-    const prefix = prefixMatch ? prefixMatch[0] : '';
-    const suffix = suffixMatch ? suffixMatch[0] : '';
-    const clean = w.slice(prefix.length, w.length - suffix.length);
+      // Инициалы латиницей (например: "I.I." или "A." или "I.") -> кириллические заглавные инициалы
+      if (/^[a-zA-Z]\.([a-zA-Z]\.?)*$/i.test(w)) {
+        let outInit = '';
+        for (let i = 0; i < w.length; i++) {
+          const c = w[i].toLowerCase();
+          if (c === '.') outInit += '.';
+          else {
+            const trans = transliterateRussianWord(c);
+            outInit += trans.toUpperCase();
+          }
+        }
+        return outInit;
+      }
 
-    if (!clean || !/[a-zA-Z]/.test(clean)) return w;
+      const prefixMatch = w.match(/^[^a-zA-Z0-9а-яёА-ЯЁ]+/);
+      const suffixMatch = w.match(/[^a-zA-Z0-9а-яёА-ЯЁ]+$/);
+      const prefix = prefixMatch ? prefixMatch[0] : '';
+      const suffix = suffixMatch ? suffixMatch[0] : '';
+      const clean = w.slice(prefix.length, w.length - suffix.length);
 
-    const lower = clean.toLowerCase();
+      if (!clean || !/[a-zA-Z]/.test(clean)) return w;
 
-    // 1. Если это защищенный бренд -> возвращаем канонический бренд
-    if (PROTECTED_ENGLISH_BRANDS.has(lower)) {
-      return prefix + PROTECTED_ENGLISH_BRANDS.get(lower) + suffix;
-    }
+      const lower = clean.toLowerCase();
 
-    // 2. Если есть в словаре ритейла/госуслуг
-    if (KNOWN_RETAIL_TRANSLIT[lower]) {
-      return prefix + KNOWN_RETAIL_TRANSLIT[lower] + suffix;
-    }
+      // 1. Если это защищенный бренд -> возвращаем канонический бренд
+      if (PROTECTED_ENGLISH_BRANDS.has(lower)) {
+        return prefix + PROTECTED_ENGLISH_BRANDS.get(lower) + suffix;
+      }
 
-    // 3. Если слово в английском словаре -> НЕ трогаем, возвращаем оригинал
-    if (isEnglishWordOrBrand(lower) && !hasRussianOrg) {
+      // 2. Если есть в словаре ритейла/госуслуг
+      if (KNOWN_RETAIL_TRANSLIT[lower]) {
+        return prefix + KNOWN_RETAIL_TRANSLIT[lower] + suffix;
+      }
+
+      // 3. Если слово в английском словаре -> НЕ трогаем, возвращаем оригинал
+      if (isEnglishWordOrBrand(lower) && !hasRussianOrg) {
+        return w;
+      }
+
+      // 4. Вычисляем оценку уверенности транслита (NLP Morphology Scoring)
+      const confidence = getRussianTranslitConfidence(clean, context);
+
+      // Если уверенность >= 45% -> транслитерируем в кириллицу
+      if (confidence >= 45) {
+        const trans = transliterateRussianWord(clean);
+        return prefix + trans + suffix;
+      }
+
+      // Иначе НЕ уверены -> сохраняем оригинальное написание
       return w;
-    }
-
-    // 4. Вычисляем оценку уверенности транслита (NLP Morphology Scoring)
-    const confidence = getRussianTranslitConfidence(clean, context);
-
-    // Если уверенность >= 45% -> транслитерируем в кириллицу
-    if (confidence >= 45) {
-      const trans = transliterateRussianWord(clean);
-      return prefix + trans + suffix;
-    }
-
-    // Иначе НЕ уверены -> сохраняем оригинальное написание
-    return w;
-  }).join('');
+    })
+    .join('');
 }
 window.smartTransliterateMerchant = smartTransliterateMerchant;
 
@@ -880,7 +1279,7 @@ window.smartTransliterateMerchant = smartTransliterateMerchant;
 function toCleanTitleCase(str) {
   if (!str) return '';
   let s = String(str).trim();
-  
+
   // Удаляем ведущую пунктуацию и концевую пунктуацию (сохраняя точки инициалов)
   s = s.replace(/^[.,:;\-_/\\]+/g, '').trim();
   if (!/(?:^|\s|[«"'(])[А-ЯЁA-Zа-яёa-z]\.$/i.test(s)) {
@@ -895,22 +1294,73 @@ function toCleanTitleCase(str) {
   const lowerS = s.toLowerCase();
   for (const [key, val] of PROTECTED_ENGLISH_BRANDS.entries()) {
     if ((key.includes(' ') || key.includes('-')) && lowerS.includes(key)) {
-      const reg = new RegExp('(^|[^a-zA-Z0-9а-яёА-ЯЁ])' + key.replace(/[- ]/g, '[- ]') + '($|[^a-zA-Z0-9а-яёА-ЯЁ])', 'gi');
+      const reg = new RegExp(
+        '(^|[^a-zA-Z0-9а-яёА-ЯЁ])' + key.replace(/[- ]/g, '[- ]') + '($|[^a-zA-Z0-9а-яёА-ЯЁ])',
+        'gi'
+      );
       s = s.replace(reg, `$1${val}$2`);
     }
   }
 
   // Предлоги и союзы, которые остаются строчными внутри фразы
   const LOWER_PREPOSITIONS = new Set([
-    'и', 'в', 'во', 'на', 'с', 'со', 'по', 'за', 'под', 'над', 'из', 'из-за', 'из-под', 'от', 'для', 'без', 'у', 'о', 'об', 'обо', 'к', 'ко', 'да', 'но', 'или', 'через', 'при', 'до',
-    'iz', 'v', 'vo', 'na', 's', 'so', 'po', 'za', 'pod', 'nad', 'ot', 'dlya', 'bez', 'u', 'o', 'ob', 'obo', 'k', 'ko', 'cherez', 'pri', 'do'
+    'и',
+    'в',
+    'во',
+    'на',
+    'с',
+    'со',
+    'по',
+    'за',
+    'под',
+    'над',
+    'из',
+    'из-за',
+    'из-под',
+    'от',
+    'для',
+    'без',
+    'у',
+    'о',
+    'об',
+    'обо',
+    'к',
+    'ко',
+    'да',
+    'но',
+    'или',
+    'через',
+    'при',
+    'до',
+    'iz',
+    'v',
+    'vo',
+    'na',
+    's',
+    'so',
+    'po',
+    'za',
+    'pod',
+    'nad',
+    'ot',
+    'dlya',
+    'bez',
+    'u',
+    'o',
+    'ob',
+    'obo',
+    'k',
+    'ko',
+    'cherez',
+    'pri',
+    'do',
   ]);
 
   // Разбиение на токены с сохранением разделителей
   const tokens = s.split(/(\s+|[-–—/\\«»"()]+)/);
 
   let wordIndex = 0;
-  const result = tokens.map((token) => {
+  const result = tokens.map(token => {
     if (!token || /^\s+$/.test(token)) return token;
     if (/^[-–—/\\«»"()]+$/.test(token)) return token;
 
@@ -1000,7 +1450,7 @@ function splitBankCategoryAndMerchant(rawText) {
     /^(финансовые\s+услуги|услуги\s+банка|банковские\s+услуги)(?:\s+|$)/i,
     /^(перевод(?:ы)?(?:\s+частному\s+лицу|\s+клиенту\s+сбера|\s+на\s+карту|\s+физлицу|\s+по\s+номеру)?)(?:\s+|$)/i,
     /^(снятие\s+наличных|выдача\s+наличных|внесение\s+наличных)(?:\s+|$)/i,
-    /^(прочие\s+операции|прочие\s+расходы|прочие\s+платежи|другие\s+расходы|другие\s+платежи)(?:\s+|$)/i
+    /^(прочие\s+операции|прочие\s+расходы|прочие\s+платежи|другие\s+расходы|другие\s+платежи)(?:\s+|$)/i,
   ];
 
   for (const pat of multiWordCategoryPatterns) {
@@ -1010,7 +1460,7 @@ function splitBankCategoryAndMerchant(rawText) {
       const after = text.slice(match[0].length).trim();
       return {
         bankCategory: detectedCat,
-        merchant: after.length >= 2 ? after : text
+        merchant: after.length >= 2 ? after : text,
       };
     }
   }
@@ -1028,7 +1478,7 @@ function splitBankCategoryAndMerchant(rawText) {
     /^(образование|курсы|тренинги|обучение)(?:\s+|$)/i,
     /^(путешествия|отели|гостиницы|туризм)(?:\s+|$)/i,
     /^(благотворительность|пожертвования)(?:\s+|$)/i,
-    /^(переводы|перевод)(?:\s+|$)/i
+    /^(переводы|перевод)(?:\s+|$)/i,
   ];
 
   for (const pat of singleWordCategoryPatterns) {
@@ -1038,15 +1488,16 @@ function splitBankCategoryAndMerchant(rawText) {
       const after = text.slice(match[0].length).trim();
       return {
         bankCategory: detectedCat,
-        merchant: after.length >= 2 ? after : text
+        merchant: after.length >= 2 ? after : text,
       };
     }
   }
 
   // 3. Динамическая проверка по пользовательским и системным категориям из Firebase / кэша (по убыванию длины)
-  const activeCats = (typeof getActiveCategories === 'function')
-    ? [...getActiveCategories('Расход'), ...getActiveCategories('Доход')]
-    : (window.DEFAULT_SYSTEM_CATEGORIES || []);
+  const activeCats =
+    typeof getActiveCategories === 'function'
+      ? [...getActiveCategories('Расход'), ...getActiveCategories('Доход')]
+      : window.DEFAULT_SYSTEM_CATEGORIES || [];
 
   const sortedCats = [...new Set(activeCats)].sort((a, b) => b.length - a.length);
   for (const cat of sortedCats) {
@@ -1113,7 +1564,7 @@ class UniversalStatementParser {
         continue;
       }
 
-      const nextLine = (i + 1 < rawLines.length) ? rawLines[i + 1].trim() : '';
+      const nextLine = i + 1 < rawLines.length ? rawLines[i + 1].trim() : '';
 
       if (this._isCandidateTxStart(line, nextLine, layout, currentBlock, bankInfo)) {
         if (currentBlock) {
@@ -1160,20 +1611,45 @@ class UniversalStatementParser {
    */
   static _detectTableLayout(rawLines) {
     let startIndex = 0;
-    let endIndex = rawLines.length - 1;
+    const endIndex = rawLines.length - 1;
     let headerFound = false;
     let headerKeywords = [];
     let hasSeparateDebitCredit = false;
     let debitColumnFirst = true;
 
     const candidateHeaderWords = [
-      'дата операции', 'дата списания', 'дата проводки', 'дата документа', 'дата совершения',
-      'дата отражения', 'дата платежа', 'дата транзакции', 'дата/время', 'дата и время',
-      'описание операции', 'детали операции', 'назначение платежа', 'назначение',
-      'место совершения', 'содержание операции', 'примечание', 'описание',
-      'сумма операции', 'сумма в валюте', 'сумма платежа', 'сумма',
-      'списание', 'зачисление', 'поступление', 'дебет', 'кредит', 'приход', 'расход',
-      'остаток', 'валюта', 'категория'
+      'дата операции',
+      'дата списания',
+      'дата проводки',
+      'дата документа',
+      'дата совершения',
+      'дата отражения',
+      'дата платежа',
+      'дата транзакции',
+      'дата/время',
+      'дата и время',
+      'описание операции',
+      'детали операции',
+      'назначение платежа',
+      'назначение',
+      'место совершения',
+      'содержание операции',
+      'примечание',
+      'описание',
+      'сумма операции',
+      'сумма в валюте',
+      'сумма платежа',
+      'сумма',
+      'списание',
+      'зачисление',
+      'поступление',
+      'дебет',
+      'кредит',
+      'приход',
+      'расход',
+      'остаток',
+      'валюта',
+      'категория',
     ];
 
     const maxScan = Math.min(rawLines.length, 120);
@@ -1181,13 +1657,22 @@ class UniversalStatementParser {
       const line = rawLines[i].toLowerCase();
       const matches = candidateHeaderWords.filter(kw => line.includes(kw));
 
-      if (matches.length >= 2 || line.includes('расшифровка операций') || (line.includes('дата операции') && line.includes('сумма'))) {
+      if (
+        matches.length >= 2 ||
+        line.includes('расшифровка операций') ||
+        (line.includes('дата операции') && line.includes('сумма'))
+      ) {
         headerFound = true;
         startIndex = i + 1;
         headerKeywords = matches;
 
-        const hasDebit = line.includes('списание') || line.includes('дебет') || line.includes('расход');
-        const hasCredit = line.includes('зачисление') || line.includes('поступление') || line.includes('кредит') || line.includes('приход');
+        const hasDebit =
+          line.includes('списание') || line.includes('дебет') || line.includes('расход');
+        const hasCredit =
+          line.includes('зачисление') ||
+          line.includes('поступление') ||
+          line.includes('кредит') ||
+          line.includes('приход');
         if (hasDebit && hasCredit) {
           hasSeparateDebitCredit = true;
           const debitPos = Math.min(
@@ -1201,7 +1686,7 @@ class UniversalStatementParser {
             line.indexOf('кредит') !== -1 ? line.indexOf('кредит') : Infinity,
             line.indexOf('приход') !== -1 ? line.indexOf('приход') : Infinity
           );
-          debitColumnFirst = (debitPos < creditPos);
+          debitColumnFirst = debitPos < creditPos;
         }
 
         // Продвигаем startIndex через все последовательные строки шапки таблицы
@@ -1209,7 +1694,10 @@ class UniversalStatementParser {
         while (scanIdx < maxScan) {
           const scanL = rawLines[scanIdx].toLowerCase();
           // Если строка содержит финансовую операцию (дата + сумма), прекращаем пропуск
-          if (/^\s*\d{2}[./-]\d{2}[./-]\d{2,4}\b/.test(scanL) && /[\d\s\xa0]+[.,]\d{2}/.test(scanL)) {
+          if (
+            /^\s*\d{2}[./-]\d{2}[./-]\d{2,4}\b/.test(scanL) &&
+            /[\d\s\xa0]+[.,]\d{2}/.test(scanL)
+          ) {
             break;
           }
           const scanMatches = candidateHeaderWords.filter(kw => scanL.includes(kw));
@@ -1234,7 +1722,9 @@ class UniversalStatementParser {
       }
     }
 
-    const hasCategoryColumn = headerKeywords.includes('категория') || rawLines.slice(0, Math.min(startIndex + 1, 100)).some(l => /\bкатегория\b/i.test(l));
+    const hasCategoryColumn =
+      headerKeywords.includes('категория') ||
+      rawLines.slice(0, Math.min(startIndex + 1, 100)).some(l => /\bкатегория\b/i.test(l));
 
     return {
       startIndex,
@@ -1243,7 +1733,7 @@ class UniversalStatementParser {
       headerKeywords,
       hasSeparateDebitCredit,
       debitColumnFirst,
-      hasCategoryColumn
+      hasCategoryColumn,
     };
   }
 
@@ -1253,7 +1743,8 @@ class UniversalStatementParser {
    */
   static _hasAnyAmount(line) {
     if (!line) return false;
-    const amountRegex = /(?:^|[^\d])([+−–—\-\u2012\u2013\u2014\u2212]?\s*[\d\s\xa0]{1,10}[.,]\d{2})(?!\s*[./-]\d{2,4})(?:\s*(?:₽|руб\.?|rub|rur|usd|\$|eur|€))?/gi;
+    const amountRegex =
+      /(?:^|[^\d])([+−–—\-\u2012\u2013\u2014\u2212]?\s*[\d\s\xa0]{1,10}[.,]\d{2})(?!\s*[./-]\d{2,4})(?:\s*(?:₽|руб\.?|rub|rur|usd|\$|eur|€))?/gi;
     let m;
     while ((m = amountRegex.exec(line)) !== null) {
       const rawMatch = m[1].trim();
@@ -1327,7 +1818,8 @@ class UniversalStatementParser {
     // а у операции останется только категория банка без наименования!
     if (currentBlock && currentBlock.length > 0 && this._blockHasAmount(currentBlock)) {
       const hasAmt = this._hasAnyAmount(line);
-      const isAuthProcessingLine = /^\s*\d{2}[./-]\d{2}[./-](\d{4}|\d{2})\s+(?:\d{5,8}|[A-Za-z0-9_-]{5,10})\b/i.test(line);
+      const isAuthProcessingLine =
+        /^\s*\d{2}[./-]\d{2}[./-](\d{4}|\d{2})\s+(?:\d{5,8}|[A-Za-z0-9_-]{5,10})\b/i.test(line);
       if (isAuthProcessingLine && !hasAmt) {
         return false;
       }
@@ -1347,7 +1839,11 @@ class UniversalStatementParser {
     }
 
     // 3. Строка начинается с префикса операции и даты: "Оплата 01.05.2024", "Покупка 15.06.2024"
-    if (/^(?:оплата(?:\s+товаров|\s+услуг)?|покупка|перевод|зачисление|списание|снятие|выдача|пополнение|платеж)\s+(?:\d{2}[./-]\d{2}[./-](\d{4}|\d{2})|\d{4}-\d{2}-\d{2})\b/i.test(line)) {
+    if (
+      /^(?:оплата(?:\s+товаров|\s+услуг)?|покупка|перевод|зачисление|списание|снятие|выдача|пополнение|платеж)\s+(?:\d{2}[./-]\d{2}[./-](\d{4}|\d{2})|\d{4}-\d{2}-\d{2})\b/i.test(
+        line
+      )
+    ) {
       return true;
     }
 
@@ -1373,7 +1869,12 @@ class UniversalStatementParser {
       return true;
     }
 
-    if (l.includes('продолжение на') || l.includes('продолжение следующ') || l.includes('окончание таблицы') || l.includes('продолжение выписки')) {
+    if (
+      l.includes('продолжение на') ||
+      l.includes('продолжение следующ') ||
+      l.includes('окончание таблицы') ||
+      l.includes('продолжение выписки')
+    ) {
       return true;
     }
 
@@ -1393,7 +1894,9 @@ class UniversalStatementParser {
   static _isFinalTableFooter(line) {
     if (!line) return false;
     const l = line.toLowerCase();
-    return /(?:конец\s+документа|окончание\s+выписки|документ\s+сформирован\s+автоматически|выписка\s+заверена\s+банком)/i.test(l);
+    return /(?:конец\s+документа|окончание\s+выписки|документ\s+сформирован\s+автоматически|выписка\s+заверена\s+банком)/i.test(
+      l
+    );
   }
 
   /**
@@ -1415,19 +1918,34 @@ class UniversalStatementParser {
     if (!amountInfo || !amountInfo.amount || amountInfo.amount <= 0) return null;
 
     // 3. Формируем чистое название контрагента / магазина / перевода
-    const cleanRes = this._cleanUniversalMerchant(lines, fullText, amountInfo.amount, dateInfo.displayDate, amountInfo.type, layout, bankInfo);
-    const rawMerchant = (typeof cleanRes === 'object' && cleanRes.merchant) ? cleanRes.merchant : cleanRes;
-    const bankCategory = (typeof cleanRes === 'object') ? cleanRes.bankCategory : null;
-    const merchant = cleanMerchantTitle(rawMerchant) || (amountInfo.type === 'Доход' ? 'Поступление средств' : 'Банковская операция');
+    const cleanRes = this._cleanUniversalMerchant(
+      lines,
+      fullText,
+      amountInfo.amount,
+      dateInfo.displayDate,
+      amountInfo.type,
+      layout,
+      bankInfo
+    );
+    const rawMerchant =
+      typeof cleanRes === 'object' && cleanRes.merchant ? cleanRes.merchant : cleanRes;
+    const bankCategory = typeof cleanRes === 'object' ? cleanRes.bankCategory : null;
+    const merchant =
+      cleanMerchantTitle(rawMerchant) ||
+      (amountInfo.type === 'Доход' ? 'Поступление средств' : 'Банковская операция');
 
     // 4. Проверяем на внутренний перевод / наличные / СБП
     const isTransfer = this._checkIfTransfer(fullText, merchant, bankInfo);
 
     // 5. Динамическая категоризация через базу Firebase с учетом категории банка
     const categorySearchText = bankCategory ? `${bankCategory} ${fullText}` : fullText;
-    const category = (typeof StatementCategorizer !== 'undefined' && typeof StatementCategorizer.categorize === 'function')
-      ? StatementCategorizer.categorize(merchant, categorySearchText, amountInfo.type)
-      : (amountInfo.type === 'Доход' ? 'Другое' : 'Другое');
+    const category =
+      typeof StatementCategorizer !== 'undefined' &&
+      typeof StatementCategorizer.categorize === 'function'
+        ? StatementCategorizer.categorize(merchant, categorySearchText, amountInfo.type)
+        : amountInfo.type === 'Доход'
+          ? 'Другое'
+          : 'Другое';
     const categoryIcon = getDynamicCategoryIcon(category);
 
     return {
@@ -1441,7 +1959,7 @@ class UniversalStatementParser {
       categoryIcon: categoryIcon,
       isTransfer: isTransfer,
       bank: bankInfo.name || 'Банк',
-      rawDetails: fullText
+      rawDetails: fullText,
     };
   }
 
@@ -1460,12 +1978,19 @@ class UniversalStatementParser {
       if (year.length === 2) year = '20' + year;
       const yearNum = parseInt(year, 10);
 
-      if (day >= 1 && day <= 31 && month >= 1 && month <= 12 && yearNum >= 2000 && yearNum <= 2099) {
+      if (
+        day >= 1 &&
+        day <= 31 &&
+        month >= 1 &&
+        month <= 12 &&
+        yearNum >= 2000 &&
+        yearNum <= 2099
+      ) {
         const dayStr = String(day).padStart(2, '0');
         const monthStr = String(month).padStart(2, '0');
         return {
           isoDate: `${yearNum}-${monthStr}-${dayStr}`,
-          displayDate: `${dayStr}.${monthStr}.${yearNum}`
+          displayDate: `${dayStr}.${monthStr}.${yearNum}`,
         };
       }
     }
@@ -1477,12 +2002,19 @@ class UniversalStatementParser {
       const month = parseInt(match[2], 10);
       const day = parseInt(match[3], 10);
 
-      if (day >= 1 && day <= 31 && month >= 1 && month <= 12 && yearNum >= 2000 && yearNum <= 2099) {
+      if (
+        day >= 1 &&
+        day <= 31 &&
+        month >= 1 &&
+        month <= 12 &&
+        yearNum >= 2000 &&
+        yearNum <= 2099
+      ) {
         const dayStr = String(day).padStart(2, '0');
         const monthStr = String(month).padStart(2, '0');
         return {
           isoDate: `${yearNum}-${monthStr}-${dayStr}`,
-          displayDate: `${dayStr}.${monthStr}.${yearNum}`
+          displayDate: `${dayStr}.${monthStr}.${yearNum}`,
         };
       }
     }
@@ -1498,7 +2030,8 @@ class UniversalStatementParser {
     const lText = text.toLowerCase();
 
     // Ищем кандидатов на сумму с 2 десятичными знаками, исключая совпадения с датами
-    const amountRegex = /(?:^|[^\d])([+−–—\-\u2012\u2013\u2014\u2212]?\s*[\d\s\xa0]{1,10}[.,]\d{2})(?!\s*[./-]\d{2,4})(?:\s*(?:₽|руб\.?|rub|rur|usd|\$|eur|€))?/gi;
+    const amountRegex =
+      /(?:^|[^\d])([+−–—\-\u2012\u2013\u2014\u2212]?\s*[\d\s\xa0]{1,10}[.,]\d{2})(?!\s*[./-]\d{2,4})(?:\s*(?:₽|руб\.?|rub|rur|usd|\$|eur|€))?/gi;
 
     const candidates = [];
     let m;
@@ -1541,8 +2074,14 @@ class UniversalStatementParser {
     }
 
     // 2. Проверяем семантические маркеры в тексте
-    const isIncomeKeyword = /\b(зачисление|поступление|пополнение|зарплата|аванс|кэшб[еэ]к|возврат|выплата|начисление процентов|перевод от|возмещение|доход|входящий перевод)\b/i.test(lText);
-    const isExpenseKeyword = /\b(списание|оплата|покупка|перевод клиенту|перевод физлицу|снятие наличных|комиссия|выдача наличных|плата за|удержание|расход|исходящий перевод)\b/i.test(lText);
+    const isIncomeKeyword =
+      /\b(зачисление|поступление|пополнение|зарплата|аванс|кэшб[еэ]к|возврат|выплата|начисление процентов|перевод от|возмещение|доход|входящий перевод)\b/i.test(
+        lText
+      );
+    const isExpenseKeyword =
+      /\b(списание|оплата|покупка|перевод клиенту|перевод физлицу|снятие наличных|комиссия|выдача наличных|плата за|удержание|расход|исходящий перевод)\b/i.test(
+        lText
+      );
 
     // 3. Проверяем раздельные колонки Списание / Зачисление (Дебет / Кредит)
     if (candidates.length >= 2) {
@@ -1555,10 +2094,10 @@ class UniversalStatementParser {
 
         if (layout?.hasSeparateDebitCredit) {
           if (layout.debitColumnFirst) {
-            const type = (targetIdx < zeroIdx) ? 'Расход' : 'Доход';
+            const type = targetIdx < zeroIdx ? 'Расход' : 'Доход';
             return { amount: target.val, type };
           } else {
-            const type = (targetIdx < zeroIdx) ? 'Доход' : 'Расход';
+            const type = targetIdx < zeroIdx ? 'Доход' : 'Расход';
             return { amount: target.val, type };
           }
         }
@@ -1573,7 +2112,8 @@ class UniversalStatementParser {
     if (layout?.headerKeywords?.some(k => k.includes('остаток')) && nonZeroList.length >= 2) {
       primaryCandidate = nonZeroList[0];
     } else {
-      const rubTarget = nonZeroList.find(c => c.isRub) || (nonZeroList.length > 0 ? nonZeroList[0] : null);
+      const rubTarget =
+        nonZeroList.find(c => c.isRub) || (nonZeroList.length > 0 ? nonZeroList[0] : null);
       primaryCandidate = rubTarget || candidates[0];
     }
 
@@ -1595,23 +2135,42 @@ class UniversalStatementParser {
    * 2. Распознавание структурных полей терминалов, POS, маркетплейсов и СБП (НСПК ЦБ РФ).
    * 3. Безопасный синтаксический конвейер (Left-Right Non-destructive Reducer) без потери данных.
    */
-  static _cleanUniversalMerchant(lines, fullText, amount, dateStr, type, layout = {}, bankInfo = {}) {
+  static _cleanUniversalMerchant(
+    lines,
+    fullText,
+    amount,
+    dateStr,
+    type,
+    layout = {},
+    bankInfo = {}
+  ) {
     // 0. Банк-адаптер: приоритетная обработка специфических форматов банка (если задан кастомный фильтр)
     if (bankInfo && typeof bankInfo.customMerchantFilter === 'function') {
       try {
-        const customRes = bankInfo.customMerchantFilter(lines, fullText, amount, dateStr, type, layout);
+        const customRes = bankInfo.customMerchantFilter(
+          lines,
+          fullText,
+          amount,
+          dateStr,
+          type,
+          layout
+        );
         if (customRes) {
           if (typeof customRes === 'string' && customRes.trim().length > 0) {
             return { merchant: customRes.trim(), bankCategory: null };
           } else if (typeof customRes === 'object' && customRes.merchant) {
             return {
               merchant: customRes.merchant,
-              bankCategory: customRes.bankCategory || null
+              bankCategory: customRes.bankCategory || null,
             };
           }
         }
       } catch (err) {
-        console.warn('[UniversalStatementParser] Ошибка в bank.customMerchantFilter:', bankInfo.name, err);
+        console.warn(
+          '[UniversalStatementParser] Ошибка в bank.customMerchantFilter:',
+          bankInfo.name,
+          err
+        );
       }
     }
 
@@ -1627,8 +2186,13 @@ class UniversalStatementParser {
     // "место совершения операции: 50148954/RU/MOSKVA G\Apteka 36 6 MCC5912"
     // "193571 /RU/CARD2CARD AMOBILE>MOSKVA MCC6538"
     // "48123456/RUS/SANKT-PETERBURG/IP SEMENOVA A.A."
-    const isoTerminalMatch = raw.match(/(?:место\s+совершения(?:\s+операции)?:?\s*)?(?:[a-zA-Z0-9_-]{4,16}\s*[/\\]\s*(?:RU|RUS|[A-Za-z]{2,3})\s*[/\\]\s*[^/\\]+?[/\\]\s*)([^/\\]+?)(?:\s+MCC:?\s*\d{4}|\s*$)/i) ||
-                             raw.match(/(?:[a-zA-Z0-9_-]{4,16}\s*[/\\]\s*(?:RU|RUS|[A-Za-z]{2,3})\s*[/\\]\s*)([^/\\]+?)(?:\s+MCC:?\s*\d{4}|\s*$)/i);
+    const isoTerminalMatch =
+      raw.match(
+        /(?:место\s+совершения(?:\s+операции)?:?\s*)?(?:[a-zA-Z0-9_-]{4,16}\s*[/\\]\s*(?:RU|RUS|[A-Za-z]{2,3})\s*[/\\]\s*[^/\\]+?[/\\]\s*)([^/\\]+?)(?:\s+MCC:?\s*\d{4}|\s*$)/i
+      ) ||
+      raw.match(
+        /(?:[a-zA-Z0-9_-]{4,16}\s*[/\\]\s*(?:RU|RUS|[A-Za-z]{2,3})\s*[/\\]\s*)([^/\\]+?)(?:\s+MCC:?\s*\d{4}|\s*$)/i
+      );
     if (isoTerminalMatch && isoTerminalMatch[1]) {
       let tName = isoTerminalMatch[1].trim();
       const cityArrow = tName.split('>');
@@ -1655,7 +2219,9 @@ class UniversalStatementParser {
     // 1.2. Стандартный эквайринг Retail / POS / E-Commerce (Alfa-Bank, Raiffeisen, VTB)
     // Пример: "Retail RUS MOSCOW RESTORAN NESSELBEK"
     // Пример: "POS RUS MOSKVA OOO VKUSVILL"
-    const retailAcqMatch = raw.match(/\b(?:Retail|POS|E-COMMERCE|Unique|ATM)\s+(?:RUS|RU|[A-Z]{2,3})\s+(?:[A-Za-zА-Яа-яЁё0-9\s.-]+?\s+)?([A-Za-zА-Яа-яЁё0-9\s&№"'«»._-]{3,50}?)(?:\s+MCC:?\s*\d{4}|\s+дата\b|\s+карта\b|\s+\d{2}[./-]\d{2}|$)/i);
+    const retailAcqMatch = raw.match(
+      /\b(?:Retail|POS|E-COMMERCE|Unique|ATM)\s+(?:RUS|RU|[A-Z]{2,3})\s+(?:[A-Za-zА-Яа-яЁё0-9\s.-]+?\s+)?([A-Za-zА-Яа-яЁё0-9\s&№"'«»._-]{3,50}?)(?:\s+MCC:?\s*\d{4}|\s+дата\b|\s+карта\b|\s+\d{2}[./-]\d{2}|$)/i
+    );
     if (retailAcqMatch && retailAcqMatch[1]) {
       let rName = retailAcqMatch[1].trim();
       rName = stripCardTokens(rName);
@@ -1698,14 +2264,21 @@ class UniversalStatementParser {
     } else {
       // Резервная проверка: есть ли веб-ссылка непосредственно в описании операции
       const fallbackUrl = extractWebsiteLink(raw);
-      if (fallbackUrl && (raw.toLowerCase().includes('оплата') || raw.toLowerCase().includes('pos') || raw.toLowerCase().includes('retail'))) {
+      if (
+        fallbackUrl &&
+        (raw.toLowerCase().includes('оплата') ||
+          raw.toLowerCase().includes('pos') ||
+          raw.toLowerCase().includes('retail'))
+      ) {
         return fallbackUrl;
       }
     }
 
     // 1.4. Формат POS-терминалов: "... сумма ... в [НАЗВАНИЕ ТОЧКИ] [ГОРОД] [RU] дата ..."
     // Пример: "сумма 2152.00 в APTEKA ZDOROV.RU SANKT- PETERBU RU дата 2026-09-15"
-    const ozonPosMatch = raw.match(/(?:сумма\s*[\d\s.,]+\s*в|\bв)\s+([A-Za-zА-Яа-яЁё0-9_\-.\s]{3,50}?)(?:\s+(?:sankt-?\s*peterbu|moskva|moscow|ru|rus|россия)\b|\s+дата\s*\d{4}|$)/i);
+    const ozonPosMatch = raw.match(
+      /(?:сумма\s*[\d\s.,]+\s*в|\bв)\s+([A-Za-zА-Яа-яЁё0-9_\-.\s]{3,50}?)(?:\s+(?:sankt-?\s*peterbu|moskva|moscow|ru|rus|россия)\b|\s+дата\s*\d{4}|$)/i
+    );
     if (ozonPosMatch && ozonPosMatch[1]) {
       let posName = ozonPosMatch[1].replace(/^[«"'\s]+|[»"'\s]+$/g, '').trim();
       posName = stripCardTokens(posName);
@@ -1733,28 +2306,43 @@ class UniversalStatementParser {
     const l = raw.toLowerCase();
     if (l.includes('сбп') || l.includes('быстрых платежей') || l.includes('sbp')) {
       // Ищем ФИО контрагента
-      const sbpPerson = raw.match(/(?:получатель|отправитель|клиент|плательщик|в пользу|от|кому):\s*([А-ЯЁ][а-яёA-Za-z\s.-]{2,35})/i) ||
-                        raw.match(/(?:исходящий перевод сбп,?\s*|входящий перевод сбп,?\s*)([А-ЯЁ][а-яё]+\s+[А-ЯЁ][а-яё]+(?:\s+[А-ЯЁ]\.?)?)/i) ||
-                        raw.match(/(?:исходящий перевод сбп,?\s*|входящий перевод сбп,?\s*)([А-ЯЁ][а-яё]+)/i);
+      const sbpPerson =
+        raw.match(
+          /(?:получатель|отправитель|клиент|плательщик|в пользу|от|кому):\s*([А-ЯЁ][а-яёA-Za-z\s.-]{2,35})/i
+        ) ||
+        raw.match(
+          /(?:исходящий перевод сбп,?\s*|входящий перевод сбп,?\s*)([А-ЯЁ][а-яё]+\s+[А-ЯЁ][а-яё]+(?:\s+[А-ЯЁ]\.?)?)/i
+        ) ||
+        raw.match(/(?:исходящий перевод сбп,?\s*|входящий перевод сбп,?\s*)([А-ЯЁ][а-яё]+)/i);
 
       // Ищем наименование банка-получателя/отправителя
-      const sbpBank = raw.match(/(?:в\s+банк|банк|из\s+банка|через\s+банк|через|из|в)?\s*([«"]?[А-Яа-яA-Za-z-]+(?:\s*банк)?[»"]?)\s*(?:,|$|\.)/i);
+      const sbpBank = raw.match(
+        /(?:в\s+банк|банк|из\s+банка|через\s+банк|через|из|в)?\s*([«"]?[А-Яа-яA-Za-z-]+(?:\s*банк)?[»"]?)\s*(?:,|$|\.)/i
+      );
 
       let personName = '';
       if (sbpPerson && sbpPerson[1]) {
-        personName = sbpPerson[1].replace(/^(от|кому|получатель|отправитель|клиент|плательщик):\s*/i, '').replace(/без ндс.*$/i, '').trim();
+        personName = sbpPerson[1]
+          .replace(/^(от|кому|получатель|отправитель|клиент|плательщик):\s*/i, '')
+          .replace(/без ндс.*$/i, '')
+          .trim();
       }
 
       let bankName = '';
       if (sbpBank && sbpBank[1]) {
         const candidateBank = sbpBank[1].replace(/[«"]/g, '').trim();
-        if (/банк|сбер|тинькофф|т-банк|втб|газпром|альфа|озон|яндекс|райффайзен/i.test(candidateBank) && !/быстрых|платежей|сбп/i.test(candidateBank)) {
+        if (
+          /банк|сбер|тинькофф|т-банк|втб|газпром|альфа|озон|яндекс|райффайзен/i.test(
+            candidateBank
+          ) &&
+          !/быстрых|платежей|сбп/i.test(candidateBank)
+        ) {
           bankName = candidateBank;
         }
       }
 
       if (personName && personName.length >= 3) {
-        return bankName 
+        return bankName
           ? `${type === 'Доход' ? 'Входящий перевод СБП' : 'Перевод СБП'}: ${personName} (${bankName})`
           : `${type === 'Доход' ? 'Входящий перевод СБП' : 'Перевод СБП'}: ${personName}`;
       } else if (bankName) {
@@ -1775,8 +2363,9 @@ class UniversalStatementParser {
 
     // 1.8. Внутрибанковские переводы
     if (/внутрибанковский\s+перевод/i.test(raw)) {
-      const person = raw.match(/(?:на|от)\s+(?:\+?\d[\d\s-]{8,15},\s*)?([А-ЯЁа-яё]+\s+[А-ЯЁ]\.?)/i) ||
-                     raw.match(/([А-ЯЁа-яё]+\s+[А-ЯЁ]\.?)(?=\s+в\s+\d{2}:\d{2})/i);
+      const person =
+        raw.match(/(?:на|от)\s+(?:\+?\d[\d\s-]{8,15},\s*)?([А-ЯЁа-яё]+\s+[А-ЯЁ]\.?)/i) ||
+        raw.match(/([А-ЯЁа-яё]+\s+[А-ЯЁ]\.?)(?=\s+в\s+\d{2}:\d{2})/i);
       if (person && person[1]) {
         const cleanP = person[1].trim();
         return `Внутрибанковский перевод: ${cleanP}`;
@@ -1785,36 +2374,47 @@ class UniversalStatementParser {
     }
 
     // 1.8.1. Переводы конкретным лицам и сервисам (Сбер, Т-Банк, СБП и др.)
-    const transferForMatch = raw.match(/перевод\s+(?:для|кому|клиенту(?:\s+сбера)?|физлицу)\s+([А-ЯЁа-яёA-Za-z\s.-]+?)(?=(?:\s*\.?\s*операция|\s*\.?\s*по\s+карте|\s*\.?\s*по\s+счету|\s*$))/i);
+    const transferForMatch = raw.match(
+      /перевод\s+(?:для|кому|клиенту(?:\s+сбера)?|физлицу)\s+([А-ЯЁа-яёA-Za-z\s.-]+?)(?=(?:\s*\.?\s*операция|\s*\.?\s*по\s+карте|\s*\.?\s*по\s+счету|\s*$))/i
+    );
     if (transferForMatch && transferForMatch[1]) {
       let personName = transferForMatch[1].replace(/\b\.?\s*операция.*$/i, '').trim();
       personName = stripCardTokens(personName);
       if (personName.length >= 2) {
         return {
           merchant: `Перевод: ${toCleanTitleCase(personName)}`,
-          bankCategory: 'Перевод'
+          bankCategory: 'Перевод',
         };
       }
     }
 
-    const transferFromMatch = raw.match(/перевод\s+(?:из|от)\s+([А-ЯЁа-яёA-Za-z\s.-]+?)(?=(?:\s*\.?\s*операция|\s*\.?\s*по\s+карте|\s*\.?\s*по\s+счету|\s*$))/i);
+    const transferFromMatch = raw.match(
+      /перевод\s+(?:из|от)\s+([А-ЯЁа-яёA-Za-z\s.-]+?)(?=(?:\s*\.?\s*операция|\s*\.?\s*по\s+карте|\s*\.?\s*по\s+счету|\s*$))/i
+    );
     if (transferFromMatch && transferFromMatch[1]) {
       let sourceName = transferFromMatch[1].replace(/\b\.?\s*операция.*$/i, '').trim();
       sourceName = stripCardTokens(sourceName);
       if (sourceName.length >= 2) {
         return {
-          merchant: type === 'Доход' ? `Входящий перевод: ${toCleanTitleCase(sourceName)}` : `Перевод: ${toCleanTitleCase(sourceName)}`,
-          bankCategory: 'Перевод'
+          merchant:
+            type === 'Доход'
+              ? `Входящий перевод: ${toCleanTitleCase(sourceName)}`
+              : `Перевод: ${toCleanTitleCase(sourceName)}`,
+          bankCategory: 'Перевод',
         };
       }
     }
 
     // 1.9. B2B безналичные платежи с организациями (ООО, АО, ПАО, ИП)
-    const legalEntity = raw.match(/(?:^|[^\wа-яёА-ЯЁ])((?:ООО|АО|ПАО|ЗАО|ИП|ФГУП|МУП)\s+["«]?[A-Za-zА-Яа-яЁё0-9_\-\s.&]+?["»]?(?=\s+(?:ИНН|КПП|БИК|ОГРН|р\/с|л\/с|\d{10,12}|на сумму|сумма|$)))/i);
+    const legalEntity = raw.match(
+      /(?:^|[^\wа-яёА-ЯЁ])((?:ООО|АО|ПАО|ЗАО|ИП|ФГУП|МУП)\s+["«]?[A-Za-zА-Яа-яЁё0-9_\-\s.&]+?["»]?(?=\s+(?:ИНН|КПП|БИК|ОГРН|р\/с|л\/с|\d{10,12}|на сумму|сумма|$)))/i
+    );
     if (legalEntity && legalEntity[1]) {
       const le = legalEntity[1].trim();
       if (le.length >= 4) {
-        const purpose = raw.match(/^(?:оплата\s+по\s+договору[^\d.,\n]+|оплата\s+по\s+счету[^\d.,\n]+)/i);
+        const purpose = raw.match(
+          /^(?:оплата\s+по\s+договору[^\d.,\n]+|оплата\s+по\s+счету[^\d.,\n]+)/i
+        );
         if (purpose && purpose[0].length < 35) {
           return `${toCleanTitleCase(purpose[0].trim())}: ${toCleanTitleCase(le)}`;
         }
@@ -1826,7 +2426,9 @@ class UniversalStatementParser {
     if (/снятие\s+наличных|выдача\s+наличных|снятие\s+в\s+банкомате|банкомат.*выдача/i.test(raw)) {
       return 'Снятие наличных';
     }
-    if (/внесение\s+наличных|пополнение\s+наличными|взнос\s+наличными|банкомат.*пополнение/i.test(raw)) {
+    if (
+      /внесение\s+наличных|пополнение\s+наличными|взнос\s+наличными|банкомат.*пополнение/i.test(raw)
+    ) {
       return 'Внесение наличных';
     }
     if (/заработная\s+плата|зарплата|выплата\s+аванса|зачисление\s+зп/i.test(raw)) {
@@ -1836,7 +2438,11 @@ class UniversalStatementParser {
       const prog = raw.match(/программе\s+лояльности/i);
       return prog ? 'Кэшбек (Программа лояльности)' : 'Кэшбек';
     }
-    if (/комиссия\s+за\s+обслуживание|плата\s+за\s+обслуживание|плата\s+за\s+пакет|комиссия\s+банка/i.test(raw)) {
+    if (
+      /комиссия\s+за\s+обслуживание|плата\s+за\s+обслуживание|плата\s+за\s+пакет|комиссия\s+банка/i.test(
+        raw
+      )
+    ) {
       return 'Комиссия банка';
     }
     if (/проценты\s+по\s+вкладу|начисление\s+процентов|капитализация\s+процентов/i.test(raw)) {
@@ -1853,10 +2459,13 @@ class UniversalStatementParser {
     // В таких выписках первая строка содержит категорию банка («Отдых и развлечения», «Супермаркеты» и т.д.),
     // а вторая строка — реальное описание транзакции («KOMPANIYA AFISHA MOSCOW RUS...», «Перевод для...»).
     if (lines.length >= 2) {
-      let line1Clean = lines[0]
+      const line1Clean = lines[0]
         .replace(/\b\d{2}[./-]\d{2}[./-]\d{2,4}\b/g, ' ')
         .replace(/\b(?:в\s+)?\d{2}:\d{2}(?::\d{2})?\b/g, ' ')
-        .replace(/([+−–—\-\u2012\u2013\u2014\u2212]?\s*[\d\s\xa0]{1,10}[.,]\d{2})\s*(?:₽|руб\.?|rub|rur|usd|\$|eur|€)?/gi, ' ')
+        .replace(
+          /([+−–—\-\u2012\u2013\u2014\u2212]?\s*[\d\s\xa0]{1,10}[.,]\d{2})\s*(?:₽|руб\.?|rub|rur|usd|\$|eur|€)?/gi,
+          ' '
+        )
         .trim();
 
       const cat1 = splitBankCategoryAndMerchant(line1Clean);
@@ -1874,8 +2483,14 @@ class UniversalStatementParser {
 
     // 2. Снимаем префиксы типов операций в начале строки
     lineText = lineText
-      .replace(/^(?:оплата\s+(?:товаров\s+и\s+услуг|товаров\/услуг|товаров|услуг|по\s+карте)?|безналичная\s+оплата|покупка|списание\s+по\s+карте|операция\s+по\s+карте|списание|зачисление|платеж\s+по\s+карте|операция:?)\s*/i, '')
-      .replace(/^(?:покупка\s+\(внешняя\s+сеть\s+рф\)|покупка\s+\(терминал\s+банка\)|покупка\s+\(филиал\s+гпб\)|возврат\s+\(терминал\s+банка\))\s*\.?\s*/i, '');
+      .replace(
+        /^(?:оплата\s+(?:товаров\s+и\s+услуг|товаров\/услуг|товаров|услуг|по\s+карте)?|безналичная\s+оплата|покупка|списание\s+по\s+карте|операция\s+по\s+карте|списание|зачисление|платеж\s+по\s+карте|операция:?)\s*/i,
+        ''
+      )
+      .replace(
+        /^(?:покупка\s+\(внешняя\s+сеть\s+рф\)|покупка\s+\(терминал\s+банка\)|покупка\s+\(филиал\s+гпб\)|возврат\s+\(терминал\s+банка\))\s*\.?\s*/i,
+        ''
+      );
 
     // 3. Удаляем ВСЕ маски карт, фразы "по карте" и хвосты с помощью stripCardTokens
     lineText = stripCardTokens(lineText);
@@ -1888,19 +2503,36 @@ class UniversalStatementParser {
 
     // 5. Удаляем времена (в HH:MM:SS, HH:MM) с поддержкой кириллического предлога "в" и таймзоны
     lineText = lineText
-      .replace(/(?:^|[^\wа-яёА-ЯЁ])(?:в\s+)?\d{1,2}:\d{2}(?::\d{2})?(?:\s*(?:мск|utc|gmt))?(?=[^\wа-яёА-ЯЁ]|$)/gi, ' ')
+      .replace(
+        /(?:^|[^\wа-яёА-ЯЁ])(?:в\s+)?\d{1,2}:\d{2}(?::\d{2})?(?:\s*(?:мск|utc|gmt))?(?=[^\wа-яёА-ЯЁ]|$)/gi,
+        ' '
+      )
       .replace(/\b\d{1,2}:\d{2}(?::\d{2})?\b/g, ' ');
 
     // 6. Удаляем финансовые суммы с знаками валют или без
-    lineText = lineText
-      .replace(/([+−–—\-\u2012\u2013\u2014\u2212]?\s*[\d\s\xa0]{1,10}[.,]\d{2})\s*(?:₽|руб\.?|rub|rur|usd|\$|eur|€)?/gi, ' ');
+    lineText = lineText.replace(
+      /([+−–—\-\u2012\u2013\u2014\u2212]?\s*[\d\s\xa0]{1,10}[.,]\d{2})\s*(?:₽|руб\.?|rub|rur|usd|\$|eur|€)?/gi,
+      ' '
+    );
 
     // 7. Удаляем технические валютные и банковские термины с безопасными границами для кириллицы
     lineText = lineText
-      .replace(/(?:^|[^\wа-яёА-ЯЁ])(?:валюта\s+операции:?|валюта\s+счета:?|российские\s+рубли|российский\s+рубль|рубли\s+рф|rur|rub|usd|eur)(?=[^\wа-яёА-ЯЁ]|$)/gi, ' ')
-      .replace(/(?:^|[^\wа-яёА-ЯЁ])(?:операции\s+обработки|операции\s+договора|договора\s+мск|дата\s+проводки|дата\s+операции|сумма\s+в\s+валюте|сумма\s+операции)(?=[^\wа-яёА-ЯЁ]|$)/gi, ' ')
-      .replace(/(?:^|[^\wа-яёА-ЯЁ])(?:выписка\s+по\s+карте|выписка\s+по\s+счету|детали\s+операции|место\s+совершения(?:\s+операции)?)(?=[^\wа-яёА-ЯЁ]|$)/gi, ' ')
-      .replace(/(?:^|[^\wа-яёА-ЯЁ])(?:без\s+ндс|без\s+налога|в\s+т\.ч\.\s*ндс|мск|utc|gmt)(?=[^\wа-яёА-ЯЁ]|$)/gi, ' ');
+      .replace(
+        /(?:^|[^\wа-яёА-ЯЁ])(?:валюта\s+операции:?|валюта\s+счета:?|российские\s+рубли|российский\s+рубль|рубли\s+рф|rur|rub|usd|eur)(?=[^\wа-яёА-ЯЁ]|$)/gi,
+        ' '
+      )
+      .replace(
+        /(?:^|[^\wа-яёА-ЯЁ])(?:операции\s+обработки|операции\s+договора|договора\s+мск|дата\s+проводки|дата\s+операции|сумма\s+в\s+валюте|сумма\s+операции)(?=[^\wа-яёА-ЯЁ]|$)/gi,
+        ' '
+      )
+      .replace(
+        /(?:^|[^\wа-яёА-ЯЁ])(?:выписка\s+по\s+карте|выписка\s+по\s+счету|детали\s+операции|место\s+совершения(?:\s+операции)?)(?=[^\wа-яёА-ЯЁ]|$)/gi,
+        ' '
+      )
+      .replace(
+        /(?:^|[^\wа-яёА-ЯЁ])(?:без\s+ндс|без\s+налога|в\s+т\.ч\.\s*ндс|мск|utc|gmt)(?=[^\wа-яёА-ЯЁ]|$)/gi,
+        ' '
+      );
 
     // 7.1. Удаляем приклеенные артефакты шапки/подвала колонок выписки (операции, обработки, договора, мск)
     lineText = lineText
@@ -1912,9 +2544,18 @@ class UniversalStatementParser {
 
     // 8. Удаляем эквайринговые и авторизационные коды
     lineText = lineText
-      .replace(/\b(mcc:?\s*\d{4}|rrn:?\s*\w+|код\s+авторизации:?\s*\w+|авторизация:?\s*\w+|станция:?\s*\w+)\b/gi, ' ')
-      .replace(/\b(терминал\s+банка|внешняя\s+сеть\s+рф|филиал\s+гпб|pos|retail|e-commerce|unique)\b/gi, ' ')
-      .replace(/\b(комиссия:?\s*[\d\s.,]+|остаток:?\s*[\d\s.,]+|успешно|исполнено|проведено)\b/gi, ' ');
+      .replace(
+        /\b(mcc:?\s*\d{4}|rrn:?\s*\w+|код\s+авторизации:?\s*\w+|авторизация:?\s*\w+|станция:?\s*\w+)\b/gi,
+        ' '
+      )
+      .replace(
+        /\b(терминал\s+банка|внешняя\s+сеть\s+рф|филиал\s+гпб|pos|retail|e-commerce|unique)\b/gi,
+        ' '
+      )
+      .replace(
+        /\b(комиссия:?\s*[\d\s.,]+|остаток:?\s*[\d\s.,]+|успешно|исполнено|проведено)\b/gi,
+        ' '
+      );
 
     // 8.1. Снимаем изолированные коды авторизации (5-8 цифр в начале или после даты)
     lineText = lineText.replace(/^[.,\s]*\b\d{5,8}\b\s*/, '').trim();
@@ -1929,8 +2570,14 @@ class UniversalStatementParser {
 
     // 9. Удаляем географические суффиксы на границах слов (не ломая слова вроде "Городской")
     lineText = lineText
-      .replace(/\b(?:г\.\s*[а-яёa-z-]+|город:?\s*(?:москва|санкт-петербург|казань|самара|сочи|екатеринбург|краснодар|уфа|пермь))\b/gi, ' ')
-      .replace(/\b(?:moskva|moscow|sankt-?peterbu(?:rg)?|spb|ekaterinburg|kazan|novosibirsk|samara|rostov|krasnodar|sochi|voronezh|ufa|perm)\b/gi, ' ')
+      .replace(
+        /\b(?:г\.\s*[а-яёa-z-]+|город:?\s*(?:москва|санкт-петербург|казань|самара|сочи|екатеринбург|краснодар|уфа|пермь))\b/gi,
+        ' '
+      )
+      .replace(
+        /\b(?:moskva|moscow|sankt-?peterbu(?:rg)?|spb|ekaterinburg|kazan|novosibirsk|samara|rostov|krasnodar|sochi|voronezh|ufa|perm)\b/gi,
+        ' '
+      )
       .replace(/\b(?:ru|rus|russia|россия|russian\s+federation)\b/gi, ' ');
 
     // 10. Удаляем номер терминала/магазина в самом конце строки (например, "Pyaterochka 4512" -> "Pyaterochka")
@@ -1952,14 +2599,14 @@ class UniversalStatementParser {
     // -------------------------------------------------------------
     // ЭТАП 3: Нормализация регистра (Title Case)
     // -------------------------------------------------------------
-    let finalMerchant = (type === 'Доход' ? 'Поступление средств' : 'Банковская операция');
+    let finalMerchant = type === 'Доход' ? 'Поступление средств' : 'Банковская операция';
     if (lineText.length >= 2 && !/^\d+$/.test(lineText)) {
       finalMerchant = toCleanTitleCase(lineText);
     }
 
     return {
       merchant: finalMerchant,
-      bankCategory: detectedBankCategory || bankCategory || null
+      bankCategory: detectedBankCategory || bankCategory || null,
     };
   }
 
@@ -1971,7 +2618,7 @@ class UniversalStatementParser {
     let currentBlock = null;
 
     for (let i = 0; i < rawLines.length; i++) {
-      let line = rawLines[i].trim();
+      const line = rawLines[i].trim();
       if (!line) continue;
 
       // Если встретили признак завершения таблицы или подвала документа — закрываем текущий блок транзакции
@@ -1985,7 +2632,7 @@ class UniversalStatementParser {
 
       if (this._isServiceLine(line, config)) continue;
 
-      const nextLine = (i + 1 < rawLines.length) ? rawLines[i + 1] : '';
+      const nextLine = i + 1 < rawLines.length ? rawLines[i + 1] : '';
       if (config.isTxStart(line, nextLine, currentBlock)) {
         if (currentBlock) rawBlocks.push(currentBlock);
         currentBlock = [line];
@@ -2034,9 +2681,11 @@ class UniversalStatementParser {
 
     // Динамическая категоризация через базу Firebase
     const categorySearch = `${data.bankCategory ? data.bankCategory + ' ' : ''}${data.hint ? data.hint + ' ' : ''}${fullText}`;
-    const category = (typeof StatementCategorizer !== 'undefined' && typeof StatementCategorizer.categorize === 'function')
-      ? StatementCategorizer.categorize(merchant, categorySearch, data.type)
-      : 'Другое';
+    const category =
+      typeof StatementCategorizer !== 'undefined' &&
+      typeof StatementCategorizer.categorize === 'function'
+        ? StatementCategorizer.categorize(merchant, categorySearch, data.type)
+        : 'Другое';
     const categoryIcon = getDynamicCategoryIcon(category);
 
     return {
@@ -2050,14 +2699,19 @@ class UniversalStatementParser {
       categoryIcon: categoryIcon,
       isTransfer: isTransfer,
       bank: config.name,
-      rawDetails: fullText
+      rawDetails: fullText,
     };
   }
 
   static _checkIfTransfer(fullText, merchant, config) {
     const text = `${fullText} ${merchant}`.toLowerCase();
-    const hasUniversal = Array.isArray(UNIVERSAL_TRANSFER_KEYWORDS) && UNIVERSAL_TRANSFER_KEYWORDS.some(kw => text.includes(kw));
-    const hasCustom = (config && typeof config.customTransferCheck === 'function') ? config.customTransferCheck(text) : false;
+    const hasUniversal =
+      Array.isArray(UNIVERSAL_TRANSFER_KEYWORDS) &&
+      UNIVERSAL_TRANSFER_KEYWORDS.some(kw => text.includes(kw));
+    const hasCustom =
+      config && typeof config.customTransferCheck === 'function'
+        ? config.customTransferCheck(text)
+        : false;
     return hasUniversal || hasCustom;
   }
 
@@ -2067,7 +2721,9 @@ class UniversalStatementParser {
   static _stripFooterFromLine(line) {
     if (!line) return '';
     // Ищем маркеры начала подвала (служебные отметки формирования, должности, подписи, остатки)
-    const footerMatch = line.match(/(?:(?<!\p{L})(?:должность|подпись|расшифровка\s+подписи|дата\s+формирования(?:\s+выписки)?|выписка\s+сформирована|исходящий\s+остаток|итого\s+оборотов)(?!\p{L}))/iu);
+    const footerMatch = line.match(
+      /(?:(?<!\p{L})(?:должность|подпись|расшифровка\s+подписи|дата\s+формирования(?:\s+выписки)?|выписка\s+сформирована|исходящий\s+остаток|итого\s+оборотов)(?!\p{L}))/iu
+    );
     if (footerMatch && footerMatch.index > 0) {
       return line.slice(0, footerMatch.index).trim();
     }
@@ -2084,28 +2740,46 @@ class UniversalStatementParser {
     if (!l) return false;
 
     // 1. Итоговые строки таблицы и остатки (не срабатываем на слово «остаток» в шапке колонок таблицы)
-    if (/(?:исходящий\s+остаток|остаток\s+на\s+конец|обороты\s+за\s+период|итого\s+(?:списаний|зачислений|оборотов|операций)|всего\s+(?:списано|зачислено|поступлений|операций)|исходящее\s+сальдо)/iu.test(l)) {
+    if (
+      /(?:исходящий\s+остаток|остаток\s+на\s+конец|обороты\s+за\s+период|итого\s+(?:списаний|зачислений|оборотов|операций)|всего\s+(?:списано|зачислено|поступлений|операций)|исходящее\s+сальдо)/iu.test(
+        l
+      )
+    ) {
       return true;
     }
 
     // 2. Служебные метаданные генерации документа / выписки
-    if (/(?:дата|время)\s+(?:формирования|составления|выгрузки|выдачи|печати)(?:\s+выписки)?/iu.test(l) ||
-        /(?:выписка|справка|отчет)\s+(?:сформирован[ао]|составлен[ао]|заверен[ао])/iu.test(l) ||
-        /(?:сформировано|составлено)\s+(?:автоматически|в\s+системе|банком)/iu.test(l) ||
-        /(?:не\s+требует\s+(?:подписи|печати))/iu.test(l)) {
+    if (
+      /(?:дата|время)\s+(?:формирования|составления|выгрузки|выдачи|печати)(?:\s+выписки)?/iu.test(
+        l
+      ) ||
+      /(?:выписка|справка|отчет)\s+(?:сформирован[ао]|составлен[ао]|заверен[ао])/iu.test(l) ||
+      /(?:сформировано|составлено)\s+(?:автоматически|в\s+системе|банком)/iu.test(l) ||
+      /(?:не\s+требует\s+(?:подписи|печати))/iu.test(l)
+    ) {
       return true;
     }
 
     // 3. Официальные должности руководства и сотрудников банка, реквизиты подписания:
-    if (/(?<!\p{L})(?:должность|подпись|расшифровка\s+подписи)(?!\p{L})/iu.test(l) ||
-        /(?<!\p{L})(?:вице[- ]президент|президент\s+банка|председатель\s+правления)(?!\p{L})/iu.test(l) ||
-        /(?<!\p{L})(?:начальник|директор|руководитель|заместитель|управляющий|главный\s+бухгалтер|бухгалтер|ответственный\s+исполнитель|исполнитель|специалист|операционист|кассир|контролер)(?!\p{L})/iu.test(l) ||
-        /(?:с\s+уважением|искренне\s+ваш)/iu.test(l)) {
+    if (
+      /(?<!\p{L})(?:должность|подпись|расшифровка\s+подписи)(?!\p{L})/iu.test(l) ||
+      /(?<!\p{L})(?:вице[- ]президент|президент\s+банка|председатель\s+правления)(?!\p{L})/iu.test(
+        l
+      ) ||
+      /(?<!\p{L})(?:начальник|директор|руководитель|заместитель|управляющий|главный\s+бухгалтер|бухгалтер|ответственный\s+исполнитель|исполнитель|специалист|операционист|кассир|контролер)(?!\p{L})/iu.test(
+        l
+      ) ||
+      /(?:с\s+уважением|искренне\s+ваш)/iu.test(l)
+    ) {
       return true;
     }
 
     // 4. ЭЦП, факсимиле, штампы, сертификаты и заверение документов
-    if (/(?:документ\s+подписан|электронн(?:ой|ая)\s+подпис(?:ью|ь)|кэп|пэп|укэп|сертификат\s+ключа|оттиск\s+печати|м\.п\.|подпись\s+уполномоченного|подпись\s+сотрудника|выписка\s+заверена|печать\s+банка|штамп\s+банка)/iu.test(l)) {
+    if (
+      /(?:документ\s+подписан|электронн(?:ой|ая)\s+подпис(?:ью|ь)|кэп|пэп|укэп|сертификат\s+ключа|оттиск\s+печати|м\.п\.|подпись\s+уполномоченного|подпись\s+сотрудника|выписка\s+заверена|печать\s+банка|штамп\s+банка)/iu.test(
+        l
+      )
+    ) {
       return true;
     }
 
@@ -2119,8 +2793,10 @@ class UniversalStatementParser {
 
   static _isServiceLine(line, config) {
     const l = line.toLowerCase();
-    const isCommon = Array.isArray(COMMON_SERVICE_LINES) && COMMON_SERVICE_LINES.some(kw => l.includes(kw));
-    const isCustom = (config && typeof config.isServiceLine === 'function') ? config.isServiceLine(l) : false;
+    const isCommon =
+      Array.isArray(COMMON_SERVICE_LINES) && COMMON_SERVICE_LINES.some(kw => l.includes(kw));
+    const isCustom =
+      config && typeof config.isServiceLine === 'function' ? config.isServiceLine(l) : false;
     return isCommon || isCustom;
   }
 }
@@ -2129,310 +2805,26 @@ class UniversalStatementParser {
 // 2. РЕЕСТР БАНКОВ (КАЖДЫЙ БАНК — АДАПТЕР К УНИВЕРСАЛЬНОМУ ЯДРУ)
 // =============================================================
 
-const BANK_REGISTRY = [
-  // --- ЯНДЕКС БАНК ---
-  {
-    id: 'YANDEX',
-    name: 'Яндекс Банк',
-    slug: 'yandexbank',
-    iconKey: 'yandex',
-    badgeColor: 'bg-amber-900/60 text-amber-300 border-amber-700/60',
-    guide: {
-      doc: 'Выписка по договору Сейва или карты (PDF)',
-      steps: [
-        'Откройте приложение «Яндекс Пэй»',
-        'Нажмите на Сейв или карту Яндекс Банка',
-        'Перейдите в раздел «Справки» внизу страницы',
-        'Выберите «Выписка по договору» и задайте период дат',
-        'Скачайте сформированный PDF-документ'
-      ]
-    },
-    getScore: (p) => {
-      let score = 0;
-      if (/лицензи[яи][^\d]*3027\b/i.test(p) || p.includes('3027')) score += 10;
-      if (p.includes('яндекс банк') || p.includes('кб яндекс') || p.includes('yandex bank') || p.includes('ао яндекс')) score += 8;
-      if (p.includes('yabank.yandex.ru') || p.includes('yandex.ru/bank') || p.includes('yandex pay') || p.includes('яндекс пэй')) score += 5;
-      if (p.includes('договору сейва') || p.includes('сейв') || p.includes('справка об остатке')) score += 4;
-      return score;
-    },
-    detect: function(p) { return this.getScore(p) >= 5; },
-    isTxStart: (l) => /^(?:оплата(?:\s+товаров(?:\s+и\s+услуг|\/услуг)?|\s+услуг)?|покупка|перевод|снятие|пополнение|зачисление|возврат|списание|выплата)(?:\s+|$|[.,:;])/iu.test(l.trim()) || /^\s*\d{2}\.\d{2}\.\d{4}\s+(?:оплата|покупка|перевод|пополнение|зачисление|возврат|списание)/iu.test(l.trim()),
-    isServiceLine: (l) => {
-      const lower = l.toLowerCase();
-      return (lower.includes('операции') && lower.includes('мск')) ||
-             (lower.includes('обработки') && lower.includes('договора')) ||
-             lower.includes('исходящий остаток') ||
-             lower.includes('итого списаний') ||
-             lower.includes('итого зачислений') ||
-             lower.includes('с уважением') ||
-             lower.includes('начальник отдела') ||
-             lower.includes('самохвалова') ||
-             lower.includes('садовническая') ||
-             lower.includes('yabank.yandex.ru');
-    },
-    customMerchantFilter: (lines, fullText, amount, dateStr, type) => {
-      const full = lines.join(' ');
-      if (/перевод.*сбп/i.test(full)) {
-        const s = full.match(/(?:Отправитель|Получатель):\s*([^.]*?)(?:Без НДС|$)/i);
-        return {
-          merchant: s ? `Перевод СБП (${s[1].trim()})` : (type === 'Доход' ? 'Входящий перевод СБП' : 'Перевод через СБП'),
-          bankCategory: 'Перевод'
-        };
-      }
-      let merchant = full
-        .replace(/^Оплата(?:\s+товаров(?:\s+и\s+услуг|\/услуг)?|\s+услуг)?\s*/iu, '')
-        .replace(/^(?:покупка|перевод|снятие|пополнение|зачисление|возврат|списание|выплата)\s*/iu, '')
-        .replace(/\b\d{2}\.\d{2}\.\d{4}\b/g, ' ')
-        .replace(/\*\d{4}/g, ' ')
-        .replace(/([+−–—\-\u2012\u2013\u2014\u2212]?\s*[\d\s\xa0]+[.,]\d{2})\s*₽?/g, ' ')
-        .replace(/(?:^|[^\wа-яёА-ЯЁ])(?:в\s+)?\d{1,2}:\d{2}(?::\d{2})?(?:\s*(?:мск|utc|gmt))?(?=[^\wа-яёА-ЯЁ]|$)/gi, ' ')
-        .replace(/(?:^|[^\wа-яёА-ЯЁ])(?:операции\s+обработки|операции\s+договора|договора\s+мск|операции|обработки|договора|мск|карты|валюте)(?=[^\wа-яёА-ЯЁ]|$)/gi, ' ')
-        .replace(/(?:^|\s+)[вv]$/i, '')
-        .replace(/\s+/g, ' ')
-        .trim();
-      merchant = stripCardTokens(merchant);
-      merchant = cleanMerchantTitle(merchant);
-      if (merchant.length >= 2 && !/^\d+$/.test(merchant)) {
-        return { merchant: toCleanTitleCase(merchant) };
-      }
-      return null;
-    }
-  },
+window.BANK_REGISTRY = window.BANK_REGISTRY || [];
 
-  // --- ГАЗПРОМБАНК ---
-  {
-    id: 'GPB',
-    name: 'Газпромбанк',
-    slug: 'gazprombank',
-    iconKey: 'gpb',
-    badgeColor: 'bg-blue-900/60 text-blue-300 border-blue-700/60',
-    guide: {
-      doc: 'Выписка по карте / счёту (PDF)',
-      steps: [
-        'Откройте мобильное приложение Газпромбанка',
-        'Выберите счёт карты на главном экране',
-        'Перейдите в раздел «Справки и выписки»',
-        'Выберите «Выписка по карте», укажите интервал дат',
-        'Скачайте сформированный PDF-документ'
-      ]
-    },
-    getScore: (p) => {
-      let score = 0;
-      if (/лицензи[яи][^\d]*354\b/i.test(p)) score += 10;
-      if (p.includes('банк гпб') || p.includes('газпромбанк') || p.includes('гпб (ао)') || p.includes('гпб (акционерное')) score += 8;
-      if (p.includes('gazprombank.ru')) score += 5;
-      if (p.includes('дата отражения') || p.includes('номер банковского счета')) score += 4;
-      return score;
-    },
-    detect: function(p) { return this.getScore(p) >= 5; },
-    isTxStart: (l) => /^(\d{2}\.\d{2}\.\d{4})\s+(\d{2}\.\d{2}\.\d{4})/.test(l.trim()),
-    isServiceLine: (l) => {
-      const lower = l.toLowerCase();
-      return lower.includes('газпромбанк (акционерное общество)') ||
-             lower.includes('генеральная лицензия банка россии') ||
-             lower.includes('исходящий остаток') ||
-             lower.includes('итого оборотов') ||
-             lower.includes('дата отражения');
-    },
-    customMerchantFilter: (lines, fullText, amount, dateStr, type) => {
-      const full = lines.join(' ');
-      const dev = extractDeviceField(full);
-      const sbp = full.match(/Перевод\s+(?:по\s+СБП|клиенту|от)\s+([^.]+?)(?:\.|$)/i);
-      let merchant = dev ? dev : (sbp ? sbp[0].trim() : null);
-      if (!merchant) return null;
-      if (/sbp\s+c2c\s+spisanie/i.test(merchant)) {
-        return { merchant: 'Перевод через СБП', bankCategory: 'Перевод' };
-      } else if (/sbp\s+c2c\s+zachislenie/i.test(merchant)) {
-        return { merchant: 'Входящий перевод СБП', bankCategory: 'Перевод' };
-      } else if (/sbp\s+pl\s+qr/i.test(merchant)) {
-        return { merchant: 'Оплата через СБП QR', bankCategory: 'Платежи' };
-      } else {
-        const link = extractWebsiteLink(merchant);
-        if (link) {
-          return { merchant: /sbp/i.test(merchant) ? `SBP ${link}` : link };
-        }
-        return { merchant: toCleanTitleCase(stripCardTokens(merchant)) };
-      }
-    }
-  },
-
-  // --- СБЕРБАНК ---
-  {
-    id: 'SBER',
-    name: 'Сбербанк',
-    slug: 'sberbank',
-    iconKey: 'sber',
-    badgeColor: 'bg-emerald-900/60 text-emerald-300 border-emerald-700/60',
-    guide: {
-      doc: 'Выписка по счёту карты (PDF)',
-      steps: [
-        'Откройте приложение «СберБанк Онлайн»',
-        'Выберите нужную карту или платёжный счёт',
-        'Нажмите «О карте» → «Выписки и справки»',
-        'Выберите «Выписка по счету карты», укажите интервал дат',
-        'Скачайте сформированный PDF-документ'
-      ]
-    },
-    getScore: (p) => {
-      let score = 0;
-      if (/лицензи[яи][^\d]*1481\b/i.test(p) || p.includes('1481')) score += 10;
-      if (p.includes('пао сбербанк') || p.includes('сбербанк россии') || p.includes('сбербанк онлайн') || p.includes('sberbank online')) score += 8;
-      else if (p.includes('сбербанк') || p.includes('сбер')) score += 5;
-      if (p.includes('sberbank.ru') || p.includes('sber.ru')) score += 5;
-      if (p.includes('отчет по счету') || p.includes('выписка по счету дебетовой карты') || p.includes('выписка по счету карты') || p.includes('выписка по счёту')) score += 4;
-      return score;
-    },
-    detect: function(p) { return this.getScore(p) >= 5; },
-    isTxStart: (l, nextLine, currentBlock) => {
-      if (!l) return false;
-      if (currentBlock && currentBlock.length > 0) {
-        const isProcessingLine = /^\s*\d{2}\.\d{2}\.\d{4}\s+(?:\d{5,8}|[A-Za-z0-9_-]{5,10})\b/i.test(l);
-        if (isProcessingLine) return false;
-      }
-      return /^\s*\d{2}\.\d{2}\.\d{4}(?:\s+\d{2}:\d{2})?\s+[А-Яа-яЁёA-Za-z]/.test(l);
-    },
-    isServiceLine: (l) => {
-      const lower = l.toLowerCase();
-      return lower.includes('пао сбербанк') ||
-             lower.includes('генеральная лицензия') ||
-             lower.includes('отчет по счету') ||
-             lower.includes('входящий остаток') ||
-             lower.includes('исходящий остаток') ||
-             lower.includes('всего зачислений') ||
-             lower.includes('всего списаний');
-    },
-    customMerchantFilter: (lines, fullText, amount, dateStr, type) => {
-      const full = lines.join(' ');
-      let bankCategory = null;
-      let merchant = '';
-
-      // 1. Извлекаем категорию Сбера (например: "Отдых и развлечения", "Супермаркеты", "Кафе и рестораны", "Переводы", "Транспорт" и т.д.)
-      const catSplit = splitBankCategoryAndMerchant(full);
-      if (catSplit && catSplit.bankCategory) {
-        bankCategory = catSplit.bankCategory;
-      }
-
-      // 2. В Сбере вторая строка (или правая часть строки) содержит:
-      // [Дата проводки] [Код авторизации 6 цифр] [Мерчант POS] [Город/RUS] [Операция по карте ****XXXX]
-      const sberAuthMatch = full.match(/(?:\d{2}\.\d{2}\.\d{4}\s+)?\b\d{5,8}\b\s+([^]+?)(?=(?:\.?\s*операци[яиею]|\bпо\s+карте|\bс\s+карты|\bсо\s+счета|\bна\s+карту|\bкарта\b|\*\*\*\*|\b\d{4}\b)|$)/i);
-      
-      if (sberAuthMatch && sberAuthMatch[1].trim().length >= 2) {
-        merchant = sberAuthMatch[1].trim();
-      } else if (lines.length >= 2) {
-        let second = lines.slice(1).join(' ')
-          .replace(/^\s*\d{2}\.\d{2}\.\d{4}\s*/g, ' ')
-          .replace(/(?:^|\s+)\d{5,8}(?=\s+|$)/g, ' ')
-          .replace(/(?:^|\s+)(?:0t0|ot0|oto|ko|t01|pos)[*_\s]\s*/gi, ' ')
-          .replace(/([+−–—\-\u2012\u2013\u2014\u2212]?\s*[\d\s\xa0]+[.,]\d{2})/g, ' ')
-          .trim();
-        merchant = second;
-      }
-
-      if (!merchant || merchant.length < 2) {
-        let cleanFirst = lines[0]
-          .replace(/^\s*\d{2}\.\d{2}\.\d{4}\s*(?:\d{2}:\d{2})?\s*/, '')
-          .replace(/([+−–—\-\u2012\u2013\u2014\u2212]?\s*[\d\s\xa0]+[.,]\d{2})/g, '')
-          .trim();
-        if (bankCategory) {
-          cleanFirst = cleanFirst.replace(new RegExp('^' + escapeRegExp(bankCategory), 'i'), '').trim();
-        }
-        merchant = cleanFirst;
-      }
-
-      // Очистка от масок карт, фраз операций и номеров
-      merchant = stripCardTokens(merchant);
-      merchant = cleanMerchantTitle(merchant);
-
-      // Удаляем географические и терминальные суффиксы (MOSKVA RUS, 3505 MOSKVA RUS, RU, RUS, SANKT-PETERBURG и т.д.)
-      merchant = merchant
-        .replace(/(?:^|[^\wа-яёА-ЯЁ])(?:moscow|moskva|sankt-?peterbur[g]?|spb|chelyabinsk|kazan|rostov|samara|ufa|perm|novosibirsk|ekaterinburg|krasnodar|vladivostok|rus|ru)(?=[^\wа-яёА-ЯЁ]|$)/gi, ' ')
-        .replace(/\b\d{3,6}\b/g, ' ') // убираем терминальные ID вроде 3505
-        .replace(/\b(?:pp\s+card|card)\b.*$/gi, ' ')
-        .replace(/(?:^|[^\wа-яёА-ЯЁ])\.?\s*операци[яиею](?=[^\wа-яёА-ЯЁ]|$)/gi, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
-
-      merchant = stripCardTokens(merchant);
-      merchant = cleanMerchantTitle(merchant);
-
-      const cleanM = toCleanTitleCase(merchant);
-      if (cleanM && cleanM.length >= 2 && !/^(?:операция|операция сбербанк|банковская операция)$/i.test(cleanM)) {
-        return {
-          merchant: cleanM,
-          bankCategory: bankCategory
-        };
-      }
-      return { merchant: type === 'Доход' ? 'Поступление средств' : 'Операция Сбербанк', bankCategory };
-    }
-  },
-
-  // --- ОЗОН БАНК ---
-  {
-    id: 'OZON',
-    name: 'Озон Банк',
-    slug: 'ozonbank',
-    iconKey: 'ozon',
-    badgeColor: 'bg-sky-900/60 text-sky-300 border-sky-700/60',
-    guide: {
-      doc: 'Справка о движении средств (PDF)',
-      steps: [
-        'Откройте приложение Ozon Банк',
-        'Выберите нужную карту или платёжный счёт',
-        'Нажмите «Получить справку» → «О движении средств»',
-        'Укажите интервал дат и тип операций',
-        'Скачайте сформированный PDF-документ'
-      ]
-    },
-    getScore: (p) => {
-      let score = 0;
-      if (/лицензи[яи][^\d]*3542\b/i.test(p) || p.includes('3542')) score += 10;
-      if (p.includes('озон банк') || p.includes('ozon банк') || p.includes('ozon bank') || p.includes('еком банк') || p.includes('ecom bank')) score += 8;
-      if (p.includes('finance.ozon.ru') || p.includes('ozon.ru')) score += 5;
-      if (p.includes('справка о движении денежных средств') || p.includes('справка о движении средств') || p.includes('движении средств')) score += 4;
-      return score;
-    },
-    detect: function(p) { return this.getScore(p) >= 5; },
-    isTxStart: (l) => /^\s*\d{2}\.\d{2}\.\d{4}/.test(l.trim()),
-    isServiceLine: (l) => {
-      const lower = l.toLowerCase();
-      return lower.includes('озон банк') ||
-             lower.includes('еком банк') ||
-             lower.includes('справка о движении') ||
-             lower.includes('исходящий остаток') ||
-             lower.includes('итого по операциям');
-    },
-    customMerchantFilter: (lines, fullText, amount, dateStr, type) => {
-      const full = lines.join(' ');
-      const pos = full.match(/(?:сумма\s*[\d.]+\s*в|\bв)\s+([\s\S]+?)\s+дата\s*\d{4}/i);
-      if (pos && pos[1].trim()) {
-        let m = pos[1].replace(/\s+(RU|RUS)$/i, '').replace(/\s+/g, ' ').trim();
-        return { merchant: toCleanTitleCase(stripCardTokens(cleanMerchantTitle(m))) };
-      } else if (/выплата\s+к[еэ]шб[еэ]ка/i.test(full)) {
-        return { merchant: 'Кэшбек Ozon', bankCategory: 'Кэшбек' };
-      } else if (/возврат/i.test(full)) {
-        const o = full.match(/заказ\s*№?\s*([0-9a-zA-Z-]+)/i);
-        return { merchant: o ? `Возврат Ozon (${o[0]})` : 'Возврат покупки' };
-      } else if (/ozon\s*travel/i.test(full)) {
-        const o = full.match(/заказ\s*№?\s*([0-9a-zA-Z-]+)/i);
-        return { merchant: o ? `Ozon Travel (${o[0]})` : 'Ozon Travel' };
-      } else if (/платформе\s+ozon|оплата.*ozon/i.test(full)) {
-        const o = full.match(/заказ\s*№?\s*([0-9a-zA-Z-]+)/i);
-        return { merchant: o ? `Ozon (${o[0]})` : 'Ozon' };
-      } else if (/перевод.*сбп/i.test(full)) {
-        const s = full.match(/(?:Отправитель|Получатель):\s*([^.]*?)(?:Без НДС|$)/i);
-        return {
-          merchant: s ? `Перевод СБП (${s[1].trim()})` : (type === 'Доход' ? 'Входящий перевод СБП' : 'Перевод через СБП'),
-          bankCategory: 'Перевод'
-        };
-      }
-      return null;
-    }
+function registerBankAdapter(adapter) {
+  if (!adapter || !adapter.id) return;
+  window.BANK_REGISTRY = window.BANK_REGISTRY || [];
+  const idx = window.BANK_REGISTRY.findIndex(b => b.id === adapter.id);
+  if (idx >= 0) {
+    window.BANK_REGISTRY[idx] = adapter;
+  } else {
+    window.BANK_REGISTRY.push(adapter);
   }
-];
-window.BANK_REGISTRY = BANK_REGISTRY;
+}
+window.registerBankAdapter = registerBankAdapter;
+
+const BANK_REGISTRY = window.BANK_REGISTRY;
 
 function openBankGuide(bankIdentifier) {
-  const bank = BANK_REGISTRY.find(b => b.id === bankIdentifier || b.iconKey === bankIdentifier || b.slug === bankIdentifier);
+  const bank = BANK_REGISTRY.find(
+    b => b.id === bankIdentifier || b.iconKey === bankIdentifier || b.slug === bankIdentifier
+  );
   if (!bank || !bank.guide) return;
 
   const dialog = document.getElementById('bank-guide-dialog');
@@ -2450,12 +2842,16 @@ function openBankGuide(bankIdentifier) {
     iconContainer.setAttribute('data-bank-icon', bank.iconKey || bank.slug);
   }
 
-  stepsEl.innerHTML = bank.guide.steps.map((step, idx) => `
+  stepsEl.innerHTML = bank.guide.steps
+    .map(
+      (step, idx) => `
     <div class="flex items-start gap-2.5 p-2.5 rounded-xl bg-[#12151C] border border-[rgba(255,255,255,0.03)]">
       <span class="w-5 h-5 rounded-full bg-[#6C5DD3]/20 text-[#6C5DD3] text-[11px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">${idx + 1}</span>
       <span class="text-xs text-gray-300 leading-snug">${escapeHtml(step)}</span>
     </div>
-  `).join('');
+  `
+    )
+    .join('');
 
   dialog.classList.remove('hidden');
 
@@ -2522,21 +2918,39 @@ class StatementDispatcher {
     let slug = 'generic';
     let iconKey = 'generic';
 
-    const fullHeader = (preamble + ' ' + (rawLines.slice(0, 30).join(' '))).toLowerCase();
+    const fullHeader = (preamble + ' ' + rawLines.slice(0, 30).join(' ')).toLowerCase();
 
-    if (fullHeader.includes('сбербанк') || fullHeader.includes('sberbank') || fullHeader.includes('сбер')) {
+    if (
+      fullHeader.includes('сбербанк') ||
+      fullHeader.includes('sberbank') ||
+      fullHeader.includes('сбер')
+    ) {
       name = 'Сбербанк';
       slug = 'sberbank';
       iconKey = 'sber';
-    } else if (fullHeader.includes('тинькофф') || fullHeader.includes('т-банк') || fullHeader.includes('т банк') || fullHeader.includes('tinkoff') || fullHeader.includes('t-bank')) {
+    } else if (
+      fullHeader.includes('тинькофф') ||
+      fullHeader.includes('т-банк') ||
+      fullHeader.includes('т банк') ||
+      fullHeader.includes('tinkoff') ||
+      fullHeader.includes('t-bank')
+    ) {
       name = 'Т-Банк';
       slug = 'tbank';
       iconKey = 'tbank';
-    } else if (fullHeader.includes('альфа-банк') || fullHeader.includes('альфа банк') || fullHeader.includes('alfa-bank')) {
+    } else if (
+      fullHeader.includes('альфа-банк') ||
+      fullHeader.includes('альфа банк') ||
+      fullHeader.includes('alfa-bank')
+    ) {
       name = 'Альфа-Банк';
       slug = 'alfabank';
       iconKey = 'alfa';
-    } else if (fullHeader.includes('втб') || fullHeader.includes('банк втб') || fullHeader.includes('vtb')) {
+    } else if (
+      fullHeader.includes('втб') ||
+      fullHeader.includes('банк втб') ||
+      fullHeader.includes('vtb')
+    ) {
       name = 'ВТБ';
       slug = 'vtb';
       iconKey = 'vtb';
@@ -2561,7 +2975,10 @@ class StatementDispatcher {
       slug = 'mts';
       iconKey = 'generic';
     } else {
-      const match = (rawLines.slice(0, 25).join(' ')).match(/(?:пао|ао|ооо|акб|кб)\s*[«"]?([^»"\n\r]{3,35}банк[а-я]*)[»"]?/i);
+      const match = rawLines
+        .slice(0, 25)
+        .join(' ')
+        .match(/(?:пао|ао|ооо|акб|кб)\s*[«"]?([^»"\n\r]{3,35}банк[а-я]*)[»"]?/i);
       if (match && match[1]) {
         name = match[1].replace(/^[«"]+|[»"]+$/g, '').trim();
       }
@@ -2572,7 +2989,7 @@ class StatementDispatcher {
       name: name,
       slug: slug,
       iconKey: iconKey,
-      badgeColor: 'bg-indigo-900/60 text-indigo-300 border-indigo-700/60'
+      badgeColor: 'bg-indigo-900/60 text-indigo-300 border-indigo-700/60',
     };
   }
 
@@ -2583,7 +3000,7 @@ class StatementDispatcher {
     let maxScore = 0;
 
     for (const bank of BANK_REGISTRY) {
-      const score = bank.getScore ? bank.getScore(preamble) : (bank.detect(preamble) ? 10 : 0);
+      const score = bank.getScore ? bank.getScore(preamble) : bank.detect(preamble) ? 10 : 0;
       if (score > maxScore) {
         maxScore = score;
         bestBank = bank;
@@ -2598,7 +3015,9 @@ class StatementDispatcher {
     const transactions = UniversalStatementParser.parseUniversal(rawLines, bestBank);
 
     if (!transactions || transactions.length === 0) {
-      throw new Error(`В документе «${bestBank.name}» не удалось обнаружить финансовые операции. Убедитесь, что загружен файл выписки с операциями.`);
+      throw new Error(
+        `В документе «${bestBank.name}» не удалось обнаружить финансовые операции. Убедитесь, что загружен файл выписки с операциями.`
+      );
     }
 
     return { bank: bestBank, transactions };
@@ -2612,7 +3031,9 @@ async function handleStatementUpload(event) {
   const files = Array.from(event.target.files || []);
   if (files.length === 0) return;
 
-  const pdfFiles = files.filter(f => f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf'));
+  const pdfFiles = files.filter(
+    f => f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf')
+  );
   if (pdfFiles.length === 0) {
     showToast('Пожалуйста, выберите файлы в формате PDF', true);
     event.target.value = '';
@@ -2625,9 +3046,10 @@ async function handleStatementUpload(event) {
 
   for (let i = 0; i < totalFiles; i++) {
     const file = pdfFiles[i];
-    const progressText = totalFiles > 1 
-      ? `Обработка выписки (${i + 1} из ${totalFiles}): ${file.name}...` 
-      : `Обработка выписки: ${file.name}...`;
+    const progressText =
+      totalFiles > 1
+        ? `Обработка выписки (${i + 1} из ${totalFiles}): ${file.name}...`
+        : `Обработка выписки: ${file.name}...`;
     showToast(progressText, false, true);
 
     try {
@@ -2650,7 +3072,7 @@ async function handleStatementUpload(event) {
         fileSize: file.size,
         blobUrl,
         bank: result.bank,
-        transactions: result.transactions
+        transactions: result.transactions,
       });
     } catch (err) {
       console.error(`Ошибка обработки PDF ${file.name}:`, err);
@@ -2665,7 +3087,10 @@ async function handleStatementUpload(event) {
   }
 
   if (errors.length > 0) {
-    showToast(`Загружено ${parsedResults.length} из ${totalFiles} выписок. Ошибки: ${errors.join('; ')}`, true);
+    showToast(
+      `Загружено ${parsedResults.length} из ${totalFiles} выписок. Ошибки: ${errors.join('; ')}`,
+      true
+    );
   } else {
     document.getElementById('toast-container')?.classList.add('hidden');
   }
@@ -2681,7 +3106,7 @@ async function handleStatementUpload(event) {
       file: res.file,
       blobUrl: res.blobUrl,
       bank: res.bank,
-      count: res.transactions.length
+      count: res.transactions.length,
     });
 
     res.transactions.forEach((tx, txIdx) => {
@@ -2719,7 +3144,11 @@ function extractIsoDate(val) {
   }
   if (typeof val === 'object') {
     if (typeof val.toDate === 'function') {
-      try { return extractIsoDate(val.toDate()); } catch (e) {}
+      try {
+        return extractIsoDate(val.toDate());
+      } catch (_e) {
+        return '';
+      }
     }
     if (typeof val.seconds === 'number') {
       return extractIsoDate(new Date(val.seconds * 1000));
@@ -2754,7 +3183,7 @@ function extractIsoDate(val) {
   }
 
   // 3. Резерв через parseAnyDate
-  const parsed = (typeof parseAnyDate === 'function') ? parseAnyDate(str) : new Date(str);
+  const parsed = typeof parseAnyDate === 'function' ? parseAnyDate(str) : new Date(str);
   if (parsed && !isNaN(parsed.getTime())) {
     const y = parsed.getFullYear();
     const m = String(parsed.getMonth() + 1).padStart(2, '0');
@@ -2769,10 +3198,16 @@ function extractIsoDate(val) {
  */
 function cleanMerchantForCompare(str) {
   if (!str) return '';
-  if (typeof StatementCategorizer !== 'undefined' && typeof StatementCategorizer.normalize === 'function') {
+  if (
+    typeof StatementCategorizer !== 'undefined' &&
+    typeof StatementCategorizer.normalize === 'function'
+  ) {
     return StatementCategorizer.normalize(str);
   }
-  return String(str).toLowerCase().replace(/[^a-zа-я0-9]/gi, '').trim();
+  return String(str)
+    .toLowerCase()
+    .replace(/[^a-zа-я0-9]/gi, '')
+    .trim();
 }
 
 /**
@@ -2789,7 +3224,16 @@ function normalizeRawDetails(str) {
 
 function isGenericMerchant(normStr) {
   if (!normStr) return true;
-  const generics = ['rashod', 'dohod', 'pokupka', 'trata', 'operatsiya', 'perevod', 'drugoe', 'oplatatovarov'];
+  const generics = [
+    'rashod',
+    'dohod',
+    'pokupka',
+    'trata',
+    'operatsiya',
+    'perevod',
+    'drugoe',
+    'oplatatovarov',
+  ];
   return generics.some(g => normStr.includes(g));
 }
 
@@ -2806,39 +3250,64 @@ function checkTransactionDuplicateWithDetails(tx, options = {}) {
 
   const matchedDbIds = options.matchedDbIds || new Set();
   const seenInBatch = options.seenInBatch || [];
-  const customList = Array.isArray(options) ? options : (options.existingList || null);
+  const customList = Array.isArray(options) ? options : options.existingList || null;
 
-  const txAmount = (typeof parseAmount === 'function')
-    ? Math.abs(parseAmount(tx.amount))
-    : Math.abs(parseFloat(String(tx.amount || 0).replace(/\s/g, '').replace(/,/g, '.')) || 0);
+  const txAmount =
+    typeof parseAmount === 'function'
+      ? Math.abs(parseAmount(tx.amount))
+      : Math.abs(
+          parseFloat(
+            String(tx.amount || 0)
+              .replace(/\s/g, '')
+              .replace(/,/g, '.')
+          ) || 0
+        );
 
-  const rawTxType = String(tx.type || '').trim().toLowerCase();
-  const txType = (rawTxType === 'доход' || rawTxType === 'income') ? 'Доход' : 'Расход';
+  const rawTxType = String(tx.type || '')
+    .trim()
+    .toLowerCase();
+  const txType = rawTxType === 'доход' || rawTxType === 'income' ? 'Доход' : 'Расход';
 
   const txIsoDate = extractIsoDate(tx.date || tx.displayDate || tx.rawDate || tx.formattedDate);
   const txMerchant = String(tx.merchant || tx.comment || tx.description || '').trim();
   const normTxMerchant = cleanMerchantForCompare(txMerchant);
-  const rawTx = normalizeRawDetails(tx.rawDetails || tx.comment || tx.description || tx.merchant || '');
+  const rawTx = normalizeRawDetails(
+    tx.rawDetails || tx.comment || tx.description || tx.merchant || ''
+  );
 
   // 1. Проверка на дубликат внутри текущего пакета импортируемых файлов
   if (seenInBatch && seenInBatch.length > 0) {
     for (const prevTx of seenInBatch) {
       if (!prevTx || prevTx._id === tx._id) continue;
-      const prevAmount = (typeof parseAmount === 'function')
-        ? Math.abs(parseAmount(prevTx.amount))
-        : Math.abs(parseFloat(String(prevTx.amount || 0).replace(/\s/g, '').replace(/,/g, '.')) || 0);
-      const rawPrevType = String(prevTx.type || '').trim().toLowerCase();
-      const prevType = (rawPrevType === 'доход' || rawPrevType === 'income') ? 'Доход' : 'Расход';
+      const prevAmount =
+        typeof parseAmount === 'function'
+          ? Math.abs(parseAmount(prevTx.amount))
+          : Math.abs(
+              parseFloat(
+                String(prevTx.amount || 0)
+                  .replace(/\s/g, '')
+                  .replace(/,/g, '.')
+              ) || 0
+            );
+      const rawPrevType = String(prevTx.type || '')
+        .trim()
+        .toLowerCase();
+      const prevType = rawPrevType === 'доход' || rawPrevType === 'income' ? 'Доход' : 'Расход';
 
       if (Math.abs(prevAmount - txAmount) > 0.05 || prevType !== txType) continue;
 
-      const prevIsoDate = extractIsoDate(prevTx.date || prevTx.displayDate || prevTx.rawDate || prevTx.formattedDate);
+      const prevIsoDate = extractIsoDate(
+        prevTx.date || prevTx.displayDate || prevTx.rawDate || prevTx.formattedDate
+      );
       if (!prevIsoDate || !txIsoDate || prevIsoDate !== txIsoDate) continue;
 
-      const isSameFile = (tx.sourceFile && prevTx.sourceFile && tx.sourceFile === prevTx.sourceFile) ||
-                         (!tx.sourceFile && !prevTx.sourceFile);
+      const isSameFile =
+        (tx.sourceFile && prevTx.sourceFile && tx.sourceFile === prevTx.sourceFile) ||
+        (!tx.sourceFile && !prevTx.sourceFile);
 
-      const rawPrev = normalizeRawDetails(prevTx.rawDetails || prevTx.comment || prevTx.description || prevTx.merchant || '');
+      const rawPrev = normalizeRawDetails(
+        prevTx.rawDetails || prevTx.comment || prevTx.description || prevTx.merchant || ''
+      );
 
       if (isSameFile) {
         // ВНУТРИ ОДНОЙ ВЫПИСКИ / ФАЙЛА:
@@ -2851,8 +3320,16 @@ function checkTransactionDuplicateWithDetails(tx, options = {}) {
         if (rawTx && rawPrev && rawTx === rawPrev) {
           return { isDuplicate: true, reason: 'Повтор в выписке' };
         }
-        const prevNormMerchant = cleanMerchantForCompare(prevTx.merchant || prevTx.comment || prevTx.description || '');
-        if (normTxMerchant && prevNormMerchant && (normTxMerchant === prevNormMerchant || normTxMerchant.includes(prevNormMerchant) || prevNormMerchant.includes(normTxMerchant))) {
+        const prevNormMerchant = cleanMerchantForCompare(
+          prevTx.merchant || prevTx.comment || prevTx.description || ''
+        );
+        if (
+          normTxMerchant &&
+          prevNormMerchant &&
+          (normTxMerchant === prevNormMerchant ||
+            normTxMerchant.includes(prevNormMerchant) ||
+            prevNormMerchant.includes(normTxMerchant))
+        ) {
           // Если есть подробные сырые строки и они явно различаются по времени/кодам, не блокируем
           if (rawTx && rawPrev && rawTx !== rawPrev && rawTx.length > 8 && rawPrev.length > 8) {
             // Раздельные операции
@@ -2865,11 +3342,13 @@ function checkTransactionDuplicateWithDetails(tx, options = {}) {
   }
 
   // 2. Проверка относительно базы данных (Cache.transactions)
-  const allExisting = customList || (
-    typeof getAllCachedTransactionsFlat === 'function'
+  const allExisting =
+    customList ||
+    (typeof getAllCachedTransactionsFlat === 'function'
       ? getAllCachedTransactionsFlat()
-      : ((window.Cache?.transactions || []).flatMap(m => Array.isArray(m.items) ? m.items : (m.amount !== undefined ? [m] : [])))
-  );
+      : (window.Cache?.transactions || []).flatMap(m =>
+          Array.isArray(m.items) ? m.items : m.amount !== undefined ? [m] : []
+        ));
 
   if (!allExisting || allExisting.length === 0) {
     return { isDuplicate: false };
@@ -2882,28 +3361,48 @@ function checkTransactionDuplicateWithDetails(tx, options = {}) {
     const itemId = item.id || `idx_${i}`;
     if (matchedDbIds.has(itemId)) continue;
 
-    const itemAmount = (typeof parseAmount === 'function')
-      ? Math.abs(parseAmount(item.amount))
-      : Math.abs(parseFloat(String(item.amount || 0).replace(/\s/g, '').replace(/,/g, '.')) || 0);
+    const itemAmount =
+      typeof parseAmount === 'function'
+        ? Math.abs(parseAmount(item.amount))
+        : Math.abs(
+            parseFloat(
+              String(item.amount || 0)
+                .replace(/\s/g, '')
+                .replace(/,/g, '.')
+            ) || 0
+          );
 
-    const rawItemType = String(item.type || '').trim().toLowerCase();
-    const itemType = (rawItemType === 'доход' || rawItemType === 'income') ? 'Доход' : 'Расход';
+    const rawItemType = String(item.type || '')
+      .trim()
+      .toLowerCase();
+    const itemType = rawItemType === 'доход' || rawItemType === 'income' ? 'Доход' : 'Расход';
 
     if (Math.abs(itemAmount - txAmount) > 0.05 || itemType !== txType) {
       continue;
     }
 
-    const itemIsoDate = extractIsoDate(item.date || item.rawDate || item.formattedDate || item.displayDate);
-    const itemComment = (typeof getTxComment === 'function' ? getTxComment(item) : String(item.comment || item.description || item.merchant || '')).trim();
+    const itemIsoDate = extractIsoDate(
+      item.date || item.rawDate || item.formattedDate || item.displayDate
+    );
+    const itemComment = (
+      typeof getTxComment === 'function'
+        ? getTxComment(item)
+        : String(item.comment || item.description || item.merchant || '')
+    ).trim();
     const normItemComment = cleanMerchantForCompare(itemComment);
 
     // Строгое совпадение по точному календарному дню (ISO)
     if (itemIsoDate && txIsoDate && itemIsoDate === txIsoDate) {
       // Если у обеих записей есть мерчант, и они абсолютно разные и длинные — это могут быть разные покупки в один день
-      const areBothDistinctMerchants = normTxMerchant && normItemComment &&
-        normTxMerchant.length >= 4 && normItemComment.length >= 4 &&
-        !normTxMerchant.includes(normItemComment) && !normItemComment.includes(normTxMerchant) &&
-        !isGenericMerchant(normTxMerchant) && !isGenericMerchant(normItemComment);
+      const areBothDistinctMerchants =
+        normTxMerchant &&
+        normItemComment &&
+        normTxMerchant.length >= 4 &&
+        normItemComment.length >= 4 &&
+        !normTxMerchant.includes(normItemComment) &&
+        !normItemComment.includes(normTxMerchant) &&
+        !isGenericMerchant(normTxMerchant) &&
+        !isGenericMerchant(normItemComment);
 
       if (!areBothDistinctMerchants) {
         return { isDuplicate: true, reason: 'В базе', matchedDbId: itemId };
@@ -2927,16 +3426,17 @@ function isTransactionDuplicate(tx, optionsOrList) {
 // ОБНОВЛЕННЫЙ УПЛОТНЕННЫЙ РЕНДЕР КАРТОЧЕК ВЫПИСКИ (~52px)
 // -------------------------------------------------------------
 let currentImportFilter = 'new'; // 'new' | 'transfers' | 'dupes' | 'all'
-let currentBankFilter = 'all';   // 'all' | bankName
+let currentBankFilter = 'all'; // 'all' | bankName
 
 function setImportFilter(filter) {
   currentImportFilter = filter;
   ['new', 'transfers', 'dupes', 'all'].forEach(f => {
     const btn = document.getElementById(`tab-import-${f}`);
     if (btn) {
-      btn.className = f === filter
-        ? 'py-1 px-1.5 rounded-lg font-semibold bg-[#212430] text-white text-xs transition-all cursor-pointer flex flex-col items-center justify-center leading-tight text-center'
-        : 'py-1 px-1.5 rounded-lg font-medium text-[#848D99] hover:text-white text-xs transition-all cursor-pointer flex flex-col items-center justify-center leading-tight text-center';
+      btn.className =
+        f === filter
+          ? 'py-1 px-1.5 rounded-lg font-semibold bg-[#212430] text-white text-xs transition-all cursor-pointer flex flex-col items-center justify-center leading-tight text-center'
+          : 'py-1 px-1.5 rounded-lg font-medium text-[#848D99] hover:text-white text-xs transition-all cursor-pointer flex flex-col items-center justify-center leading-tight text-center';
     }
   });
 
@@ -2956,9 +3456,11 @@ function setBankFilter(bankName) {
       const isAllBtn = btn.id === 'bank-filter-btn-all';
       const isMatch = (isAllBtn && bankName === 'all') || btn.id === `bank-filter-btn-${bankName}`;
       if (isMatch) {
-        btn.className = 'flex-shrink-0 flex items-center gap-1.5 py-1 px-2.5 rounded-xl font-semibold bg-[#212430] text-white border border-[rgba(255,255,255,0.12)] text-[11px] shadow-sm transition-all cursor-pointer whitespace-nowrap';
+        btn.className =
+          'flex-shrink-0 flex items-center gap-1.5 py-1 px-2.5 rounded-xl font-semibold bg-[#212430] text-white border border-[rgba(255,255,255,0.12)] text-[11px] shadow-sm transition-all cursor-pointer whitespace-nowrap';
       } else {
-        btn.className = 'flex-shrink-0 flex items-center gap-1.5 py-1 px-2.5 rounded-xl font-medium text-[#848D99] bg-[#12151C] hover:text-white hover:bg-[#1A1D27] border border-[rgba(255,255,255,0.04)] text-[11px] transition-all cursor-pointer whitespace-nowrap';
+        btn.className =
+          'flex-shrink-0 flex items-center gap-1.5 py-1 px-2.5 rounded-xl font-medium text-[#848D99] bg-[#12151C] hover:text-white hover:bg-[#1A1D27] border border-[rgba(255,255,255,0.04)] text-[11px] transition-all cursor-pointer whitespace-nowrap';
       }
     });
   }
@@ -2972,8 +3474,15 @@ window.setBankFilter = setBankFilter;
 // Массовый выбор: отметить все новые транзакции (с учетом активного фильтра по банку)
 function toggleSelectAllNew() {
   const txs = window._lastParsedTransactions || [];
-  const targetTxs = currentBankFilter === 'all' ? txs : (Array.isArray(txs) ? txs.filter(t => t && t.bank === currentBankFilter) : []);
-  const anyUnselected = (Array.isArray(targetTxs) ? targetTxs : []).some(t => t && !t.isDuplicate && !t.isTransfer && !t.selected);
+  const targetTxs =
+    currentBankFilter === 'all'
+      ? txs
+      : Array.isArray(txs)
+        ? txs.filter(t => t && t.bank === currentBankFilter)
+        : [];
+  const anyUnselected = (Array.isArray(targetTxs) ? targetTxs : []).some(
+    t => t && !t.isDuplicate && !t.isTransfer && !t.selected
+  );
   (Array.isArray(targetTxs) ? targetTxs : []).forEach(t => {
     if (t && !t.isDuplicate && !t.isTransfer) {
       t.selected = anyUnselected;
@@ -3008,7 +3517,8 @@ function renderFilteredRows(transactions) {
   }
 
   if (visibleTxs.length === 0) {
-    output.innerHTML = '<div class="text-center text-[#848D99] py-12 text-xs">Нет операций в этой вкладке</div>';
+    output.innerHTML =
+      '<div class="text-center text-[#848D99] py-12 text-xs">Нет операций в этой вкладке</div>';
     return;
   }
 
@@ -3017,14 +3527,15 @@ function renderFilteredRows(transactions) {
     const isInactive = tx.isDuplicate || tx.isTransfer;
     const isExp = tx.type === 'Расход';
     const amountSign = isExp ? '-' : '+';
-    
+
     // Суммы всегда максимально контрастные, четкие и яркие (полная видимость)
     const amountColor = isExp ? 'text-white font-bold' : 'text-[#30D158] font-bold';
 
     // Стилизация фона и рамки карточки:
     // Карточки переводов и дублей НЕ затемняются (100% видимость, без opacity),
     // но имеют аккуратный отличительный оттенок фона и рамки для моментального узнавания
-    let cardThemeClasses = 'bg-[#181B24] border-[rgba(255,255,255,0.06)] hover:border-[rgba(255,255,255,0.14)]';
+    let cardThemeClasses =
+      'bg-[#181B24] border-[rgba(255,255,255,0.06)] hover:border-[rgba(255,255,255,0.14)]';
     if (tx.isTransfer) {
       cardThemeClasses = 'bg-[#1C1F2B] border-amber-500/30 hover:border-amber-500/45';
     } else if (tx.isDuplicate) {
@@ -3104,10 +3615,11 @@ function renderFilteredRows(transactions) {
               <div id="cat-menu-${tx._id}" 
                    class="custom-dropdown-menu hidden absolute right-0 bottom-full mb-1.5 w-52 max-h-60 overflow-y-auto bg-[#181B24] border border-[rgba(255,255,255,0.08)] rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.85)] z-50 p-1.5 space-y-0.5"
                    data-prevent-row-click="true">
-                ${cats.map(cat => {
-                  const isCustom = !DEFAULT_SYSTEM_CATEGORIES.includes(cat);
-                  const loopIcon = getDynamicCategoryIcon(cat);
-                  return `
+                ${cats
+                  .map(cat => {
+                    const isCustom = !DEFAULT_SYSTEM_CATEGORIES.includes(cat);
+                    const loopIcon = getDynamicCategoryIcon(cat);
+                    return `
                     <div class="flex items-center justify-between hover:bg-[#2A2D3C] rounded-xl px-2.5 py-1.5 transition-colors group">
                       <button type="button" 
                               onclick="event.stopPropagation(); selectImportCat('${tx._id}', '${escapeHtml(cat)}', '${loopIcon}')" 
@@ -3115,12 +3627,17 @@ function renderFilteredRows(transactions) {
                         <i data-lucide="${loopIcon}" class="w-3.5 h-3.5 text-[#848D99] pointer-events-none"></i>
                         <span class="truncate pointer-events-none">${escapeHtml(cat)}</span>
                       </button>
-                      ${isCustom ? `
+                      ${
+                        isCustom
+                          ? `
                         <button type="button" onclick="event.stopPropagation(); deleteCategoryFromImport('${escapeHtml(cat)}', '${tx.type}')" class="text-gray-500 hover:text-[#FF453A] p-1 flex-shrink-0 cursor-pointer"><i data-lucide="trash-2" class="w-3.5 h-3.5 pointer-events-none"></i></button>
-                      ` : ''}
+                      `
+                          : ''
+                      }
                     </div>
                   `;
-                }).join('')}
+                  })
+                  .join('')}
 
                 <div class="border-t border-[rgba(255,255,255,0.06)] pt-1 mt-1">
                   <button type="button" onclick="event.stopPropagation(); addCategoryFromImport('${tx.type}', '${tx._id}')" class="w-full text-left px-2 py-1.5 text-[12px] text-[#8C7DFF] hover:text-white hover:bg-[#6C5DD3]/15 rounded-lg flex items-center gap-1.5 font-semibold cursor-pointer transition-colors">
@@ -3258,25 +3775,36 @@ async function triggerGeminiEnhancement(transactions) {
       }
     });
 
-    const allDbItems = typeof getAllCachedTransactionsFlat === 'function'
-      ? getAllCachedTransactionsFlat()
-      : ((window.Cache?.transactions || []).flatMap(m => Array.isArray(m.items) ? m.items : []));
+    const allDbItems =
+      typeof getAllCachedTransactionsFlat === 'function'
+        ? getAllCachedTransactionsFlat()
+        : (window.Cache?.transactions || []).flatMap(m => (Array.isArray(m.items) ? m.items : []));
 
     if (allDbItems && allDbItems.length > 0) {
       const ambiguousPairs = [];
       transactions.forEach(tx => {
         if (tx.isDuplicate || tx.isTransfer) return;
         const txDate = extractIsoDate(tx.date || tx.displayDate || tx.rawDate);
-        const txAmount = Math.abs(typeof parseAmount === 'function' ? parseAmount(tx.amount) : parseFloat(tx.amount) || 0);
+        const txAmount = Math.abs(
+          typeof parseAmount === 'function' ? parseAmount(tx.amount) : parseFloat(tx.amount) || 0
+        );
 
         const candidateDb = allDbItems.find(item => {
           const itemDate = extractIsoDate(item.date || item.rawDate);
-          const itemAmount = Math.abs(typeof parseAmount === 'function' ? parseAmount(item.amount) : parseFloat(item.amount) || 0);
+          const itemAmount = Math.abs(
+            typeof parseAmount === 'function'
+              ? parseAmount(item.amount)
+              : parseFloat(item.amount) || 0
+          );
           return itemDate === txDate && Math.abs(itemAmount - txAmount) < 0.05;
         });
 
         if (candidateDb) {
-          const dbText = (typeof getTxComment === 'function' ? getTxComment(candidateDb) : (candidateDb.comment || candidateDb.merchant || '')).trim();
+          const dbText = (
+            typeof getTxComment === 'function'
+              ? getTxComment(candidateDb)
+              : candidateDb.comment || candidateDb.merchant || ''
+          ).trim();
           const txText = (tx.merchant || tx.rawDetails || '').trim();
           if (dbText && txText && dbText.toLowerCase() !== txText.toLowerCase()) {
             ambiguousPairs.push({
@@ -3292,7 +3820,8 @@ async function triggerGeminiEnhancement(transactions) {
       });
 
       if (ambiguousPairs.length > 0) {
-        const dupEvaluations = await window.GeminiService.evaluateAmbiguousDuplicates(ambiguousPairs);
+        const dupEvaluations =
+          await window.GeminiService.evaluateAmbiguousDuplicates(ambiguousPairs);
         ambiguousPairs.forEach(pair => {
           const evalRes = dupEvaluations[pair.pairId];
           if (evalRes && evalRes.isSameExpense && evalRes.confidence >= 0.7) {
@@ -3328,22 +3857,26 @@ function renderParsedTransactionsView(loadedStatementsOrFileName, transactions, 
   if (Array.isArray(loadedStatementsOrFileName)) {
     loadedStatements = loadedStatementsOrFileName;
   } else {
-    loadedStatements = [{
-      fileName: loadedStatementsOrFileName,
-      bank: bankConfig || { name: 'Банк', slug: 'generic', iconKey: 'generic' },
-      count: transactions.length
-    }];
+    loadedStatements = [
+      {
+        fileName: loadedStatementsOrFileName,
+        bank: bankConfig || { name: 'Банк', slug: 'generic', iconKey: 'generic' },
+        count: transactions.length,
+      },
+    ];
   }
 
   window._loadedStatements = loadedStatements;
   window._lastActiveBank = loadedStatements[0]?.bank || bankConfig;
-  window._lastParsedFileName = loadedStatements[0]?.fileName || (typeof loadedStatementsOrFileName === 'string' ? loadedStatementsOrFileName : 'Выписка');
+  window._lastParsedFileName =
+    loadedStatements[0]?.fileName ||
+    (typeof loadedStatementsOrFileName === 'string' ? loadedStatementsOrFileName : 'Выписка');
   window._lastParsedBankName = window._lastActiveBank;
   currentBankFilter = 'all';
 
   // Сортировка по убыванию даты
   transactions.sort((a, b) => b.date.localeCompare(a.date));
-  
+
   const dialog = document.getElementById('pdf-debug-dialog');
   const info = document.getElementById('pdf-debug-info');
 
@@ -3370,7 +3903,8 @@ function renderParsedTransactionsView(loadedStatementsOrFileName, transactions, 
       if (bFound) tx.bank = bFound.name;
     }
     if (!tx.bank) tx.bank = window._lastActiveBank?.name || 'Банк';
-    if (!tx.bankIconKey) tx.bankIconKey = window._lastActiveBank?.iconKey || window._lastActiveBank?.slug || 'generic';
+    if (!tx.bankIconKey)
+      tx.bankIconKey = window._lastActiveBank?.iconKey || window._lastActiveBank?.slug || 'generic';
 
     seenInBatch.push(tx);
   });
@@ -3424,14 +3958,20 @@ function renderParsedTransactionsView(loadedStatementsOrFileName, transactions, 
 
   function updateHeaderSummary() {
     const allSelectedTxs = transactions.filter(t => t.selected);
-    const totalExp = allSelectedTxs.filter(t => t.type === 'Расход').reduce((s, t) => s + t.amount, 0);
-    const totalInc = allSelectedTxs.filter(t => t.type === 'Доход').reduce((s, t) => s + t.amount, 0);
+    const totalExp = allSelectedTxs
+      .filter(t => t.type === 'Расход')
+      .reduce((s, t) => s + t.amount, 0);
+    const totalInc = allSelectedTxs
+      .filter(t => t.type === 'Доход')
+      .reduce((s, t) => s + t.amount, 0);
 
     // Подготовка отображения шапки с информацией о выписках
     if (info) {
       if (loadedStatements.length > 1) {
         const uniqueBankNames = [...new Set(loadedStatements.map(s => s.bank?.name || 'Банк'))];
-        const filesTooltip = loadedStatements.map(s => `${s.fileName} (${s.bank?.name}): ${s.count} оп.`).join('\n');
+        const filesTooltip = loadedStatements
+          .map(s => `${s.fileName} (${s.bank?.name}): ${s.count} оп.`)
+          .join('\n');
         info.innerHTML = `
           <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-semibold border bg-[#6C5DD3]/15 text-[#8C7DFF] border-[#6C5DD3]/25 cursor-help min-w-0 max-w-[170px] sm:max-w-[280px]" title="${escapeHtml(filesTooltip)}">
             <i data-lucide="layers" class="w-3 h-3 flex-shrink-0"></i>
@@ -3470,9 +4010,10 @@ function renderParsedTransactionsView(loadedStatementsOrFileName, transactions, 
     if (incEl) incEl.innerText = formatMoney(totalInc);
 
     // Точный раздельный подсчет операций (для выбранного фильтра по банку)
-    const currentScopeTxs = currentBankFilter === 'all' 
-      ? transactions 
-      : transactions.filter(t => t.bank === currentBankFilter);
+    const currentScopeTxs =
+      currentBankFilter === 'all'
+        ? transactions
+        : transactions.filter(t => t.bank === currentBankFilter);
 
     const newCount = currentScopeTxs.filter(t => !t.isDuplicate && !t.isTransfer).length;
     const transfersCount = currentScopeTxs.filter(t => t.isTransfer).length;
@@ -3526,7 +4067,7 @@ function toggleImportCatMenu(txId) {
   if (!menu || !btn) return;
 
   const isClosed = menu.classList.contains('hidden');
-  
+
   // Закрываем все открытые меню
   document.querySelectorAll('.custom-dropdown-menu').forEach(m => m.classList.add('hidden'));
   document.querySelectorAll('.card-parsed-row').forEach(c => {
@@ -3538,7 +4079,7 @@ function toggleImportCatMenu(txId) {
     if (card) {
       card.style.zIndex = '60';
     }
-    
+
     // Позиционируем вниз (или вверх, если внизу нет места)
     const rect = btn.getBoundingClientRect();
     const spaceBelow = window.innerHeight - rect.bottom;
@@ -3557,7 +4098,8 @@ function toggleImportCatMenu(txId) {
 
 function selectImportCat(txId, newCat, icon) {
   const tx = window._lastParsedTransactions?.find(t => t._id === txId);
-  const catIcon = (icon && icon !== 'undefined' && icon !== '') ? icon : getDynamicCategoryIcon(newCat);
+  const catIcon =
+    icon && icon !== 'undefined' && icon !== '' ? icon : getDynamicCategoryIcon(newCat);
   if (tx) {
     tx.category = newCat;
     tx.categoryIcon = catIcon;
@@ -3627,10 +4169,14 @@ window._suppressRowClickUntil = 0;
 
 function handleCardPointerDown(event, txId) {
   if (event.button && event.button !== 0) return;
-  const target = (event?.target?.nodeType === 3) ? event.target.parentElement : event?.target;
+  const target = event?.target?.nodeType === 3 ? event.target.parentElement : event?.target;
   if (!target) return;
 
-  if (target.closest('button, input, select, textarea, label, .custom-dropdown-wrap, .custom-dropdown-menu, [data-prevent-row-click]')) {
+  if (
+    target.closest(
+      'button, input, select, textarea, label, .custom-dropdown-wrap, .custom-dropdown-menu, [data-prevent-row-click]'
+    )
+  ) {
     return;
   }
 
@@ -3687,14 +4233,15 @@ function initTooltipSwipe() {
   if (!tooltip || tooltip.dataset.swipeInit === 'true') return;
   tooltip.dataset.swipeInit = 'true';
 
-  let startX = 0, startY = 0;
+  let startX = 0,
+    startY = 0;
   let currentDx = 0;
   let isSwiping = false;
   let directionLocked = null; // null | 'horizontal' | 'vertical'
   let startTime = 0;
   let activePointerId = null;
 
-  tooltip.addEventListener('pointerdown', (e) => {
+  tooltip.addEventListener('pointerdown', e => {
     if (e.button && e.button !== 0) return;
     if (e.target.closest('button, a')) return;
 
@@ -3709,47 +4256,53 @@ function initTooltipSwipe() {
     tooltip.style.transition = 'none';
   });
 
-  tooltip.addEventListener('pointermove', (e) => {
-    if (activePointerId === null || e.pointerId !== activePointerId) return;
+  tooltip.addEventListener(
+    'pointermove',
+    e => {
+      if (activePointerId === null || e.pointerId !== activePointerId) return;
 
-    const dx = e.clientX - startX;
-    const dy = e.clientY - startY;
-    const absDx = Math.abs(dx);
-    const absDy = Math.abs(dy);
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      const absDx = Math.abs(dx);
+      const absDy = Math.abs(dy);
 
-    // Определяем направление жеста при начале движения
-    if (!directionLocked) {
-      // Если движение вертикальное (скролл содержимого) — отдаем управление естественному вертикальному скроллу
-      if (absDy >= 5 && absDy > absDx) {
-        directionLocked = 'vertical';
-        return;
+      // Определяем направление жеста при начале движения
+      if (!directionLocked) {
+        // Если движение вертикальное (скролл содержимого) — отдаем управление естественному вертикальному скроллу
+        if (absDy >= 5 && absDy > absDx) {
+          directionLocked = 'vertical';
+          return;
+        }
+
+        // Если движение горизонтальное (свайп) — захватываем жест для легкого скольжения
+        if (absDx >= 5 && absDx >= absDy) {
+          directionLocked = 'horizontal';
+          isSwiping = true;
+          try {
+            tooltip.setPointerCapture(e.pointerId);
+          } catch (_err) {
+            // Pointer capture unsupported on device
+          }
+        }
       }
 
-      // Если движение горизонтальное (свайп) — захватываем жест для легкого скольжения
-      if (absDx >= 5 && absDx >= absDy) {
-        directionLocked = 'horizontal';
-        isSwiping = true;
-        try {
-          tooltip.setPointerCapture(e.pointerId);
-        } catch (err) {}
+      if (directionLocked === 'horizontal' && isSwiping) {
+        if (e.cancelable) e.preventDefault();
+        currentDx = dx;
+
+        // Мгновенный отклик 1:1 без rAF-задержки + легкая визуальная обратная связь прозрачностью
+        const opacityProgress = Math.min(absDx / 240, 0.45);
+        tooltip.style.transform = `translate3d(${currentDx}px, 0, 0)`;
+        tooltip.style.opacity = String(1 - opacityProgress);
       }
-    }
+    },
+    { passive: false }
+  );
 
-    if (directionLocked === 'horizontal' && isSwiping) {
-      if (e.cancelable) e.preventDefault();
-      currentDx = dx;
-
-      // Мгновенный отклик 1:1 без rAF-задержки + легкая визуальная обратная связь прозрачностью
-      const opacityProgress = Math.min(absDx / 240, 0.45);
-      tooltip.style.transform = `translate3d(${currentDx}px, 0, 0)`;
-      tooltip.style.opacity = String(1 - opacityProgress);
-    }
-  }, { passive: false });
-
-  const onPointerFinish = (e) => {
+  const onPointerFinish = e => {
     if (activePointerId === null || e.pointerId !== activePointerId) return;
 
-    const wasHorizontal = (directionLocked === 'horizontal');
+    const wasHorizontal = directionLocked === 'horizontal';
     const movedDx = currentDx;
     isSwiping = false;
     directionLocked = null;
@@ -3757,7 +4310,9 @@ function initTooltipSwipe() {
 
     try {
       tooltip.releasePointerCapture(e.pointerId);
-    } catch (err) {}
+    } catch (_err) {
+      // Pointer capture release unsupported on device
+    }
 
     if (!wasHorizontal) {
       tooltip.style.transform = 'translate3d(0, 0, 0)';
@@ -3773,7 +4328,8 @@ function initTooltipSwipe() {
     if (absDx > 24 || velocity > 0.18) {
       const sign = movedDx >= 0 ? 1 : -1;
       const flyX = sign * Math.max(window.innerWidth || 400, 360);
-      tooltip.style.transition = 'transform 0.16s cubic-bezier(0.1, 0.9, 0.2, 1), opacity 0.14s ease-out';
+      tooltip.style.transition =
+        'transform 0.16s cubic-bezier(0.1, 0.9, 0.2, 1), opacity 0.14s ease-out';
       tooltip.style.transform = `translate3d(${flyX}px, 0, 0)`;
       tooltip.style.opacity = '0';
       setTimeout(() => {
@@ -3781,7 +4337,8 @@ function initTooltipSwipe() {
       }, 140);
     } else {
       // Быстрый и плавный возврат тултипа
-      tooltip.style.transition = 'transform 0.18s cubic-bezier(0.1, 0.9, 0.2, 1), opacity 0.16s ease-out';
+      tooltip.style.transition =
+        'transform 0.18s cubic-bezier(0.1, 0.9, 0.2, 1), opacity 0.16s ease-out';
       tooltip.style.transform = 'translate3d(0, 0, 0)';
       tooltip.style.opacity = '1';
       setTimeout(() => {
@@ -3808,7 +4365,11 @@ function showRawTxTooltip(txId, clientX, clientY) {
   window._suppressRowClickUntil = Date.now() + 650;
 
   if (navigator.vibrate) {
-    try { navigator.vibrate(20); } catch (e) {}
+    try {
+      navigator.vibrate(20);
+    } catch (_e) {
+      /* vibration unsupported */
+    }
   }
 
   const dateEl = document.getElementById('raw-tooltip-date');
@@ -3818,7 +4379,8 @@ function showRawTxTooltip(txId, clientX, clientY) {
   if (dateEl) dateEl.innerText = tx.displayDate || tx.date || '';
   if (bankEl) bankEl.innerText = tx.bank ? String(tx.bank) : '';
 
-  let rawText = tx.rawDetails || tx.comment || tx.description || tx.merchant || 'Нет исходных данных';
+  const rawText =
+    tx.rawDetails || tx.comment || tx.description || tx.merchant || 'Нет исходных данных';
   if (textEl) textEl.innerText = rawText.trim();
 
   // Получаем точные границы карточки операции
@@ -3842,7 +4404,9 @@ function showRawTxTooltip(txId, clientX, clientY) {
   tooltip.style.visibility = 'visible';
 
   // Горизонтальное положение X: выравниваем с карточкой, зажимая в границы экрана
-  let posX = cardRect ? cardRect.left + (cardRect.width - tooltipWidth) / 2 : (clientX - tooltipWidth / 2);
+  let posX = cardRect
+    ? cardRect.left + (cardRect.width - tooltipWidth) / 2
+    : clientX - tooltipWidth / 2;
   posX = Math.max(12, Math.min(posX, window.innerWidth - tooltipWidth - 12));
 
   // Вертикальное положение Y:
@@ -3901,17 +4465,29 @@ function hideRawTxTooltip() {
 window.hideRawTxTooltip = hideRawTxTooltip;
 
 // Скрытие тултипа при скролле экрана/окна/списка операций
-window.addEventListener('scroll', () => {
-  if (_isShowingRawTooltip) hideRawTxTooltip();
-}, { passive: true, capture: true });
+window.addEventListener(
+  'scroll',
+  () => {
+    if (_isShowingRawTooltip) hideRawTxTooltip();
+  },
+  { passive: true, capture: true }
+);
 
-document.addEventListener('scroll', () => {
-  if (_isShowingRawTooltip) hideRawTxTooltip();
-}, { passive: true, capture: true });
+document.addEventListener(
+  'scroll',
+  () => {
+    if (_isShowingRawTooltip) hideRawTxTooltip();
+  },
+  { passive: true, capture: true }
+);
 
-document.getElementById('pdf-debug-scroll-container')?.addEventListener('scroll', () => {
-  if (_isShowingRawTooltip) hideRawTxTooltip();
-}, { passive: true });
+document.getElementById('pdf-debug-scroll-container')?.addEventListener(
+  'scroll',
+  () => {
+    if (_isShowingRawTooltip) hideRawTxTooltip();
+  },
+  { passive: true }
+);
 
 // Закрытие тултипа при тапе или клике мимо него (на пустую область, другую карточку или фон)
 function handleOutsideTooltipEvent(e) {
@@ -3920,7 +4496,13 @@ function handleOutsideTooltipEvent(e) {
   if (Date.now() < (window._suppressRowClickUntil || 0)) return;
   if (Date.now() - (window._rawTooltipOpenedAt || 0) < 500) return;
   if (_isPointerDownOnCard) return;
-  if (_rawTooltipTxId && e.target && typeof e.target.closest === 'function' && e.target.closest('#card-tx-' + _rawTooltipTxId) && (Date.now() - (window._rawTooltipOpenedAt || 0) < 750)) {
+  if (
+    _rawTooltipTxId &&
+    e.target &&
+    typeof e.target.closest === 'function' &&
+    e.target.closest('#card-tx-' + _rawTooltipTxId) &&
+    Date.now() - (window._rawTooltipOpenedAt || 0) < 750
+  ) {
     return;
   }
   const tooltip = document.getElementById('raw-tx-tooltip');
@@ -3975,7 +4557,8 @@ async function openInAppPdfViewer(fileOrBlobUrl, fileName = 'Выписка.pdf'
   if (titleEl) titleEl.textContent = fileName || 'Выписка.pdf';
 
   const externalBtn = document.getElementById('pdf-viewer-external-btn');
-  const isNative = typeof window.isNativeAppPlatform === 'function' ? window.isNativeAppPlatform() : false;
+  const isNative =
+    typeof window.isNativeAppPlatform === 'function' ? window.isNativeAppPlatform() : false;
   if (externalBtn) {
     externalBtn.style.display = isNative ? 'none' : 'flex';
   }
@@ -3990,7 +4573,9 @@ async function openInAppPdfViewer(fileOrBlobUrl, fileName = 'Выписка.pdf'
       pdfData = await fileOrBlobUrl.arrayBuffer();
       try {
         _currentPdfBlobUrl = URL.createObjectURL(fileOrBlobUrl);
-      } catch (e) {}
+      } catch (_e) {
+        // Blob URL creation fallback
+      }
     } else if (typeof fileOrBlobUrl === 'string') {
       _currentPdfBlobUrl = fileOrBlobUrl;
       pdfData = fileOrBlobUrl;
@@ -4044,7 +4629,7 @@ async function renderCurrentPdfPage() {
 
     const renderContext = {
       canvasContext: ctx,
-      viewport: viewport
+      viewport: viewport,
     };
 
     await page.render(renderContext).promise;
@@ -4056,12 +4641,14 @@ async function renderCurrentPdfPage() {
     const prevBtn = document.getElementById('pdf-prev-page-btn');
     const nextBtn = document.getElementById('pdf-next-page-btn');
 
-    if (pageLabel) pageLabel.textContent = `Страница ${_currentPdfPageNum} из ${_currentPdfTotalPages}`;
-    if (pageIndicator) pageIndicator.textContent = `${_currentPdfPageNum} / ${_currentPdfTotalPages}`;
+    if (pageLabel)
+      pageLabel.textContent = `Страница ${_currentPdfPageNum} из ${_currentPdfTotalPages}`;
+    if (pageIndicator)
+      pageIndicator.textContent = `${_currentPdfPageNum} / ${_currentPdfTotalPages}`;
     if (zoomLabel) zoomLabel.textContent = `${Math.round(_currentPdfScale * 100)}%`;
 
-    if (prevBtn) prevBtn.disabled = (_currentPdfPageNum <= 1);
-    if (nextBtn) nextBtn.disabled = (_currentPdfPageNum >= _currentPdfTotalPages);
+    if (prevBtn) prevBtn.disabled = _currentPdfPageNum <= 1;
+    if (nextBtn) nextBtn.disabled = _currentPdfPageNum >= _currentPdfTotalPages;
   } catch (err) {
     console.warn('Ошибка отрисовки страницы PDF:', err);
   } finally {
@@ -4118,7 +4705,8 @@ function openStatementFileDirectly(statement) {
   // Закрываем выпадающее меню выбора выписки, если оно было открыто
   document.getElementById('statement-file-picker-popup')?.classList.add('hidden');
 
-  const isNative = typeof window.isNativeAppPlatform === 'function' ? window.isNativeAppPlatform() : false;
+  const isNative =
+    typeof window.isNativeAppPlatform === 'function' ? window.isNativeAppPlatform() : false;
 
   // 1. В нативном APK (Android WebView): открываем встроенный просмотрщик
   if (isNative) {
@@ -4131,8 +4719,9 @@ function openStatementFileDirectly(statement) {
   if (!fileUrl && statement.file) {
     try {
       const isPdf = statement.fileName?.toLowerCase()?.endsWith('.pdf');
-      const mime = isPdf ? 'application/pdf' : (statement.file.type || 'application/octet-stream');
-      const blob = (statement.file.type === mime) ? statement.file : new Blob([statement.file], { type: mime });
+      const mime = isPdf ? 'application/pdf' : statement.file.type || 'application/octet-stream';
+      const blob =
+        statement.file.type === mime ? statement.file : new Blob([statement.file], { type: mime });
       fileUrl = URL.createObjectURL(blob);
       statement.blobUrl = fileUrl;
     } catch (e) {
@@ -4153,9 +4742,13 @@ function openStatementFileDirectly(statement) {
     document.body.appendChild(a);
     a.click();
     setTimeout(() => {
-      try { a.remove(); } catch (err) {}
+      try {
+        a.remove();
+      } catch (_err) {
+        /* ignore */
+      }
     }, 100);
-  } catch (err) {
+  } catch (_err) {
     openInAppPdfViewer(statement.file || fileUrl, statement.fileName);
   }
 }
@@ -4200,12 +4793,13 @@ function toggleStatementFilePicker(event) {
   if (countEl) countEl.innerText = `${statements.length} файлов`;
 
   if (listEl) {
-    listEl.innerHTML = statements.map((s, idx) => {
-      const bConfig = s.bank || {};
-      const bankName = bConfig.name || 'Банк';
-      const iconKey = bConfig.iconKey || bConfig.slug || 'generic';
-      const sizeStr = s.fileSize ? formatFileSize(s.fileSize) : '';
-      return `
+    listEl.innerHTML = statements
+      .map((s, idx) => {
+        const bConfig = s.bank || {};
+        const bankName = bConfig.name || 'Банк';
+        const iconKey = bConfig.iconKey || bConfig.slug || 'generic';
+        const sizeStr = s.fileSize ? formatFileSize(s.fileSize) : '';
+        return `
         <div onclick="event.stopPropagation(); openStatementViewerByIndex(${idx})" 
              class="flex items-center justify-between p-2 rounded-xl hover:bg-[#212430] active:bg-[#2A2D3C] transition-colors cursor-pointer group">
           <div class="flex items-center gap-2 min-w-0 flex-1">
@@ -4227,7 +4821,8 @@ function toggleStatementFilePicker(event) {
           <i data-lucide="external-link" class="w-3.5 h-3.5 text-gray-500 group-hover:text-[#8C7DFF] flex-shrink-0 ml-1.5 transition-colors"></i>
         </div>
       `;
-    }).join('');
+      })
+      .join('');
   }
 
   popup.classList.remove('hidden');
@@ -4255,12 +4850,16 @@ function handleCardRowClick(event, txId) {
   if (window._suppressRowClickUntil && Date.now() < window._suppressRowClickUntil) {
     return;
   }
-  const target = (event?.target?.nodeType === 3) ? event.target.parentElement : event?.target;
+  const target = event?.target?.nodeType === 3 ? event.target.parentElement : event?.target;
   if (!target) return;
 
   // Игнорируем клики по интерактивным элементам внутри карточки:
   // кнопкам, ссылкам, инпутам, дропдаунам, меню и элементам с data-prevent-row-click
-  if (target.closest('button, input, select, textarea, label, .custom-dropdown-wrap, .custom-dropdown-menu, [data-prevent-row-click]')) {
+  if (
+    target.closest(
+      'button, input, select, textarea, label, .custom-dropdown-wrap, .custom-dropdown-menu, [data-prevent-row-click]'
+    )
+  ) {
     return;
   }
 
@@ -4307,11 +4906,14 @@ async function importSelectedTransactions() {
   try {
     // В Firestore батч вмещает максимум 500 операций
     const CHUNK_SIZE = 400;
-    const userProfile = (typeof getCurrentUserProfile === 'function') ? getCurrentUserProfile() : { displayName: 'Пользователь', avatarId: 'user' };
+    const userProfile =
+      typeof getCurrentUserProfile === 'function'
+        ? getCurrentUserProfile()
+        : { displayName: 'Пользователь', avatarId: 'user' };
     const authorInfo = {
       uid: auth?.currentUser?.uid || '',
       name: userProfile.displayName,
-      avatarId: userProfile.avatarId
+      avatarId: userProfile.avatarId,
     };
 
     const newDocs = [];
@@ -4322,19 +4924,21 @@ async function importSelectedTransactions() {
       const batch = db.batch();
 
       chunk.forEach(tx => {
-        const docRef = (window.getUserCol ? getUserCol('Transactions') : db.collection('Transactions')).doc();
+        const docRef = (
+          window.getUserCol ? getUserCol('Transactions') : db.collection('Transactions')
+        ).doc();
         tx.id = docRef.id;
-        const txType = (tx.type === 'income' || tx.type === 'Доход') ? 'Доход' : 'Расход';
+        const txType = tx.type === 'income' || tx.type === 'Доход' ? 'Доход' : 'Расход';
         const amt = Math.abs(parseFloat(tx.amount) || 0);
         const comm = tx.merchant || tx.comment || '';
         const docData = {
           type: txType,
           amount: amt,
-          date: tx.date,            // YYYY-MM-DD
+          date: tx.date, // YYYY-MM-DD
           category: tx.category || 'Прочее',
-          comment: comm,     // Записываем название точки в комментарий
+          comment: comm, // Записываем название точки в комментарий
           author: authorInfo,
-          createdAt: Date.now()
+          createdAt: Date.now(),
         };
         batch.set(docRef, docData);
         newDocs.push({ id: docRef.id, ...docData });
@@ -4347,7 +4951,8 @@ async function importSelectedTransactions() {
     await Promise.all(batchPromises);
 
     // Мгновенное оптимистичное обновление локального кэша и интерфейса (без ожидания сети)
-    const existingFlat = (typeof getAllCachedTransactionsFlat === 'function') ? getAllCachedTransactionsFlat() : [];
+    const existingFlat =
+      typeof getAllCachedTransactionsFlat === 'function' ? getAllCachedTransactionsFlat() : [];
     const existingIds = new Set(existingFlat.map(t => t.id));
     const toAppend = newDocs.filter(t => !existingIds.has(t.id));
 
@@ -4355,7 +4960,9 @@ async function importSelectedTransactions() {
       Cache.transactions = processTransactions([...existingFlat, ...toAppend]);
     }
 
-    const hasExpensesInImport = selected.some(s => s.type === 'expense' || s.amount < 0 || (s.type !== 'income' && s.type !== 'Доход'));
+    const hasExpensesInImport = selected.some(
+      s => s.type === 'expense' || s.amount < 0 || (s.type !== 'income' && s.type !== 'Доход')
+    );
     if (hasExpensesInImport) {
       if (typeof triggerBudgetExpenseAnimation === 'function') {
         triggerBudgetExpenseAnimation();
@@ -4380,7 +4987,8 @@ async function importSelectedTransactions() {
       if (typeof switchTab === 'function') switchTab('budget');
       if (typeof goToWizardStep === 'function') goToWizardStep(returnStep);
       if (typeof renderWizardIncomeSources === 'function') renderWizardIncomeSources();
-      if (typeof calculateHistoricalIncomeForWizard === 'function') calculateHistoricalIncomeForWizard();
+      if (typeof calculateHistoricalIncomeForWizard === 'function')
+        calculateHistoricalIncomeForWizard();
     } else {
       if (typeof renderBudgetTab === 'function') renderBudgetTab();
     }
@@ -4403,7 +5011,8 @@ async function importSelectedTransactions() {
 // ============================================================
 function getImportedLargeExpenses(transactions) {
   const plan = window.Cache?.budgetPlan;
-  const threshold = (typeof getLargeExpenseThreshold === 'function') ? getLargeExpenseThreshold() : Infinity;
+  const threshold =
+    typeof getLargeExpenseThreshold === 'function' ? getLargeExpenseThreshold() : Infinity;
   if (!isFinite(threshold) || threshold <= 0) return [];
 
   const today = new Date();
@@ -4430,18 +5039,26 @@ function getImportedLargeExpenses(transactions) {
 
   return (transactions || []).filter(tx => {
     // Только расходы
-    const isExp = (tx.type === 'expense' || tx.type === 'Расход' || (tx.type !== 'income' && tx.type !== 'Доход' && tx.amount < 0));
+    const isExp =
+      tx.type === 'expense' ||
+      tx.type === 'Расход' ||
+      (tx.type !== 'income' && tx.type !== 'Доход' && tx.amount < 0);
     if (!isExp) return false;
 
     // Уже исключенные / распределенные пропускаем
-    if (tx.excludeFromBudget || tx.isExcludedFromBudget || tx.billType === 'onetime' || (parseInt(tx.spreadMonths, 10) > 1)) {
+    if (
+      tx.excludeFromBudget ||
+      tx.isExcludedFromBudget ||
+      tx.billType === 'onetime' ||
+      parseInt(tx.spreadMonths, 10) > 1
+    ) {
       return false;
     }
 
     const amt = Math.abs(parseFloat(tx.amount) || 0);
     if (amt < threshold) return false;
 
-    const pDate = (typeof parseAnyDate === 'function') ? parseAnyDate(tx.date) : new Date(tx.date);
+    const pDate = typeof parseAnyDate === 'function' ? parseAnyDate(tx.date) : new Date(tx.date);
     if (!pDate || isNaN(pDate.getTime())) return false;
 
     const txMonthDate = new Date(pDate.getFullYear(), pDate.getMonth(), 1);
@@ -4474,7 +5091,7 @@ window._statementLargeTxs = [];
 function openStatementLargeExpensesModal(largeTxs) {
   if (!largeTxs || largeTxs.length === 0) return;
 
-  const threshold = (typeof getLargeExpenseThreshold === 'function') ? getLargeExpenseThreshold() : 0;
+  const threshold = typeof getLargeExpenseThreshold === 'function' ? getLargeExpenseThreshold() : 0;
   const goals = Cache?.goals || [];
   const activeGoals = goals.filter(g => g.status !== 'Выполнена' || (parseFloat(g.saved) || 0) > 0);
   const availableGoals = activeGoals.length > 0 ? activeGoals : goals;
@@ -4490,7 +5107,7 @@ function openStatementLargeExpensesModal(largeTxs) {
   window._statementLargeTxs = largeTxs.map(tx => ({
     ...tx,
     selectedForAmortize: true,
-    fundingGoalId: defaultGoalId
+    fundingGoalId: defaultGoalId,
   }));
 
   const dlg = document.getElementById('statement-large-expenses-modal');
@@ -4520,17 +5137,22 @@ function renderStatementLargeList() {
   const availableGoals = activeGoals.length > 0 ? activeGoals : goals;
   const defaultGoalId = availableGoals[0]?.id || '';
 
-  listEl.innerHTML = (window._statementLargeTxs || []).map((item, idx) => {
-    const amt = Math.abs(parseFloat(item.amount) || 0);
-    const pDate = (typeof parseAnyDate === 'function') ? parseAnyDate(item.date) : new Date(item.date);
-    const dateFormatted = (typeof formatDateStr === 'function' && pDate) ? formatDateStr(pDate, 'dd.MM.yyyy') : item.date;
-    const catObj = expCats.find(c => c.name === item.category);
-    const icon = catObj?.icon && catObj.icon !== '📦' ? catObj.icon : 'tag';
-    const title = item.merchant || item.comment || item.category || 'Расход';
-    const currentGoalId = item.fundingGoalId || defaultGoalId;
-    const selectedGoal = availableGoals.find(g => g.id === currentGoalId) || availableGoals[0];
+  listEl.innerHTML = (window._statementLargeTxs || [])
+    .map((item, idx) => {
+      const amt = Math.abs(parseFloat(item.amount) || 0);
+      const pDate =
+        typeof parseAnyDate === 'function' ? parseAnyDate(item.date) : new Date(item.date);
+      const dateFormatted =
+        typeof formatDateStr === 'function' && pDate
+          ? formatDateStr(pDate, 'dd.MM.yyyy')
+          : item.date;
+      const catObj = expCats.find(c => c.name === item.category);
+      const icon = catObj?.icon && catObj.icon !== 'package' ? catObj.icon : 'tag';
+      const title = item.merchant || item.comment || item.category || 'Расход';
+      const currentGoalId = item.fundingGoalId || defaultGoalId;
+      const selectedGoal = availableGoals.find(g => g.id === currentGoalId) || availableGoals[0];
 
-    return `
+      return `
       <div id="stmt-large-card-${idx}" class="p-3 rounded-2xl bg-[#12151C] border border-[rgba(255,255,255,0.06)] flex flex-col gap-2.5 transition-all ${item.selectedForAmortize ? 'border-violet-500/30' : 'opacity-60'}">
         <div class="flex items-center justify-between gap-2.5">
           <label class="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer select-none">
@@ -4575,7 +5197,9 @@ function renderStatementLargeList() {
             </button>
             
             <div id="stmt-goal-dropdown-${idx}" class="hidden absolute left-0 right-0 top-full mt-1 z-50 bg-[#1A1D27] border border-[rgba(255,255,255,0.12)] rounded-xl shadow-2xl overflow-hidden py-1 max-h-48 overflow-y-auto custom-scrollbar animate-fade-in" onclick="event.stopPropagation()">
-              ${availableGoals.map(g => `
+              ${availableGoals
+                .map(
+                  g => `
                 <div onclick="selectStmtLargeGoal(${idx}, '${g.id}')" class="px-2.5 py-2 hover:bg-[#252836] flex items-center justify-between gap-2 cursor-pointer transition-colors ${currentGoalId === g.id ? 'bg-violet-500/15 text-white font-semibold' : 'text-gray-300'}">
                   <div class="flex items-center gap-2 truncate">
                     <i data-lucide="${g.icon || 'target'}" class="w-3.5 h-3.5 text-[#8C7DFF] flex-shrink-0"></i>
@@ -4583,13 +5207,16 @@ function renderStatementLargeList() {
                   </div>
                   <span class="text-[10px] font-mono text-gray-400 flex-shrink-0">${formatMoney(g.saved || 0)}</span>
                 </div>
-              `).join('')}
+              `
+                )
+                .join('')}
             </div>
           </div>
         </div>
       </div>
     `;
-  }).join('');
+    })
+    .join('');
 
   if (typeof lucide !== 'undefined') lucide.createIcons({ root: listEl });
 }
@@ -4606,7 +5233,7 @@ function toggleStmtLargeGoalDropdown(idx, e) {
   if (isHidden) {
     dropdown.classList.remove('hidden');
     setTimeout(() => {
-      const handleOutsideClick = (evt) => {
+      const handleOutsideClick = evt => {
         const d = document.getElementById(`stmt-goal-dropdown-${idx}`);
         const btn = document.getElementById(`stmt-goal-btn-${idx}`);
         if (d && !d.classList.contains('hidden')) {
@@ -4701,14 +5328,15 @@ async function submitStatementLargeExpenses() {
   const defaultGoalId = goals[0]?.id || '';
 
   // 1. МГНОВЕННОЕ ОПТИМИСТИЧНОЕ ОБНОВЛЕНИЕ В ПАМЯТИ
-  const flat = typeof getAllCachedTransactionsFlat === 'function' ? getAllCachedTransactionsFlat() : [];
+  const flat =
+    typeof getAllCachedTransactionsFlat === 'function' ? getAllCachedTransactionsFlat() : [];
   const backgroundTasks = [];
 
   for (const item of items) {
     const amount = Math.abs(parseFloat(item.amount) || 0);
     const chosenGoalId = item.fundingGoalId || defaultGoalId;
     const targetGoal = goals.find(g => g.id === chosenGoalId);
-    const goalName = targetGoal ? (targetGoal.name || targetGoal.title || 'Цель') : 'Цель';
+    const goalName = targetGoal ? targetGoal.name || targetGoal.title || 'Цель' : 'Цель';
 
     // Оптимистично уменьшаем накопления цели
     if (targetGoal && amount > 0) {
@@ -4731,15 +5359,17 @@ async function submitStatementLargeExpenses() {
 
     if (item.id) {
       backgroundTasks.push(
-        getUserCol('Transactions').doc(item.id).update({
-          excludeFromBudget: true,
-          spreadMonths: 1,
-          billType: 'onetime',
-          fundingGoalId: chosenGoalId || null,
-          fundingGoalName: goalName,
-          fundingGoalAmount: amount,
-          updatedAt: Date.now()
-        })
+        getUserCol('Transactions')
+          .doc(item.id)
+          .update({
+            excludeFromBudget: true,
+            spreadMonths: 1,
+            billType: 'onetime',
+            fundingGoalId: chosenGoalId || null,
+            fundingGoalName: goalName,
+            fundingGoalAmount: amount,
+            updatedAt: Date.now(),
+          })
       );
     }
   }
@@ -4759,7 +5389,9 @@ async function submitStatementLargeExpenses() {
   if (typeof renderTransactions === 'function') renderTransactions();
   if (typeof renderGoals === 'function') renderGoals();
 
-  showToast(`Списано из целей ${items.length} ${items.length === 1 ? 'крупная трата' : 'крупных трат'}`);
+  showToast(
+    `Списано из целей ${items.length} ${items.length === 1 ? 'крупная трата' : 'крупных трат'}`
+  );
 
   // Если был возврат в мастер
   if (window._returnToWizardStep) {
@@ -4792,7 +5424,7 @@ function downloadParsedJSON() {
     return {
       ...t,
       comment: comm,
-      description: comm
+      description: comm,
     };
   });
 
@@ -4812,21 +5444,22 @@ function downloadParsedJSON() {
 // -------------------------------------------------------------
 // ЛОГИКА ОКНА "ЗАПОМНИТЬ ПРАВИЛО В СЛОВАРЬ"
 // -------------------------------------------------------------
-let currentRememberTx = null;
+let _currentRememberTx = null;
 let currentRememberCallback = null;
 
 function openRememberRuleModal(txId) {
   const tx = window._lastParsedTransactions?.find(t => t._id === txId);
   if (!tx) return;
 
-  currentRememberTx = tx;
+  _currentRememberTx = tx;
   currentRememberCallback = null;
 
   const keywordInput = document.getElementById('rule-keyword-input');
   if (keywordInput) keywordInput.value = tx.merchant || '';
 
   const targetCats = getActiveCategories(tx.type || 'Расход');
-  const selectedCat = (tx.category && targetCats.includes(tx.category)) ? tx.category : (targetCats[0] || 'Другое');
+  const selectedCat =
+    tx.category && targetCats.includes(tx.category) ? tx.category : targetCats[0] || 'Другое';
   populateModalCatMenu('rule', targetCats, selectedCat);
 
   const dlg = document.getElementById('remember-rule-dialog');
@@ -4837,14 +5470,17 @@ function openRememberRuleModal(txId) {
 }
 
 function openRememberRuleCustom(keyword, category, type = 'Расход', onSavedCallback = null) {
-  currentRememberTx = null;
-  currentRememberCallback = (typeof onSavedCallback === 'function') ? onSavedCallback : null;
+  _currentRememberTx = null;
+  currentRememberCallback = typeof onSavedCallback === 'function' ? onSavedCallback : null;
 
   const keywordInput = document.getElementById('rule-keyword-input');
   if (keywordInput) keywordInput.value = keyword || '';
 
   const targetCats = getActiveCategories(type || 'Расход');
-  const selectedCat = (category && category !== 'Категория...' && targetCats.includes(category)) ? category : (targetCats[0] || 'Другое');
+  const selectedCat =
+    category && category !== 'Категория...' && targetCats.includes(category)
+      ? category
+      : targetCats[0] || 'Другое';
   populateModalCatMenu('rule', targetCats, selectedCat);
 
   const dlg = document.getElementById('remember-rule-dialog');
@@ -4857,14 +5493,14 @@ function openRememberRuleCustom(keyword, category, type = 'Расход', onSave
 function closeRememberRuleModal() {
   const dlg = document.getElementById('remember-rule-dialog');
   if (dlg) dlg.classList.add('hidden');
-  currentRememberTx = null;
+  _currentRememberTx = null;
   currentRememberCallback = null;
 }
 
 async function saveCategoryRuleFromModal() {
   const keyword = document.getElementById('rule-keyword-input')?.value.trim();
   const category = document.getElementById('rule-category-input')?.value;
-  
+
   if (!keyword) {
     if (typeof showToast === 'function') showToast('Введите ключевое слово или фразу', true);
     return;
@@ -4876,7 +5512,12 @@ async function saveCategoryRuleFromModal() {
   }
 
   try {
-    const col = (typeof window.getUserCol === 'function') ? window.getUserCol('CategoryRules') : (typeof db !== 'undefined' ? db.collection('CategoryRules') : null);
+    const col =
+      typeof window.getUserCol === 'function'
+        ? window.getUserCol('CategoryRules')
+        : typeof db !== 'undefined'
+          ? db.collection('CategoryRules')
+          : null;
 
     if (col) {
       // Если слово ранее было подавлено пользователем — удаляем маркер disabled
@@ -4888,11 +5529,24 @@ async function saveCategoryRuleFromModal() {
       batch.set(newDocRef, { pattern: keyword, category: category, updatedAt: Date.now() });
       await batch.commit();
 
-      const normKeyword = (typeof StatementCategorizer !== 'undefined') ? StatementCategorizer.normalize(keyword) : keyword.toLowerCase();
+      const normKeyword =
+        typeof StatementCategorizer !== 'undefined'
+          ? StatementCategorizer.normalize(keyword)
+          : keyword.toLowerCase();
       if (!window.Cache) window.Cache = {};
       if (!window.Cache.categoryRules) window.Cache.categoryRules = [];
-      window.Cache.categoryRules = window.Cache.categoryRules.filter(r => ((typeof StatementCategorizer !== 'undefined') ? StatementCategorizer.normalize(r.pattern) : r.pattern.toLowerCase()) !== normKeyword);
-      window.Cache.categoryRules.push({ id: newDocRef.id, pattern: keyword, category: category, isSystem: false });
+      window.Cache.categoryRules = window.Cache.categoryRules.filter(
+        r =>
+          (typeof StatementCategorizer !== 'undefined'
+            ? StatementCategorizer.normalize(r.pattern)
+            : r.pattern.toLowerCase()) !== normKeyword
+      );
+      window.Cache.categoryRules.push({
+        id: newDocRef.id,
+        pattern: keyword,
+        category: category,
+        isSystem: false,
+      });
     }
 
     applyRulesToOpenedStatement(keyword, category);
@@ -4914,13 +5568,13 @@ async function saveCategoryRuleFromModal() {
 }
 
 // -------------------------------------------------------------
-// РЕДАКТОР СЛОВАРЯ КАТЕГОРИЙ (ШЕСТЕРЕНКА ⚙️)
+// РЕДАКТОР СЛОВАРЯ КАТЕГОРИЙ (НАСТРОЙКИ СЛОВАРЯ)
 // -------------------------------------------------------------
 function openRulesEditorModal() {
   const dialog = document.getElementById('rules-editor-dialog');
 
   const allCats = [...new Set([...getActiveCategories('Расход'), ...getActiveCategories('Доход')])];
-  
+
   populateModalCatMenu('editor', allCats, 'Продукты');
 
   document.getElementById('editor-keyword-input').value = '';
@@ -4958,9 +5612,11 @@ function renderRulesList() {
   });
 
   let html = '';
-  Object.keys(grouped).sort().forEach(cat => {
-    const catIcon = getDynamicCategoryIcon(cat);
-    html += `
+  Object.keys(grouped)
+    .sort()
+    .forEach(cat => {
+      const catIcon = getDynamicCategoryIcon(cat);
+      html += `
       <div class="bg-[#12151C] border border-[rgba(255,255,255,0.04)] rounded-2xl p-3.5 space-y-2.5">
         <div class="flex items-center justify-between border-b border-[rgba(255,255,255,0.04)] pb-2">
           <div class="flex items-center gap-2">
@@ -4974,9 +5630,9 @@ function renderRulesList() {
         <div class="flex flex-wrap gap-1.5">
     `;
 
-    grouped[cat].forEach(r => {
-      const isCustom = !r.isSystem;
-      html += `
+      grouped[cat].forEach(r => {
+        const isCustom = !r.isSystem;
+        html += `
         <span class="inline-flex items-center gap-1.5 ${isCustom ? 'bg-[#6C5DD3]/15 text-white border border-[#6C5DD3]/30' : 'bg-[#181B24] text-gray-300 border border-[rgba(255,255,255,0.06)]'} text-[11px] px-2.5 py-1 rounded-xl transition-all">
           <span class="font-medium">${escapeHtml(r.pattern)}</span>
           <button type="button" onclick="deleteRuleFromEditor('${r.id}', ${r.isSystem ? 'true' : 'false'}, '${escapeHtml(r.pattern)}')" class="text-gray-500 hover:text-[#FF453A] cursor-pointer p-0.5 transition-colors" title="Удалить фразу">
@@ -4984,13 +5640,13 @@ function renderRulesList() {
           </button>
         </span>
       `;
-    });
+      });
 
-    html += `
+      html += `
         </div>
       </div>
     `;
-  });
+    });
 
   container.innerHTML = html;
   if (typeof lucide !== 'undefined') lucide.createIcons({ root: container });
@@ -5019,8 +5675,15 @@ async function addRuleFromEditor() {
     await batch.commit();
 
     if (!window.Cache.categoryRules) window.Cache.categoryRules = [];
-    window.Cache.categoryRules = window.Cache.categoryRules.filter(r => r.pattern.toLowerCase() !== keyword.toLowerCase());
-    window.Cache.categoryRules.push({ id: newDocRef.id, pattern: keyword, category: category, isSystem: false });
+    window.Cache.categoryRules = window.Cache.categoryRules.filter(
+      r => r.pattern.toLowerCase() !== keyword.toLowerCase()
+    );
+    window.Cache.categoryRules.push({
+      id: newDocRef.id,
+      pattern: keyword,
+      category: category,
+      isSystem: false,
+    });
 
     input.value = '';
     renderRulesList();
@@ -5043,12 +5706,14 @@ async function deleteRuleFromEditor(ruleId, isSystem, pattern) {
     }
 
     const normTarget = StatementCategorizer.normalize(pattern);
-    window.Cache.categoryRules = (window.Cache.categoryRules || []).filter(r => r.id !== ruleId && StatementCategorizer.normalize(r.pattern) !== normTarget);
+    window.Cache.categoryRules = (window.Cache.categoryRules || []).filter(
+      r => r.id !== ruleId && StatementCategorizer.normalize(r.pattern) !== normTarget
+    );
     renderRulesList();
   } catch (e) {
     showToast('Ошибка удаления: ' + e.message, true);
   }
-} 
+}
 
 async function restoreDefaultRules() {
   try {
@@ -5072,16 +5737,28 @@ window.restoreDefaultRules = restoreDefaultRules;
 
 // Пересчитывает категории в открытой выписке при добавлении нового правила
 function applyRulesToOpenedStatement(keyword, category) {
-  if (!window._lastParsedTransactions || !Array.isArray(window._lastParsedTransactions) || window._lastParsedTransactions.length === 0) return;
+  if (
+    !window._lastParsedTransactions ||
+    !Array.isArray(window._lastParsedTransactions) ||
+    window._lastParsedTransactions.length === 0
+  )
+    return;
   const kw = (keyword || '').trim().toLowerCase();
   if (!kw) return;
-  const normKw = (typeof StatementCategorizer !== 'undefined') ? StatementCategorizer.normalize(kw) : kw;
+  const normKw =
+    typeof StatementCategorizer !== 'undefined' ? StatementCategorizer.normalize(kw) : kw;
   const finalIcon = getDynamicCategoryIcon(category);
 
   window._lastParsedTransactions.forEach(t => {
-    const full = `${t.merchant || ''} ${t.rawDetails || ''} ${t.comment || ''} ${t.description || ''}`.toLowerCase();
-    const normFull = (typeof StatementCategorizer !== 'undefined') ? StatementCategorizer.normalize(full) : full;
-    if (full.includes(kw) || (normKw && normFull.includes(normKw)) || (normKw && full.includes(normKw))) {
+    const full =
+      `${t.merchant || ''} ${t.rawDetails || ''} ${t.comment || ''} ${t.description || ''}`.toLowerCase();
+    const normFull =
+      typeof StatementCategorizer !== 'undefined' ? StatementCategorizer.normalize(full) : full;
+    if (
+      full.includes(kw) ||
+      (normKw && normFull.includes(normKw)) ||
+      (normKw && full.includes(normKw))
+    ) {
       t.category = category;
       t.categoryIcon = finalIcon;
     }
@@ -5095,10 +5772,10 @@ function toggleModalCatMenu(type) {
   const menu = document.getElementById(`${type}-category-menu`);
   if (!menu) return;
   const isClosed = menu.classList.contains('hidden');
-  
+
   // Закрываем все открытые меню
   document.querySelectorAll('.custom-dropdown-menu').forEach(m => m.classList.add('hidden'));
-  
+
   if (isClosed) menu.classList.remove('hidden');
 }
 
@@ -5134,10 +5811,11 @@ function populateModalCatMenu(type, categories, selectedCat) {
     label.classList.add('text-white');
   }
 
-  menu.innerHTML = categories.map(cat => {
-    const icon = getDynamicCategoryIcon(cat);
-    const isSelected = (cat === defaultCat);
-    return `
+  menu.innerHTML = categories
+    .map(cat => {
+      const icon = getDynamicCategoryIcon(cat);
+      const isSelected = cat === defaultCat;
+      return `
       <button type="button" 
               onclick="selectModalCat('${type}', '${escapeHtml(cat)}', '${icon}')" 
               class="w-full text-left px-3 py-2 text-[13px] rounded-xl transition-colors flex items-center gap-2.5 cursor-pointer ${isSelected ? 'bg-[#6C5DD3]/15 text-[#6C5DD3] font-semibold' : 'text-gray-300 hover:bg-[#2A2D3C]'}">
@@ -5145,14 +5823,15 @@ function populateModalCatMenu(type, categories, selectedCat) {
         <span class="truncate">${escapeHtml(cat)}</span>
       </button>
     `;
-  }).join('');
+    })
+    .join('');
 
   if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
 // Глобальное закрытие любых открытых кастомных меню при клике в любое место мимо
-document.addEventListener('click', (e) => {
-  const target = (e?.target?.nodeType === 3) ? e.target.parentElement : e?.target;
+document.addEventListener('click', e => {
+  const target = e?.target?.nodeType === 3 ? e.target.parentElement : e?.target;
   if (target && typeof target.closest === 'function') {
     if (!target.closest('.custom-dropdown-wrap')) {
       document.querySelectorAll('.custom-dropdown-menu').forEach(m => m.classList.add('hidden'));
@@ -5210,3 +5889,12 @@ window.openStatementFileDirectly = openStatementFileDirectly;
 window.extractDeviceField = extractDeviceField;
 window.extractWebsiteLink = extractWebsiteLink;
 
+window.toggleImportCatMenu = toggleImportCatMenu;
+window.selectImportCat = selectImportCat;
+window.deleteCategoryFromImport = deleteCategoryFromImport;
+window.importSelectedTransactions = importSelectedTransactions;
+window.downloadParsedJSON = downloadParsedJSON;
+window.openRulesEditorModal = openRulesEditorModal;
+window.closeRulesEditorModal = closeRulesEditorModal;
+window.addRuleFromEditor = addRuleFromEditor;
+window.deleteRuleFromEditor = deleteRuleFromEditor;
