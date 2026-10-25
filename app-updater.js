@@ -2,7 +2,7 @@
 // МОДУЛЬ ОБНОВЛЕНИЯ И УСТАНОВКИ ПРИЛОЖЕНИЯ (PWA / APK)
 // ============================================================
 
-window.APP_VERSION = '1.0.5';
+window.APP_VERSION = '1.0.6';
 window.GITHUB_REPO = 'Danchel77/Capital';
 window.APK_DOWNLOAD_URL = `https://github.com/${window.GITHUB_REPO}/releases/download/latest/FamilyBudget.apk`;
 window.RELEASES_API_URL = `https://api.github.com/repos/${window.GITHUB_REPO}/releases/latest`;
