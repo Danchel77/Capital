@@ -867,6 +867,50 @@ function renderWizCalendar() {
 }
 window.renderWizCalendar = renderWizCalendar;
 
+function handleWizardDayClick(day, event) {
+  if (event) {
+    event.stopPropagation();
+    event.preventDefault();
+  }
+  const today = new Date();
+  const bills = (Cache?.calendarBills || []).filter(
+    b => parseInt(b.day, 10) === parseInt(day, 10) && getOneTimeBillMonthInfo(b, today).isActive
+  );
+  currentWizSelectedDay = day;
+  window.currentWizSelectedDay = day;
+
+  const plan = Cache?.budgetPlan || {};
+  const isWizard =
+    !plan.isConfigured ||
+    document.getElementById('budget-wizard')?.classList.contains('hidden') === false;
+
+  if (isWizard) {
+    if (bills.length > 0) {
+      const cell = document.querySelector(`[data-wiz-day="${day}"]`);
+      if (typeof showWizDayTooltip === 'function') {
+        showWizDayTooltip(day, bills, cell);
+      } else {
+        openDayBillsModal(day);
+      }
+    } else {
+      openAddBillModal(day);
+    }
+  } else {
+    if (bills.length > 0) {
+      const cell = document.querySelector(`#budget-modal-calendar-grid [data-wiz-day="${day}"]`);
+      if (typeof showBudgetModalDayTooltip === 'function') {
+        showBudgetModalDayTooltip(day, bills, cell);
+      } else {
+        openDayBillsModal(day);
+      }
+    } else {
+      openAddBillModal(day);
+    }
+  }
+}
+window.handleWizardDayClick = handleWizardDayClick;
+window.selectWizCalendarDay = handleWizardDayClick;
+
 function openBillPaymentMatchModal(billId, preserveSelection = false) {
   activeMatchingBillId = billId;
   if (!preserveSelection) {
