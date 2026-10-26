@@ -1488,7 +1488,7 @@ async function syncAuthCredentialsToBankPush() {
       familyId: familyId,
       idToken: idToken,
       refreshToken: refreshToken,
-      apiKey: 'AIzaSyC_JkUF__UfStFrTKecRasKqKBKXlQ4D88',
+      apiKey: window.firebaseConfig?.apiKey || '',
       projectId: 'familybudget-4245a',
       geminiApiKey: geminiApiKey,
       authorName: profile.displayName || user.displayName || 'Пользователь',

@@ -18,105 +18,120 @@ if (typeof window.showLoadingScreen === 'function') {
 const currentAuth = typeof auth !== 'undefined' ? auth : window.auth;
 if (currentAuth && typeof currentAuth.onAuthStateChanged === 'function') {
   currentAuth.onAuthStateChanged(async user => {
-  if (user) {
-    document.getElementById('login-screen')?.classList.add('hidden');
+    if (user) {
+      document.getElementById('login-screen')?.classList.add('hidden');
 
-    // Если приложение уже полностью инициализировано для этого же пользователя (например, при разворачивании PWA или реконнекте токена)
-    if (isAppInitialized && currentAuthedUid === user.uid) {
-      // Ни в коем случае не показываем загрузочный экран, не сбрасываем вкладку и не прерываем работу пользователя!
+      // Если приложение уже полностью инициализировано для этого же пользователя (например, при разворачивании PWA или реконнекте токена)
+      if (isAppInitialized && currentAuthedUid === user.uid) {
+        // Ни в коем случае не показываем загрузочный экран, не сбрасываем вкладку и не прерываем работу пользователя!
+        if (typeof window.fetchAllData === 'function') {
+          window.fetchAllData(true).catch(() => {});
+        }
+        return;
+      }
+
+      if (currentAuthedUid !== user.uid) {
+        if (typeof window.resetGlobalCache === 'function') {
+          window.resetGlobalCache();
+        }
+      }
+
+      currentAuthedUid = user.uid;
+
+      // Обновляем никнейм в шапке
+      const nameEl = document.getElementById('header-user-name');
+      if (nameEl) {
+        const name =
+          user.displayName ||
+          (user.email?.includes('@budget.local')
+            ? user.email.replace('@budget.local', '')
+            : user.email?.split('@')[0]) ||
+          'Профиль';
+        nameEl.textContent = name;
+      }
+
+      if (typeof window.initNewUserIfNeeded === 'function') {
+        await window.initNewUserIfNeeded(user);
+      }
+      if (typeof window.loadUserSettings === 'function') {
+        await window.loadUserSettings(user);
+      }
       if (typeof window.fetchAllData === 'function') {
-        window.fetchAllData(true).catch(() => {});
+        await window.fetchAllData(false);
       }
-      return;
-    }
 
-    if (currentAuthedUid !== user.uid) {
-      if (typeof window.resetGlobalCache === 'function') {
-        window.resetGlobalCache();
-      }
-    }
-
-    currentAuthedUid = user.uid;
-
-    // Обновляем никнейм в шапке
-    const nameEl = document.getElementById('header-user-name');
-    if (nameEl) {
-      const name = user.displayName || (user.email?.includes('@budget.local') ? user.email.replace('@budget.local', '') : user.email?.split('@')[0]) || 'Профиль';
-      nameEl.textContent = name;
-    }
-
-    if (typeof window.initNewUserIfNeeded === 'function') {
-      await window.initNewUserIfNeeded(user);
-    }
-    if (typeof window.loadUserSettings === 'function') {
-      await window.loadUserSettings(user);
-    }
-    if (typeof window.fetchAllData === 'function') {
-      await window.fetchAllData(false);
-    }
-
-    // Проверяем вызов через системный ярлык/виджет быстрого добавления (PWA Shortcut / APK Widget)
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('action') === 'new-expense' || window._pendingAction === 'new-expense') {
-      window._pendingAction = null;
-      if (typeof window.triggerQuickNewExpense === 'function') {
-        window.triggerQuickNewExpense();
+      // Проверяем вызов через системный ярлык/виджет быстрого добавления (PWA Shortcut / APK Widget)
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('action') === 'new-expense' || window._pendingAction === 'new-expense') {
+        window._pendingAction = null;
+        if (typeof window.triggerQuickNewExpense === 'function') {
+          window.triggerQuickNewExpense();
+        } else {
+          switchTab('transactions', { initial: true });
+        }
+        if (urlParams.has('action')) {
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
       } else {
-        switchTab('transactions', { initial: true });
+        // Восстанавливаем сохраненную вкладку или открываем бюджет по умолчанию (без анимации сжатия/разжатия при старте)
+        const savedTab = localStorage.getItem('budget_active_tab') || 'budget';
+        switchTab(savedTab, { initial: true });
       }
-      if (urlParams.has('action')) {
-        window.history.replaceState({}, document.title, window.location.pathname);
+
+      isAppInitialized = true;
+      lastVisibilitySyncTimestamp = Date.now();
+
+      // Скрываем загрузочный экран, когда приложение полностью готово
+      if (typeof window.hideLoadingScreen === 'function') {
+        window.hideLoadingScreen();
+      } else {
+        document.getElementById('loading-screen')?.classList.add('hidden');
+      }
+
+      // Проверяем и запускаем онбординг для новых пользователей
+      if (typeof window.checkAndShowOnboarding === 'function') {
+        window.checkAndShowOnboarding();
+      }
+
+      // Инициализируем умный совет дня
+      if (typeof window.initDailyInsight === 'function') {
+        setTimeout(() => window.initDailyInsight(), 800);
+      }
+
+      // Проверяем и отправляем запланированные напоминания о счетах и вкладах (только в день наступления)
+      if (typeof checkAndSendReminders === 'function') {
+        setTimeout(() => checkAndSendReminders(), 1500);
+      }
+
+      // Проверяем и предлагаем установку PWA (только 1 раз в день в обычном браузере)
+      checkAndShowPwaInstallPrompt(2500);
+
+      // Для Android APK: проверяем разрешение на чтение банковских пушей.
+      // Шторка предложения виджетов скоординирована и покажется либо после закрытия окна пушей, либо штатно при наличии разрешений.
+      if (typeof window.checkAndPromptBankPushPermission === 'function') {
+        window.checkAndPromptBankPushPermission(2500);
+      } else if (typeof window.checkAndShowWidgetPrompt === 'function') {
+        window.checkAndShowWidgetPrompt(3500);
       }
     } else {
-      // Восстанавливаем сохраненную вкладку или открываем бюджет по умолчанию (без анимации сжатия/разжатия при старте)
-      const savedTab = localStorage.getItem('budget_active_tab') || 'budget';
-      switchTab(savedTab, { initial: true });
+      isAppInitialized = false;
+      currentAuthedUid = null;
+
+      if (typeof window.hideLoadingScreen === 'function') {
+        window.hideLoadingScreen();
+      } else {
+        document.getElementById('loading-screen')?.classList.add('hidden');
+      }
+      if (typeof window.closeProfileModal === 'function') window.closeProfileModal();
+      if (typeof window.resetGlobalCache === 'function') window.resetGlobalCache();
+      if (typeof window.resetAuthFormState === 'function') window.resetAuthFormState();
+      if (typeof window.hidePwaInstallBanner === 'function') window.hidePwaInstallBanner();
+
+      // Закрываем любые открытые диалоговые окна
+      document.querySelectorAll('[id$="-dialog"]').forEach(d => d.classList.add('hidden'));
+
+      document.getElementById('login-screen')?.classList.remove('hidden');
     }
-
-    isAppInitialized = true;
-    lastVisibilitySyncTimestamp = Date.now();
-
-    // Скрываем загрузочный экран, когда приложение полностью готово
-    if (typeof window.hideLoadingScreen === 'function') {
-      window.hideLoadingScreen();
-    } else {
-      document.getElementById('loading-screen')?.classList.add('hidden');
-    }
-
-    // Проверяем и отправляем запланированные напоминания о счетах и вкладах (только в день наступления)
-    if (typeof checkAndSendReminders === 'function') {
-      setTimeout(() => checkAndSendReminders(), 1500);
-    }
-
-    // Проверяем и предлагаем установку PWA (только 1 раз в день в обычном браузере)
-    checkAndShowPwaInstallPrompt(2500);
-
-    // Для Android APK: проверяем разрешение на чтение банковских пушей.
-    // Шторка предложения виджетов скоординирована и покажется либо после закрытия окна пушей, либо штатно при наличии разрешений.
-    if (typeof window.checkAndPromptBankPushPermission === 'function') {
-      window.checkAndPromptBankPushPermission(2500);
-    } else if (typeof window.checkAndShowWidgetPrompt === 'function') {
-      window.checkAndShowWidgetPrompt(3500);
-    }
-  } else {
-    isAppInitialized = false;
-    currentAuthedUid = null;
-
-    if (typeof window.hideLoadingScreen === 'function') {
-      window.hideLoadingScreen();
-    } else {
-      document.getElementById('loading-screen')?.classList.add('hidden');
-    }
-    if (typeof window.closeProfileModal === 'function') window.closeProfileModal();
-    if (typeof window.resetGlobalCache === 'function') window.resetGlobalCache();
-    if (typeof window.resetAuthFormState === 'function') window.resetAuthFormState();
-    if (typeof window.hidePwaInstallBanner === 'function') window.hidePwaInstallBanner();
-
-    // Закрываем любые открытые диалоговые окна
-    document.querySelectorAll('[id$="-dialog"]').forEach(d => d.classList.add('hidden'));
-
-    document.getElementById('login-screen')?.classList.remove('hidden');
-  }
   });
 }
 
@@ -194,71 +209,91 @@ function cancelTouchPress() {
 }
 
 // 1. Обработка Touch-событий (смартфоны и планшеты) — защита от ложных сжатий при свайпе
-document.addEventListener('touchstart', (e) => {
-  if (e.touches.length !== 1) {
-    cancelTouchPress();
-    return;
-  }
-
-  const target = isInteractiveTarget(e.target);
-  if (!target) {
-    cancelTouchPress();
-    return;
-  }
-
-  cancelTouchPress();
-
-  touchStartX = e.touches[0].clientX;
-  touchStartY = e.touches[0].clientY;
-  isTouchScrolling = false;
-  activePressedEl = target;
-
-  // Небольшая задержка в 60мс перед добавлением класса is-pressed.
-  // Если палец сразу начал свайп или скролл — отклик отменяется до того, как элемент успеет визуально сжаться.
-  touchPressTimer = setTimeout(() => {
-    if (activePressedEl && !isTouchScrolling) {
-      activePressedEl.classList.add('is-pressed');
+document.addEventListener(
+  'touchstart',
+  e => {
+    if (e.touches.length !== 1) {
+      cancelTouchPress();
+      return;
     }
-  }, 60);
-}, { passive: true });
 
-document.addEventListener('touchmove', (e) => {
-  if (!activePressedEl || e.touches.length !== 1) return;
-  const dx = Math.abs(e.touches[0].clientX - touchStartX);
-  const dy = Math.abs(e.touches[0].clientY - touchStartY);
+    const target = isInteractiveTarget(e.target);
+    if (!target) {
+      cancelTouchPress();
+      return;
+    }
 
-  // Порог сдвига в 4px: если палец сдвинулся, это свайп или скролл списка, моментально отменяем нажатие
-  if (dx > 4 || dy > 4) {
-    isTouchScrolling = true;
     cancelTouchPress();
-  }
-}, { passive: true });
 
-document.addEventListener('touchend', () => {
-  if (activePressedEl && !isTouchScrolling) {
-    const el = activePressedEl;
-    activePressedEl = null;
-    releasePressedElement(el, false);
-  } else {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+    isTouchScrolling = false;
+    activePressedEl = target;
+
+    // Небольшая задержка в 60мс перед добавлением класса is-pressed.
+    // Если палец сразу начал свайп или скролл — отклик отменяется до того, как элемент успеет визуально сжаться.
+    touchPressTimer = setTimeout(() => {
+      if (activePressedEl && !isTouchScrolling) {
+        activePressedEl.classList.add('is-pressed');
+      }
+    }, 60);
+  },
+  { passive: true }
+);
+
+document.addEventListener(
+  'touchmove',
+  e => {
+    if (!activePressedEl || e.touches.length !== 1) return;
+    const dx = Math.abs(e.touches[0].clientX - touchStartX);
+    const dy = Math.abs(e.touches[0].clientY - touchStartY);
+
+    // Порог сдвига в 4px: если палец сдвинулся, это свайп или скролл списка, моментально отменяем нажатие
+    if (dx > 4 || dy > 4) {
+      isTouchScrolling = true;
+      cancelTouchPress();
+    }
+  },
+  { passive: true }
+);
+
+document.addEventListener(
+  'touchend',
+  () => {
+    if (activePressedEl && !isTouchScrolling) {
+      const el = activePressedEl;
+      activePressedEl = null;
+      releasePressedElement(el, false);
+    } else {
+      cancelTouchPress();
+    }
+    isTouchScrolling = false;
+  },
+  { passive: true }
+);
+
+document.addEventListener(
+  'touchcancel',
+  () => {
     cancelTouchPress();
-  }
-  isTouchScrolling = false;
-}, { passive: true });
-
-document.addEventListener('touchcancel', () => {
-  cancelTouchPress();
-  isTouchScrolling = false;
-}, { passive: true });
+    isTouchScrolling = false;
+  },
+  { passive: true }
+);
 
 // Снятие нажатия при возникновении скролла в любом контейнере
-window.addEventListener('scroll', () => {
-  if (activePressedEl) {
-    cancelTouchPress();
-  }
-}, { passive: true });
+window.addEventListener(
+  'scroll',
+  () => {
+    if (activePressedEl) {
+      cancelTouchPress();
+    }
+  },
+  { passive: true }
+);
 
 // 2. Обработка Mouse-событий (Desktop / мышь)
-document.addEventListener('mousedown', (e) => {
+document.addEventListener('mousedown', e => {
   if (e.sourceCapabilities && e.sourceCapabilities.firesTouchEvents) return;
   if (e.button !== 0) return;
 
@@ -277,7 +312,7 @@ document.addEventListener('mousedown', (e) => {
 });
 
 // Переключение основных экранов (Табов)
-const APP_MAIN_TABS = ['budget', 'transactions', 'deposits', 'broker'];
+const APP_MAIN_TABS = ['budget', 'transactions', 'capital'];
 
 function getCurrentActiveTab() {
   const active = APP_MAIN_TABS.find(t => {
@@ -288,8 +323,21 @@ function getCurrentActiveTab() {
 }
 window.getCurrentActiveTab = getCurrentActiveTab;
 
-function switchTab(tab, options = false) {
-  const isInitial = (typeof options === 'boolean' && options) || Boolean(options && (options.initial || options.skipAnimation)) || !isAppInitialized;
+function switchTab(rawTab, options = false) {
+  let tab = rawTab;
+  let requestedSubtab = null;
+  if (tab === 'deposits') {
+    tab = 'capital';
+    requestedSubtab = 'deposits';
+  } else if (tab === 'broker') {
+    tab = 'capital';
+    requestedSubtab = 'broker';
+  }
+
+  const isInitial =
+    (typeof options === 'boolean' && options) ||
+    Boolean(options && (options.initial || options.skipAnimation)) ||
+    !isAppInitialized;
   const skipAnimation = isInitial;
 
   if (typeof closeCardContextMenu === 'function') closeCardContextMenu();
@@ -342,10 +390,12 @@ function switchTab(tab, options = false) {
 
   const activeTabEl = document.getElementById(tab + '-tab');
   const activeNavBtn = document.getElementById('nav-' + tab);
-  
+
   try {
     localStorage.setItem('budget_active_tab', tab);
-  } catch (e) {}
+  } catch (_e) {
+    /* ignore */
+  }
 
   if (activeTabEl) {
     activeTabEl.classList.remove('hidden');
@@ -379,7 +429,11 @@ function switchTab(tab, options = false) {
 
   // Тактильный виброотклик на смартфонах при смене экранов
   if (typeof navigator !== 'undefined' && navigator.vibrate) {
-    try { navigator.vibrate(12); } catch (e) {}
+    try {
+      navigator.vibrate(12);
+    } catch (_e) {
+      /* ignore */
+    }
   }
 
   // Всегда открываем вкладку с позицией прокрутки в самом верху
@@ -393,10 +447,14 @@ function switchTab(tab, options = false) {
     appContent.style.position = '';
   }
   if (activeTabEl) activeTabEl.scrollTop = 0;
-  
+
   // Умный кэшированный рендер вкладок
   if (tab === 'budget') {
-    if (window._budgetTabDirty !== false || !window._budgetTabRendered || window._budgetNeedsExpenseAnimation) {
+    if (
+      window._budgetTabDirty !== false ||
+      !window._budgetTabRendered ||
+      window._budgetNeedsExpenseAnimation
+    ) {
       if (typeof renderBudgetTab === 'function') renderBudgetTab();
       window._budgetTabDirty = false;
       window._budgetTabRendered = true;
@@ -407,21 +465,73 @@ function switchTab(tab, options = false) {
       window._transactionsTabDirty = false;
       window._transactionsTabRendered = true;
     }
-  } else if (tab === 'deposits') {
-    if (window._depositsTabDirty !== false || !window._depositsTabRendered) {
-      if (typeof renderDeposits === 'function') renderDeposits();
-      window._depositsTabDirty = false;
-      window._depositsTabRendered = true;
-    }
-  } else if (tab === 'broker') {
-    if (window._brokerTabDirty !== false || !window._brokerTabRendered) {
-      if (typeof renderBroker === 'function') renderBroker();
-      if (Cache && typeof drawBrokerChart === 'function') setTimeout(drawBrokerChart, 80);
-      window._brokerTabDirty = false;
-      window._brokerTabRendered = true;
-    }
+  } else if (tab === 'capital') {
+    const targetSubtab =
+      requestedSubtab || localStorage.getItem('capital_active_subtab') || 'deposits';
+    switchCapitalSubtab(targetSubtab);
   }
 }
+
+function switchCapitalSubtab(subtab) {
+  const depBtn = document.getElementById('cap-subtab-deposits');
+  const brBtn = document.getElementById('cap-subtab-broker');
+  const depView = document.getElementById('capital-deposits-view');
+  const brView = document.getElementById('capital-broker-view');
+
+  try {
+    localStorage.setItem('capital_active_subtab', subtab);
+  } catch (_e) {
+    /* ignore */
+  }
+
+  if (subtab === 'deposits') {
+    if (depBtn) {
+      depBtn.className =
+        'flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 bg-[#6C5DD3] text-white shadow-sm active:scale-95';
+    }
+    if (brBtn) {
+      brBtn.className =
+        'flex-1 py-2 px-3 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 text-[#848D99] hover:text-white active:scale-95';
+    }
+    if (depView) depView.classList.remove('hidden');
+    if (brView) brView.classList.add('hidden');
+
+    if (typeof renderDeposits === 'function') renderDeposits();
+  } else {
+    if (brBtn) {
+      brBtn.className =
+        'flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 bg-[#6C5DD3] text-white shadow-sm active:scale-95';
+    }
+    if (depBtn) {
+      depBtn.className =
+        'flex-1 py-2 px-3 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 text-[#848D99] hover:text-white active:scale-95';
+    }
+    if (brView) brView.classList.remove('hidden');
+    if (depView) depView.classList.add('hidden');
+
+    if (typeof renderBroker === 'function') renderBroker();
+    if (typeof drawBrokerChart === 'function') setTimeout(drawBrokerChart, 80);
+  }
+
+  updateCapitalSummaryHeader();
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+window.switchCapitalSubtab = switchCapitalSubtab;
+
+function updateCapitalSummaryHeader() {
+  const totalAmountEl = document.getElementById('capital-total-amount');
+  const depSummaryEl = document.getElementById('capital-summary-deposits');
+  const brSummaryEl = document.getElementById('capital-summary-broker');
+
+  const depTotal = typeof getTotalDepositsValue === 'function' ? getTotalDepositsValue() : 0;
+  const brTotal = typeof getTotalBrokerValue === 'function' ? getTotalBrokerValue() : 0;
+  const totalCap = depTotal + brTotal;
+
+  if (totalAmountEl) totalAmountEl.innerText = formatMoney(totalCap);
+  if (depSummaryEl) depSummaryEl.innerText = formatMoney(depTotal);
+  if (brSummaryEl) brSummaryEl.innerText = formatMoney(brTotal);
+}
+window.updateCapitalSummaryHeader = updateCapitalSummaryHeader;
 
 // Универсальные хелперы открытия/закрытия форм
 function toggleForm(containerId, btnId, btnText, formId, type) {
@@ -439,7 +549,6 @@ function toggleForm(containerId, btnId, btnText, formId, type) {
   if (!formContainer.classList.contains('hidden')) {
     const form = document.getElementById(formId);
     if (form) form.reset();
-    const today = new Date().toISOString().split('T')[0];
 
     if (type === 'tx' && typeof addTxRow === 'function') {
       const list = document.getElementById('tx-items-list');
@@ -452,7 +561,10 @@ function toggleForm(containerId, btnId, btnText, formId, type) {
       if (nameInp) nameInp.value = `Вклад ${nextNum}`;
 
       const now = new Date();
-      const todayRu = (typeof formatDateStr === 'function') ? formatDateStr(now, 'dd.MM.yyyy') : `${String(now.getDate()).padStart(2, '0')}.${String(now.getMonth() + 1).padStart(2, '0')}.${now.getFullYear()}`;
+      const todayRu =
+        typeof formatDateStr === 'function'
+          ? formatDateStr(now, 'dd.MM.yyyy')
+          : `${String(now.getDate()).padStart(2, '0')}.${String(now.getMonth() + 1).padStart(2, '0')}.${now.getFullYear()}`;
 
       const startInp = document.getElementById('dep-start');
       if (startInp) startInp.value = todayRu;
@@ -510,7 +622,7 @@ let pwaIsDragging = false;
 window.deferredPwaPrompt = null;
 
 // Перехватываем стандартное событие браузера для установки PWA
-window.addEventListener('beforeinstallprompt', (e) => {
+window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
   window.deferredPwaPrompt = e;
   const btnText = document.getElementById('pwa-install-btn-text');
@@ -526,15 +638,20 @@ window.addEventListener('appinstalled', () => {
 
 // Проверка, запущено ли приложение уже как PWA (standalone)
 function isPwaStandalone() {
-  return window.matchMedia('(display-mode: standalone)').matches ||
-         window.navigator.standalone === true ||
-         document.referrer.includes('android-app://');
+  return (
+    window.matchMedia('(display-mode: standalone)').matches ||
+    window.navigator.standalone === true ||
+    document.referrer.includes('android-app://')
+  );
 }
 
 // Проверка, является ли устройство iOS (Safari требует ручного добавления на экран)
 function isIOSDevice() {
   const ua = window.navigator.userAgent.toLowerCase();
-  return /iphone|ipad|ipod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  return (
+    /iphone|ipad|ipod/.test(ua) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+  );
 }
 
 // Проверка условий показа баннера установки приложения
@@ -609,37 +726,46 @@ function initPwaSwipeGesture() {
   if (!card || card.dataset.swipeBound === 'true') return;
   card.dataset.swipeBound = 'true';
 
-  card.addEventListener('touchstart', (e) => {
-    if (e.touches.length !== 1) return;
-    // Если тап пришелся по кнопке или крестику — даем кнопке сработать
-    const target = (e?.target?.nodeType === 3) ? e.target.parentElement : e?.target;
-    if (target && typeof target.closest === 'function' && target.closest('button, a, input')) return;
+  card.addEventListener(
+    'touchstart',
+    e => {
+      if (e.touches.length !== 1) return;
+      // Если тап пришелся по кнопке или крестику — даем кнопке сработать
+      const target = e?.target?.nodeType === 3 ? e.target.parentElement : e?.target;
+      if (target && typeof target.closest === 'function' && target.closest('button, a, input'))
+        return;
 
-    pwaTouchStartX = e.touches[0].clientX;
-    pwaTouchCurrentX = pwaTouchStartX;
-    pwaTouchStartY = e.touches[0].clientY;
-    pwaTouchCurrentY = pwaTouchStartY;
-    pwaIsDragging = true;
-    pausePwaTimer();
-    card.style.transition = 'none';
-  }, { passive: true });
+      pwaTouchStartX = e.touches[0].clientX;
+      pwaTouchCurrentX = pwaTouchStartX;
+      pwaTouchStartY = e.touches[0].clientY;
+      pwaTouchCurrentY = pwaTouchStartY;
+      pwaIsDragging = true;
+      pausePwaTimer();
+      card.style.transition = 'none';
+    },
+    { passive: true }
+  );
 
-  card.addEventListener('touchmove', (e) => {
-    if (!pwaIsDragging || e.touches.length !== 1) return;
-    pwaTouchCurrentX = e.touches[0].clientX;
-    pwaTouchCurrentY = e.touches[0].clientY;
-    const deltaX = pwaTouchCurrentX - pwaTouchStartX;
-    const deltaY = pwaTouchCurrentY - pwaTouchStartY;
-    const clampedY = Math.max(-15, deltaY); // Не даем сильно утягивать вверх
+  card.addEventListener(
+    'touchmove',
+    e => {
+      if (!pwaIsDragging || e.touches.length !== 1) return;
+      pwaTouchCurrentX = e.touches[0].clientX;
+      pwaTouchCurrentY = e.touches[0].clientY;
+      const deltaX = pwaTouchCurrentX - pwaTouchStartX;
+      const deltaY = pwaTouchCurrentY - pwaTouchStartY;
+      const clampedY = Math.max(-15, deltaY); // Не даем сильно утягивать вверх
 
-    // Перемещаем карточку за пальцем
-    card.style.transform = `translate3d(${deltaX}px, ${clampedY}px, 0)`;
-    
-    // Рассчитываем плавное затухание в зависимости от расстояния смещения
-    const distance = Math.hypot(deltaX, Math.max(0, clampedY));
-    const opacity = Math.max(0.15, 1 - (distance / 260));
-    card.style.opacity = opacity.toString();
-  }, { passive: true });
+      // Перемещаем карточку за пальцем
+      card.style.transform = `translate3d(${deltaX}px, ${clampedY}px, 0)`;
+
+      // Рассчитываем плавное затухание в зависимости от расстояния смещения
+      const distance = Math.hypot(deltaX, Math.max(0, clampedY));
+      const opacity = Math.max(0.15, 1 - distance / 260);
+      card.style.opacity = opacity.toString();
+    },
+    { passive: true }
+  );
 
   const endDrag = () => {
     if (!pwaIsDragging) return;
@@ -652,7 +778,8 @@ function initPwaSwipeGesture() {
 
     if (isHorizontalSwipe || isVerticalSwipe) {
       // Плавный вылет карточки по траектории свайпа
-      card.style.transition = 'transform 0.4s cubic-bezier(0.2, 0.9, 0.35, 1), opacity 0.35s ease-out';
+      card.style.transition =
+        'transform 0.4s cubic-bezier(0.2, 0.9, 0.35, 1), opacity 0.35s ease-out';
       if (Math.abs(deltaX) > Math.abs(deltaY)) {
         card.style.transform = `translate3d(${deltaX > 0 ? '120%' : '-120%'}, 0, 0)`;
       } else {
@@ -675,7 +802,8 @@ function initPwaSwipeGesture() {
       }, 400);
     } else {
       // Мягкий возврат карточки на место без рывков
-      card.style.transition = 'transform 0.35s cubic-bezier(0.2, 0.9, 0.35, 1), opacity 0.3s ease-out';
+      card.style.transition =
+        'transform 0.35s cubic-bezier(0.2, 0.9, 0.35, 1), opacity 0.3s ease-out';
       card.style.transform = 'translate3d(0, 0, 0)';
       card.style.opacity = '1';
       setTimeout(() => {
@@ -746,7 +874,7 @@ async function triggerPwaInstallPrompt() {
       }
       window.deferredPwaPrompt = null;
     } catch (e) {
-      console.log('PWA prompt error:', e);
+      console.warn('PWA prompt error:', e);
     }
   } else if (isIOSDevice()) {
     // На iOS раскрываем ультракомпактную пошаговую инструкцию Safari
@@ -843,7 +971,10 @@ async function checkAndSendReminders() {
     return;
   }
 
-  const todayStr = (typeof formatDateStr === 'function') ? formatDateStr(now, 'yyyy-MM-dd') : now.toISOString().slice(0, 10);
+  const todayStr =
+    typeof formatDateStr === 'function'
+      ? formatDateStr(now, 'yyyy-MM-dd')
+      : now.toISOString().slice(0, 10);
 
   // 1. Проверка счетов из календаря (только не оплаченные и на сегодня)
   const billsNotifKey = `notif_bills_sent_${todayStr}`;
@@ -872,7 +1003,8 @@ async function checkAndSendReminders() {
         body = `Сегодня по плану: ${name} на ${formattedAmt}`;
       } else {
         const totalSum = dueBills.reduce((s, b) => s + (parseFloat(b.amount) || 0), 0);
-        const formattedTotal = typeof formatMoney === 'function' ? formatMoney(totalSum) : totalSum + ' ₽';
+        const formattedTotal =
+          typeof formatMoney === 'function' ? formatMoney(totalSum) : totalSum + ' ₽';
         const count = dueBills.length;
         const mod10 = count % 10;
         const mod100 = count % 100;
@@ -899,9 +1031,13 @@ async function checkAndSendReminders() {
 
     let isEndingToday = false;
     if (dep.endDate) {
-      const pDate = (typeof parseAnyDate === 'function') ? parseAnyDate(dep.endDate) : new Date(dep.endDate);
+      const pDate =
+        typeof parseAnyDate === 'function' ? parseAnyDate(dep.endDate) : new Date(dep.endDate);
       if (pDate && !isNaN(pDate.getTime())) {
-        isEndingToday = (pDate.getFullYear() === now.getFullYear() && pDate.getMonth() === now.getMonth() && pDate.getDate() === now.getDate());
+        isEndingToday =
+          pDate.getFullYear() === now.getFullYear() &&
+          pDate.getMonth() === now.getMonth() &&
+          pDate.getDate() === now.getDate();
       }
     }
 
@@ -928,7 +1064,7 @@ async function sendSystemNotification(title, body, tab, tag) {
           icon: './icon-pwa.svg',
           badge: './icon-pwa.svg',
           tag,
-          data: { tab, url: './' }
+          data: { tab, url: './' },
         });
         return;
       }
@@ -937,7 +1073,7 @@ async function sendSystemNotification(title, body, tab, tag) {
       new Notification(title, {
         body,
         icon: './icon-pwa.svg',
-        tag
+        tag,
       });
     }
   } catch (err) {
@@ -947,7 +1083,7 @@ async function sendSystemNotification(title, body, tab, tag) {
 
 // Прием сообщений от Service Worker (например, при клике на push)
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.addEventListener('message', (event) => {
+  navigator.serviceWorker.addEventListener('message', event => {
     if (event.data?.type === 'SWITCH_TAB' && event.data?.tab) {
       if (typeof switchTab === 'function') {
         switchTab(event.data.tab);
@@ -957,11 +1093,206 @@ if ('serviceWorker' in navigator) {
 }
 
 // Периодическая проверка раз в 15 минут
-setInterval(() => {
-  if (typeof checkAndSendReminders === 'function') {
-    checkAndSendReminders();
+setInterval(
+  () => {
+    if (typeof checkAndSendReminders === 'function') {
+      checkAndSendReminders();
+    }
+  },
+  15 * 60 * 1000
+);
+
+// ==========================================
+// Онбординг (Знакомство с Капиталом)
+// ==========================================
+function openOnboardingModal() {
+  const dlg = document.getElementById('onboarding-modal');
+  if (dlg) {
+    if (typeof lockBodyScroll === 'function') lockBodyScroll();
+    dlg.classList.remove('hidden');
+    if (typeof lucide !== 'undefined') lucide.createIcons();
   }
-}, 15 * 60 * 1000);
+}
+window.openOnboardingModal = openOnboardingModal;
+
+function closeOnboardingModal() {
+  const dlg = document.getElementById('onboarding-modal');
+  if (dlg) {
+    dlg.classList.add('hidden');
+    if (typeof unlockBodyScroll === 'function') unlockBodyScroll();
+  }
+  try {
+    localStorage.setItem('capital_onboarding_shown', 'true');
+  } catch (_e) {
+    /* ignore */
+  }
+}
+window.closeOnboardingModal = closeOnboardingModal;
+
+function checkAndShowOnboarding() {
+  let shown = false;
+  try {
+    shown = localStorage.getItem('capital_onboarding_shown') === 'true';
+  } catch (_e) {
+    /* ignore */
+  }
+
+  if (!shown) {
+    setTimeout(() => {
+      openOnboardingModal();
+    }, 600);
+  }
+}
+window.checkAndShowOnboarding = checkAndShowOnboarding;
+
+// ==========================================
+// Умный финансовый совет дня (Gemini Insight)
+// ==========================================
+function dismissDailyInsight() {
+  const card = document.getElementById('budget-insight-card');
+  if (card) card.classList.add('hidden');
+  try {
+    const todayStr = new Date().toISOString().split('T')[0];
+    localStorage.setItem('budget_daily_insight_dismissed', todayStr);
+  } catch (_e) {
+    /* ignore */
+  }
+}
+window.dismissDailyInsight = dismissDailyInsight;
+
+async function initDailyInsight() {
+  const card = document.getElementById('budget-insight-card');
+  const textEl = document.getElementById('budget-insight-text');
+  if (!card || !textEl) return;
+
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  // 1. Проверяем, не скрыл ли пользователь совет на сегодня
+  let dismissedDate = null;
+  try {
+    dismissedDate = localStorage.getItem('budget_daily_insight_dismissed');
+  } catch (_e) {
+    /* ignore */
+  }
+  if (dismissedDate === todayStr) {
+    card.classList.add('hidden');
+    return;
+  }
+
+  // 2. Проверяем кэшированный совет за сегодня
+  let cachedDate = null;
+  let cachedText = null;
+  try {
+    cachedDate = localStorage.getItem('budget_daily_insight_date');
+    cachedText = localStorage.getItem('budget_daily_insight_text');
+  } catch (_e) {
+    /* ignore */
+  }
+
+  if (cachedDate === todayStr && cachedText) {
+    textEl.innerText = cachedText;
+    card.classList.remove('hidden');
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+    return;
+  }
+
+  // 3. Собираем сводные финансовые данные для генерации
+  const today = new Date();
+  const targetYear = today.getFullYear();
+  const targetMonth = today.getMonth();
+  const targetMonthKey = `${targetYear}-${String(targetMonth + 1).padStart(2, '0')}`;
+
+  let monthlySpent = 0;
+  let monthlyIncome = 0;
+  const targetMonthObj = (Cache?.transactions || []).find(m => m.id === targetMonthKey);
+  if (targetMonthObj && Array.isArray(targetMonthObj.items)) {
+    targetMonthObj.items.forEach(tx => {
+      const isExpense = tx.type === 'Расход' || tx.type === 'expense';
+      const isIncome = tx.type === 'Доход' || tx.type === 'income';
+      const isExcluded = !!(tx.excludeFromBudget || tx.isExcludedFromBudget);
+      if (isExcluded) return;
+      const val = parseFloat(tx.amount) || 0;
+      if (isExpense) monthlySpent += val;
+      if (isIncome) monthlyIncome += val;
+    });
+  }
+  const delta = monthlyIncome - monthlySpent;
+
+  const { items: upcomingBills, totalAmount: upcomingBillsSum } =
+    typeof getUpcomingBills === 'function'
+      ? getUpcomingBills(14, today)
+      : { items: [], totalAmount: 0 };
+
+  const totalCapital = typeof getTotalCapitalValue === 'function' ? getTotalCapitalValue() : 0;
+
+  // Вклады: ближайший к закрытию
+  const activeDeposits = (Cache?.deposits || []).filter(d => !d.isClosed);
+  let depositsHint = 'активных вкладов нет';
+  if (activeDeposits.length > 0) {
+    activeDeposits.sort((a, b) => (a.endDate || 0) - (b.endDate || 0));
+    const nextDep = activeDeposits[0];
+    const daysLeft = nextDep.endDate
+      ? Math.ceil((nextDep.endDate - Date.now()) / (24 * 60 * 60 * 1000))
+      : null;
+    depositsHint =
+      daysLeft !== null
+        ? `вклад «${nextDep.name || 'Вклад'}» на ${formatMoney(nextDep.amount)} закроется через ${daysLeft} дн.`
+        : `${activeDeposits.length} активных вкладов на сумму ${formatMoney(totalCapital)}`;
+  }
+
+  // Цели: первая активная
+  const goals = Cache?.goals || [];
+  let mainGoalHint = 'цели не заданы';
+  if (goals.length > 0) {
+    const g = goals[0];
+    mainGoalHint = `цель «${g.name}» (план: ${formatMoney(g.target)})`;
+  }
+
+  // 4. Попытка сгенерировать через Gemini
+  let aiText = null;
+  if (window.GeminiService && typeof window.GeminiService.generateDailyInsight === 'function') {
+    try {
+      aiText = await window.GeminiService.generateDailyInsight({
+        delta,
+        income: monthlyIncome,
+        expense: monthlySpent,
+        upcomingBillsSum,
+        upcomingBillsCount: upcomingBills.length,
+        totalCapital,
+        depositsHint,
+        mainGoalHint,
+      });
+    } catch (_e) {
+      /* ignore */
+    }
+  }
+
+  // Если AI вернул ответ — используем его
+  if (aiText && typeof aiText === 'string' && aiText.trim().length > 10) {
+    cachedText = aiText.trim();
+  } else {
+    // Детерминированный fallback
+    if (upcomingBills.length > 0) {
+      cachedText = `На ближайшие 14 дней запланированы обязательные платежи на ${formatMoney(upcomingBillsSum)}. Держите сумму доступной к списанию.`;
+    } else if (delta > 0) {
+      cachedText = `Текущий свободный остаток месяца составляет +${formatMoney(delta)}. Средства работают на ваши финансовые цели.`;
+    } else {
+      cachedText = `Капитал семьи составляет ${formatMoney(totalCapital)}. Все вклады и активы синхронизированы в реальном времени.`;
+    }
+  }
+
+  try {
+    localStorage.setItem('budget_daily_insight_date', todayStr);
+    localStorage.setItem('budget_daily_insight_text', cachedText);
+  } catch (_e) {
+    /* ignore */
+  }
+
+  textEl.innerText = cachedText;
+  card.classList.remove('hidden');
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+window.initDailyInsight = initDailyInsight;
 
 // Экспорт в глобальную область
 window.switchTab = switchTab;
@@ -988,4 +1319,3 @@ if (typeof window.updatePrivacyModeUI === 'function') {
 if (typeof lucide !== 'undefined') {
   lucide.createIcons();
 }
-

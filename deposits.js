@@ -7,15 +7,33 @@
 // ==========================================
 function processDeposits(deposits, goals) {
   const goalsMap = {};
-  (goals || []).forEach(g => goalsMap[g.id] = g.name || '');
+  (goals || []).forEach(g => (goalsMap[g.id] = g.name || ''));
 
   return deposits.map(dep => {
-    const amount = parseFloat(dep.amount !== undefined ? dep.amount : (dep.initialAmount !== undefined ? dep.initialAmount : (dep.currentAmount || 0))) || 0;
-    const rate = parseFloat(dep.rate !== undefined ? dep.rate : (dep.percent !== undefined ? dep.percent : (dep.interestRate || 0))) || 0;
-    
+    const amount =
+      parseFloat(
+        dep.amount !== undefined
+          ? dep.amount
+          : dep.initialAmount !== undefined
+            ? dep.initialAmount
+            : dep.currentAmount || 0
+      ) || 0;
+    const rate =
+      parseFloat(
+        dep.rate !== undefined
+          ? dep.rate
+          : dep.percent !== undefined
+            ? dep.percent
+            : dep.interestRate || 0
+      ) || 0;
+
     const rawStart = dep.startDate || dep.rawStart;
-    const startDate = rawStart ? (typeof parseAnyDate === 'function' ? parseAnyDate(rawStart) : new Date(rawStart)) : new Date();
-    
+    const startDate = rawStart
+      ? typeof parseAnyDate === 'function'
+        ? parseAnyDate(rawStart)
+        : new Date(rawStart)
+      : new Date();
+
     const rawEnd = dep.endDate || dep.rawEnd;
     let endDate;
     if (rawEnd) {
@@ -34,29 +52,39 @@ function processDeposits(deposits, goals) {
     end.setHours(0, 0, 0, 0);
 
     const isExplicitlyClosed = dep.status === 'Закрыт' || dep.isClosed === true;
-    const isMatured = !isExplicitlyClosed && (today >= end);
+    const isMatured = !isExplicitlyClosed && today >= end;
     const isClosed = isExplicitlyClosed;
 
     const totalDays = Math.max(1, Math.round((endDate - startDate) / 86400000));
-    const daysPassed = isClosed ? totalDays : Math.max(0, Math.min(Math.round((new Date() - startDate) / 86400000), totalDays));
+    const daysPassed = isClosed
+      ? totalDays
+      : Math.max(0, Math.min(Math.round((new Date() - startDate) / 86400000), totalDays));
     const goalIdStr = dep.goalId || '';
     const durationStr = getDepositDurationStr(startDate, endDate);
 
-    const totalExpectedInterest = Math.round(totalDays * (amount * (rate / 100) / 365));
-    const currentInterest = Math.round(daysPassed * (amount * (rate / 100) / 365));
+    const totalExpectedInterest = Math.round(totalDays * ((amount * (rate / 100)) / 365));
+    const currentInterest = Math.round(daysPassed * ((amount * (rate / 100)) / 365));
     const monthlyInterest = (amount * (rate / 100)) / 12;
 
     // Авто-миграция неполных записей в Firestore при чтении
-    if (dep.id && (dep.amount === undefined || dep.rate === undefined || !dep.startDate || !dep.endDate)) {
+    if (
+      dep.id &&
+      (dep.amount === undefined || dep.rate === undefined || !dep.startDate || !dep.endDate)
+    ) {
       try {
-        getUserCol('Deposits').doc(dep.id).update({
-          amount: amount,
-          rate: rate,
-          startDate: formatDateStr(startDate, 'yyyy-MM-dd') || dep.startDate,
-          endDate: formatDateStr(endDate, 'yyyy-MM-dd') || dep.endDate,
-          status: isClosed ? 'Закрыт' : 'Активен'
-        }).catch(() => {});
-      } catch (e) {}
+        getUserCol('Deposits')
+          .doc(dep.id)
+          .update({
+            amount: amount,
+            rate: rate,
+            startDate: formatDateStr(startDate, 'yyyy-MM-dd') || dep.startDate,
+            endDate: formatDateStr(endDate, 'yyyy-MM-dd') || dep.endDate,
+            status: isClosed ? 'Закрыт' : 'Активен',
+          })
+          .catch(() => {});
+      } catch (_e) {
+        /* ignore */
+      }
     }
 
     return {
@@ -76,7 +104,7 @@ function processDeposits(deposits, goals) {
       rawEnd: formatDateStr(endDate, 'yyyy-MM-dd') || dep.endDate,
       isClosed,
       isMatured,
-      isInterestCredited: !!dep.isInterestCredited
+      isInterestCredited: !!dep.isInterestCredited,
     };
   });
 }
@@ -93,8 +121,13 @@ function renderDeposits() {
   const active = data.filter(d => !d.isClosed && !d.isMatured);
   const closed = data.filter(d => d.isClosed);
 
-  const totalActiveAmount = [...active, ...matured].reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0);
-  const totalMonthlyInterest = Math.round(active.reduce((sum, d) => sum + (parseFloat(d.monthlyInterest) || 0), 0));
+  const totalActiveAmount = [...active, ...matured].reduce(
+    (sum, d) => sum + (parseFloat(d.amount) || 0),
+    0
+  );
+  const totalMonthlyInterest = Math.round(
+    active.reduce((sum, d) => sum + (parseFloat(d.monthlyInterest) || 0), 0)
+  );
 
   if (totalAmountEl) {
     totalAmountEl.innerText = formatMoney(totalActiveAmount);
@@ -114,6 +147,7 @@ function renderDeposits() {
   }
 
   updateDepositsBadge();
+  if (typeof updateCapitalSummaryHeader === 'function') updateCapitalSummaryHeader();
 
   if (!listEl) return;
 
@@ -150,7 +184,9 @@ function renderDeposits() {
           </h3>
           <span class="text-[10px] text-amber-400/80 font-medium">Срок завершен</span>
         </div>
-        ${matured.map(dep => `
+        ${matured
+          .map(
+            dep => `
           <div class="card bg-gradient-to-r from-amber-500/15 via-[#181B24] to-[#181B24] border border-amber-500/40 hover:border-amber-500/60 rounded-2xl p-4 flex flex-col transition-all shadow-lg cursor-pointer"
                onclick="openCloseDepositModal('${dep.id}')">
             <div class="flex items-start justify-between w-full gap-2">
@@ -176,7 +212,9 @@ function renderDeposits() {
               <span class="text-gray-300">Начислено: <b class="font-mono text-[#30D158] font-bold">+${formatMoney(dep.expectedInterest)}</b></span>
             </div>
           </div>
-        `).join('')}
+        `
+          )
+          .join('')}
       </div>
     `;
   }
@@ -201,38 +239,50 @@ function renderDeposits() {
           </div>
         </div>
         
-        ${dep.goalName ? `
+        ${
+          dep.goalName
+            ? `
           <div class="deposit-goal-tag flex-shrink-0 ml-2">
             <span class="px-2 py-0.5 text-[10px] font-semibold bg-[#6C5DD3]/15 text-[#9DA5FF] rounded-full border border-[#6C5DD3]/25 truncate max-w-[110px] inline-flex items-center gap-1">
               <i data-lucide="target" class="w-2.5 h-2.5"></i>
               <span class="truncate">${escapeHtml(dep.goalName)}</span>
             </span>
           </div>
-        ` : ''}
+        `
+            : ''
+        }
       </div>
 
       <div class="mt-3 flex items-end justify-between w-full">
         <div class="flex flex-col">
           <span class="text-[10px] text-[#848D99] uppercase font-bold tracking-wider mb-0.5">Вложено: ${formatMoney(dep.amount)}</span>
-          ${isCls ? `
+          ${
+            isCls
+              ? `
             <div class="flex items-center gap-1.5 text-xs">
                <span class="text-[#30D158] font-bold font-mono">+${formatMoney(dep.expectedInterest)}</span>
                <span class="text-[10px] text-[#848D99] font-medium">${dep.goalName && dep.isInterestCredited ? 'зачислено в цель' : 'выплачено'}</span>
             </div>
-          ` : `
+          `
+              : `
             <div class="flex items-center gap-1 text-xs">
                <span class="text-[#30D158] font-bold font-mono">+${formatMoney(dep.currentInterest)}</span>
                <span class="text-gray-600">/</span>
                <span class="text-gray-400 font-mono text-[11px]">+${formatMoney(dep.expectedInterest)}</span>
             </div>
-          `}
+          `
+          }
         </div>
 
-        ${!isCls && dep.monthlyInterest > 0 ? `
+        ${
+          !isCls && dep.monthlyInterest > 0
+            ? `
           <div class="text-right">
             <span class="text-[10px] text-[#848D99] block font-medium">~+${formatMoney(Math.round(dep.monthlyInterest))}/мес</span>
           </div>
-        ` : ''}
+        `
+            : ''
+        }
       </div>
 
       <!-- Тонкая полоска прогресса (Material/iOS) -->
@@ -272,11 +322,18 @@ function submitDeposit(e) {
   const rawName = document.getElementById('dep-name')?.value?.trim();
   const name = rawName || `Вклад ${nextNum}`;
 
-  const parsedStart = (typeof parseAnyDate === 'function') ? parseAnyDate(startRaw) : new Date(startRaw);
-  const startDate = (parsedStart && !isNaN(parsedStart.getTime()) && typeof formatDateStr === 'function') ? formatDateStr(parsedStart, 'yyyy-MM-dd') : (formatDateStr(startRaw) || startRaw);
+  const parsedStart =
+    typeof parseAnyDate === 'function' ? parseAnyDate(startRaw) : new Date(startRaw);
+  const startDate =
+    parsedStart && !isNaN(parsedStart.getTime()) && typeof formatDateStr === 'function'
+      ? formatDateStr(parsedStart, 'yyyy-MM-dd')
+      : formatDateStr(startRaw) || startRaw;
 
-  const parsedEnd = (typeof parseAnyDate === 'function') ? parseAnyDate(endRaw) : new Date(endRaw);
-  const endDate = (parsedEnd && !isNaN(parsedEnd.getTime()) && typeof formatDateStr === 'function') ? formatDateStr(parsedEnd, 'yyyy-MM-dd') : (formatDateStr(endRaw) || endRaw);
+  const parsedEnd = typeof parseAnyDate === 'function' ? parseAnyDate(endRaw) : new Date(endRaw);
+  const endDate =
+    parsedEnd && !isNaN(parsedEnd.getTime()) && typeof formatDateStr === 'function'
+      ? formatDateStr(parsedEnd, 'yyyy-MM-dd')
+      : formatDateStr(endRaw) || endRaw;
 
   submitAction('dep-submit-btn', 'Deposits', {
     name,
@@ -286,7 +343,7 @@ function submitDeposit(e) {
     endDate,
     goalId: document.getElementById('dep-goal').value || '',
     status: 'Активен',
-    isInterestCredited: false
+    isInterestCredited: false,
   });
 }
 
@@ -309,12 +366,15 @@ function openEditDepModal(id) {
   setFormattedVal('edit-dep-rate', dep.rate);
 
   const startRaw = dep.rawStart || dep.startDate || '';
-  const parsedStart = typeof parseAnyDate === 'function' ? parseAnyDate(startRaw) : new Date(startRaw);
-  document.getElementById('edit-dep-start').value = (typeof formatDateStr === 'function') ? formatDateStr(parsedStart, 'dd.MM.yyyy') : startRaw;
+  const parsedStart =
+    typeof parseAnyDate === 'function' ? parseAnyDate(startRaw) : new Date(startRaw);
+  document.getElementById('edit-dep-start').value =
+    typeof formatDateStr === 'function' ? formatDateStr(parsedStart, 'dd.MM.yyyy') : startRaw;
 
   const endRaw = dep.rawEnd || dep.endDate || '';
   const parsedEnd = typeof parseAnyDate === 'function' ? parseAnyDate(endRaw) : new Date(endRaw);
-  document.getElementById('edit-dep-end').value = (typeof formatDateStr === 'function') ? formatDateStr(parsedEnd, 'dd.MM.yyyy') : endRaw;
+  document.getElementById('edit-dep-end').value =
+    typeof formatDateStr === 'function' ? formatDateStr(parsedEnd, 'dd.MM.yyyy') : endRaw;
 
   const goalObj = (Cache?.goals || []).find(g => g.id === dep.goalId);
   selectEditDepositGoal(dep.goalId || '', goalObj ? goalObj.name : '');
@@ -424,7 +484,7 @@ async function submitEditDepModal(e) {
       rate,
       startDate,
       endDate,
-      goalId
+      goalId,
     });
     closeEditDepModal();
     await fetchAllData();
@@ -436,15 +496,20 @@ async function submitEditDepModal(e) {
 function deleteDepFromModal() {
   const id = document.getElementById('edit-dep-id').value;
   if (!id) return;
-  showDialog('Удаление вклада', 'Точно удалить вклад? Это действие нельзя отменить.', true, async () => {
-    try {
-      await getUserCol('Deposits').doc(id).delete();
-      closeEditDepModal();
-      await fetchAllData();
-    } catch (err) {
-      showToast('Ошибка при удалении: ' + (err.message || ''), true);
+  showDialog(
+    'Удаление вклада',
+    'Точно удалить вклад? Это действие нельзя отменить.',
+    true,
+    async () => {
+      try {
+        await getUserCol('Deposits').doc(id).delete();
+        closeEditDepModal();
+        await fetchAllData();
+      } catch (err) {
+        showToast('Ошибка при удалении: ' + (err.message || ''), true);
+      }
     }
-  });
+  );
 }
 
 function editDep(id) {
@@ -457,7 +522,8 @@ function editDep(id) {
 function updateDepositsBadge() {
   const data = Cache?.deposits || [];
   const maturedCount = data.filter(d => !d.isClosed && d.isMatured).length;
-  const badge = document.getElementById('nav-deposits-badge');
+  const badge =
+    document.getElementById('nav-capital-badge') || document.getElementById('nav-deposits-badge');
   if (badge) {
     if (maturedCount > 0) {
       badge.classList.remove('hidden');
@@ -558,13 +624,15 @@ function renderDepCloseGoals() {
   const selectedId = document.getElementById('dep-close-goal-id')?.value || '';
 
   if (goals.length === 0) {
-    menu.innerHTML = '<div class="px-3 py-2 text-xs text-[#848D99] text-center">Нет активных целей</div>';
+    menu.innerHTML =
+      '<div class="px-3 py-2 text-xs text-[#848D99] text-center">Нет активных целей</div>';
     return;
   }
 
-  menu.innerHTML = goals.map(g => {
-    const isSelected = g.id === selectedId;
-    return `
+  menu.innerHTML = goals
+    .map(g => {
+      const isSelected = g.id === selectedId;
+      return `
       <div onclick="selectDepCloseGoal('${g.id}')" 
            class="flex items-center justify-between px-3 py-2 rounded-xl transition-colors cursor-pointer ${isSelected ? 'bg-[#6C5DD3]/20 text-white font-semibold' : 'hover:bg-[#212430] text-gray-200'}">
         <span class="flex items-center gap-2 truncate text-xs">
@@ -574,7 +642,8 @@ function renderDepCloseGoals() {
         <span class="text-[10px] text-[#848D99] font-mono ml-2 flex-shrink-0">${formatMoney(g.saved || 0)}</span>
       </div>
     `;
-  }).join('');
+    })
+    .join('');
 
   if (typeof lucide !== 'undefined') lucide.createIcons();
 }
@@ -648,13 +717,13 @@ async function submitCloseDepositModal() {
       if (goal) {
         const newSaved = (parseFloat(goal.saved) || 0) + interestEarned;
         const target = parseFloat(goal.target) || 0;
-        const isAchieved = (target > 0 && newSaved >= target);
+        const isAchieved = target > 0 && newSaved >= target;
 
         const goalRef = getUserCol('Goals').doc(goal.id);
         batch.update(goalRef, {
           saved: newSaved,
-          status: isAchieved ? 'Выполнена' : (goal.status || 'В процессе'),
-          updatedAt: Date.now()
+          status: isAchieved ? 'Выполнена' : goal.status || 'В процессе',
+          updatedAt: Date.now(),
         });
 
         goal.saved = newSaved;
@@ -667,10 +736,10 @@ async function submitCloseDepositModal() {
       status: 'Закрыт',
       isClosed: true,
       isInterestCredited: isCreditToGoal,
-      creditedGoalId: isCreditToGoal ? (goalId || '') : '',
+      creditedGoalId: isCreditToGoal ? goalId || '' : '',
       interestEarned: interestEarned,
       closedAt: Date.now(),
-      updatedAt: Date.now()
+      updatedAt: Date.now(),
     });
 
     await batch.commit();
@@ -684,7 +753,9 @@ async function submitCloseDepositModal() {
     closeDepositCloseModal();
 
     if (isCreditToGoal && interestEarned > 0 && updatedGoalName) {
-      showToast(`Вклад «${dep.name}» закрыт. Проценты (+${formatMoney(interestEarned)}) зачислены в цель «${updatedGoalName}»!`);
+      showToast(
+        `Вклад «${dep.name}» закрыт. Проценты (+${formatMoney(interestEarned)}) зачислены в цель «${updatedGoalName}»!`
+      );
     } else {
       showToast(`Вклад «${dep.name}» перенесен в закрытые вклады.`);
     }
@@ -726,7 +797,6 @@ function getDepositDurationStr(startDate, endDate) {
   if (mod10 >= 2 && mod10 <= 4) return `${months} месяца`;
   return `${months} месяцев`;
 }
-
 
 // Global Scope Exports
 window.processDeposits = processDeposits;

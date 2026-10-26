@@ -17,12 +17,16 @@ function setAuthMode(mode) {
   const submitBtn = document.getElementById('auth-submit-btn');
 
   if (mode === 'login') {
-    loginTab.className = 'flex-1 py-2 text-xs font-semibold rounded-xl bg-[#6C5DD3] text-white transition-all cursor-pointer';
-    regTab.className = 'flex-1 py-2 text-xs font-semibold rounded-xl text-gray-400 hover:text-white transition-all cursor-pointer';
+    loginTab.className =
+      'flex-1 py-2 text-xs font-semibold rounded-xl bg-[#6C5DD3] text-white transition-all cursor-pointer';
+    regTab.className =
+      'flex-1 py-2 text-xs font-semibold rounded-xl text-gray-400 hover:text-white transition-all cursor-pointer';
     submitBtn.innerText = 'Войти';
   } else {
-    regTab.className = 'flex-1 py-2 text-xs font-semibold rounded-xl bg-[#6C5DD3] text-white transition-all cursor-pointer';
-    loginTab.className = 'flex-1 py-2 text-xs font-semibold rounded-xl text-gray-400 hover:text-white transition-all cursor-pointer';
+    regTab.className =
+      'flex-1 py-2 text-xs font-semibold rounded-xl bg-[#6C5DD3] text-white transition-all cursor-pointer';
+    loginTab.className =
+      'flex-1 py-2 text-xs font-semibold rounded-xl text-gray-400 hover:text-white transition-all cursor-pointer';
     submitBtn.innerText = 'Создать аккаунт';
   }
 }
@@ -41,18 +45,28 @@ function normalizeAuthEmail(input) {
 if (typeof firebase !== 'undefined' && firebase.auth) {
   const checkRedirectAuth = () => {
     try {
-      firebase.auth().getRedirectResult().then(result => {
-        if (result && result.user) {
-          const toast = document.getElementById('toast-container');
-          if (toast) toast.classList.add('hidden');
-          showToast('Успешный вход через Google!');
-        }
-      }).catch(err => {
-        if (err && err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
-          console.warn('Google Auth Redirect error:', err);
-        }
-      });
-    } catch (e) {}
+      firebase
+        .auth()
+        .getRedirectResult()
+        .then(result => {
+          if (result && result.user) {
+            const toast = document.getElementById('toast-container');
+            if (toast) toast.classList.add('hidden');
+            showToast('Успешный вход через Google!');
+          }
+        })
+        .catch(err => {
+          if (
+            err &&
+            err.code !== 'auth/popup-closed-by-user' &&
+            err.code !== 'auth/cancelled-popup-request'
+          ) {
+            console.warn('Google Auth Redirect error:', err);
+          }
+        });
+    } catch (_e) {
+      /* ignore */
+    }
   };
 
   const updateAuthUIForEnvironment = () => {
@@ -79,10 +93,12 @@ async function loginWithGoogle() {
     if (typeof firebase !== 'undefined' && firebase.auth) {
       try {
         await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-      } catch (e) {}
+      } catch (_e) {
+        /* ignore */
+      }
     }
 
-    const isNative = !!(window.Capacitor?.isNativePlatform());
+    const isNative = !!window.Capacitor?.isNativePlatform();
     const GoogleAuth = window.Capacitor?.Plugins?.GoogleAuth;
 
     // Внутри нативного APK Android: вызываем исключительно нативное системное окно Google
@@ -94,7 +110,7 @@ async function loginWithGoogle() {
       await GoogleAuth.initialize({
         clientId: '129164761119-0collp5th27qd9o4ah8dronfctcfp3pv.apps.googleusercontent.com',
         scopes: ['profile', 'email'],
-        grantOfflineAccess: true
+        grantOfflineAccess: true,
       });
 
       let googleUser;
@@ -104,7 +120,12 @@ async function loginWithGoogle() {
         const toast = document.getElementById('toast-container');
         if (toast) toast.classList.add('hidden');
         const errStr = String(signErr?.message || signErr || '');
-        if (errStr.includes('cancel') || errStr.includes('12501') || errStr.includes('closed') || errStr.includes('abort')) {
+        if (
+          errStr.includes('cancel') ||
+          errStr.includes('12501') ||
+          errStr.includes('closed') ||
+          errStr.includes('abort')
+        ) {
           return;
         }
         console.error('Нативная ошибка GoogleAuth:', signErr);
@@ -139,7 +160,7 @@ async function loginWithGoogle() {
     provider.addScope('profile');
     provider.addScope('email');
     provider.setCustomParameters({
-      prompt: 'select_account'
+      prompt: 'select_account',
     });
 
     try {
@@ -160,8 +181,14 @@ async function loginWithGoogle() {
         return;
       }
     } catch (popupErr) {
-      console.warn('signInWithPopup blocked or failed, falling back to signInWithRedirect:', popupErr);
-      if (popupErr.code === 'auth/popup-closed-by-user' || popupErr.code === 'auth/cancelled-popup-request') {
+      console.warn(
+        'signInWithPopup blocked or failed, falling back to signInWithRedirect:',
+        popupErr
+      );
+      if (
+        popupErr.code === 'auth/popup-closed-by-user' ||
+        popupErr.code === 'auth/cancelled-popup-request'
+      ) {
         const toast = document.getElementById('toast-container');
         if (toast) toast.classList.add('hidden');
         return;
@@ -206,14 +233,22 @@ async function handleAuthSubmit(e) {
       btn.innerText = 'Создание аккаунта...';
       const cred = await auth.createUserWithEmailAndPassword(email, password);
       if (cred.user) {
-        const displayName = usernameInput.includes('@') ? usernameInput.split('@')[0] : usernameInput.trim();
+        const displayName = usernameInput.includes('@')
+          ? usernameInput.split('@')[0]
+          : usernameInput.trim();
         await cred.user.updateProfile({ displayName });
-        await db.collection('users').doc(cred.user.uid).set({
-          displayName,
-          email,
-          profile: { displayName, avatarId: 'user' },
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge: true });
+        await db
+          .collection('users')
+          .doc(cred.user.uid)
+          .set(
+            {
+              displayName,
+              email,
+              profile: { displayName, avatarId: 'user' },
+              createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            },
+            { merge: true }
+          );
       }
       showToast('Аккаунт успешно создан!');
     }
@@ -229,7 +264,7 @@ async function handleAuthSubmit(e) {
     }
   } finally {
     btn.disabled = false;
-    btn.innerText = (currentAuthMode === 'login') ? 'Войти' : 'Создать аккаунт';
+    btn.innerText = currentAuthMode === 'login' ? 'Войти' : 'Создать аккаунт';
   }
 }
 
@@ -237,7 +272,7 @@ function resetAuthFormState() {
   const btn = document.getElementById('auth-submit-btn');
   if (btn) {
     btn.disabled = false;
-    btn.innerText = (currentAuthMode === 'login') ? 'Войти' : 'Создать аккаунт';
+    btn.innerText = currentAuthMode === 'login' ? 'Войти' : 'Создать аккаунт';
   }
   const form = document.getElementById('auth-form');
   if (form) form.reset();
@@ -254,14 +289,14 @@ function logoutUser() {
       } catch (_) {
         /* ignore */
       }
-      
+
       const txList = document.getElementById('transactions-list');
       if (txList) txList.innerHTML = '';
       const expEl = document.getElementById('month-expense');
       if (expEl) expEl.innerText = '0 ₽';
       const incEl = document.getElementById('month-income');
       if (incEl) incEl.innerText = '0 ₽';
-      
+
       resetAuthFormState();
       await auth.signOut();
     } catch (err) {
@@ -281,10 +316,11 @@ async function loadUserSettings(user) {
     const doc = await db.collection('users').doc(user.uid).get();
     const data = doc.exists ? doc.data() : {};
     const settings = data?.settings || {};
-    
+
     const showBroker = settings.showBroker !== undefined ? settings.showBroker : false;
     const showPdfInfo = settings.showPdfInfo !== undefined ? settings.showPdfInfo : true;
-    const enableNotifications = settings.enableNotifications !== undefined ? settings.enableNotifications : false;
+    const enableNotifications =
+      settings.enableNotifications !== undefined ? settings.enableNotifications : false;
     const notificationTime = settings.notificationTime || '10:00';
 
     if (!Cache) Cache = {};
@@ -295,13 +331,21 @@ async function loadUserSettings(user) {
     Cache.settings.notificationTime = notificationTime;
 
     // Загружаем профиль пользователя
-    const rawName = user.displayName || (user.email?.includes('@budget.local') ? user.email.replace('@budget.local', '') : user.email?.split('@')[0]) || 'Пользователь';
+    const rawName =
+      user.displayName ||
+      (user.email?.includes('@budget.local')
+        ? user.email.replace('@budget.local', '')
+        : user.email?.split('@')[0]) ||
+      'Пользователь';
     const profile = data?.profile || {};
-    const avatarId = (profile.avatarId !== undefined && profile.avatarId !== null && profile.avatarId !== '') ? profile.avatarId : (data?.avatarId || 'user');
-    
+    const avatarId =
+      profile.avatarId !== undefined && profile.avatarId !== null && profile.avatarId !== ''
+        ? profile.avatarId
+        : data?.avatarId || 'user';
+
     Cache.userProfile = {
       displayName: profile.displayName || data?.displayName || rawName,
-      avatarId: avatarId
+      avatarId: avatarId,
     };
     selectedAvatarPresetId = Cache.userProfile.avatarId || 'user';
 
@@ -315,7 +359,10 @@ async function loadUserSettings(user) {
           const members = Array.isArray(famData.members) ? famData.members : [];
           if (members.length === 0) {
             // Если в семье 0 участников — группа удалена
-            await db.collection('users').doc(user.uid).update({ familyId: firebase.firestore.FieldValue.delete() });
+            await db
+              .collection('users')
+              .doc(user.uid)
+              .update({ familyId: firebase.firestore.FieldValue.delete() });
             Cache.family = null;
           } else {
             // Авто-миграция: если memberUids еще нет в документе семьи, обновляем его
@@ -328,7 +375,10 @@ async function loadUserSettings(user) {
           }
         } else {
           // Если группа была удалена — отвязываем
-          await db.collection('users').doc(user.uid).update({ familyId: firebase.firestore.FieldValue.delete() });
+          await db
+            .collection('users')
+            .doc(user.uid)
+            .update({ familyId: firebase.firestore.FieldValue.delete() });
           Cache.family = null;
         }
       } catch (famErr) {
@@ -356,7 +406,9 @@ function checkFamilyBudgetReviewPrompt() {
   const user = auth.currentUser;
   if (!user || !Cache?.family) return;
 
-  const isOwner = (Cache.family.ownerUid === user.uid) || (Cache.family.members?.find(m => m && m.uid === user.uid)?.role === 'owner');
+  const isOwner =
+    Cache.family.ownerUid === user.uid ||
+    Cache.family.members?.find(m => m && m.uid === user.uid)?.role === 'owner';
   if (!isOwner || !Cache.family.needsBudgetReview) return;
 
   const memberName = Cache.family.lastJoinedMember?.name || 'Новый участник';
@@ -383,7 +435,9 @@ async function closeFamilyReviewDialog(isConfirmed = false) {
     try {
       await db.collection('families').doc(Cache.family.id).update({ needsBudgetReview: false });
       if (Cache.family) Cache.family.needsBudgetReview = false;
-    } catch (e) {}
+    } catch (_e) {
+      /* ignore */
+    }
   }
 }
 
@@ -396,18 +450,22 @@ async function confirmFamilyBudgetReview() {
     try {
       await db.collection('families').doc(Cache.family.id).update({ needsBudgetReview: false });
       if (Cache.family) Cache.family.needsBudgetReview = false;
-    } catch (e) {}
+    } catch (_e) {
+      /* ignore */
+    }
   }
 
-  // Переходим на вкладку бюджета и открываем мастер настройки со СТАДИИ 1 со всеми сохраненными данными!
-  if (typeof openBudgetPlanWizardReview === 'function') {
-    openBudgetPlanWizardReview();
+  if (typeof switchTab === 'function') {
+    switchTab('budget');
   }
 }
 
 // Обновление кнопки профиля в шапке
 function updateHeaderProfileUI() {
-  const profile = (typeof getCurrentUserProfile === 'function') ? getCurrentUserProfile() : (Cache?.userProfile || { displayName: 'Профиль', avatarId: 'user' });
+  const profile =
+    typeof getCurrentUserProfile === 'function'
+      ? getCurrentUserProfile()
+      : Cache?.userProfile || { displayName: 'Профиль', avatarId: 'user' };
   const nameEl = document.getElementById('header-user-name');
   const avatarEl = document.getElementById('header-user-avatar');
 
@@ -436,9 +494,13 @@ function openProfileModal() {
     dialog.scrollTo({ top: 0, behavior: 'instant' });
     if (!dialog.dataset.wheelBound) {
       dialog.dataset.wheelBound = 'true';
-      dialog.addEventListener('wheel', (e) => {
-        e.stopPropagation();
-      }, { passive: true });
+      dialog.addEventListener(
+        'wheel',
+        e => {
+          e.stopPropagation();
+        },
+        { passive: true }
+      );
     }
   }
 
@@ -448,22 +510,35 @@ function openProfileModal() {
   const editNameInput = document.getElementById('profile-edit-name-input');
   const editNameRow = document.getElementById('profile-edit-name-row');
 
-  const profile = (typeof getCurrentUserProfile === 'function') ? getCurrentUserProfile() : (Cache?.userProfile || { displayName: 'Пользователь', avatarId: '' });
-  
+  const profile =
+    typeof getCurrentUserProfile === 'function'
+      ? getCurrentUserProfile()
+      : Cache?.userProfile || { displayName: 'Пользователь', avatarId: '' };
+
   if (nameEl) nameEl.textContent = profile.displayName;
   if (editNameInput) editNameInput.value = profile.displayName;
   if (editNameRow) editNameRow.classList.add('hidden');
 
   if (avatarContainer && typeof getAvatarHtml === 'function') {
-    avatarContainer.innerHTML = getAvatarHtml(profile.avatarId, 'w-14 h-14', 'w-7 h-7', 'ring-2 ring-white/10 shadow-lg cursor-pointer hover:ring-[#6C5DD3]/50 transition-all active:scale-95');
+    avatarContainer.innerHTML = getAvatarHtml(
+      profile.avatarId,
+      'w-14 h-14',
+      'w-7 h-7',
+      'ring-2 ring-white/10 shadow-lg cursor-pointer hover:ring-[#6C5DD3]/50 transition-all active:scale-95'
+    );
   }
 
   if (typeEl) {
-    const isGoogle = Array.isArray(user?.providerData) && user.providerData.some(p => p && p.providerId === 'google.com');
-    typeEl.textContent = isGoogle ? `Google (${user.email})` : `Логин: ${user.email?.includes('@budget.local') ? user.email.replace('@budget.local', '') : user.email}`;
+    const isGoogle =
+      Array.isArray(user?.providerData) &&
+      user.providerData.some(p => p && p.providerId === 'google.com');
+    typeEl.textContent = isGoogle
+      ? `Google (${user.email})`
+      : `Логин: ${user.email?.includes('@budget.local') ? user.email.replace('@budget.local', '') : user.email}`;
   }
 
-  const isNative = typeof window.isNativeAppPlatform === 'function' ? window.isNativeAppPlatform() : false;
+  const isNative =
+    typeof window.isNativeAppPlatform === 'function' ? window.isNativeAppPlatform() : false;
   const isPwa = typeof window.isPwaStandalone === 'function' ? window.isPwaStandalone() : false;
 
   // Пункт уведомлений о счетах и вкладах отображается только внутри APK приложения
@@ -476,7 +551,7 @@ function openProfileModal() {
   const toggleNotif = document.getElementById('toggle-notifications-setting');
   const timeRow = document.getElementById('notifications-time-row');
   const timeInput = document.getElementById('notifications-time-input');
-  const notifEnabled = !!(Cache?.settings?.enableNotifications);
+  const notifEnabled = !!Cache?.settings?.enableNotifications;
   if (toggleNotif) toggleNotif.checked = notifEnabled;
   if (timeRow) timeRow.classList.toggle('hidden', !notifEnabled);
   if (timeInput) timeInput.value = Cache?.settings?.notificationTime || '10:00';
@@ -484,13 +559,14 @@ function openProfileModal() {
   // Обновляем состояние чекбокса брокера
   const toggle = document.getElementById('toggle-broker-setting');
   if (toggle) {
-    toggle.checked = !!(Cache?.settings?.showBroker);
+    toggle.checked = !!Cache?.settings?.showBroker;
   }
 
   // Обновляем состояние чекбокса инфо-окна PDF
   const togglePdf = document.getElementById('toggle-pdf-info-setting');
   if (togglePdf) {
-    togglePdf.checked = Cache?.settings?.showPdfInfo !== undefined ? !!Cache.settings.showPdfInfo : true;
+    togglePdf.checked =
+      Cache?.settings?.showPdfInfo !== undefined ? !!Cache.settings.showPdfInfo : true;
   }
 
   // Обновляем видимость пунктов установки, виджетов и пушей
@@ -506,11 +582,16 @@ function openProfileModal() {
 
     if (bankPushBtn) {
       bankPushBtn.classList.remove('hidden');
-      const autoPushEnabled = typeof window.isBankPushAutoExpenseEnabled === 'function' ? window.isBankPushAutoExpenseEnabled() : true;
+      const autoPushEnabled =
+        typeof window.isBankPushAutoExpenseEnabled === 'function'
+          ? window.isBankPushAutoExpenseEnabled()
+          : true;
       const badgeEl = document.getElementById('profile-bank-push-badge');
       if (badgeEl) {
         badgeEl.textContent = autoPushEnabled ? 'Включен' : 'Выключен';
-        badgeEl.className = autoPushEnabled ? 'text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full' : 'text-[10px] font-bold text-gray-400 bg-white/5 px-2 py-0.5 rounded-full';
+        badgeEl.className = autoPushEnabled
+          ? 'text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full'
+          : 'text-[10px] font-bold text-gray-400 bg-white/5 px-2 py-0.5 rounded-full';
       }
     }
   } else if (isPwa) {
@@ -520,7 +601,9 @@ function openProfileModal() {
       pwaBtn.classList.remove('hidden');
       const titleSpan = pwaBtn.querySelector('.profile-install-title');
       if (titleSpan) titleSpan.textContent = 'Установить приложение';
-      const pwaSub = pwaBtn.querySelector('.profile-install-subtitle') || pwaBtn.querySelector('.text-\\[11px\\]');
+      const pwaSub =
+        pwaBtn.querySelector('.profile-install-subtitle') ||
+        pwaBtn.querySelector('.text-\\[11px\\]');
       if (pwaSub) pwaSub.textContent = 'Скачать приложение для Android';
     }
     if (checkUpdatesBtn) checkUpdatesBtn.classList.add('hidden');
@@ -532,7 +615,9 @@ function openProfileModal() {
       pwaBtn.classList.remove('hidden');
       const titleSpan = pwaBtn.querySelector('.profile-install-title');
       if (titleSpan) titleSpan.textContent = 'Установить приложение';
-      const pwaSub = pwaBtn.querySelector('.profile-install-subtitle') || pwaBtn.querySelector('.text-\\[11px\\]');
+      const pwaSub =
+        pwaBtn.querySelector('.profile-install-subtitle') ||
+        pwaBtn.querySelector('.text-\\[11px\\]');
       if (pwaSub) pwaSub.textContent = 'Скачать или добавить на главный экран';
     }
     if (checkUpdatesBtn) checkUpdatesBtn.classList.add('hidden');
@@ -593,7 +678,7 @@ function openAvatarPickerModal() {
   let html = '';
   Object.keys(presets).forEach(key => {
     const p = presets[key];
-    const isSelected = (key === currentAvatar);
+    const isSelected = key === currentAvatar;
     html += `
       <button type="button" 
               onclick="selectAvatarPreset('${p.id}')"
@@ -641,7 +726,12 @@ async function applySelectedAvatar() {
   // Обновляем аватарку в модалке профиля
   const avatarContainer = document.getElementById('profile-avatar-container');
   if (avatarContainer && typeof getAvatarHtml === 'function') {
-    avatarContainer.innerHTML = getAvatarHtml(selectedAvatarPresetId, 'w-14 h-14', 'w-7 h-7', 'ring-2 ring-white/10 shadow-lg cursor-pointer hover:ring-[#6C5DD3]/50 transition-all active:scale-95');
+    avatarContainer.innerHTML = getAvatarHtml(
+      selectedAvatarPresetId,
+      'w-14 h-14',
+      'w-7 h-7',
+      'ring-2 ring-white/10 shadow-lg cursor-pointer hover:ring-[#6C5DD3]/50 transition-all active:scale-95'
+    );
     if (typeof lucide !== 'undefined') lucide.createIcons({ root: avatarContainer });
   }
 
@@ -655,7 +745,9 @@ async function saveProfileInfo(showToastSuccess = true) {
   if (!user) return;
 
   const nameInput = document.getElementById('profile-edit-name-input');
-  const newName = nameInput ? nameInput.value.trim() : (Cache.userProfile?.displayName || 'Пользователь');
+  const newName = nameInput
+    ? nameInput.value.trim()
+    : Cache.userProfile?.displayName || 'Пользователь';
   const avatarId = selectedAvatarPresetId || Cache.userProfile?.avatarId || 'user';
 
   if (!newName) {
@@ -676,13 +768,19 @@ async function saveProfileInfo(showToastSuccess = true) {
     await user.updateProfile({ displayName: newName });
 
     // Обновляем документ пользователя в Firestore
-    await db.collection('users').doc(user.uid).set({
-      displayName: newName,
-      profile: {
-        displayName: newName,
-        avatarId: avatarId
-      }
-    }, { merge: true });
+    await db
+      .collection('users')
+      .doc(user.uid)
+      .set(
+        {
+          displayName: newName,
+          profile: {
+            displayName: newName,
+            avatarId: avatarId,
+          },
+        },
+        { merge: true }
+      );
 
     // Если состоит в семье — обновляем его запись в составе семьи
     if (Cache?.family?.id) {
@@ -732,7 +830,9 @@ function openChangeLoginModal() {
   const newLoginInput = document.getElementById('change-login-new');
   const passInput = document.getElementById('change-login-password');
 
-  const currentLogin = user.email?.includes('@budget.local') ? user.email.replace('@budget.local', '') : user.email;
+  const currentLogin = user.email?.includes('@budget.local')
+    ? user.email.replace('@budget.local', '')
+    : user.email;
   if (currentLoginEl) currentLoginEl.textContent = currentLogin;
   if (newLoginInput) newLoginInput.value = '';
   if (passInput) passInput.value = '';
@@ -785,10 +885,13 @@ async function submitChangeLogin() {
     await user.updateEmail(newEmail);
 
     // 3. Обновление в Firestore
-    await db.collection('users').doc(user.uid).set({
-      email: newEmail,
-      login: rawNewLogin
-    }, { merge: true });
+    await db.collection('users').doc(user.uid).set(
+      {
+        email: newEmail,
+        login: rawNewLogin,
+      },
+      { merge: true }
+    );
 
     document.getElementById('toast-container')?.classList.add('hidden');
     closeChangeLoginModal();
@@ -901,16 +1004,15 @@ function renderFamilySettingsUI() {
   if (!user) return;
 
   const family = Cache?.family;
-  const userProfile = (typeof getCurrentUserProfile === 'function') ? getCurrentUserProfile() : { displayName: 'Пользователь', avatarId: 'user' };
 
   if (family) {
-    const isOwner = (family.ownerUid === user.uid);
+    const isOwner = family.ownerUid === user.uid;
     const members = family.members || [];
-    
+
     let membersHtml = '';
     members.forEach(m => {
-      const isMe = (m.uid === user.uid);
-      const isMemOwner = (m.role === 'owner' || m.uid === family.ownerUid);
+      const isMe = m.uid === user.uid;
+      const isMemOwner = m.role === 'owner' || m.uid === family.ownerUid;
       membersHtml += `
         <div class="flex items-center justify-between p-2.5 rounded-xl bg-[#12151C] border border-[rgba(255,255,255,0.04)]">
           <div class="flex items-center gap-3 min-w-0">
@@ -967,15 +1069,19 @@ function renderFamilySettingsUI() {
 
         <!-- Действия -->
         <div class="pt-2 border-t border-[rgba(255,255,255,0.04)] flex justify-between items-center">
-          ${isOwner ? `
+          ${
+            isOwner
+              ? `
             <button type="button" onclick="deleteFamilyGroup()" class="text-xs text-red-400 hover:text-red-300 transition-colors cursor-pointer flex items-center gap-1">
               <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Удалить группу
             </button>
-          ` : `
+          `
+              : `
             <button type="button" onclick="leaveFamilyGroup()" class="text-xs text-red-400 hover:text-red-300 transition-colors cursor-pointer flex items-center gap-1">
               <i data-lucide="log-out" class="w-3.5 h-3.5"></i> Выйти из семьи
             </button>
-          `}
+          `
+          }
           <span class="text-[11px] text-gray-500">Синхронизация вкл.</span>
         </div>
       </div>
@@ -1057,7 +1163,10 @@ async function submitCreateFamily() {
 
   try {
     const code = generateFamilyInviteCode(6);
-    const userProfile = (typeof getCurrentUserProfile === 'function') ? getCurrentUserProfile() : { displayName: 'Пользователь', avatarId: 'user' };
+    const userProfile =
+      typeof getCurrentUserProfile === 'function'
+        ? getCurrentUserProfile()
+        : { displayName: 'Пользователь', avatarId: 'user' };
 
     const familyRef = db.collection('families').doc();
     const familyData = {
@@ -1072,17 +1181,26 @@ async function submitCreateFamily() {
           name: userProfile.displayName,
           avatarId: userProfile.avatarId,
           role: 'owner',
-          joinedAt: Date.now()
-        }
-      ]
+          joinedAt: Date.now(),
+        },
+      ],
     };
 
-    const tables = ['Transactions', 'Deposits', 'Broker', 'Goals', 'Categories', 'CategoryRules', 'BudgetPlan', 'CalendarBills'];
+    const tables = [
+      'Transactions',
+      'Deposits',
+      'Broker',
+      'Goals',
+      'Categories',
+      'CategoryRules',
+      'BudgetPlan',
+      'CalendarBills',
+    ];
 
     // Параллельное выполнение: создаем документ семьи и запрашиваем 8 личных коллекций одновременно
     const [_, ...snaps] = await Promise.all([
       familyRef.set(familyData),
-      ...tables.map(tbl => db.collection('users').doc(user.uid).collection(tbl).get())
+      ...tables.map(tbl => db.collection('users').doc(user.uid).collection(tbl).get()),
     ]);
 
     // Копируем все личные записи в единый пакетный запрос (Batch Write)
@@ -1102,7 +1220,7 @@ async function submitCreateFamily() {
 
     // Параллельно коммитим пакетное копирование и обновляем привязку пользователя
     const tasks = [
-      db.collection('users').doc(user.uid).set({ familyId: familyRef.id }, { merge: true })
+      db.collection('users').doc(user.uid).set({ familyId: familyRef.id }, { merge: true }),
     ];
     if (pendingWrites > 0) {
       tasks.push(batch.commit());
@@ -1195,7 +1313,15 @@ function getRecordDeduplicationSignature(table, item) {
 
 // Объединение личных данных нового участника в семейное пространство с защитой от дублирования
 async function mergePersonalDataIntoFamily(user, familyRef, userProfile) {
-  const tables = ['Transactions', 'Deposits', 'Broker', 'Goals', 'CalendarBills', 'Categories', 'CategoryRules'];
+  const tables = [
+    'Transactions',
+    'Deposits',
+    'Broker',
+    'Goals',
+    'CalendarBills',
+    'Categories',
+    'CategoryRules',
+  ];
 
   try {
     const userProms = tables.map(tbl => db.collection('users').doc(user.uid).collection(tbl).get());
@@ -1233,7 +1359,7 @@ async function mergePersonalDataIntoFamily(user, familyRef, userProfile) {
           data.author = data.author || {
             uid: user.uid,
             name: userProfile.displayName || 'Участник',
-            avatarId: userProfile.avatarId || 'user'
+            avatarId: userProfile.avatarId || 'user',
           };
         }
 
@@ -1271,12 +1397,16 @@ async function submitJoinFamily() {
   try {
     // Поддерживаем как новые буквенно-цифровые коды (например 7K9X2M), так и старые с префиксом FAM-
     let qSnap = await db.collection('families').where('code', '==', rawCode).limit(1).get();
-    
+
     if (qSnap.empty && !rawCode.startsWith('FAM-')) {
       qSnap = await db.collection('families').where('code', '==', `FAM-${rawCode}`).limit(1).get();
     }
     if (qSnap.empty && rawCode.startsWith('FAM-')) {
-      qSnap = await db.collection('families').where('code', '==', rawCode.replace('FAM-', '')).limit(1).get();
+      qSnap = await db
+        .collection('families')
+        .where('code', '==', rawCode.replace('FAM-', ''))
+        .limit(1)
+        .get();
     }
 
     if (qSnap.empty) {
@@ -1294,14 +1424,19 @@ async function submitJoinFamily() {
     if (members.length === 0) {
       try {
         await famDoc.ref.delete();
-      } catch (e) {}
+      } catch (_e) {
+        /* ignore */
+      }
       document.getElementById('toast-container')?.classList.add('hidden');
       showToast('Группа не существует или была расформирована', true);
       if (submitBtn) submitBtn.disabled = false;
       return;
     }
 
-    const userProfile = (typeof getCurrentUserProfile === 'function') ? getCurrentUserProfile() : { displayName: 'Пользователь', avatarId: 'user' };
+    const userProfile =
+      typeof getCurrentUserProfile === 'function'
+        ? getCurrentUserProfile()
+        : { displayName: 'Пользователь', avatarId: 'user' };
     const isAlreadyMember = members.some(m => m && m.uid === user.uid);
 
     showToast('Объединение семейных данных...', false, true);
@@ -1312,7 +1447,7 @@ async function submitJoinFamily() {
         name: userProfile.displayName,
         avatarId: userProfile.avatarId,
         role: 'member',
-        joinedAt: Date.now()
+        joinedAt: Date.now(),
       });
 
       // Обновляем семью и выставляем флаг предложения перенастройки бюджета создателю
@@ -1324,8 +1459,8 @@ async function submitJoinFamily() {
         lastJoinedMember: {
           uid: user.uid,
           name: userProfile.displayName,
-          joinedAt: Date.now()
-        }
+          joinedAt: Date.now(),
+        },
       });
 
       // Объединяем личные данные нового участника в семейное пространство (с защитой от дублирования)
@@ -1333,9 +1468,12 @@ async function submitJoinFamily() {
     }
 
     // Привязываем пользователя
-    await db.collection('users').doc(user.uid).set({
-      familyId: famDoc.id
-    }, { merge: true });
+    await db.collection('users').doc(user.uid).set(
+      {
+        familyId: famDoc.id,
+      },
+      { merge: true }
+    );
 
     Cache.family = { id: famDoc.id, ...famData, members };
 
@@ -1357,11 +1495,14 @@ async function submitJoinFamily() {
 function copyFamilyInviteCode(code) {
   if (!code) return;
   if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(code).then(() => {
-      showToast(`Код ${code} скопирован в буфер обмена`);
-    }).catch(() => {
-      showToast(`Код семьи: ${code}`);
-    });
+    navigator.clipboard
+      .writeText(code)
+      .then(() => {
+        showToast(`Код ${code} скопирован в буфер обмена`);
+      })
+      .catch(() => {
+        showToast(`Код семьи: ${code}`);
+      });
   } else {
     showToast(`Код семьи: ${code}`);
   }
@@ -1371,114 +1512,144 @@ function leaveFamilyGroup() {
   const user = auth.currentUser;
   if (!user || !Cache?.family) return;
 
-  showDialog('Выход из семьи', 'Вы точно хотите отключиться от семейного бюджета? Вы вернётесь к личному кабинету.', true, async () => {
-    showToast('Отключение от семьи...', false, true);
-    const tables = ['Transactions', 'Deposits', 'Broker', 'Goals', 'Categories', 'CategoryRules', 'BudgetPlan', 'CalendarBills'];
-    try {
-      const famId = Cache.family.id;
-      const famDoc = await db.collection('families').doc(famId).get();
-      if (famDoc.exists) {
-        const famData = famDoc.data() || {};
-        const members = (famData.members || []).filter(m => m && m.uid !== user.uid);
+  showDialog(
+    'Выход из семьи',
+    'Вы точно хотите отключиться от семейного бюджета? Вы вернётесь к личному кабинету.',
+    true,
+    async () => {
+      showToast('Отключение от семьи...', false, true);
+      const tables = [
+        'Transactions',
+        'Deposits',
+        'Broker',
+        'Goals',
+        'Categories',
+        'CategoryRules',
+        'BudgetPlan',
+        'CalendarBills',
+      ];
+      try {
+        const famId = Cache.family.id;
+        const famDoc = await db.collection('families').doc(famId).get();
+        if (famDoc.exists) {
+          const famData = famDoc.data() || {};
+          const members = (famData.members || []).filter(m => m && m.uid !== user.uid);
 
-        if (members.length === 0) {
-          // Если участников не осталось — удаляем все подколлекции и документ семьи параллельно
-          const snaps = await Promise.all(
-            tables.map(table => db.collection('families').doc(famId).collection(table).get())
-          );
-          const batch = db.batch();
-          let deleteCount = 0;
-          snaps.forEach(snap => {
-            if (snap && !snap.empty) {
-              snap.docs.forEach(doc => {
-                batch.delete(doc.ref);
-                deleteCount++;
-              });
+          if (members.length === 0) {
+            // Если участников не осталось — удаляем все подколлекции и документ семьи параллельно
+            const snaps = await Promise.all(
+              tables.map(table => db.collection('families').doc(famId).collection(table).get())
+            );
+            const batch = db.batch();
+            let deleteCount = 0;
+            snaps.forEach(snap => {
+              if (snap && !snap.empty) {
+                snap.docs.forEach(doc => {
+                  batch.delete(doc.ref);
+                  deleteCount++;
+                });
+              }
+            });
+            if (deleteCount > 0) {
+              await batch.commit();
             }
-          });
-          if (deleteCount > 0) {
-            await batch.commit();
-          }
-          await db.collection('families').doc(famId).delete();
-        } else {
-          const isOwner = (famData.ownerUid === user.uid) || (famData.members?.find(m => m && m.uid === user.uid)?.role === 'owner');
-          if (isOwner) {
-            // Передаем права владельца следующему участнику
-            const newOwner = members[0];
-            members.forEach((m, idx) => {
-              if (idx === 0) m.role = 'owner';
-              else if (m.role === 'owner') m.role = 'member';
-            });
-            const memberUids = members.map(m => m && m.uid).filter(Boolean);
-            await db.collection('families').doc(famId).update({
-              ownerUid: newOwner.uid,
-              members: members,
-              memberUids: memberUids
-            });
+            await db.collection('families').doc(famId).delete();
           } else {
-            const memberUids = members.map(m => m && m.uid).filter(Boolean);
-            await db.collection('families').doc(famId).update({ members, memberUids });
+            const isOwner =
+              famData.ownerUid === user.uid ||
+              famData.members?.find(m => m && m.uid === user.uid)?.role === 'owner';
+            if (isOwner) {
+              // Передаем права владельца следующему участнику
+              const newOwner = members[0];
+              members.forEach((m, idx) => {
+                if (idx === 0) m.role = 'owner';
+                else if (m.role === 'owner') m.role = 'member';
+              });
+              const memberUids = members.map(m => m && m.uid).filter(Boolean);
+              await db.collection('families').doc(famId).update({
+                ownerUid: newOwner.uid,
+                members: members,
+                memberUids: memberUids,
+              });
+            } else {
+              const memberUids = members.map(m => m && m.uid).filter(Boolean);
+              await db.collection('families').doc(famId).update({ members, memberUids });
+            }
           }
         }
+
+        await db.collection('users').doc(user.uid).update({
+          familyId: firebase.firestore.FieldValue.delete(),
+        });
+
+        Cache.family = null;
+        document.getElementById('toast-container')?.classList.add('hidden');
+        showToast('Вы вышли из семейного бюджета');
+
+        renderFamilySettingsUI();
+        await fetchAllData();
+      } catch (err) {
+        document.getElementById('toast-container')?.classList.add('hidden');
+        console.error('Ошибка выхода из семьи:', err);
+        showToast('Ошибка выхода: ' + err.message, true);
       }
-
-      await db.collection('users').doc(user.uid).update({
-        familyId: firebase.firestore.FieldValue.delete()
-      });
-
-      Cache.family = null;
-      document.getElementById('toast-container')?.classList.add('hidden');
-      showToast('Вы вышли из семейного бюджета');
-
-      renderFamilySettingsUI();
-      await fetchAllData();
-    } catch (err) {
-      document.getElementById('toast-container')?.classList.add('hidden');
-      console.error('Ошибка выхода из семьи:', err);
-      showToast('Ошибка выхода: ' + err.message, true);
     }
-  });
+  );
 }
 
 function deleteFamilyGroup() {
   const user = auth.currentUser;
   if (!user || !Cache?.family) return;
 
-  showDialog('Удаление семьи', 'Вы уверены, что хотите удалить семейную группу? Все объединенные данные будут удалены, а участники отключены.', true, async () => {
-    showToast('Удаление семейной группы...', false, true);
-    const tables = ['Transactions', 'Deposits', 'Broker', 'Goals', 'Categories', 'CategoryRules', 'BudgetPlan', 'CalendarBills'];
-    try {
-      const famId = Cache.family.id;
+  showDialog(
+    'Удаление семьи',
+    'Вы уверены, что хотите удалить семейную группу? Все объединенные данные будут удалены, а участники отключены.',
+    true,
+    async () => {
+      showToast('Удаление семейной группы...', false, true);
+      const tables = [
+        'Transactions',
+        'Deposits',
+        'Broker',
+        'Goals',
+        'Categories',
+        'CategoryRules',
+        'BudgetPlan',
+        'CalendarBills',
+      ];
+      try {
+        const famId = Cache.family.id;
 
-      // Удаляем все подколлекции семьи
-      for (const table of tables) {
-        const snap = await db.collection('families').doc(famId).collection(table).get();
-        if (!snap.empty) {
-          const batch = db.batch();
-          snap.docs.forEach(doc => batch.delete(doc.ref));
-          await batch.commit();
+        // Удаляем все подколлекции семьи
+        for (const table of tables) {
+          const snap = await db.collection('families').doc(famId).collection(table).get();
+          if (!snap.empty) {
+            const batch = db.batch();
+            snap.docs.forEach(doc => batch.delete(doc.ref));
+            await batch.commit();
+          }
         }
+
+        // Удаляем сам документ семьи
+        await db.collection('families').doc(famId).delete();
+
+        await db.collection('users').doc(user.uid).update({
+          familyId: firebase.firestore.FieldValue.delete(),
+        });
+
+        Cache.family = null;
+        document.getElementById('toast-container')?.classList.add('hidden');
+        showToast('Семейная группа и общие данные удалены');
+
+        renderFamilySettingsUI();
+        await fetchAllData();
+      } catch (err) {
+        document.getElementById('toast-container')?.classList.add('hidden');
+        console.error('Ошибка удаления семьи:', err);
+        showToast('Ошибка удаления: ' + err.message, true);
       }
-
-      // Удаляем сам документ семьи
-      await db.collection('families').doc(famId).delete();
-
-      await db.collection('users').doc(user.uid).update({
-        familyId: firebase.firestore.FieldValue.delete()
-      });
-
-      Cache.family = null;
-      document.getElementById('toast-container')?.classList.add('hidden');
-      showToast('Семейная группа и общие данные удалены');
-
-      renderFamilySettingsUI();
-      await fetchAllData();
-    } catch (err) {
-      document.getElementById('toast-container')?.classList.add('hidden');
-      console.error('Ошибка удаления семьи:', err);
-      showToast('Ошибка удаления: ' + err.message, true);
     }
-  });
+  );
 }
 
 // ==========================================
@@ -1489,7 +1660,9 @@ function openDeleteAccountModal() {
   const user = auth.currentUser;
   if (!user) return;
 
-  const isGoogle = Array.isArray(user?.providerData) && user.providerData.some(p => p && p.providerId === 'google.com');
+  const isGoogle =
+    Array.isArray(user?.providerData) &&
+    user.providerData.some(p => p && p.providerId === 'google.com');
   const dialog = document.getElementById('delete-account-dialog');
   const passSection = document.getElementById('delete-account-pass-section');
   const googleSection = document.getElementById('delete-account-google-section');
@@ -1524,7 +1697,16 @@ function closeDeleteAccountModal() {
 
 async function purgeUserDataAndAuthUser(user) {
   showToast('Удаление всех данных аккаунта...', false, true);
-  const tables = ['Transactions', 'Deposits', 'Broker', 'Goals', 'Categories', 'CategoryRules', 'BudgetPlan', 'CalendarBills'];
+  const tables = [
+    'Transactions',
+    'Deposits',
+    'Broker',
+    'Goals',
+    'Categories',
+    'CategoryRules',
+    'BudgetPlan',
+    'CalendarBills',
+  ];
 
   try {
     // 1. Проверяем, состоит ли пользователь в семейной группе
@@ -1558,7 +1740,9 @@ async function purgeUserDataAndAuthUser(user) {
             await db.collection('families').doc(familyId).delete();
           } else {
             // В группе остаются другие участники
-            const isOwner = (famData.ownerUid === user.uid) || (members.find(m => m && m.uid === user.uid)?.role === 'owner');
+            const isOwner =
+              famData.ownerUid === user.uid ||
+              members.find(m => m && m.uid === user.uid)?.role === 'owner';
             if (isOwner) {
               // Сценарий 2: Создатель группы удаляет аккаунт -> владельцем становится следующий участник
               const newOwner = remainingMembers[0];
@@ -1570,14 +1754,14 @@ async function purgeUserDataAndAuthUser(user) {
               await db.collection('families').doc(familyId).update({
                 ownerUid: newOwner.uid,
                 members: remainingMembers,
-                memberUids: remainingUids
+                memberUids: remainingUids,
               });
             } else {
               // Сценарий 1: Простой участник удаляет аккаунт -> выходит из группы
               const remainingUids = remainingMembers.map(m => m && m.uid).filter(Boolean);
               await db.collection('families').doc(familyId).update({
                 members: remainingMembers,
-                memberUids: remainingUids
+                memberUids: remainingUids,
               });
             }
           }
@@ -1671,9 +1855,15 @@ async function toggleBrokerSetting(enable) {
   if (!user) return;
 
   try {
-    await db.collection('users').doc(user.uid).set({
-      settings: { showBroker: enable }
-    }, { merge: true });
+    await db
+      .collection('users')
+      .doc(user.uid)
+      .set(
+        {
+          settings: { showBroker: enable },
+        },
+        { merge: true }
+      );
 
     if (!Cache.settings) Cache.settings = {};
     Cache.settings.showBroker = enable;
@@ -1689,9 +1879,15 @@ async function togglePdfInfoSetting(enable) {
   if (!user) return;
 
   try {
-    await db.collection('users').doc(user.uid).set({
-      settings: { showPdfInfo: enable }
-    }, { merge: true });
+    await db
+      .collection('users')
+      .doc(user.uid)
+      .set(
+        {
+          settings: { showPdfInfo: enable },
+        },
+        { merge: true }
+      );
 
     if (!Cache.settings) Cache.settings = {};
     Cache.settings.showPdfInfo = enable;
@@ -1728,9 +1924,15 @@ async function toggleNotificationsSetting(enable) {
   if (timeRow) timeRow.classList.toggle('hidden', !enable);
 
   try {
-    await db.collection('users').doc(user.uid).set({
-      settings: { enableNotifications: enable }
-    }, { merge: true });
+    await db
+      .collection('users')
+      .doc(user.uid)
+      .set(
+        {
+          settings: { enableNotifications: enable },
+        },
+        { merge: true }
+      );
 
     if (!Cache.settings) Cache.settings = {};
     Cache.settings.enableNotifications = enable;
@@ -1753,9 +1955,15 @@ async function changeNotificationTimeSetting(time) {
   if (!user || !time) return;
 
   try {
-    await db.collection('users').doc(user.uid).set({
-      settings: { notificationTime: time }
-    }, { merge: true });
+    await db
+      .collection('users')
+      .doc(user.uid)
+      .set(
+        {
+          settings: { notificationTime: time },
+        },
+        { merge: true }
+      );
 
     if (!Cache.settings) Cache.settings = {};
     Cache.settings.notificationTime = time;
@@ -1820,9 +2028,7 @@ function renderGeminiSettingsUI() {
 
   if (keyInput) {
     const savedKey =
-      window.Cache?.settings?.geminiApiKey ||
-      localStorage.getItem('budget_gemini_api_key') ||
-      '';
+      window.Cache?.settings?.geminiApiKey || localStorage.getItem('budget_gemini_api_key') || '';
     keyInput.value = savedKey;
   }
 }

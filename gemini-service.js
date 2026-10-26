@@ -24,9 +24,7 @@ class GeminiService {
     // 1. Personal Gemini API Key (manual entry in Settings takes precedence)
     const manualKey =
       window.Cache?.settings?.geminiApiKey ||
-      (typeof localStorage !== 'undefined'
-        ? localStorage.getItem('budget_gemini_api_key')
-        : null);
+      (typeof localStorage !== 'undefined' ? localStorage.getItem('budget_gemini_api_key') : null);
 
     if (manualKey && typeof manualKey === 'string' && manualKey.trim().length > 10) {
       return { type: 'custom_key', value: manualKey.trim() };
@@ -263,6 +261,43 @@ class GeminiService {
     }
 
     return results;
+  }
+
+  /**
+   * Generates a concise financial insight/advice based on user's current metrics.
+   */
+  async generateDailyInsight(summaryData) {
+    if (!this.isAvailable()) return null;
+
+    const prompt = `Ты — финансовый аналитик в приложении для учета семейного капитала.
+Данные:
+- Свободный остаток за месяц: ${summaryData.delta} ₽ (Доходы: ${summaryData.income} ₽, Расходы: ${summaryData.expense} ₽)
+- Обязательные платежи на 14 дней: ${summaryData.upcomingBillsSum} ₽ (${summaryData.upcomingBillsCount} счетов)
+- Общий капитал (вклады + MOEX): ${summaryData.totalCapital} ₽
+- Ближайшие вклады: ${summaryData.depositsHint || 'нет данных'}
+- Основная цель: ${summaryData.mainGoalHint || 'не задана'}
+
+Задача: Сформулируй РОВНО ОДНО практическое, деловое наблюдение или совет.
+Правила:
+1. Строго 1-2 предложения (максимум 25 слов).
+2. Без приветствий, без «Я твой помощник», без смайликов и эмодзи.
+3. Только деловой тон, конкретные цифры и прикладная польза.
+4. Отвечай только текстом на русском языке.`;
+
+    const payload = {
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: {
+        temperature: 0.3,
+        maxOutputTokens: 120,
+      },
+    };
+
+    try {
+      return await this.callWithFallback(payload);
+    } catch (e) {
+      console.warn('Gemini daily insight generation failed:', e);
+      return null;
+    }
   }
 }
 

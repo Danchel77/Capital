@@ -4,7 +4,7 @@
  */
 
 let brokerChartObj = null;
-let currentBrokerTimeframe = "ALL";
+let currentBrokerTimeframe = 'ALL';
 
 // ==========================================
 // 2. Broker (Брокерский счет: расчеты и графики)
@@ -21,12 +21,17 @@ function processBroker(ops) {
     const rawDate = o.date || new Date().toISOString().split('T')[0];
     const ds = formatDateStr(rawDate, 'd MMM');
     const fullDate = formatDateStr(rawDate, 'd MMM yyyy');
-    const parsedDate = typeof parseAnyDate === 'function' ? parseAnyDate(rawDate) : new Date(rawDate);
+    const parsedDate =
+      typeof parseAnyDate === 'function' ? parseAnyDate(rawDate) : new Date(rawDate);
     const timestamp = parsedDate ? parsedDate.getTime() : new Date(rawDate).getTime();
 
     if (o.type === 'Пополнение') {
-      const depAmount = typeof parseAmount === 'function' ? parseAmount(o.amount) : (parseFloat(o.amount) || 0);
-      const balAfter = typeof parseAmount === 'function' ? parseAmount(o.balance !== undefined ? o.balance : o.amount) : (parseFloat(o.balance !== undefined ? o.balance : o.amount) || 0);
+      const depAmount =
+        typeof parseAmount === 'function' ? parseAmount(o.amount) : parseFloat(o.amount) || 0;
+      const balAfter =
+        typeof parseAmount === 'function'
+          ? parseAmount(o.balance !== undefined ? o.balance : o.amount)
+          : parseFloat(o.balance !== undefined ? o.balance : o.amount) || 0;
       totalDeposits += depAmount;
 
       const item = {
@@ -36,7 +41,7 @@ function processBroker(ops) {
         formattedDate: fullDate,
         amount: depAmount,
         balance: balAfter,
-        timestamp
+        timestamp,
       };
 
       depositList.push(item);
@@ -51,10 +56,13 @@ function processBroker(ops) {
         type: 'Пополнение',
         depositAmount: depAmount,
         balance: balAfter,
-        timestamp
+        timestamp,
       });
     } else if (o.type === 'Баланс') {
-      const bal = typeof parseAmount === 'function' ? parseAmount(o.balance !== undefined ? o.balance : o.amount) : (parseFloat(o.balance !== undefined ? o.balance : o.amount) || 0);
+      const bal =
+        typeof parseAmount === 'function'
+          ? parseAmount(o.balance !== undefined ? o.balance : o.amount)
+          : parseFloat(o.balance !== undefined ? o.balance : o.amount) || 0;
       const item = {
         id: o.id,
         type: 'Баланс',
@@ -62,7 +70,7 @@ function processBroker(ops) {
         formattedDate: fullDate,
         amount: bal,
         balance: bal,
-        timestamp
+        timestamp,
       };
 
       allOps.push(item);
@@ -76,7 +84,7 @@ function processBroker(ops) {
         type: 'Баланс',
         depositAmount: 0,
         balance: bal,
-        timestamp
+        timestamp,
       });
     }
   });
@@ -96,7 +104,10 @@ function processBroker(ops) {
   if (points.length > 0) {
     const firstPoint = points[0];
     if (firstPoint.type === 'Баланс') {
-      const subsequentDeposits = points.slice(1).filter(p => p.type === 'Пополнение').reduce((s, p) => s + (p.depositAmount || 0), 0);
+      const subsequentDeposits = points
+        .slice(1)
+        .filter(p => p.type === 'Пополнение')
+        .reduce((s, p) => s + (p.depositAmount || 0), 0);
       baseCapital = firstPoint.y + subsequentDeposits;
     } else {
       baseCapital = totalDeposits;
@@ -113,7 +124,7 @@ function processBroker(ops) {
     profit: profit,
     chartData: points,
     deposits: depositList,
-    history: allOps
+    history: allOps,
   };
 }
 
@@ -148,7 +159,7 @@ function renderBroker() {
   assets.forEach(asset => {
     const qty = parseFloat(asset.quantity) || 0;
     const isCash = asset.type === 'cash';
-    const price = isCash ? 1 : (parseFloat(asset.currentPrice) || parseFloat(asset.price) || 0);
+    const price = isCash ? 1 : parseFloat(asset.currentPrice) || parseFloat(asset.price) || 0;
     const val = qty * price;
 
     if (isCash) {
@@ -196,11 +207,11 @@ let brokerLongPressTimer = null;
 let brokerTouchStartX = 0;
 let brokerTouchStartY = 0;
 let isBrokerLongPressActive = false;
-let activeBrokerPoint = null;
 let selectedBrokerPointIndex = -1;
 
 function getBrokerPointAtCoords(clientX, clientY) {
-  if (!brokerChartObj || !currentBrokerChartPoints || currentBrokerChartPoints.length === 0) return null;
+  if (!brokerChartObj || !currentBrokerChartPoints || currentBrokerChartPoints.length === 0)
+    return null;
   const canvas = document.getElementById('brokerChart');
   if (!canvas) return null;
 
@@ -229,7 +240,7 @@ function getBrokerPointAtCoords(clientX, clientY) {
         element: ptElem,
         screenX: rect.left + ptElem.x,
         screenY: rect.top + ptElem.y,
-        distance: dist
+        distance: dist,
       };
     }
   }
@@ -245,20 +256,27 @@ function showBrokerPointTooltip(index) {
   const ptElem = meta.data[index];
 
   // Активируем hover-состояние точки в Chart.js
-  brokerChartObj.setActiveElements([{
-    datasetIndex: 0,
-    index: index
-  }]);
+  brokerChartObj.setActiveElements([
+    {
+      datasetIndex: 0,
+      index: index,
+    },
+  ]);
 
   // Программно активируем тултип
   if (brokerChartObj.tooltip) {
-    brokerChartObj.tooltip.setActiveElements([{
-      datasetIndex: 0,
-      index: index
-    }], {
-      x: ptElem.x,
-      y: ptElem.y
-    });
+    brokerChartObj.tooltip.setActiveElements(
+      [
+        {
+          datasetIndex: 0,
+          index: index,
+        },
+      ],
+      {
+        x: ptElem.x,
+        y: ptElem.y,
+      }
+    );
   }
 
   brokerChartObj.update('none');
@@ -281,13 +299,19 @@ function highlightBrokerPoint(index) {
   selectedBrokerPointIndex = index;
 
   if (!ds._basePointBorderColors) {
-    ds._basePointBorderColors = Array.isArray(ds.pointBorderColor) ? [...ds.pointBorderColor] : Array(ds.data.length).fill('#181B24');
+    ds._basePointBorderColors = Array.isArray(ds.pointBorderColor)
+      ? [...ds.pointBorderColor]
+      : Array(ds.data.length).fill('#181B24');
   }
   if (!ds._basePointRadii) {
-    ds._basePointRadii = Array.isArray(ds.pointRadius) ? [...ds.pointRadius] : Array(ds.data.length).fill(4);
+    ds._basePointRadii = Array.isArray(ds.pointRadius)
+      ? [...ds.pointRadius]
+      : Array(ds.data.length).fill(4);
   }
   if (!ds._basePointBorderWidths) {
-    ds._basePointBorderWidths = Array.isArray(ds.pointBorderWidth) ? [...ds.pointBorderWidth] : Array(ds.data.length).fill(2);
+    ds._basePointBorderWidths = Array.isArray(ds.pointBorderWidth)
+      ? [...ds.pointBorderWidth]
+      : Array(ds.data.length).fill(2);
   }
 
   const borderColors = [...ds._basePointBorderColors];
@@ -337,9 +361,15 @@ function openBrokerPointPopup(pt, screenX, screenY, ptIndex) {
   const editBtn = document.getElementById('broker-popup-btn-edit');
   const deleteBtn = document.getElementById('broker-popup-btn-delete');
 
-  const parsedDate = typeof parseAnyDate === 'function' ? parseAnyDate(pt.rawDate || pt.date) : new Date(pt.rawDate || pt.date);
+  const parsedDate =
+    typeof parseAnyDate === 'function'
+      ? parseAnyDate(pt.rawDate || pt.date)
+      : new Date(pt.rawDate || pt.date);
   if (dateEl) {
-    dateEl.innerText = (typeof formatDateStr === 'function') ? formatDateStr(parsedDate, 'dd.MM.yyyy') : (pt.rawDate || pt.date);
+    dateEl.innerText =
+      typeof formatDateStr === 'function'
+        ? formatDateStr(parsedDate, 'dd.MM.yyyy')
+        : pt.rawDate || pt.date;
   }
 
   if (infoEl) {
@@ -387,10 +417,10 @@ function openBrokerPointPopup(pt, screenX, screenY, ptIndex) {
 
   // Доступное пространство по вертикали
   const spaceTop = screenY - topSafeLimit;
-  const spaceBottom = (window.innerHeight - bottomSafeLimit) - screenY;
+  const spaceBottom = window.innerHeight - bottomSafeLimit - screenY;
 
   // Доступное пространство по горизонтали
-  const spaceRight = (window.innerWidth - minMargin) - screenX;
+  const spaceRight = window.innerWidth - minMargin - screenX;
   const spaceLeft = screenX - minMargin;
 
   // Определение вертикального положения (сверху или снизу)
@@ -414,8 +444,8 @@ function openBrokerPointPopup(pt, screenX, screenY, ptIndex) {
   }
 
   // Координаты попапа (сверху-справа, сверху-слева, снизу-справа, снизу-слева)
-  let top = placeTop ? (screenY - popupHeight - gap) : (screenY + gap);
-  let left = placeRight ? (screenX + gap) : (screenX - popupWidth - gap);
+  let top = placeTop ? screenY - popupHeight - gap : screenY + gap;
+  let left = placeRight ? screenX + gap : screenX - popupWidth - gap;
 
   // Страховочное ограничение в пределах экрана
   top = Math.max(topSafeLimit, Math.min(window.innerHeight - popupHeight - bottomSafeLimit, top));
@@ -447,50 +477,70 @@ function attachBrokerChartLongPressListeners() {
   canvas._brokerLongPressAttached = true;
 
   // Touch события для мобильных устройств
-  canvas.addEventListener('touchstart', (e) => {
-    if (!e.touches || e.touches.length !== 1) return;
-    brokerTouchStartX = e.touches[0].clientX;
-    brokerTouchStartY = e.touches[0].clientY;
-    isBrokerLongPressActive = false;
+  canvas.addEventListener(
+    'touchstart',
+    e => {
+      if (!e.touches || e.touches.length !== 1) return;
+      brokerTouchStartX = e.touches[0].clientX;
+      brokerTouchStartY = e.touches[0].clientY;
+      isBrokerLongPressActive = false;
 
-    clearTimeout(brokerLongPressTimer);
-    const hit = getBrokerPointAtCoords(brokerTouchStartX, brokerTouchStartY);
-    if (hit && hit.point && hit.point.id) {
-      brokerLongPressTimer = setTimeout(() => {
-        isBrokerLongPressActive = true;
-        if (navigator.vibrate) {
-          try { navigator.vibrate(40); } catch (_) {}
-        }
-        openBrokerPointPopup(hit.point, hit.screenX, hit.screenY, hit.index);
-      }, 500);
-    } else {
-      // Касание мимо точки - закрываем активный попап
-      closeBrokerPointPopup();
-    }
-  }, { passive: true });
-
-  canvas.addEventListener('touchmove', (e) => {
-    if (!e.touches || e.touches.length === 0) return;
-    const curX = e.touches[0].clientX;
-    const curY = e.touches[0].clientY;
-    const dx = curX - brokerTouchStartX;
-    const dy = curY - brokerTouchStartY;
-    if (Math.hypot(dx, dy) > 10) {
       clearTimeout(brokerLongPressTimer);
-    }
-  }, { passive: true });
+      const hit = getBrokerPointAtCoords(brokerTouchStartX, brokerTouchStartY);
+      if (hit && hit.point && hit.point.id) {
+        brokerLongPressTimer = setTimeout(() => {
+          isBrokerLongPressActive = true;
+          if (navigator.vibrate) {
+            try {
+              navigator.vibrate(40);
+            } catch (_) {
+              /* ignore */
+            }
+          }
+          openBrokerPointPopup(hit.point, hit.screenX, hit.screenY, hit.index);
+        }, 500);
+      } else {
+        // Касание мимо точки - закрываем активный попап
+        closeBrokerPointPopup();
+      }
+    },
+    { passive: true }
+  );
 
-  canvas.addEventListener('touchend', (e) => {
+  canvas.addEventListener(
+    'touchmove',
+    e => {
+      if (!e.touches || e.touches.length === 0) return;
+      const curX = e.touches[0].clientX;
+      const curY = e.touches[0].clientY;
+      const dx = curX - brokerTouchStartX;
+      const dy = curY - brokerTouchStartY;
+      if (Math.hypot(dx, dy) > 10) {
+        clearTimeout(brokerLongPressTimer);
+      }
+    },
+    { passive: true }
+  );
+
+  canvas.addEventListener('touchend', e => {
     clearTimeout(brokerLongPressTimer);
     if (isBrokerLongPressActive) {
       if (e.cancelable) e.preventDefault();
-      setTimeout(() => { isBrokerLongPressActive = false; }, 150);
+      setTimeout(() => {
+        isBrokerLongPressActive = false;
+      }, 150);
       return;
     }
 
     // Одиночный быстрый тап: проверяем попадание по точке
-    const touchEndX = (e.changedTouches && e.changedTouches.length > 0) ? e.changedTouches[0].clientX : brokerTouchStartX;
-    const touchEndY = (e.changedTouches && e.changedTouches.length > 0) ? e.changedTouches[0].clientY : brokerTouchStartY;
+    const touchEndX =
+      e.changedTouches && e.changedTouches.length > 0
+        ? e.changedTouches[0].clientX
+        : brokerTouchStartX;
+    const touchEndY =
+      e.changedTouches && e.changedTouches.length > 0
+        ? e.changedTouches[0].clientY
+        : brokerTouchStartY;
 
     if (Math.hypot(touchEndX - brokerTouchStartX, touchEndY - brokerTouchStartY) < 18) {
       const hit = getBrokerPointAtCoords(touchEndX, touchEndY);
@@ -511,7 +561,7 @@ function attachBrokerChartLongPressListeners() {
   });
 
   // Мышь для десктопа
-  canvas.addEventListener('mousedown', (e) => {
+  canvas.addEventListener('mousedown', e => {
     if (e.button !== 0) return;
     brokerTouchStartX = e.clientX;
     brokerTouchStartY = e.clientY;
@@ -530,7 +580,7 @@ function attachBrokerChartLongPressListeners() {
     }
   });
 
-  canvas.addEventListener('mousemove', (e) => {
+  canvas.addEventListener('mousemove', e => {
     const dx = e.clientX - brokerTouchStartX;
     const dy = e.clientY - brokerTouchStartY;
     if (Math.hypot(dx, dy) > 6) {
@@ -538,10 +588,12 @@ function attachBrokerChartLongPressListeners() {
     }
   });
 
-  canvas.addEventListener('mouseup', (e) => {
+  canvas.addEventListener('mouseup', e => {
     clearTimeout(brokerLongPressTimer);
     if (isBrokerLongPressActive) {
-      setTimeout(() => { isBrokerLongPressActive = false; }, 150);
+      setTimeout(() => {
+        isBrokerLongPressActive = false;
+      }, 150);
       return;
     }
     const hit = getBrokerPointAtCoords(e.clientX, e.clientY);
@@ -560,7 +612,7 @@ function attachBrokerChartLongPressListeners() {
   });
 
   // Контекстное меню (правый клик) на десктопе
-  canvas.addEventListener('contextmenu', (e) => {
+  canvas.addEventListener('contextmenu', e => {
     const hit = getBrokerPointAtCoords(e.clientX, e.clientY);
     if (hit && hit.point && hit.point.id) {
       e.preventDefault();
@@ -612,10 +664,12 @@ function drawBrokerChart() {
   const data = filteredData.map(p => p.y);
 
   // Стилизация точек: аккуратный темный бордер под цвет фона, без неестественной обводки в обычном состоянии
-  const pointBgColors = filteredData.map(p => p.type === 'Пополнение' ? '#30D158' : '#6C5DD3');
+  const pointBgColors = filteredData.map(p => (p.type === 'Пополнение' ? '#30D158' : '#6C5DD3'));
   const pointBorderColors = filteredData.map(() => '#181B24');
-  const pointRadii = filteredData.map(p => p.type === 'Пополнение' ? 5.5 : (filteredData.length === 1 ? 5 : 3.5));
-  const pointHoverRadii = filteredData.map(p => p.type === 'Пополнение' ? 7.5 : 6);
+  const pointRadii = filteredData.map(p =>
+    p.type === 'Пополнение' ? 5.5 : filteredData.length === 1 ? 5 : 3.5
+  );
+  const pointHoverRadii = filteredData.map(p => (p.type === 'Пополнение' ? 7.5 : 6));
   const pointBorderWidths = Array(filteredData.length).fill(2);
 
   const grad = ctx.createLinearGradient(0, 0, 0, 200);
@@ -626,45 +680,49 @@ function drawBrokerChart() {
     type: 'line',
     data: {
       labels: labels,
-      datasets: [{
-        data: data,
-        borderColor: '#6C5DD3',
-        borderWidth: 2.5,
-        backgroundColor: grad,
-        fill: true,
-        tension: 0.3,
-        pointRadius: pointRadii,
-        pointHoverRadius: pointHoverRadii,
-        pointBackgroundColor: pointBgColors,
-        pointBorderColor: pointBorderColors,
-        pointBorderWidth: pointBorderWidths
-      }]
+      datasets: [
+        {
+          data: data,
+          borderColor: '#6C5DD3',
+          borderWidth: 2.5,
+          backgroundColor: grad,
+          fill: true,
+          tension: 0.3,
+          pointRadius: pointRadii,
+          pointHoverRadius: pointHoverRadii,
+          pointBackgroundColor: pointBgColors,
+          pointBorderColor: pointBorderColors,
+          pointBorderWidth: pointBorderWidths,
+        },
+      ],
     },
-    plugins: [{
-      id: 'brokerSelectedPointHalo',
-      afterDatasetsDraw(chart) {
-        if (selectedBrokerPointIndex == null || selectedBrokerPointIndex < 0) return;
-        const meta = chart.getDatasetMeta(0);
-        if (!meta || !meta.data || !meta.data[selectedBrokerPointIndex]) return;
-        const pt = meta.data[selectedBrokerPointIndex];
-        const c = chart.ctx;
-        c.save();
-        c.beginPath();
-        c.arc(pt.x, pt.y, 14, 0, Math.PI * 2);
-        c.strokeStyle = 'rgba(255, 255, 255, 0.45)';
-        c.lineWidth = 2;
-        c.stroke();
-        c.restore();
-      }
-    }],
+    plugins: [
+      {
+        id: 'brokerSelectedPointHalo',
+        afterDatasetsDraw(chart) {
+          if (selectedBrokerPointIndex == null || selectedBrokerPointIndex < 0) return;
+          const meta = chart.getDatasetMeta(0);
+          if (!meta || !meta.data || !meta.data[selectedBrokerPointIndex]) return;
+          const pt = meta.data[selectedBrokerPointIndex];
+          const c = chart.ctx;
+          c.save();
+          c.beginPath();
+          c.arc(pt.x, pt.y, 14, 0, Math.PI * 2);
+          c.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+          c.lineWidth = 2;
+          c.stroke();
+          c.restore();
+        },
+      },
+    ],
     options: {
       responsive: true,
       maintainAspectRatio: false,
       interaction: {
         mode: 'nearest',
-        intersect: true
+        intersect: true,
       },
-      onClick: (evt) => {
+      onClick: evt => {
         if (isBrokerLongPressActive) {
           isBrokerLongPressActive = false;
           return;
@@ -702,15 +760,16 @@ function drawBrokerChart() {
           cornerRadius: 12,
           displayColors: false,
           callbacks: {
-            title: function(items) {
+            title: function (items) {
               if (!items || !items.length) return '';
               const idx = items[0].dataIndex;
               const pt = filteredData[idx];
               if (!pt) return items[0].label;
-              const d = typeof parseAnyDate === 'function' ? parseAnyDate(pt.rawDate || pt.date) : null;
-              return d ? formatDateStr(d, 'dd.MM.yyyy') : (pt.fullDate || items[0].label);
+              const d =
+                typeof parseAnyDate === 'function' ? parseAnyDate(pt.rawDate || pt.date) : null;
+              return d ? formatDateStr(d, 'dd.MM.yyyy') : pt.fullDate || items[0].label;
             },
-            label: function(item) {
+            label: function (item) {
               const idx = item.dataIndex;
               const pt = filteredData[idx];
               if (!pt) return `Баланс: ${formatMoney(item.raw)}`;
@@ -718,27 +777,24 @@ function drawBrokerChart() {
                 return [
                   `Баланс: ${formatMoney(pt.y)}`,
                   `Пополнение: +${formatMoney(pt.depositAmount)}`,
-                  'Удерживайте для действий'
+                  'Удерживайте для действий',
                 ];
               }
-              return [
-                `Баланс: ${formatMoney(pt.y)}`,
-                'Удерживайте для действий'
-              ];
-            }
-          }
-        }
+              return [`Баланс: ${formatMoney(pt.y)}`, 'Удерживайте для действий'];
+            },
+          },
+        },
       },
       scales: {
         x: {
           grid: { display: false },
-          ticks: { color: '#848D99', font: { size: 10 } }
+          ticks: { color: '#848D99', font: { size: 10 } },
         },
         y: {
-          display: false
-        }
-      }
-    }
+          display: false,
+        },
+      },
+    },
   });
 
   // Сохраняем исходные стили точек для мгновенного сброса подсветки
@@ -771,6 +827,7 @@ function toggleDepositGoalMenu(e) {
     if (typeof lucide !== 'undefined') lucide.createIcons();
   }
 }
+window.toggleDepositGoalMenu = toggleDepositGoalMenu;
 
 function selectDepositGoal(goalId, goalName) {
   const hiddenInp = document.getElementById('dep-goal');
@@ -838,8 +895,8 @@ function updateGoalDropdowns() {
 // ==========================================
 // 5. Global Event Listeners (Инвестиции)
 // ==========================================
-document.addEventListener('click', (e) => {
-  const target = (e?.target?.nodeType === 3) ? e.target.parentElement : e?.target;
+document.addEventListener('click', e => {
+  const target = e?.target?.nodeType === 3 ? e.target.parentElement : e?.target;
   if (!target || typeof target.closest !== 'function') return;
 
   // Закрывать попап точки брокера при клике вне него
@@ -850,14 +907,16 @@ document.addEventListener('click', (e) => {
   }
 
   // Не закрывать поповеры брокера, если клик произошел внутри самого поповера, кнопок его вызова, модалки точки, или внутри дейтпикера
-  if (target.closest('.broker-popover') ||
-      target.closest('#broker-deposit-btn') ||
-      target.closest('#broker-balance-btn') ||
-      target.closest('#broker-point-modal') ||
-      target.closest('#broker-point-popup') ||
-      target.closest('#custom-datepicker') ||
-      target.closest('input[data-datepicker]') ||
-      target.closest('input[type="date"]')) {
+  if (
+    target.closest('.broker-popover') ||
+    target.closest('#broker-deposit-btn') ||
+    target.closest('#broker-balance-btn') ||
+    target.closest('#broker-point-modal') ||
+    target.closest('#broker-point-popup') ||
+    target.closest('#custom-datepicker') ||
+    target.closest('input[data-datepicker]') ||
+    target.closest('input[type="date"]')
+  ) {
     return;
   }
   if (typeof closeAllBrokerPopovers === 'function') {
@@ -866,8 +925,8 @@ document.addEventListener('click', (e) => {
 });
 
 // Мгновенная реакция закрытия попапа при начале касания/клика вне его
-document.addEventListener('pointerdown', (e) => {
-  const target = (e?.target?.nodeType === 3) ? e.target.parentElement : e?.target;
+document.addEventListener('pointerdown', e => {
+  const target = e?.target?.nodeType === 3 ? e.target.parentElement : e?.target;
   if (!target || typeof target.closest !== 'function') return;
 
   const popup = document.getElementById('broker-point-popup');
@@ -879,12 +938,16 @@ document.addEventListener('pointerdown', (e) => {
 });
 
 // Закрытие попапа точки при скролле экрана или изменении размера
-window.addEventListener('scroll', () => {
-  const popup = document.getElementById('broker-point-popup');
-  if (popup && !popup.classList.contains('hidden')) {
-    closeBrokerPointPopup();
-  }
-}, { passive: true });
+window.addEventListener(
+  'scroll',
+  () => {
+    const popup = document.getElementById('broker-point-popup');
+    if (popup && !popup.classList.contains('hidden')) {
+      closeBrokerPointPopup();
+    }
+  },
+  { passive: true }
+);
 
 window.addEventListener('resize', () => {
   const popup = document.getElementById('broker-point-popup');
@@ -893,12 +956,11 @@ window.addEventListener('resize', () => {
   }
 });
 
-document.addEventListener('keydown', (e) => {
+document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     closeBrokerPointPopup();
   }
 });
-
 
 // Broker Global Exports
 window.processBroker = processBroker;
@@ -929,20 +991,24 @@ function setMoexModalMode(mode) {
 
   if (mode === 'cash') {
     if (cashTab) {
-      cashTab.className = 'py-2 px-2 rounded-xl text-xs font-semibold bg-[#212430] text-white transition-all cursor-pointer';
+      cashTab.className =
+        'py-2 px-2 rounded-xl text-xs font-semibold bg-[#212430] text-white transition-all cursor-pointer';
     }
     if (secTab) {
-      secTab.className = 'py-2 px-2 rounded-xl text-xs font-medium text-gray-400 hover:text-white transition-all cursor-pointer';
+      secTab.className =
+        'py-2 px-2 rounded-xl text-xs font-medium text-gray-400 hover:text-white transition-all cursor-pointer';
     }
     if (secFields) secFields.classList.add('hidden');
     if (cashFields) cashFields.classList.remove('hidden');
     document.getElementById('moex-asset-type').value = 'cash';
   } else {
     if (secTab) {
-      secTab.className = 'py-2 px-2 rounded-xl text-xs font-semibold bg-[#212430] text-white transition-all cursor-pointer';
+      secTab.className =
+        'py-2 px-2 rounded-xl text-xs font-semibold bg-[#212430] text-white transition-all cursor-pointer';
     }
     if (cashTab) {
-      cashTab.className = 'py-2 px-2 rounded-xl text-xs font-medium text-gray-400 hover:text-white transition-all cursor-pointer';
+      cashTab.className =
+        'py-2 px-2 rounded-xl text-xs font-medium text-gray-400 hover:text-white transition-all cursor-pointer';
     }
     if (secFields) secFields.classList.remove('hidden');
     if (cashFields) cashFields.classList.add('hidden');
@@ -967,9 +1033,11 @@ function renderMoexPortfolio() {
   let totalValue = 0;
   assets.forEach(a => {
     const qty = parseFloat(a.quantity) || 0;
-    const price = a.type === 'cash' ? 1 : (parseFloat(a.currentPrice) || parseFloat(a.price) || 0);
+    const price = a.type === 'cash' ? 1 : parseFloat(a.currentPrice) || parseFloat(a.price) || 0;
     totalValue += qty * price;
   });
+
+  if (typeof updateCapitalSummaryHeader === 'function') updateCapitalSummaryHeader();
 
   let html = '';
 
@@ -1085,7 +1153,7 @@ async function autoRecordBrokerDailySnapshot(totalValue) {
       await snap.docs[0].ref.update({
         balance: totalValue,
         amount: totalValue,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
     } else {
       await col.add({
@@ -1093,7 +1161,7 @@ async function autoRecordBrokerDailySnapshot(totalValue) {
         date: todayStr,
         amount: totalValue,
         balance: totalValue,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
     }
   } catch (err) {
@@ -1229,8 +1297,10 @@ function openEditMoexAssetModal(assetId) {
       preview.classList.remove('hidden');
       document.getElementById('moex-preview-ticker').textContent = asset.ticker;
       document.getElementById('moex-preview-name').textContent = asset.name || asset.ticker;
-      document.getElementById('moex-preview-badge').textContent = asset.type === 'fund' ? 'БПИФ' : 'Акция';
-      document.getElementById('moex-preview-price').textContent = `${formatMoney(asset.currentPrice || 0)}/шт.`;
+      document.getElementById('moex-preview-badge').textContent =
+        asset.type === 'fund' ? 'БПИФ' : 'Акция';
+      document.getElementById('moex-preview-price').textContent =
+        `${formatMoney(asset.currentPrice || 0)}/шт.`;
     }
 
     document.getElementById('moex-asset-qty').value = asset.quantity || 1;
@@ -1275,7 +1345,8 @@ function handleMoexSearchInput(value) {
 
       if (!resultsDiv) return;
       if (items.length === 0) {
-        resultsDiv.innerHTML = '<div class="p-3 text-center text-xs text-gray-400">Ничего не найдено</div>';
+        resultsDiv.innerHTML =
+          '<div class="p-3 text-center text-xs text-gray-400">Ничего не найдено</div>';
         resultsDiv.classList.remove('hidden');
         return;
       }
@@ -1346,7 +1417,8 @@ function updateMoexAssetCalculations() {
 
   if (_currentMoexModalMode === 'cash') {
     const rawCash = document.getElementById('moex-cash-amount')?.value;
-    const cashVal = typeof parseAmount === 'function' ? parseAmount(rawCash) : parseFloat(rawCash) || 0;
+    const cashVal =
+      typeof parseAmount === 'function' ? parseAmount(rawCash) : parseFloat(rawCash) || 0;
     totalEl.textContent = formatMoney(cashVal);
   } else {
     const qtyInput = document.getElementById('moex-asset-qty');
@@ -1365,12 +1437,14 @@ async function submitMoexAsset(e) {
 
   if (_currentMoexModalMode === 'cash') {
     const rawCash = document.getElementById('moex-cash-amount')?.value;
-    const amount = typeof parseAmount === 'function' ? parseAmount(rawCash) : parseFloat(rawCash) || 0;
+    const amount =
+      typeof parseAmount === 'function' ? parseAmount(rawCash) : parseFloat(rawCash) || 0;
     if (amount <= 0) {
       showToast('Укажите сумму в рублях больше 0', true);
       return;
     }
-    const name = (document.getElementById('moex-cash-name')?.value || '').trim() || 'Свободные рубли';
+    const name =
+      (document.getElementById('moex-cash-name')?.value || '').trim() || 'Свободные рубли';
     assetData = {
       ticker: 'RUB',
       name: name,
@@ -1394,7 +1468,8 @@ async function submitMoexAsset(e) {
     }
 
     const buyPriceRaw = document.getElementById('moex-asset-buy-price')?.value;
-    const buyPrice = typeof parseAmount === 'function' ? parseAmount(buyPriceRaw) : parseFloat(buyPriceRaw) || 0;
+    const buyPrice =
+      typeof parseAmount === 'function' ? parseAmount(buyPriceRaw) : parseFloat(buyPriceRaw) || 0;
 
     assetData = {
       ticker: _currentSelectedMoexSecurity.ticker,
@@ -1466,5 +1541,3 @@ window.selectMoexSearchResult = selectMoexSearchResult;
 window.updateMoexAssetCalculations = updateMoexAssetCalculations;
 window.submitMoexAsset = submitMoexAsset;
 window.deleteCurrentMoexAsset = deleteCurrentMoexAsset;
-
-

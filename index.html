@@ -399,8 +399,6 @@
     <script defer src="broker.js?v=141"></script>
     <script defer src="goals.js?v=141"></script>
     <script defer src="calendar-bills.js?v=141"></script>
-    <script defer src="budget-wizard.js?v=141"></script>
-    <script defer src="month-close.js?v=141"></script>
     <script defer src="budget.js?v=141"></script>
     <script defer src="app.js?v=141"></script>
   </head>
@@ -823,602 +821,8 @@
     <main id="app-content" class="p-3.5 sm:p-4 pb-20 sm:pb-16">
       <!-- ЭКРАН БЮДЖЕТА (ГЛАВНЫЙ ЭКРАН УПРАВЛЕНИЯ ФИНАНСАМИ) -->
       <div id="budget-tab" class="tab-pane space-y-4">
-        <!-- СОСТОЯНИЕ 1: ПОШАГОВЫЙ МАСТЕР ЗАПУСКА (NEOBANK СТИЛЬ) -->
-        <div id="budget-wizard" class="hidden space-y-2.5 max-w-md mx-auto">
-          <!-- Компактная шапка прогресса с сегментным трекером -->
-          <div
-            class="bg-[#181B24] border border-[rgba(255,255,255,0.06)] rounded-2xl px-3.5 py-3 shadow-sm"
-          >
-            <div class="flex items-center justify-between mb-2">
-              <h2 id="wizard-step-title" class="text-sm font-bold text-white tracking-tight">
-                Создайте цель накопления
-              </h2>
-              <span
-                id="wizard-step-badge"
-                class="text-[11px] font-semibold text-[#9DA5FF] bg-[#6C5DD3]/20 px-2 py-0.5 rounded-full border border-[#6C5DD3]/30"
-                >Шаг 1 из 5</span
-              >
-            </div>
-            <!-- 5-сегментный прогресс-бар -->
-            <div class="grid grid-cols-5 gap-1.5 h-1">
-              <div
-                id="wiz-progress-1"
-                class="h-full rounded-full bg-[#6C5DD3] transition-colors duration-300"
-              ></div>
-              <div
-                id="wiz-progress-2"
-                class="h-full rounded-full bg-[rgba(255,255,255,0.08)] transition-colors duration-300"
-              ></div>
-              <div
-                id="wiz-progress-3"
-                class="h-full rounded-full bg-[rgba(255,255,255,0.08)] transition-colors duration-300"
-              ></div>
-              <div
-                id="wiz-progress-4"
-                class="h-full rounded-full bg-[rgba(255,255,255,0.08)] transition-colors duration-300"
-              ></div>
-              <div
-                id="wiz-progress-5"
-                class="h-full rounded-full bg-[rgba(255,255,255,0.08)] transition-colors duration-300"
-              ></div>
-            </div>
-          </div>
-
-          <!-- ШАГ 1: Первая цель (Интерактивная карточка с выбором иконки и быстрым слайдером) -->
-          <div
-            id="wizard-step-1"
-            class="hidden wiz-step-card bg-[#181B24] border border-[rgba(255,255,255,0.06)] rounded-3xl p-4 shadow-md animate-fade-in"
-          >
-            <div class="wiz-step-content">
-              <!-- Блок выбора иконки и названия в одну строку -->
-              <div class="flex items-end gap-2.5">
-                <div class="relative flex-shrink-0">
-                  <button
-                    type="button"
-                    onclick="openWizardIconPicker()"
-                    id="wiz-goal-icon-btn"
-                    class="w-14 h-14 rounded-2xl bg-[#212430] hover:bg-[#2A2D3C] border border-dashed border-[#727cff]/40 hover:border-[#727cff] flex items-center justify-center transition-all cursor-pointer shadow-inner active:scale-95 group"
-                    title="Нажмите, чтобы выбрать иконку цели"
-                  >
-                    <span
-                      id="wiz-goal-icon-display"
-                      class="text-gray-400 group-hover:text-[#727cff] flex items-center justify-center transition-colors"
-                    >
-                      <i data-lucide="image-plus" class="w-6 h-6"></i>
-                    </span>
-                  </button>
-                </div>
-                <div class="flex-1 min-w-0">
-                  <label
-                    class="block text-[10px] text-[#848D99] uppercase font-bold tracking-wider mb-1"
-                    >На что копим?</label
-                  >
-                  <input
-                    type="text"
-                    id="wiz-goal-name"
-                    value=""
-                    placeholder="Отпуск, авто, подушка безопасности..."
-                    class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] text-white text-xs font-semibold rounded-xl px-3 py-2.5 outline-none focus:border-[#6C5DD3] transition-colors"
-                  />
-                </div>
-              </div>
-
-              <!-- Поп-ап выбора векторных иконок Lucide (скрыт по умолчанию) -->
-              <div
-                id="wiz-icon-picker"
-                class="hidden p-3 bg-[#12151C] rounded-2xl border border-[rgba(255,255,255,0.08)] space-y-2 animate-fade-in shadow-xl"
-              >
-                <div
-                  class="flex items-center justify-between pb-1.5 border-b border-[rgba(255,255,255,0.04)]"
-                >
-                  <span class="text-[11px] font-semibold text-gray-300">Выберите иконку цели:</span>
-                  <button
-                    type="button"
-                    onclick="openWizardIconPicker()"
-                    class="w-5 h-5 rounded-md hover:bg-[#212430] text-gray-400 hover:text-white flex items-center justify-center text-xs cursor-pointer"
-                  >
-                    ✕
-                  </button>
-                </div>
-                <div
-                  id="wiz-icon-grid"
-                  class="grid grid-cols-6 gap-1.5 max-h-48 overflow-y-auto pr-2.5 custom-scrollbar"
-                >
-                  <!-- Иконки генерируются и поддерживаются через renderWizardIconGrid() в budget.js -->
-                </div>
-              </div>
-
-              <!-- Финансовые параметры цели -->
-              <div class="grid grid-cols-2 gap-2.5">
-                <div class="bg-[#12151C] p-3 rounded-2xl border border-[rgba(255,255,255,0.04)]">
-                  <label class="block text-[10px] text-[#848D99] uppercase font-bold mb-1"
-                    >Сумма цели</label
-                  >
-                  <input
-                    type="text"
-                    inputmode="decimal"
-                    oninput="
-                      formatSumInput(this);
-                      updateWizGoalSlider();
-                    "
-                    id="wiz-goal-target"
-                    value=""
-                    placeholder="0 ₽"
-                    class="w-full bg-transparent text-white font-mono font-bold text-sm outline-none"
-                  />
-                </div>
-                <div class="bg-[#12151C] p-3 rounded-2xl border border-[rgba(255,255,255,0.04)]">
-                  <label class="block text-[10px] text-[#848D99] uppercase font-bold mb-1"
-                    >Уже отложено</label
-                  >
-                  <input
-                    type="text"
-                    inputmode="decimal"
-                    oninput="
-                      formatSumInput(this);
-                      updateWizGoalSlider();
-                    "
-                    id="wiz-goal-saved"
-                    value=""
-                    placeholder="0 ₽"
-                    class="w-full bg-transparent text-[#30D158] font-mono font-bold text-sm outline-none"
-                  />
-                </div>
-              </div>
-
-              <!-- Визуальная шкала стартового прогресса -->
-              <div
-                class="bg-[#12151C] px-3 py-2.5 rounded-2xl border border-[rgba(255,255,255,0.04)] space-y-1.5"
-              >
-                <div class="flex justify-between items-center text-[10px]">
-                  <span class="text-[#848D99] font-medium">Стартовая готовность:</span>
-                  <span id="wiz-goal-pct-label" class="text-white font-mono font-bold">0%</span>
-                </div>
-                <div class="w-full bg-[rgba(255,255,255,0.06)] h-1.5 rounded-full overflow-hidden">
-                  <div
-                    id="wiz-goal-progress-bar"
-                    class="h-full bg-gradient-to-r from-[#6C5DD3] to-[#32ADE6] rounded-full transition-all duration-300"
-                    style="width: 0%"
-                  ></div>
-                </div>
-              </div>
-
-              <div
-                class="flex items-center justify-center gap-1.5 text-[10px] text-[#848D99]/80 pt-1"
-              >
-                <i data-lucide="info" class="w-3 h-3 text-[#727cff]/70 flex-shrink-0"></i>
-                <span>Все данные можно изменить в любой момент в настройках бюджета</span>
-              </div>
-
-              <div class="pt-2">
-                <button
-                  type="button"
-                  onclick="goToWizardStep(2)"
-                  class="w-full h-11 bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white rounded-2xl text-xs font-bold shadow-lg shadow-[#6C5DD3]/20 active:scale-95 transition-all cursor-pointer flex items-center justify-center"
-                >
-                  Продолжить: Доход →
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- ШАГ 2: Доход (Компактный дружелюбный импорт и ручной ввод) -->
-          <div
-            id="wizard-step-2"
-            class="hidden wiz-step-card bg-[#181B24] border border-[rgba(255,255,255,0.06)] rounded-3xl p-4 shadow-md animate-fade-in"
-          >
-            <div class="wiz-step-content">
-              <!-- Компактная подсказка и кнопка загрузки выписки -->
-              <div
-                class="bg-[#12151C] border border-[rgba(255,255,255,0.04)] rounded-2xl p-3 flex items-start gap-2.5"
-              >
-                <div
-                  class="w-8 h-8 rounded-xl bg-[#6C5DD3]/15 text-[#727cff] flex items-center justify-center flex-shrink-0 mt-0.5"
-                >
-                  <i data-lucide="sparkles" class="w-4 h-4"></i>
-                </div>
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center justify-between gap-2">
-                    <p class="text-xs font-semibold text-gray-200 truncate">
-                      Авторасчет по выписке
-                    </p>
-                    <button
-                      type="button"
-                      onclick="triggerPdfImportFromWizard()"
-                      class="bg-[#212430] hover:bg-[#2A2D3C] text-[#727cff] hover:text-white border border-[rgba(255,255,255,0.06)] px-2.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 flex-shrink-0 cursor-pointer transition-all active:scale-95 shadow-sm"
-                      title="Загрузить банковскую выписку"
-                    >
-                      <i data-lucide="file-up" class="w-3.5 h-3.5"></i>
-                      <span>Импорт PDF</span>
-                    </button>
-                  </div>
-                  <p class="text-[11px] text-[#848D99] mt-1 leading-relaxed">
-                    Загрузите PDF из банка или введите сумму среднемесячного дохода вручную.
-                  </p>
-                </div>
-              </div>
-
-              <!-- Блок расчетного дохода по выпискам -->
-              <div
-                id="wiz-income-stats-box"
-                class="bg-[#12151C] border border-[rgba(255,255,255,0.04)] rounded-2xl p-3 flex items-center justify-between gap-3"
-              >
-                <div class="min-w-0">
-                  <span class="text-[11px] text-[#848D99] block mb-0.5"
-                    >Рассчитано по выпискам:</span
-                  >
-                  <b id="wiz-calculated-income" class="text-[#30D158] font-mono font-bold text-base"
-                    >0 ₽/мес</b
-                  >
-                </div>
-                <button
-                  type="button"
-                  id="wiz-income-details-btn"
-                  onclick="openWizAvgDetailsModal('income')"
-                  class="bg-[#212430] hover:bg-[#2A2D3C] text-[#727cff] hover:text-white border border-[rgba(255,255,255,0.06)] px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer flex-shrink-0"
-                  title="Настроить расчет среднего дохода"
-                >
-                  <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5"></i>
-                  <span>Настроить</span>
-                </button>
-              </div>
-
-              <div class="bg-[#12151C] p-3 rounded-2xl border border-[rgba(255,255,255,0.04)]">
-                <div class="flex justify-between items-center mb-1">
-                  <label class="block text-[10px] text-[#848D99] uppercase font-bold"
-                    >Плановый доход в месяц</label
-                  >
-                  <button
-                    type="button"
-                    onclick="adoptCalculatedIncome()"
-                    class="text-[10px] text-[#727cff] hover:underline font-semibold cursor-pointer"
-                  >
-                    Вставить расчетный
-                  </button>
-                </div>
-                <input
-                  type="text"
-                  inputmode="decimal"
-                  oninput="formatSumInput(this)"
-                  id="wiz-income-input"
-                  value=""
-                  placeholder="0 ₽"
-                  class="w-full bg-transparent text-white font-mono font-bold text-base outline-none"
-                />
-              </div>
-
-              <div
-                class="flex items-center justify-center gap-1.5 text-[10px] text-[#848D99]/80 pt-1"
-              >
-                <i data-lucide="info" class="w-3 h-3 text-[#727cff]/70 flex-shrink-0"></i>
-                <span>Сумму дохода можно скорректировать в любое время</span>
-              </div>
-
-              <div class="pt-2">
-                <div class="flex gap-2">
-                  <button
-                    type="button"
-                    onclick="goToWizardStep(1)"
-                    class="w-1/3 h-11 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 rounded-2xl text-xs font-semibold cursor-pointer transition-colors flex items-center justify-center"
-                  >
-                    Назад
-                  </button>
-                  <button
-                    type="button"
-                    onclick="goToWizardStep(3)"
-                    class="w-2/3 h-11 bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white rounded-2xl text-xs font-bold shadow-lg shadow-[#6C5DD3]/20 active:scale-95 cursor-pointer transition-all flex items-center justify-center"
-                  >
-                    Продолжить: Счета →
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- ШАГ 3: Календарь счетов (Прямой клик + всплывающий тултип дня) -->
-          <div
-            id="wizard-step-3"
-            class="hidden wiz-step-card bg-[#181B24] border border-[rgba(255,255,255,0.06)] rounded-3xl p-4 shadow-md animate-fade-in relative"
-          >
-            <div class="wiz-step-content">
-              <!-- Сетка календаря 1..31 -->
-              <div
-                id="wiz-calendar-wrapper"
-                class="bg-[#12151C] p-3 rounded-2xl border border-[rgba(255,255,255,0.04)] relative"
-              >
-                <div
-                  class="grid grid-cols-7 gap-1 text-center text-[10px] text-[#848D99] font-bold mb-2 uppercase tracking-wider"
-                >
-                  <span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span
-                  ><span>Сб</span><span>Вс</span>
-                </div>
-                <div
-                  id="wiz-calendar-grid"
-                  class="grid grid-cols-7 gap-1 text-center text-xs font-mono"
-                ></div>
-
-                <!-- Всплывающий аккуратный тултип платежей дня прямо рядом с ячейкой -->
-                <div
-                  id="wiz-day-tooltip"
-                  class="hidden absolute z-40 w-[260px] sm:w-[280px] bg-[#1E222D]/95 backdrop-blur-md border border-[#6C5DD3]/35 p-3 rounded-2xl shadow-2xl space-y-2.5 transition-all duration-150"
-                >
-                  <div
-                    class="flex items-center justify-between pb-2 border-b border-[rgba(255,255,255,0.08)]"
-                  >
-                    <div class="flex items-center gap-1.5 min-w-0">
-                      <div
-                        id="wiz-tooltip-day-badge"
-                        class="w-6 h-6 rounded-lg bg-[#6C5DD3]/25 text-[#a594fd] font-bold text-xs flex items-center justify-center font-mono"
-                      >
-                        10
-                      </div>
-                      <span id="wiz-tooltip-title" class="text-xs font-bold text-white truncate"
-                        >Платежи</span
-                      >
-                    </div>
-                    <button
-                      type="button"
-                      onclick="closeWizDayTooltip()"
-                      class="w-6 h-6 rounded-full bg-[#2A2D3C] text-gray-400 hover:text-white flex items-center justify-center text-xs cursor-pointer"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                  <div
-                    id="wiz-tooltip-bills-list"
-                    class="space-y-1.5 max-h-44 overflow-y-auto pr-0.5"
-                  ></div>
-                  <button
-                    type="button"
-                    onclick="addAnotherBillFromTooltip()"
-                    class="w-full bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white py-2 rounded-xl text-xs font-semibold active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5"
-                  >
-                    <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-                    <span id="wiz-tooltip-add-label">Добавить платеж на этот день</span>
-                  </button>
-                </div>
-              </div>
-
-              <!-- Легенда чипов и общая сумма счетов -->
-              <div
-                class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-1 text-[11px] text-[#848D99]"
-              >
-                <div class="flex items-center gap-3">
-                  <span class="flex items-center gap-1.5 whitespace-nowrap">
-                    <span class="w-2 h-2 rounded-full bg-[#6C5DD3] flex-shrink-0"></span>
-                    <span>Ежемесячные платежи</span>
-                  </span>
-                </div>
-                <div class="flex items-center gap-1.5 whitespace-nowrap">
-                  <span class="text-gray-400">Сумма счетов:</span>
-                  <b id="wiz-bills-total-label" class="text-white font-mono font-bold">0 ₽</b>
-                </div>
-              </div>
-
-              <div
-                class="flex items-center justify-center gap-1.5 text-[10px] text-[#848D99]/80 pt-0.5"
-              >
-                <i data-lucide="info" class="w-3 h-3 text-[#727cff]/70 flex-shrink-0"></i>
-                <span>Счета и подписки можно добавлять и удалять в календаре в любое время</span>
-              </div>
-
-              <div class="pt-2">
-                <div class="flex gap-2">
-                  <button
-                    type="button"
-                    onclick="goToWizardStep(2)"
-                    class="w-1/3 h-11 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 rounded-2xl text-xs font-semibold cursor-pointer transition-colors flex items-center justify-center"
-                  >
-                    Назад
-                  </button>
-                  <button
-                    type="button"
-                    onclick="goToWizardStep(4)"
-                    class="w-2/3 h-11 bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white rounded-2xl text-xs font-bold shadow-lg shadow-[#6C5DD3]/20 active:scale-95 cursor-pointer transition-all flex items-center justify-center"
-                  >
-                    Продолжить: Лимиты →
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- ШАГ 4: Лимиты по категориям (Кликабельные чипсы вместо громоздких кнопок) -->
-          <div
-            id="wizard-step-4"
-            class="hidden wiz-step-card bg-[#181B24] border border-[rgba(255,255,255,0.06)] rounded-3xl p-4 shadow-md animate-fade-in"
-          >
-            <div class="wiz-step-content">
-              <!-- Компактная подсказка по лимитам категорий с кнопкой импорта PDF -->
-              <div
-                class="bg-[#12151C] border border-[rgba(255,255,255,0.04)] rounded-2xl p-3 flex items-start gap-2.5"
-              >
-                <div
-                  class="w-8 h-8 rounded-xl bg-[#6C5DD3]/15 text-[#727cff] flex items-center justify-center flex-shrink-0 mt-0.5"
-                >
-                  <i data-lucide="shield-check" class="w-4 h-4"></i>
-                </div>
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center justify-between gap-2">
-                    <p class="text-xs font-semibold text-gray-200">Лимиты расходов</p>
-                    <button
-                      type="button"
-                      onclick="triggerPdfImportFromWizard()"
-                      class="bg-[#212430] hover:bg-[#2A2D3C] text-[#727cff] hover:text-white border border-[rgba(255,255,255,0.06)] px-2.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 flex-shrink-0 cursor-pointer transition-all active:scale-95 shadow-sm"
-                      title="Рассчитать средние траты по банковской выписке"
-                    >
-                      <i data-lucide="file-up" class="w-3.5 h-3.5"></i>
-                      <span>Импорт PDF</span>
-                    </button>
-                  </div>
-                  <p class="text-[11px] text-[#848D99] mt-1 leading-relaxed">
-                    Лимиты задают комфортные рамки для регулярных расходов (продукты, кафе,
-                    покупки). На их основе формируется ваш бюджет на неделю и на месяц.
-                  </p>
-                </div>
-              </div>
-
-              <!-- Сводный бейдж -->
-              <div
-                class="bg-gradient-to-r from-[#12151C] to-[#1E2330] border border-[rgba(255,255,255,0.06)] rounded-2xl p-3 flex items-center justify-between"
-              >
-                <div>
-                  <span class="text-[10px] text-[#848D99] uppercase font-bold tracking-wider block"
-                    >Итого на повседневную жизнь</span
-                  >
-                  <p class="text-[10px] text-[#848D99] mt-0.5">
-                    В неделю:
-                    <span id="wiz-live-weekly-estimate" class="text-gray-300 font-mono font-bold"
-                      >~0 ₽</span
-                    >
-                  </p>
-                </div>
-                <b id="wiz-limits-live-total" class="text-base font-bold text-white font-mono"
-                  >0 ₽/мес</b
-                >
-              </div>
-
-              <div class="flex items-center justify-between px-1">
-                <span class="text-[10px] text-[#848D99] uppercase font-bold tracking-wider"
-                  >Категории трат</span
-                >
-                <button
-                  type="button"
-                  onclick="openAddCategoryLimitPicker()"
-                  class="w-6 h-6 rounded-lg bg-[#212430] hover:bg-[#2A2D3C] text-[#8C7DFF] font-bold text-sm flex items-center justify-center cursor-pointer transition-colors active:scale-95"
-                  title="Добавить категорию"
-                >
-                  <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-                </button>
-              </div>
-
-              <!-- Список категорий с микрочипсами под инпутами -->
-              <div
-                id="wiz-category-limits-editor"
-                class="space-y-1.5 max-h-[380px] overflow-y-auto overflow-x-hidden pr-1 custom-scrollbar"
-              ></div>
-
-              <div
-                class="flex items-center justify-center gap-1.5 text-[10px] text-[#848D99]/80 pt-0.5"
-              >
-                <i data-lucide="info" class="w-3 h-3 text-[#8C7DFF]/70 flex-shrink-0"></i>
-                <span>Лимиты можно гибко менять или отключать в процессе месяца</span>
-              </div>
-
-              <div class="pt-2">
-                <div class="flex gap-2">
-                  <button
-                    type="button"
-                    onclick="goToWizardStep(3)"
-                    class="w-1/3 h-11 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 rounded-2xl text-xs font-semibold cursor-pointer transition-colors flex items-center justify-center"
-                  >
-                    Назад
-                  </button>
-                  <button
-                    type="button"
-                    onclick="goToWizardStep(5)"
-                    class="w-2/3 h-11 bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white rounded-2xl text-xs font-bold shadow-lg shadow-[#6C5DD3]/20 active:scale-95 cursor-pointer transition-all flex items-center justify-center"
-                  >
-                    Итог плана →
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- ШАГ 5: Финансовая квитанция и финальный запуск -->
-          <div
-            id="wizard-step-5"
-            class="hidden wiz-step-card bg-[#181B24] border border-[rgba(255,255,255,0.06)] rounded-3xl p-4 shadow-md animate-fade-in"
-          >
-            <div class="wiz-step-content">
-              <!-- Премиальный чек-расчет распределения бюджета -->
-              <div
-                class="bg-[#12151C] border border-[rgba(255,255,255,0.06)] rounded-2xl p-3.5 space-y-2.5"
-              >
-                <div
-                  class="flex justify-between items-center pb-2 border-b border-[rgba(255,255,255,0.04)]"
-                >
-                  <span class="text-xs text-[#848D99]">1. Плановый доход</span>
-                  <b id="wiz-sum-income" class="text-sm font-mono font-bold text-[#30D158]">0 ₽</b>
-                </div>
-
-                <div class="flex justify-between items-center text-xs">
-                  <span class="text-[#848D99] flex items-center gap-1.5">
-                    <span class="w-1.5 h-1.5 rounded-full bg-[#FF453A]"></span> Обязательные счета
-                  </span>
-                  <b id="wiz-sum-bills" class="font-mono text-gray-200">-0 ₽</b>
-                </div>
-
-                <div class="flex justify-between items-center text-xs">
-                  <span class="text-[#848D99] flex items-center gap-1.5">
-                    <span class="w-1.5 h-1.5 rounded-full bg-[#FF9F0A]"></span> Лимиты на жизнь
-                  </span>
-                  <b id="wiz-sum-limits" class="font-mono text-gray-200">-0 ₽</b>
-                </div>
-
-                <div
-                  class="pt-2 border-t border-dashed border-[rgba(255,255,255,0.1)] flex justify-between items-center"
-                >
-                  <span class="text-xs font-bold text-white">Чистый остаток в цель:</span>
-                  <b id="wiz-sum-surplus" class="text-base font-mono font-bold text-[#727cff]"
-                    >0 ₽/мес</b
-                  >
-                </div>
-              </div>
-
-              <!-- Срок и свободный лимит недели -->
-              <div class="grid grid-cols-2 gap-2">
-                <div class="bg-[#12151C] p-2.5 rounded-2xl border border-[rgba(255,255,255,0.04)]">
-                  <span class="text-[10px] text-[#848D99] block font-medium"
-                    >Недельный остаток</span
-                  >
-                  <b id="wiz-sum-week" class="text-white font-mono font-bold text-sm mt-0.5 block"
-                    >0 ₽</b
-                  >
-                </div>
-                <div class="bg-[#12151C] p-2.5 rounded-2xl border border-[rgba(255,255,255,0.04)]">
-                  <span class="text-[10px] text-[#848D99] block font-medium">Срок цели</span>
-                  <b
-                    id="wiz-sum-timeline"
-                    class="text-[#32ADE6] font-mono font-bold text-sm mt-0.5 block"
-                    >—</b
-                  >
-                </div>
-              </div>
-
-              <div
-                class="flex items-center justify-center gap-1.5 text-[10px] text-[#848D99]/80 pt-1"
-              >
-                <i data-lucide="check-circle" class="w-3 h-3 text-[#30D158] flex-shrink-0"></i>
-                <span>Готово! План сформирован, его можно перенастроить в любой день</span>
-              </div>
-
-              <div class="pt-2">
-                <div class="flex gap-2">
-                  <button
-                    type="button"
-                    onclick="goToWizardStep(4)"
-                    class="w-1/3 h-11 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 rounded-2xl text-xs font-semibold cursor-pointer transition-colors flex items-center justify-center"
-                  >
-                    Назад
-                  </button>
-                  <button
-                    type="button"
-                    onclick="finishBudgetOnboarding()"
-                    class="w-2/3 h-11 bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white rounded-2xl text-xs font-bold shadow-lg shadow-[#6C5DD3]/25 border border-[rgba(255,255,255,0.08)] transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
-                  >
-                    <i data-lucide="zap" class="w-4 h-4 fill-current"></i>
-                    <span>Запустить бюджет</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- СОСТОЯНИЕ 2: ПОЛНОЦЕННЫЙ РАБОЧИЙ ДАШБОРД (КОГДА БЮДЖЕТ НАСТРОЕН) -->
-        <div id="budget-dashboard" class="hidden space-y-4">
+        <!-- ДАШБОРД БЮДЖЕТА -->
+        <div id="budget-dashboard" class="space-y-4">
           <!-- Шапка экрана с переключением месяцев -->
           <div class="flex items-center justify-between px-1">
             <div>
@@ -1468,141 +872,136 @@
             </button>
           </div>
 
-          <!-- 1. Карточка «Недельный пульс» с круговым прогресс-баром и истинной шкалой месяца -->
+          <!-- 1. Сводная карточка финансового результата месяца -->
           <div
-            class="bg-[#181B24] border border-[rgba(255,255,255,0.06)] rounded-3xl p-5 shadow-sm relative overflow-hidden"
+            class="bg-gradient-to-br from-[#181B24] to-[#151722] border border-[rgba(255,255,255,0.06)] rounded-3xl p-5 shadow-sm relative overflow-hidden"
           >
-            <div class="flex items-center justify-between gap-3">
-              <!-- Левая колонка: Текстовые метрики недели выровнены строго по левому краю -->
-              <div class="flex-1 text-left min-w-0">
-                <span
-                  class="text-[11px] text-[#848D99] uppercase tracking-wider font-bold block mb-1"
-                  >Свободно на эту неделю</span
-                >
-                <p
-                  id="budget-week-available"
-                  class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight"
-                >
-                  0 ₽
-                </p>
-
-                <div class="mt-2.5 flex items-center gap-1.5 text-xs">
-                  <span class="text-gray-400">Траты:</span>
-                  <span id="budget-week-spent-text" class="font-mono font-bold text-gray-200"
-                    >0 ₽</span
-                  >
-                  <span class="text-[#848D99]">из</span>
-                  <span id="budget-week-limit-text" class="font-mono text-gray-400">0 ₽</span>
-                </div>
-              </div>
-
-              <!-- Правая колонка: Круговой прогресс-бар недели на одной строке справа -->
-              <div
-                class="relative w-24 h-24 sm:w-28 sm:h-28 flex-shrink-0 flex items-center justify-center"
+            <div class="flex items-center justify-between mb-1.5">
+              <span
+                id="budget-month-delta-label"
+                class="text-[11px] text-[#848D99] uppercase tracking-wider font-bold"
+                >Свободный остаток месяца</span
               >
-                <svg class="w-24 h-24 sm:w-28 sm:h-28 transform -rotate-90" viewBox="0 0 100 100">
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="38"
-                    stroke="rgba(255,255,255,0.06)"
-                    stroke-width="7"
-                    fill="transparent"
-                  />
-                  <circle
-                    id="budget-week-circle-bar"
-                    cx="50"
-                    cy="50"
-                    r="38"
-                    stroke="#30D158"
-                    stroke-width="7"
-                    stroke-dasharray="238.76"
-                    stroke-dashoffset="238.76"
-                    stroke-linecap="round"
-                    fill="transparent"
-                    class="transition-all duration-500"
-                  />
-                </svg>
-                <div
-                  class="absolute inset-0 flex items-center justify-center text-center select-none"
-                >
-                  <span
-                    id="budget-week-circle-pct"
-                    class="text-xl sm:text-2xl font-black text-white font-mono leading-none"
-                    >0%</span
-                  >
-                </div>
-              </div>
+              <span
+                id="budget-month-status-pill"
+                class="text-[10px] font-semibold px-2.5 py-0.5 rounded-full border bg-emerald-500/10 text-emerald-400 border-emerald-500/25"
+                >Профицит</span
+              >
             </div>
 
-            <!-- Месячный прогресс -->
-            <div class="mt-5 pt-4 border-t border-[rgba(255,255,255,0.06)]">
-              <div class="flex items-center justify-between text-xs mb-2">
-                <span class="text-gray-400 font-medium">Траты за месяц</span>
-                <span id="budget-month-stat" class="font-mono text-gray-200">0 из 0 ₽</span>
+            <p
+              id="budget-month-delta-val"
+              class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight"
+            >
+              0 ₽
+            </p>
+
+            <div
+              class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mt-4 pt-3.5 border-t border-[rgba(255,255,255,0.06)] text-xs"
+            >
+              <div class="p-2.5 bg-[#12151C] rounded-2xl border border-[rgba(255,255,255,0.03)]">
+                <div
+                  class="flex items-center justify-between text-[#848D99] text-[10px] uppercase font-bold mb-0.5"
+                >
+                  <span>Доходы</span>
+                  <i data-lucide="arrow-down-left" class="w-3.5 h-3.5 text-emerald-400"></i>
+                </div>
+                <span
+                  id="budget-month-income-val"
+                  class="font-mono font-bold text-emerald-400 text-sm truncate block"
+                  >+0 ₽</span
+                >
               </div>
 
-              <!-- Истинная непрерывная шкала трат за месяц -->
+              <div class="p-2.5 bg-[#12151C] rounded-2xl border border-[rgba(255,255,255,0.03)]">
+                <div
+                  class="flex items-center justify-between text-[#848D99] text-[10px] uppercase font-bold mb-0.5"
+                >
+                  <span>Расходы</span>
+                  <i data-lucide="arrow-up-right" class="w-3.5 h-3.5 text-rose-400"></i>
+                </div>
+                <span
+                  id="budget-month-expense-val"
+                  class="font-mono font-bold text-rose-400 text-sm truncate block"
+                  >-0 ₽</span
+                >
+              </div>
+
               <div
-                class="h-2.5 rounded-full bg-[#12151C] overflow-hidden border border-[rgba(255,255,255,0.06)] relative p-0.5"
+                class="col-span-2 sm:col-span-1 p-2.5 bg-[#12151C] rounded-2xl border border-[rgba(255,255,255,0.03)]"
               >
                 <div
-                  id="budget-month-bar"
-                  class="h-full bg-[#30D158] rounded-full transition-all duration-500 ease-out shadow-sm"
-                  style="width: 0%"
-                ></div>
-              </div>
-
-              <!-- Процент заполнения и кнопка закрытия месяца на одной строке под шкалой -->
-              <div class="flex items-center justify-between mt-2 min-h-[26px]">
-                <div id="budget-close-month-container" class="hidden">
-                  <button
-                    type="button"
-                    id="budget-close-month-btn"
-                    onclick="openCloseMonthFlow()"
-                    class="py-1 px-2.5 rounded-lg bg-gradient-to-r from-[#6C5DD3] to-[#8C7DFF] hover:from-[#5e4fc9] hover:to-[#7b6ceb] text-white font-bold text-[11px] shadow-sm border border-[rgba(255,255,255,0.1)] flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
-                  >
-                    <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-300"></i>
-                    <span id="budget-close-month-btn-text">Закрыть месяц</span>
-                  </button>
+                  class="flex items-center justify-between text-[#848D99] text-[10px] uppercase font-bold mb-0.5"
+                >
+                  <span>Счетов в месяц</span>
+                  <i data-lucide="calendar" class="w-3.5 h-3.5 text-[#6C5DD3]"></i>
                 </div>
-                <div class="ml-auto">
-                  <span
-                    id="budget-month-pct"
-                    class="text-[11px] font-mono font-medium text-gray-400"
-                    >0%</span
-                  >
-                </div>
+                <span
+                  id="budget-month-bills-val"
+                  class="font-mono font-bold text-gray-200 text-sm truncate block"
+                  >0 ₽</span
+                >
               </div>
             </div>
           </div>
 
-          <!-- 2. Календарь платежей (компактная 3-колоночная сетка карточек) -->
+          <!-- Карточка финансового инсайта дня -->
+          <div
+            id="budget-insight-card"
+            class="hidden bg-[#181B24] border border-[rgba(255,255,255,0.06)] rounded-2xl p-3.5 shadow-sm relative transition-all"
+          >
+            <div class="flex items-start justify-between gap-3">
+              <div class="flex items-start gap-2.5 min-w-0 flex-1">
+                <div
+                  class="w-7 h-7 rounded-lg bg-[#6C5DD3]/15 text-[#8C7DFF] flex items-center justify-center flex-shrink-0 mt-0.5"
+                >
+                  <i data-lucide="sparkles" class="w-4 h-4"></i>
+                </div>
+                <div class="min-w-0 flex-1">
+                  <span
+                    class="text-[10px] text-[#848D99] uppercase font-bold tracking-wider block mb-0.5"
+                    >Совет дня</span
+                  >
+                  <p id="budget-insight-text" class="text-xs text-gray-200 leading-snug">
+                    Загрузка аналитики...
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onclick="dismissDailyInsight()"
+                class="w-6 h-6 rounded-lg bg-[#212430] hover:bg-[#2A2D3C] text-gray-400 hover:text-white flex items-center justify-center transition-all cursor-pointer flex-shrink-0 text-xs"
+                title="Скрыть совет на сегодня"
+              >
+                <i data-lucide="x" class="w-3 h-3"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- 2. Предстоящие платежи -->
           <div class="space-y-2.5">
             <div class="flex items-center justify-between px-1">
               <div>
                 <p class="text-[11px] text-[#848D99] uppercase tracking-wider font-bold">
-                  Календарь платежей
+                  Предстоящие платежи
                 </p>
                 <p id="budget-bills-total" class="text-xs text-gray-400 mt-0.5">
-                  Ежемесячные траты: 0 ₽
+                  Ближайшие 14 дней: 0 ₽
                 </p>
               </div>
               <button
                 type="button"
                 onclick="openBudgetCalendarModal()"
-                class="w-8 h-8 rounded-xl bg-[#181B24] hover:bg-[#212430] border border-[rgba(255,255,255,0.06)] text-gray-200 flex items-center justify-center transition-all cursor-pointer shadow-sm active:scale-95"
-                title="Календарь счетов"
+                class="px-3 py-1.5 rounded-xl bg-[#181B24] hover:bg-[#212430] border border-[rgba(255,255,255,0.06)] text-gray-200 flex items-center gap-1.5 transition-all cursor-pointer shadow-sm active:scale-95 text-xs font-semibold"
+                title="Открыть календарь счетов"
               >
-                <i data-lucide="plus" class="w-4 h-4 text-[#6C5DD3]"></i>
+                <i data-lucide="calendar" class="w-3.5 h-3.5 text-[#6C5DD3]"></i>
+                <span>Календарь</span>
               </button>
             </div>
 
-            <!-- Сетка компактных карточек счетов (по 3 в строке на мобильных) -->
-            <div
-              id="budget-calendar-list"
-              class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2"
-            ></div>
+            <!-- Список ближайших списаний -->
+            <div id="budget-calendar-list" class="space-y-2"></div>
           </div>
 
           <!-- 3. Цели накопления -->
@@ -1626,36 +1025,7 @@
               </button>
             </div>
 
-            <div id="budget-goals-list" class="space-y-3"></div>
-          </div>
-
-          <!-- 4. Лимиты категорий (только активные лимиты) -->
-          <div class="space-y-2.5 pb-6 relative z-10">
-            <div class="flex items-center justify-between px-1">
-              <div>
-                <p class="text-[11px] text-[#848D99] uppercase tracking-wider font-bold">
-                  Лимиты по категориям
-                </p>
-                <span class="text-[11px] text-[#848D99]">План на месяц</span>
-              </div>
-              <button
-                type="button"
-                onclick="openAddCategoryLimitPicker()"
-                class="w-8 h-8 rounded-xl bg-[#181B24] hover:bg-[#212430] border border-[rgba(255,255,255,0.06)] text-gray-200 flex items-center justify-center transition-all cursor-pointer shadow-sm active:scale-95"
-                title="Добавить лимит категории"
-              >
-                <i data-lucide="plus" class="w-4 h-4 text-[#6C5DD3]"></i>
-              </button>
-            </div>
-
-            <div
-              class="bg-[#181B24] border border-[rgba(255,255,255,0.06)] rounded-3xl p-3.5 shadow-sm"
-            >
-              <div
-                id="budget-category-limits-list"
-                class="divide-y divide-[rgba(255,255,255,0.03)]"
-              ></div>
-            </div>
+            <div id="budget-goals-list" class="space-y-3 pb-6"></div>
           </div>
         </div>
       </div>
@@ -1708,18 +1078,19 @@
 
         <!-- 3. КОНТЕНТ ВКЛАДКИ «СПИСОК» -->
         <div id="transactions-list-wrap" class="space-y-3">
-          <!-- Кнопки добавления операций и импорта выписки -->
+          <!-- Кнопки импорта выписки и ручного добавления операций -->
           <div id="tx-top-actions" class="flex gap-2">
+            <!-- Кнопка вызова окна импорта выписки (Главное действие) -->
             <button
-              onclick="
-                toggleForm('tx-form-container', 'tx-submit-btn', 'Сохранить', 'tx-form', 'tx')
-              "
-              class="flex-1 bg-[#6C5DD3]/15 text-[#8C7DFF] border border-[#6C5DD3]/30 font-semibold rounded-xl text-sm px-5 py-3 hover:bg-[#6C5DD3]/25 active:scale-[0.98] transition-all cursor-pointer shadow-sm"
+              type="button"
+              onclick="openPdfInfoModal()"
+              class="flex-1 bg-gradient-to-r from-[#6C5DD3] to-[#8C7DFF] hover:from-[#5e4fc9] hover:to-[#7b6ceb] text-white font-bold rounded-2xl text-xs sm:text-sm px-4 py-3 shadow-lg shadow-[#6C5DD3]/25 border border-[rgba(255,255,255,0.1)] flex items-center justify-center gap-2 transition-all active:scale-[0.98] cursor-pointer"
             >
-              + Добавить операции
+              <i data-lucide="file-up" class="w-4 h-4"></i>
+              <span>Импорт выписки (PDF)</span>
             </button>
 
-            <!-- Скрытый инпут для выбора PDF (поддержка множественного выбора файлов) -->
+            <!-- Скрытый инпут для выбора PDF -->
             <input
               type="file"
               id="pdf-file-input"
@@ -1729,14 +1100,17 @@
               onchange="handleStatementUpload(event)"
             />
 
-            <!-- Кнопка вызова окна импорта выписки -->
+            <!-- Кнопка добавления операций вручную -->
             <button
               type="button"
-              onclick="openPdfInfoModal()"
-              class="bg-[#181B24] hover:bg-[#212430] active:scale-95 border border-[rgba(255,255,255,0.06)] text-gray-300 hover:text-white px-4 rounded-xl flex items-center justify-center transition-all cursor-pointer shadow-sm"
-              title="Импорт выписок PDF (можно выбрать несколько файлов)"
+              onclick="
+                toggleForm('tx-form-container', 'tx-submit-btn', 'Сохранить', 'tx-form', 'tx')
+              "
+              class="bg-[#181B24] hover:bg-[#212430] active:scale-[0.98] border border-[rgba(255,255,255,0.06)] text-gray-200 px-3.5 py-3 rounded-2xl flex items-center justify-center gap-1.5 text-xs font-semibold transition-all cursor-pointer shadow-sm"
+              title="Добавить операцию вручную"
             >
-              <i data-lucide="file-up" class="w-5 h-5 text-[#848D99]"></i>
+              <i data-lucide="plus" class="w-4 h-4 text-[#727cff]"></i>
+              <span class="hidden sm:inline">Вручную</span>
             </button>
           </div>
 
@@ -2077,377 +1451,378 @@
         </div>
       </div>
 
-      <!-- ЭКРАН ВКЛАДОВ -->
-      <div id="deposits-tab" class="tab-pane hidden space-y-4">
-        <!-- Сводная панель вкладов: общая сумма и начисленные проценты в месяц -->
-        <div id="deposits-summary-panel" class="grid grid-cols-2 gap-3 mb-1">
-          <div
-            class="bg-[#181B24] p-4 rounded-2xl border border-[rgba(255,255,255,0.06)] shadow-sm"
-          >
-            <p class="text-[10px] text-[#848D99] uppercase font-bold tracking-wider mb-1 truncate">
-              Сумма на вкладах
-            </p>
-            <p id="deposits-total-amount" class="font-bold text-white text-lg truncate">0 ₽</p>
-          </div>
-          <div
-            class="bg-[#181B24] p-4 rounded-2xl border border-[rgba(255,255,255,0.06)] shadow-sm"
-          >
-            <p class="text-[10px] text-[#848D99] uppercase font-bold tracking-wider mb-1 truncate">
-              Доход в месяц
-            </p>
-            <p id="deposits-monthly-interest" class="font-bold text-[#30D158] text-lg truncate">
-              +0 ₽
-            </p>
-          </div>
-        </div>
-
-        <button
-          id="dep-open-top-btn"
-          onclick="
-            toggleForm(
-              'deposit-form-container',
-              'dep-submit-btn',
-              'Сохранить вклад',
-              'deposit-form',
-              'dep'
-            )
-          "
-          class="w-full bg-[#6C5DD3]/15 text-[#8C7DFF] border border-[#6C5DD3]/30 font-semibold rounded-xl text-sm px-5 py-3 hover:bg-[#6C5DD3]/25 active:scale-[0.98] transition-all cursor-pointer shadow-sm"
-        >
-          + Открыть вклад
-        </button>
+      <!-- ЭКРАН КАПИТАЛА (АКТИВЫ: ВКЛАДЫ И ИНВЕСТИЦИИ MOEX) -->
+      <div id="capital-tab" class="tab-pane hidden space-y-4">
+        <!-- Сводная карточка общего капитала -->
         <div
-          id="deposit-form-container"
-          class="hidden bg-[#181B24] p-5 rounded-2xl border border-[rgba(255,255,255,0.08)] shadow-xl animate-fade-in"
+          class="bg-gradient-to-br from-[#181B24] to-[#141620] p-5 rounded-3xl border border-[rgba(255,255,255,0.06)] shadow-sm relative overflow-hidden"
         >
-          <form id="deposit-form" onsubmit="submitDeposit(event)">
-            <input
-              type="text"
-              id="dep-name"
-              placeholder="Название вклада (например: Вклад 1)"
-              class="w-full bg-gray-700 border border-gray-600 text-white rounded-xl p-3 outline-none mb-3.5 text-xs"
-            />
-
-            <!-- Кастомный стильный выпадающий список цели вклада с подсказкой -->
-            <div class="mb-3.5">
-              <div class="flex items-center justify-between mb-1 px-0.5">
-                <label class="text-[10px] text-[#848D99] uppercase font-bold tracking-wider"
-                  >Привязка к финансовой цели</label
-                >
-              </div>
-              <p class="text-[11px] text-gray-400 mb-1.5 leading-tight">
-                Вклад и проценты по нему будут учитываться в прогрессе накопления цели.
-              </p>
-              <div class="relative custom-dropdown-wrap" id="wrap-dep-goal">
-                <input type="hidden" id="dep-goal" value="" />
-                <button
-                  type="button"
-                  id="dep-goal-btn"
-                  onclick="toggleDepositGoalMenu(event)"
-                  class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] text-white rounded-xl px-3.5 py-3 text-xs flex items-center justify-between outline-none cursor-pointer hover:border-gray-500 transition-colors"
-                >
-                  <span id="dep-goal-label" class="flex items-center gap-2 truncate text-gray-300">
-                    <i data-lucide="circle-dashed" class="w-4 h-4 text-[#848D99]"></i>
-                    <span class="truncate text-gray-400">Без привязки к цели</span>
-                  </span>
-                  <span class="text-gray-400 text-[9px] ml-1">▼</span>
-                </button>
-                <div
-                  id="dep-goal-menu"
-                  class="custom-dropdown-menu hidden absolute left-0 top-full mt-1.5 w-full max-h-56 overflow-y-auto bg-[#181B24] backdrop-blur-md border border-[rgba(255,255,255,0.08)] rounded-2xl shadow-2xl z-50 p-1 space-y-0.5"
-                ></div>
-              </div>
-            </div>
-
-            <div class="flex space-x-3 mb-3.5">
-              <input
-                type="text"
-                inputmode="decimal"
-                oninput="formatSumInput(this)"
-                id="dep-amount"
-                placeholder="Сумма (₽)"
-                required
-                class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] text-white rounded-xl p-3 outline-none flex-1 text-xs"
-              />
-              <input
-                type="text"
-                inputmode="decimal"
-                oninput="formatSumInput(this)"
-                id="dep-rate"
-                placeholder="Ставка %"
-                required
-                class="w-1/3 bg-[#12151C] border border-[rgba(255,255,255,0.08)] text-white rounded-xl p-3 outline-none text-xs"
-              />
-            </div>
-
-            <!-- Даты открытия и закрытия с явными подсказками и иконками -->
-            <div class="grid grid-cols-2 gap-3 mb-5">
-              <div>
-                <label class="block text-[10px] text-[#848D99] uppercase font-bold mb-1"
-                  >Дата открытия</label
-                >
-                <input
-                  type="text"
-                  id="dep-start"
-                  data-datepicker="true"
-                  readonly
-                  placeholder="ДД.ММ.ГГГГ"
-                  required
-                  class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] text-white placeholder-gray-500 rounded-xl p-3 outline-none text-xs cursor-pointer"
-                />
-              </div>
-              <div>
-                <label class="block text-[10px] text-[#848D99] uppercase font-bold mb-1"
-                  >Дата закрытия</label
-                >
-                <input
-                  type="text"
-                  id="dep-end"
-                  data-datepicker="true"
-                  readonly
-                  placeholder="ДД.ММ.ГГГГ"
-                  required
-                  class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] text-white placeholder-gray-500 rounded-xl p-3 outline-none text-xs cursor-pointer"
-                />
-              </div>
-            </div>
-
-            <!-- Кнопки действий: 42px с идеальным вертикальным центрированием надписей -->
-            <div class="flex gap-2 h-[42px]">
-              <button
-                type="button"
-                onclick="
-                  closeForm(
-                    'deposit-form-container',
-                    'dep-submit-btn',
-                    'Сохранить вклад',
-                    'deposit-form'
-                  )
-                "
-                class="w-1/3 h-full bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 font-semibold rounded-xl text-xs flex items-center justify-center cursor-pointer transition-colors active:scale-95 leading-none"
-              >
-                Отмена
-              </button>
-              <button
-                type="submit"
-                id="dep-submit-btn"
-                class="w-2/3 h-full bg-[#6C5DD3] hover:bg-[#5E4FC9] text-white font-semibold rounded-xl text-xs flex items-center justify-center cursor-pointer shadow-md shadow-[#6C5DD3]/25 transition-all active:scale-95 leading-none"
-              >
-                Сохранить
-              </button>
-            </div>
-          </form>
-        </div>
-        <div id="deposits-list" class="space-y-4 pb-6"></div>
-      </div>
-
-      <!-- ЭКРАН БРОКЕРА (Т-БАНК СТИЛЬ) -->
-      <div id="broker-tab" class="tab-pane hidden space-y-3.5">
-        <!-- Лаконичное пустое состояние -->
-        <div
-          id="broker-empty-state"
-          class="hidden card bg-[#181B24] rounded-3xl p-6 text-center flex flex-col items-center justify-center gap-3 border border-[rgba(255,255,255,0.06)] shadow-sm"
-        >
-          <div
-            class="w-12 h-12 rounded-2xl bg-[#6C5DD3]/15 text-[#8C7DFF] flex items-center justify-center"
-          >
-            <i data-lucide="trending-up" class="w-6 h-6"></i>
-          </div>
-          <div>
-            <h3 class="text-base font-bold text-white">Портфель пуст</h3>
-            <p class="text-xs text-[#848D99] mt-1">Добавьте акции, фонды или рубли</p>
-          </div>
-          <button
-            type="button"
-            onclick="openAddMoexAssetModal()"
-            class="py-2.5 px-5 rounded-2xl bg-[#6C5DD3] hover:bg-[#5b4ec2] active:scale-95 text-white text-xs font-semibold transition-all shadow-md flex items-center gap-1.5 cursor-pointer mt-1"
-          >
-            <i data-lucide="plus" class="w-4 h-4"></i>
-            <span>Добавить актив</span>
-          </button>
-        </div>
-
-        <!-- Главная карточка портфеля -->
-        <div
-          id="broker-main-card"
-          class="bg-[#181B24] p-5 rounded-3xl border border-[rgba(255,255,255,0.06)] shadow-sm relative"
-        >
-          <div class="flex items-center justify-between">
+          <div class="flex items-center justify-between mb-2">
             <span class="text-[11px] text-[#848D99] uppercase tracking-wider font-bold"
-              >Брокерский портфель</span
+              >Общий капитал семьи</span
             >
-            <div class="flex items-center gap-1.5">
-              <button
-                type="button"
-                id="btn-refresh-moex-quotes"
-                onclick="refreshMoexQuotes()"
-                class="p-2 rounded-xl bg-[#212430] hover:bg-[#2A2D3C] text-gray-400 hover:text-white transition-all cursor-pointer active:scale-95 border border-white/5"
-                title="Обновить котировки Мосбиржи"
-              >
-                <i data-lucide="refresh-cw" class="w-4 h-4 text-cyan-400"></i>
-              </button>
-              <button
-                type="button"
-                onclick="openAddMoexAssetModal()"
-                class="py-2 px-3.5 rounded-xl bg-[#6C5DD3] hover:bg-[#5b4ec2] active:scale-95 text-white text-xs font-semibold transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
-              >
-                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-                <span>Добавить</span>
-              </button>
-            </div>
+            <span
+              id="capital-trend-badge"
+              class="text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full flex items-center gap-1"
+            >
+              <i data-lucide="trending-up" class="w-3 h-3"></i>
+              <span id="capital-trend-text">Активы</span>
+            </span>
           </div>
-
-          <!-- Основной баланс портфеля -->
           <p
-            id="broker-balance"
-            class="text-3xl font-black font-mono text-white tracking-tight mt-1"
+            id="capital-total-amount"
+            class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight"
           >
             0 ₽
           </p>
-
-          <!-- Финтех-бейдж доходности / дневной динамики -->
-          <div class="flex items-center gap-2 mt-2 mb-4 flex-wrap">
-            <span
-              id="broker-yield-badge"
-              class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#30D158]/15 text-[#30D158]"
-            >
-              0% (0 ₽)
-            </span>
-            <span id="broker-sub-stats" class="text-xs text-[#848D99]">
-              Активы:
-              <span id="broker-assets-sum" class="text-gray-300 font-medium font-mono">0 ₽</span> •
-              Рубли:
-              <span id="broker-cash-sum" class="text-gray-300 font-medium font-mono">0 ₽</span>
-            </span>
-          </div>
-
-          <!-- Переключатель таймфреймов -->
           <div
-            class="flex items-center justify-between bg-[#12151C] p-1 rounded-xl border border-[rgba(255,255,255,0.04)] mb-2 text-xs font-medium text-[#848D99]"
+            class="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-[rgba(255,255,255,0.06)] text-xs"
           >
-            <button
-              type="button"
-              onclick="setBrokerTimeframe('1M')"
-              class="broker-tf-btn flex-1 py-1 text-center rounded-lg transition-all cursor-pointer"
-              data-tf="1M"
-            >
-              1М
-            </button>
-            <button
-              type="button"
-              onclick="setBrokerTimeframe('3M')"
-              class="broker-tf-btn flex-1 py-1 text-center rounded-lg transition-all cursor-pointer"
-              data-tf="3M"
-            >
-              3М
-            </button>
-            <button
-              type="button"
-              onclick="setBrokerTimeframe('6M')"
-              class="broker-tf-btn flex-1 py-1 text-center rounded-lg transition-all cursor-pointer"
-              data-tf="6M"
-            >
-              6М
-            </button>
-            <button
-              type="button"
-              onclick="setBrokerTimeframe('1Y')"
-              class="broker-tf-btn flex-1 py-1 text-center rounded-lg transition-all cursor-pointer"
-              data-tf="1Y"
-            >
-              1Г
-            </button>
-            <button
-              type="button"
-              onclick="setBrokerTimeframe('ALL')"
-              class="broker-tf-btn flex-1 py-1 text-center rounded-lg bg-[#212430] text-white transition-all cursor-pointer"
-              data-tf="ALL"
-            >
-              Всё
-            </button>
-          </div>
-
-          <!-- Холст графика -->
-          <div class="w-full h-44 relative">
-            <canvas id="brokerChart"></canvas>
+            <div>
+              <span class="text-[#848D99] block text-[10px] uppercase font-semibold">Вклады</span>
+              <span id="capital-summary-deposits" class="font-mono font-bold text-gray-200"
+                >0 ₽</span
+              >
+            </div>
+            <div>
+              <span class="text-[#848D99] block text-[10px] uppercase font-semibold"
+                >Инвестиции MOEX</span
+              >
+              <span id="capital-summary-broker" class="font-mono font-bold text-gray-200">0 ₽</span>
+            </div>
           </div>
         </div>
 
-        <!-- СЕКЦИЯ: СОСТАВ ПОРТФЕЛЯ (МОСКОВСКАЯ БИРЖА + РУБЛИ) -->
-        <div id="moex-portfolio-container" class="space-y-3 pb-6"></div>
-      </div>
-
-      <!-- ЭКРАН ЦЕЛЕЙ -->
-      <div id="goals-tab" class="hidden space-y-4 animate-fade-in">
-        <button
-          onclick="
-            toggleForm(
-              'goal-form-container',
-              'goal-submit-btn',
-              'Создать цель',
-              'goal-form',
-              'goal'
-            )
-          "
-          class="w-full bg-[#6C5DD3]/15 text-[#8C7DFF] border border-[#6C5DD3]/30 font-semibold rounded-xl text-sm px-5 py-3 hover:bg-[#6C5DD3]/25 active:scale-[0.98] transition-all cursor-pointer shadow-sm"
-        >
-          + Добавить цель
-        </button>
+        <!-- Переключатель секций (Вклады | Инвестиции MOEX) -->
         <div
-          id="goal-form-container"
-          class="hidden bg-[#181B24] p-5 rounded-2xl border border-[rgba(255,255,255,0.08)] shadow-xl animate-fade-in"
+          class="bg-[#161822] p-1 rounded-2xl border border-[rgba(255,255,255,0.06)] flex items-center gap-1 shadow-inner"
         >
-          <form id="goal-form" onsubmit="submitGoal(event)">
-            <input
-              type="text"
-              id="goal-name"
-              placeholder="На что копим?"
-              required
-              class="w-full bg-gray-700 border border-gray-600 text-white rounded-xl p-3 outline-none mb-3.5 text-xs"
-            />
-            <input
-              type="text"
-              inputmode="decimal"
-              oninput="formatSumInput(this)"
-              id="goal-target"
-              placeholder="Целевая сумма (₽)"
-              required
-              class="w-full bg-gray-700 border border-gray-600 text-white rounded-xl p-3 outline-none mb-3.5 text-xs"
-            />
-            <div class="mb-5">
-              <label class="block text-[10px] text-[#848D99] uppercase font-bold mb-1"
-                >Срок цели</label
+          <button
+            type="button"
+            id="cap-subtab-deposits"
+            onclick="switchCapitalSubtab('deposits')"
+            class="flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 bg-[#6C5DD3] text-white shadow-sm active:scale-95"
+          >
+            <i data-lucide="piggy-bank" class="w-3.5 h-3.5"></i>
+            <span>Вклады</span>
+          </button>
+          <button
+            type="button"
+            id="cap-subtab-broker"
+            onclick="switchCapitalSubtab('broker')"
+            class="flex-1 py-2 px-3 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 text-[#848D99] hover:text-white active:scale-95"
+          >
+            <i data-lucide="trending-up" class="w-3.5 h-3.5"></i>
+            <span>Инвестиции MOEX</span>
+          </button>
+        </div>
+
+        <!-- Подвкладка: Вклады -->
+        <div id="capital-deposits-view" class="space-y-4">
+          <!-- Сводная панель вкладов: общая сумма и начисленные проценты в месяц -->
+          <div id="deposits-summary-panel" class="grid grid-cols-2 gap-3 mb-1">
+            <div
+              class="bg-[#181B24] p-4 rounded-2xl border border-[rgba(255,255,255,0.06)] shadow-sm"
+            >
+              <p
+                class="text-[10px] text-[#848D99] uppercase font-bold tracking-wider mb-1 truncate"
               >
+                Сумма на вкладах
+              </p>
+              <p id="deposits-total-amount" class="font-bold text-white text-lg truncate">0 ₽</p>
+            </div>
+            <div
+              class="bg-[#181B24] p-4 rounded-2xl border border-[rgba(255,255,255,0.06)] shadow-sm"
+            >
+              <p
+                class="text-[10px] text-[#848D99] uppercase font-bold tracking-wider mb-1 truncate"
+              >
+                Доход в месяц
+              </p>
+              <p id="deposits-monthly-interest" class="font-bold text-[#30D158] text-lg truncate">
+                +0 ₽
+              </p>
+            </div>
+          </div>
+
+          <button
+            id="dep-open-top-btn"
+            onclick="
+              toggleForm(
+                'deposit-form-container',
+                'dep-submit-btn',
+                'Сохранить вклад',
+                'deposit-form',
+                'dep'
+              )
+            "
+            class="w-full bg-[#6C5DD3]/15 text-[#8C7DFF] border border-[#6C5DD3]/30 font-semibold rounded-xl text-sm px-5 py-3 hover:bg-[#6C5DD3]/25 active:scale-[0.98] transition-all cursor-pointer shadow-sm"
+          >
+            + Открыть вклад
+          </button>
+          <div
+            id="deposit-form-container"
+            class="hidden bg-[#181B24] p-5 rounded-2xl border border-[rgba(255,255,255,0.08)] shadow-xl animate-fade-in"
+          >
+            <form id="deposit-form" onsubmit="submitDeposit(event)">
               <input
                 type="text"
-                id="goal-deadline"
-                data-datepicker="true"
-                readonly
-                placeholder="Выберите дату"
-                class="w-full bg-gray-700 border border-gray-600 text-white placeholder-gray-400 rounded-xl p-3 outline-none text-xs cursor-pointer"
+                id="dep-name"
+                placeholder="Название вклада (например: Вклад 1)"
+                class="w-full bg-gray-700 border border-gray-600 text-white rounded-xl p-3 outline-none mb-3.5 text-xs"
               />
+
+              <!-- Кастомный стильный выпадающий список цели вклада с подсказкой -->
+              <div class="mb-3.5">
+                <div class="flex items-center justify-between mb-1 px-0.5">
+                  <label class="text-[10px] text-[#848D99] uppercase font-bold tracking-wider"
+                    >Привязка к финансовой цели</label
+                  >
+                </div>
+                <p class="text-[11px] text-gray-400 mb-1.5 leading-tight">
+                  Вклад и проценты по нему будут учитываться в прогрессе накопления цели.
+                </p>
+                <div class="relative custom-dropdown-wrap" id="wrap-dep-goal">
+                  <input type="hidden" id="dep-goal" value="" />
+                  <button
+                    type="button"
+                    id="dep-goal-btn"
+                    onclick="toggleDepositGoalMenu(event)"
+                    class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] text-white rounded-xl px-3.5 py-3 text-xs flex items-center justify-between outline-none cursor-pointer hover:border-gray-500 transition-colors"
+                  >
+                    <span
+                      id="dep-goal-label"
+                      class="flex items-center gap-2 truncate text-gray-300"
+                    >
+                      <i data-lucide="circle-dashed" class="w-4 h-4 text-[#848D99]"></i>
+                      <span class="truncate text-gray-400">Без привязки к цели</span>
+                    </span>
+                    <span class="text-gray-400 text-[9px] ml-1">▼</span>
+                  </button>
+                  <div
+                    id="dep-goal-menu"
+                    class="custom-dropdown-menu hidden absolute left-0 top-full mt-1.5 w-full max-h-56 overflow-y-auto bg-[#181B24] backdrop-blur-md border border-[rgba(255,255,255,0.08)] rounded-2xl shadow-2xl z-50 p-1 space-y-0.5"
+                  ></div>
+                </div>
+              </div>
+
+              <div class="flex space-x-3 mb-3.5">
+                <input
+                  type="text"
+                  inputmode="decimal"
+                  oninput="formatSumInput(this)"
+                  id="dep-amount"
+                  placeholder="Сумма (₽)"
+                  required
+                  class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] text-white rounded-xl p-3 outline-none flex-1 text-xs"
+                />
+                <input
+                  type="text"
+                  inputmode="decimal"
+                  oninput="formatSumInput(this)"
+                  id="dep-rate"
+                  placeholder="Ставка %"
+                  required
+                  class="w-1/3 bg-[#12151C] border border-[rgba(255,255,255,0.08)] text-white rounded-xl p-3 outline-none text-xs"
+                />
+              </div>
+
+              <!-- Даты открытия и закрытия с явными подсказками и иконками -->
+              <div class="grid grid-cols-2 gap-3 mb-5">
+                <div>
+                  <label class="block text-[10px] text-[#848D99] uppercase font-bold mb-1"
+                    >Дата открытия</label
+                  >
+                  <input
+                    type="text"
+                    id="dep-start"
+                    data-datepicker="true"
+                    readonly
+                    placeholder="ДД.ММ.ГГГГ"
+                    required
+                    class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] text-white placeholder-gray-500 rounded-xl p-3 outline-none text-xs cursor-pointer"
+                  />
+                </div>
+                <div>
+                  <label class="block text-[10px] text-[#848D99] uppercase font-bold mb-1"
+                    >Дата закрытия</label
+                  >
+                  <input
+                    type="text"
+                    id="dep-end"
+                    data-datepicker="true"
+                    readonly
+                    placeholder="ДД.ММ.ГГГГ"
+                    required
+                    class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] text-white placeholder-gray-500 rounded-xl p-3 outline-none text-xs cursor-pointer"
+                  />
+                </div>
+              </div>
+
+              <!-- Кнопки действий: 42px с идеальным вертикальным центрированием надписей -->
+              <div class="flex gap-2 h-[42px]">
+                <button
+                  type="button"
+                  onclick="
+                    closeForm(
+                      'deposit-form-container',
+                      'dep-submit-btn',
+                      'Сохранить вклад',
+                      'deposit-form'
+                    )
+                  "
+                  class="w-1/3 h-full bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 font-semibold rounded-xl text-xs flex items-center justify-center cursor-pointer transition-colors active:scale-95 leading-none"
+                >
+                  Отмена
+                </button>
+                <button
+                  type="submit"
+                  id="dep-submit-btn"
+                  class="w-2/3 h-full bg-[#6C5DD3] hover:bg-[#5E4FC9] text-white font-semibold rounded-xl text-xs flex items-center justify-center cursor-pointer shadow-md shadow-[#6C5DD3]/25 transition-all active:scale-95 leading-none"
+                >
+                  Сохранить
+                </button>
+              </div>
+            </form>
+          </div>
+          <div id="deposits-list" class="space-y-4 pb-6"></div>
+        </div>
+
+        <!-- Подвкладка: Брокер -->
+        <div id="capital-broker-view" class="hidden space-y-3.5">
+          <!-- Лаконичное пустое состояние -->
+          <div
+            id="broker-empty-state"
+            class="hidden card bg-[#181B24] rounded-3xl p-6 text-center flex flex-col items-center justify-center gap-3 border border-[rgba(255,255,255,0.06)] shadow-sm"
+          >
+            <div
+              class="w-12 h-12 rounded-2xl bg-[#6C5DD3]/15 text-[#8C7DFF] flex items-center justify-center"
+            >
+              <i data-lucide="trending-up" class="w-6 h-6"></i>
             </div>
-            <div class="flex gap-2 h-[42px]">
+            <div>
+              <h3 class="text-base font-bold text-white">Портфель пуст</h3>
+              <p class="text-xs text-[#848D99] mt-1">Добавьте акции, фонды или рубли</p>
+            </div>
+            <button
+              type="button"
+              onclick="openAddMoexAssetModal()"
+              class="py-2.5 px-5 rounded-2xl bg-[#6C5DD3] hover:bg-[#5b4ec2] active:scale-95 text-white text-xs font-semibold transition-all shadow-md flex items-center gap-1.5 cursor-pointer mt-1"
+            >
+              <i data-lucide="plus" class="w-4 h-4"></i>
+              <span>Добавить актив</span>
+            </button>
+          </div>
+
+          <!-- Главная карточка портфеля -->
+          <div
+            id="broker-main-card"
+            class="bg-[#181B24] p-5 rounded-3xl border border-[rgba(255,255,255,0.06)] shadow-sm relative"
+          >
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] text-[#848D99] uppercase tracking-wider font-bold"
+                >Брокерский портфель</span
+              >
+              <div class="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  id="btn-refresh-moex-quotes"
+                  onclick="refreshMoexQuotes()"
+                  class="p-2 rounded-xl bg-[#212430] hover:bg-[#2A2D3C] text-gray-400 hover:text-white transition-all cursor-pointer active:scale-95 border border-white/5"
+                  title="Обновить котировки Мосбиржи"
+                >
+                  <i data-lucide="refresh-cw" class="w-4 h-4 text-cyan-400"></i>
+                </button>
+                <button
+                  type="button"
+                  onclick="openAddMoexAssetModal()"
+                  class="py-2 px-3.5 rounded-xl bg-[#6C5DD3] hover:bg-[#5b4ec2] active:scale-95 text-white text-xs font-semibold transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
+                >
+                  <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                  <span>Добавить</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Основной баланс портфеля -->
+            <p
+              id="broker-balance"
+              class="text-3xl font-black font-mono text-white tracking-tight mt-1"
+            >
+              0 ₽
+            </p>
+
+            <!-- Финтех-бейдж доходности / дневной динамики -->
+            <div class="flex items-center gap-2 mt-2 mb-4 flex-wrap">
+              <span
+                id="broker-yield-badge"
+                class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#30D158]/15 text-[#30D158]"
+              >
+                0% (0 ₽)
+              </span>
+              <span id="broker-sub-stats" class="text-xs text-[#848D99]">
+                Активы:
+                <span id="broker-assets-sum" class="text-gray-300 font-medium font-mono">0 ₽</span>
+                • Рубли:
+                <span id="broker-cash-sum" class="text-gray-300 font-medium font-mono">0 ₽</span>
+              </span>
+            </div>
+
+            <!-- Переключатель таймфреймов -->
+            <div
+              class="flex items-center justify-between bg-[#12151C] p-1 rounded-xl border border-[rgba(255,255,255,0.04)] mb-2 text-xs font-medium text-[#848D99]"
+            >
               <button
                 type="button"
-                onclick="
-                  closeForm('goal-form-container', 'goal-submit-btn', 'Создать цель', 'goal-form')
-                "
-                class="w-1/3 h-full bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 font-semibold rounded-xl text-xs flex items-center justify-center cursor-pointer transition-colors active:scale-95 leading-none"
+                onclick="setBrokerTimeframe('1M')"
+                class="broker-tf-btn flex-1 py-1 text-center rounded-lg transition-all cursor-pointer"
+                data-tf="1M"
               >
-                Отмена
+                1М
               </button>
               <button
-                type="submit"
-                id="goal-submit-btn"
-                class="w-2/3 h-full bg-[#6C5DD3] hover:bg-[#5E4FC9] text-white font-semibold rounded-xl text-xs flex items-center justify-center cursor-pointer shadow-md shadow-[#6C5DD3]/25 transition-all active:scale-95 leading-none"
+                type="button"
+                onclick="setBrokerTimeframe('3M')"
+                class="broker-tf-btn flex-1 py-1 text-center rounded-lg transition-all cursor-pointer"
+                data-tf="3M"
               >
-                Сохранить
+                3М
+              </button>
+              <button
+                type="button"
+                onclick="setBrokerTimeframe('6M')"
+                class="broker-tf-btn flex-1 py-1 text-center rounded-lg transition-all cursor-pointer"
+                data-tf="6M"
+              >
+                6М
+              </button>
+              <button
+                type="button"
+                onclick="setBrokerTimeframe('1Y')"
+                class="broker-tf-btn flex-1 py-1 text-center rounded-lg transition-all cursor-pointer"
+                data-tf="1Y"
+              >
+                1Г
+              </button>
+              <button
+                type="button"
+                onclick="setBrokerTimeframe('ALL')"
+                class="broker-tf-btn flex-1 py-1 text-center rounded-lg bg-[#212430] text-white transition-all cursor-pointer"
+                data-tf="ALL"
+              >
+                Всё
               </button>
             </div>
-          </form>
+
+            <!-- Холст графика -->
+            <div class="w-full h-44 relative">
+              <canvas id="brokerChart"></canvas>
+            </div>
+          </div>
+
+          <!-- СЕКЦИЯ: СОСТАВ ПОРТФЕЛЯ (МОСКОВСКАЯ БИРЖА + РУБЛИ) -->
+          <div id="moex-portfolio-container" class="space-y-3 pb-6"></div>
         </div>
-        <div id="goals-list" class="space-y-4 pb-6"></div>
       </div>
     </main>
 
@@ -2455,7 +1830,7 @@
       id="bottom-nav-bar"
       class="fixed bottom-0 left-0 right-0 w-full bg-[#12141C]/95 backdrop-blur-xl border-t border-[rgba(255,255,255,0.08)] flex items-center justify-around px-2 pt-1 pb-safe z-40 shadow-[0_-8px_32px_rgba(0,0,0,0.6)]"
     >
-      <!-- Бюджет -->
+      <!-- Главная -->
       <button
         type="button"
         onclick="switchTab('budget')"
@@ -2466,20 +1841,20 @@
           class="nav-icon-wrap w-10 h-6 rounded-lg flex items-center justify-center transition-all duration-200 bg-[#6C5DD3]/15 text-[#727cff]"
         >
           <i
-            data-lucide="wallet"
+            data-lucide="layout-dashboard"
             class="w-[19px] h-[19px] stroke-[2.2px] transition-transform duration-200 scale-105"
           ></i>
         </div>
         <span
           class="nav-label text-[10px] font-bold tracking-tight transition-colors duration-200 text-white"
-          >Бюджет</span
+          >Главная</span
         >
         <div
           class="nav-indicator w-6 h-[2.5px] rounded-full bg-[#727cff] transition-all duration-200 opacity-100 scale-100 shadow-[0_0_8px_rgba(114,124,255,0.7)]"
         ></div>
       </button>
 
-      <!-- Траты -->
+      <!-- Аналитика -->
       <button
         type="button"
         onclick="switchTab('transactions')"
@@ -2490,65 +1865,41 @@
           class="nav-icon-wrap w-10 h-6 rounded-lg flex items-center justify-center transition-all duration-200 bg-transparent text-inherit"
         >
           <i
-            data-lucide="arrow-left-right"
+            data-lucide="bar-chart-3"
             class="w-[19px] h-[19px] stroke-[2px] transition-transform duration-200"
           ></i>
         </div>
         <span
           class="nav-label text-[10px] font-medium tracking-tight transition-colors duration-200 text-[#848D99]"
-          >Траты</span
+          >Аналитика</span
         >
         <div
           class="nav-indicator w-6 h-[2.5px] rounded-full bg-[#727cff] transition-all duration-200 opacity-0 scale-75 shadow-[0_0_8px_rgba(114,124,255,0.7)]"
         ></div>
       </button>
 
-      <!-- Вклады -->
+      <!-- Капитал -->
       <button
         type="button"
-        onclick="switchTab('deposits')"
-        id="nav-deposits"
+        onclick="switchTab('capital')"
+        id="nav-capital"
         class="nav-tab-btn flex-1 py-0.5 px-1 flex flex-col items-center justify-center gap-0.5 transition-all duration-200 cursor-pointer text-[#848D99] hover:text-gray-300 relative"
       >
         <div
           class="nav-icon-wrap w-10 h-6 rounded-lg flex items-center justify-center transition-all duration-200 bg-transparent text-inherit relative"
         >
           <i
-            data-lucide="piggy-bank"
+            data-lucide="landmark"
             class="w-[19px] h-[19px] stroke-[2px] transition-transform duration-200"
           ></i>
           <span
-            id="nav-deposits-badge"
+            id="nav-capital-badge"
             class="hidden absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-amber-400 ring-2 ring-[#12141C]"
           ></span>
         </div>
         <span
           class="nav-label text-[10px] font-medium tracking-tight transition-colors duration-200 text-[#848D99]"
-          >Вклады</span
-        >
-        <div
-          class="nav-indicator w-6 h-[2.5px] rounded-full bg-[#727cff] transition-all duration-200 opacity-0 scale-75 shadow-[0_0_8px_rgba(114,124,255,0.7)]"
-        ></div>
-      </button>
-
-      <!-- Брокер -->
-      <button
-        type="button"
-        onclick="switchTab('broker')"
-        id="nav-broker"
-        class="nav-tab-btn flex-1 py-0.5 px-1 flex flex-col items-center justify-center gap-0.5 transition-all duration-200 cursor-pointer text-[#848D99] hover:text-gray-300"
-      >
-        <div
-          class="nav-icon-wrap w-10 h-6 rounded-lg flex items-center justify-center transition-all duration-200 bg-transparent text-inherit"
-        >
-          <i
-            data-lucide="trending-up"
-            class="w-[19px] h-[19px] stroke-[2px] transition-transform duration-200"
-          ></i>
-        </div>
-        <span
-          class="nav-label text-[10px] font-medium tracking-tight transition-colors duration-200 text-[#848D99]"
-          >Брокер</span
+          >Капитал</span
         >
         <div
           class="nav-indicator w-6 h-[2.5px] rounded-full bg-[#727cff] transition-all duration-200 opacity-0 scale-75 shadow-[0_0_8px_rgba(114,124,255,0.7)]"
@@ -3255,41 +2606,6 @@
             >
               Сохранить
             </button>
-          </div>
-
-          <!-- Блок тестирования закрытия месяца -->
-          <div class="pt-3 border-t border-[rgba(255,255,255,0.06)]">
-            <button
-              type="button"
-              onclick="
-                closeBudgetPlanModal();
-                openCloseMonthFlow();
-              "
-              class="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-[#6C5DD3]/15 hover:bg-[#6C5DD3]/25 text-[#a594fd] border border-[#6C5DD3]/30 text-xs font-semibold transition-all cursor-pointer"
-            >
-              <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-400"></i>
-              <span>Протестировать закрытие месяца</span>
-            </button>
-            <p class="text-[10px] text-gray-500 text-center mt-1.5 leading-tight">
-              Позволяет досрочно проверить расчет итогов, пересчет лимитов и распределение профицита
-              в цели.
-            </p>
-          </div>
-
-          <!-- Кнопка сброса и перезапуска мастера первого запуска -->
-          <div class="pt-2.5 border-t border-[rgba(255,255,255,0.06)]">
-            <button
-              type="button"
-              onclick="resetBudgetPlanToWizard()"
-              class="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/20 text-xs font-semibold transition-all cursor-pointer"
-            >
-              <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
-              <span>Сбросить настройки</span>
-            </button>
-            <p class="text-[10px] text-gray-500 text-center mt-1.5 leading-tight">
-              Позволяет заново пройти шаги настройки бюджета. Ваши операции, счета и цели
-              сохранятся.
-            </p>
           </div>
         </form>
       </div>
@@ -5421,6 +4737,31 @@
                   >
                   <span class="text-[11px] text-[#848D99] leading-tight block mt-0.5"
                     >Круговые графики остатка недели и месяца</span
+                  >
+                </div>
+              </div>
+              <i data-lucide="chevron-right" class="w-4 h-4 sm:w-5 sm:h-5 text-gray-600"></i>
+            </button>
+
+            <!-- Обучение и знакомство с приложением -->
+            <button
+              type="button"
+              onclick="
+                closeProfileModal();
+                openOnboardingModal();
+              "
+              class="w-full flex items-center justify-between p-2.5 sm:p-3 hover:bg-[#212430] active:scale-[0.99] transition-all rounded-xl cursor-pointer"
+            >
+              <div class="flex items-center gap-3">
+                <div class="p-2 rounded-xl bg-[#6C5DD3]/15 text-[#8C7DFF]">
+                  <i data-lucide="help-circle" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+                </div>
+                <div class="text-left">
+                  <span class="text-[14px] sm:text-[15px] font-medium text-gray-200 block"
+                    >Обучение и знакомство</span
+                  >
+                  <span class="text-[11px] text-[#848D99] leading-tight block mt-0.5"
+                    >Как устроен семейный капитал</span
                   >
                 </div>
               </div>
@@ -7686,544 +7027,6 @@
       </div>
     </div>
 
-    <!-- МОДАЛЬНОЕ ОКНО: ИТОГИ ЗАКРЫТИЯ МЕСЯЦА (СВОДКА & НАГРАДА) -->
-    <div
-      id="month-close-summary-dialog"
-      class="fixed inset-0 bg-black/80 z-[175] hidden flex flex-col justify-center items-center p-3 sm:p-4 backdrop-blur-sm animate-fade-in"
-      onclick="if (event.target === this) closeMonthCloseSummaryModal();"
-    >
-      <div
-        class="bg-[#181B24] border border-[rgba(255,255,255,0.1)] w-full max-w-lg rounded-3xl p-4 sm:p-6 shadow-2xl flex flex-col max-h-[92vh] overflow-hidden"
-      >
-        <!-- Шапка с иконкой награды -->
-        <div
-          class="flex items-center justify-between pb-3 mb-3 border-b border-[rgba(255,255,255,0.06)] flex-shrink-0"
-        >
-          <div class="flex items-center gap-2.5">
-            <div
-              class="w-9 h-9 rounded-2xl bg-gradient-to-br from-amber-500/20 to-amber-600/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shadow-sm flex-shrink-0"
-            >
-              <i data-lucide="award" class="w-5 h-5"></i>
-            </div>
-            <div>
-              <h3 id="close-summary-title" class="font-bold text-white text-base leading-tight">
-                Итоги месяца
-              </h3>
-              <p id="close-summary-subtitle" class="text-[11px] text-[#848D99]">
-                Сводка выполнения финансового плана
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onclick="closeMonthCloseSummaryModal()"
-            class="text-gray-400 hover:text-white p-1 rounded-lg cursor-pointer"
-          >
-            <i data-lucide="x" class="w-5 h-5"></i>
-          </button>
-        </div>
-
-        <!-- Скроллируемый контент -->
-        <div class="flex-1 overflow-y-auto custom-scrollbar space-y-4 pr-0.5">
-          <!-- Главный баннер результата / накоплений -->
-          <div
-            id="close-summary-hero-card"
-            class="p-4 rounded-2xl border transition-all relative overflow-hidden"
-          >
-            <!-- Динамическое наполнение: Профицит / Экономия сверх плана / Дефицит -->
-          </div>
-
-          <!-- Сетка показателей: Доходы | Траты на жизнь | Счета -->
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-            <!-- Карточка Доходы -->
-            <div class="p-3 bg-[#12151C] border border-[rgba(255,255,255,0.04)] rounded-2xl">
-              <div
-                class="flex items-center justify-between text-[10px] text-[#848D99] uppercase font-bold mb-1"
-              >
-                <span>Доход</span>
-                <i
-                  id="close-sum-income-icon"
-                  data-lucide="arrow-down-left"
-                  class="w-3.5 h-3.5 text-emerald-400"
-                ></i>
-              </div>
-              <p id="close-sum-income-fact" class="text-base font-bold font-mono text-[#30D158]">
-                0 ₽
-              </p>
-              <div class="text-[10px] text-[#848D99] mt-1 flex items-center justify-between">
-                <span>План: <span id="close-sum-income-plan">0 ₽</span></span>
-                <span id="close-sum-income-diff" class="font-bold font-mono"></span>
-              </div>
-            </div>
-
-            <!-- Карточка Расходы на жизнь -->
-            <div class="p-3 bg-[#12151C] border border-[rgba(255,255,255,0.04)] rounded-2xl">
-              <div
-                class="flex items-center justify-between text-[10px] text-[#848D99] uppercase font-bold mb-1"
-              >
-                <span>Траты на жизнь</span>
-                <i data-lucide="shopping-bag" class="w-3.5 h-3.5 text-[#8C7DFF]"></i>
-              </div>
-              <p id="close-sum-expense-fact" class="text-base font-bold font-mono text-white">
-                0 ₽
-              </p>
-              <div class="text-[10px] text-[#848D99] mt-1 flex items-center justify-between">
-                <span>План: <span id="close-sum-expense-plan">0 ₽</span></span>
-                <span id="close-sum-expense-diff" class="font-bold font-mono"></span>
-              </div>
-            </div>
-
-            <!-- Карточка Обязательные счета -->
-            <div class="p-3 bg-[#12151C] border border-[rgba(255,255,255,0.04)] rounded-2xl">
-              <div
-                class="flex items-center justify-between text-[10px] text-[#848D99] uppercase font-bold mb-1"
-              >
-                <span>Счета & Платежи</span>
-                <i data-lucide="calendar" class="w-3.5 h-3.5 text-amber-400"></i>
-              </div>
-              <p id="close-sum-bills-fact" class="text-base font-bold font-mono text-white">0 ₽</p>
-              <div class="text-[10px] text-[#848D99] mt-1 flex items-center justify-between">
-                <span>Оплачено: <span id="close-sum-bills-count">0 шт</span></span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Блок достижений по категориям -->
-          <div class="space-y-2">
-            <div
-              class="flex items-center justify-between text-[11px] text-[#848D99] font-bold uppercase tracking-wider px-1"
-            >
-              <span>Статистика категорий</span>
-            </div>
-            <div id="close-sum-categories-list" class="space-y-1.5"></div>
-          </div>
-        </div>
-
-        <!-- Подвал с кнопками -->
-        <div
-          class="pt-3.5 mt-3 border-t border-[rgba(255,255,255,0.06)] flex items-center gap-2 flex-shrink-0"
-        >
-          <button
-            type="button"
-            onclick="closeMonthCloseSummaryModal()"
-            class="flex-1 py-2.5 rounded-xl bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 text-xs font-semibold transition-colors cursor-pointer"
-          >
-            Закрыть
-          </button>
-          <button
-            type="button"
-            id="close-summary-continue-btn"
-            onclick="proceedToMonthAdjustStep()"
-            class="flex-1 py-2.5 rounded-xl bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white text-xs font-bold shadow-lg shadow-[#6C5DD3]/25 border border-[rgba(255,255,255,0.08)] transition-all active:scale-95 cursor-pointer flex items-center justify-center"
-          >
-            <span>Далее</span>
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- МОДАЛЬНОЕ ОКНО: КОРРЕКТИРОВКА ЛИМИТОВ И ДОХОДА НА СЛЕДУЮЩИЙ МЕСЯЦ -->
-    <div
-      id="month-close-adjust-dialog"
-      class="fixed inset-0 bg-black/80 z-[180] hidden flex flex-col justify-center items-center p-3 sm:p-4 backdrop-blur-sm animate-fade-in"
-      onclick="if (event.target === this) closeMonthCloseAdjustModal();"
-    >
-      <div
-        class="bg-[#181B24] border border-[rgba(255,255,255,0.1)] w-full max-w-lg rounded-3xl p-4 sm:p-6 shadow-2xl flex flex-col max-h-[92vh] overflow-hidden"
-      >
-        <!-- Шапка -->
-        <div
-          class="flex items-center justify-between pb-3 mb-3 border-b border-[rgba(255,255,255,0.06)] flex-shrink-0"
-        >
-          <div class="flex items-center gap-2.5">
-            <div
-              class="w-9 h-9 rounded-2xl bg-[#6C5DD3]/20 border border-[#6C5DD3]/30 flex items-center justify-center text-[#727cff] shadow-sm flex-shrink-0"
-            >
-              <i data-lucide="sliders" class="w-5 h-5"></i>
-            </div>
-            <div>
-              <h3 id="close-adjust-title" class="font-bold text-white text-base leading-tight">
-                План на следующий месяц
-              </h3>
-              <p id="close-adjust-subtitle" class="text-[11px] text-[#848D99]">
-                Скорректируйте лимиты на основе средних значений
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onclick="closeMonthCloseAdjustModal()"
-            class="text-gray-400 hover:text-white p-1 rounded-lg cursor-pointer"
-          >
-            <i data-lucide="x" class="w-5 h-5"></i>
-          </button>
-        </div>
-
-        <!-- Скроллируемая форма -->
-        <div class="flex-1 overflow-y-auto custom-scrollbar space-y-4 pr-0.5">
-          <!-- Блок 1: Плановый доход (переоформлен в стилистику карточек категорий) -->
-          <div
-            class="py-2 px-3 rounded-2xl bg-[#12151C] border border-[rgba(255,255,255,0.04)] flex items-center justify-between gap-3"
-          >
-            <div
-              class="w-8 h-8 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center flex-shrink-0"
-            >
-              <i data-lucide="wallet" class="w-4 h-4"></i>
-            </div>
-
-            <div class="flex-1 min-w-0 pr-1">
-              <div class="flex items-center gap-1.5">
-                <span class="text-xs font-bold text-gray-200 truncate">Плановый доход</span>
-              </div>
-              <div
-                id="close-adjust-income-avg-chip-container"
-                class="flex items-center gap-1 mt-0.5"
-              >
-                <div
-                  onclick="applyAdjustAverageIncome()"
-                  class="w-[100px] h-6 justify-between text-[10px] py-0.5 px-2 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/20 rounded-lg whitespace-nowrap flex items-center cursor-pointer transition-all active:scale-95 flex-shrink-0"
-                  title="Нажмите, чтобы применить средний доход"
-                >
-                  <span id="close-adjust-avg-income-text" class="truncate">Ср: ~0 ₽</span>
-                  <i data-lucide="arrow-right" class="w-2.5 h-2.5 flex-shrink-0 ml-1"></i>
-                </div>
-                <button
-                  type="button"
-                  onclick="openWizAvgDetailsModal('income', 'Доход')"
-                  class="w-6 h-6 rounded-lg bg-[#1E2330] hover:bg-[#2A2D3C] text-emerald-400 border border-[rgba(255,255,255,0.06)] flex items-center justify-center flex-shrink-0 cursor-pointer transition-colors"
-                  title="Настройка транзакций дохода"
-                >
-                  <i data-lucide="sliders-horizontal" class="w-3 h-3"></i>
-                </button>
-              </div>
-            </div>
-
-            <div class="w-[96px] flex-shrink-0">
-              <input
-                type="text"
-                id="close-adjust-income-input"
-                inputmode="numeric"
-                oninput="
-                  formatSumInput(this);
-                  updateMonthCloseForecast();
-                "
-                placeholder="0 ₽"
-                class="w-full bg-[#181B24] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-emerald-400 text-xs font-bold font-mono rounded-xl p-2 outline-none text-right transition-colors"
-              />
-            </div>
-          </div>
-
-          <!-- Блок 2: Лимиты по категориям -->
-          <div class="space-y-2">
-            <div class="flex items-center justify-between px-1">
-              <div>
-                <span class="text-[11px] text-[#848D99] font-bold uppercase tracking-wider block"
-                  >Лимиты по категориям</span
-                >
-                <span
-                  id="close-adjust-total-limits-label"
-                  class="text-[10px] text-gray-400 font-mono"
-                  >Сумма: 0 ₽</span
-                >
-              </div>
-              <button
-                type="button"
-                onclick="applyAllAdjustAverageCategoryLimits()"
-                class="px-2.5 py-1.5 bg-[#6C5DD3]/15 hover:bg-[#6C5DD3]/25 text-[#727cff] border border-[#6C5DD3]/20 rounded-xl text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1 active:scale-95"
-              >
-                <i data-lucide="wand-2" class="w-3 h-3"></i>
-                <span>Применить все средние</span>
-              </button>
-            </div>
-
-            <!-- Список категорий со средними -->
-            <div id="close-adjust-categories-container" class="space-y-2"></div>
-
-            <!-- Кнопка добавления новой категории в план -->
-            <button
-              type="button"
-              onclick="openAddAdjustCategoryPicker()"
-              class="w-full py-2.5 rounded-xl border border-dashed border-[rgba(255,255,255,0.12)] hover:border-[#6C5DD3] hover:bg-[#6C5DD3]/10 text-xs text-[#6C5DD3] font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 mt-2"
-            >
-              <i data-lucide="plus" class="w-4 h-4"></i>
-              <span>Добавить категорию</span>
-            </button>
-          </div>
-
-          <!-- Блок 3: Прогноз сбережений -->
-          <div
-            class="p-3.5 bg-[#12151C] border border-[rgba(255,255,255,0.06)] rounded-2xl space-y-2.5"
-          >
-            <div
-              class="flex items-center justify-between border-b border-[rgba(255,255,255,0.04)] pb-2 gap-2"
-            >
-              <div class="flex items-center gap-2 min-w-0 flex-1">
-                <div
-                  class="w-6 h-6 rounded-lg bg-emerald-500/15 text-emerald-400 flex items-center justify-center flex-shrink-0"
-                >
-                  <i data-lucide="piggy-bank" class="w-3.5 h-3.5"></i>
-                </div>
-                <span class="text-[11px] font-bold text-gray-200 uppercase tracking-wider truncate"
-                  >Прогноз сбережений</span
-                >
-              </div>
-              <span
-                id="close-adjust-forecast-surplus"
-                class="text-xs sm:text-sm font-black font-mono text-emerald-400 whitespace-nowrap flex-shrink-0"
-                >+0 ₽/мес</span
-              >
-            </div>
-
-            <div class="grid grid-cols-3 gap-2 text-center">
-              <div class="bg-[#181B24] p-2 rounded-xl border border-[rgba(255,255,255,0.03)]">
-                <span class="text-[9px] text-[#848D99] uppercase font-bold block mb-0.5"
-                  >Доход</span
-                >
-                <span
-                  id="close-adjust-forecast-income"
-                  class="text-xs font-bold font-mono text-emerald-400"
-                  >0 ₽</span
-                >
-              </div>
-              <div class="bg-[#181B24] p-2 rounded-xl border border-[rgba(255,255,255,0.03)]">
-                <span class="text-[9px] text-[#848D99] uppercase font-bold block mb-0.5"
-                  >Лимиты</span
-                >
-                <span
-                  id="close-adjust-forecast-limits"
-                  class="text-xs font-bold font-mono text-gray-200"
-                  >0 ₽</span
-                >
-              </div>
-              <div class="bg-[#181B24] p-2 rounded-xl border border-[rgba(255,255,255,0.03)]">
-                <span class="text-[9px] text-[#848D99] uppercase font-bold block mb-0.5"
-                  >Счета</span
-                >
-                <span
-                  id="close-adjust-forecast-bills"
-                  class="text-xs font-bold font-mono text-gray-200"
-                  >0 ₽</span
-                >
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Подвал -->
-        <div
-          class="pt-3.5 mt-3 border-t border-[rgba(255,255,255,0.06)] flex items-center gap-2 flex-shrink-0"
-        >
-          <button
-            type="button"
-            onclick="backToMonthSummaryStep()"
-            class="flex-1 py-2.5 rounded-xl bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 text-xs font-semibold transition-colors cursor-pointer"
-          >
-            Назад к итогам
-          </button>
-          <button
-            type="button"
-            onclick="finalizeMonthClose()"
-            class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-[#6C5DD3] to-[#8C7DFF] hover:from-[#5e4fc9] hover:to-[#7b6ceb] text-white text-xs font-bold shadow-lg shadow-[#6C5DD3]/25 border border-[rgba(255,255,255,0.1)] transition-all active:scale-95 cursor-pointer flex items-center justify-center"
-          >
-            <span id="close-adjust-submit-btn-text">Принять и продолжить</span>
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- МОДАЛЬНОЕ ОКНО: ВЫБОР КАТЕГОРИИ ДЛЯ ДОБАВЛЕНИЯ В ПЛАН МЕСЯЦА -->
-    <div
-      id="month-adjust-category-picker-dialog"
-      class="fixed inset-0 bg-black/80 z-[190] hidden flex flex-col justify-center items-center p-3 sm:p-4 backdrop-blur-sm animate-fade-in"
-      onclick="if (event.target === this) closeAddAdjustCategoryPicker();"
-    >
-      <div
-        class="bg-[#181B24] border border-[rgba(255,255,255,0.1)] w-full max-w-sm rounded-3xl p-4 sm:p-5 shadow-2xl flex flex-col max-h-[85vh] overflow-hidden"
-      >
-        <div
-          class="flex items-center justify-between pb-3 mb-3 border-b border-[rgba(255,255,255,0.06)] flex-shrink-0"
-        >
-          <h3 class="font-bold text-white text-sm">Добавить категорию в план</h3>
-          <button
-            type="button"
-            onclick="closeAddAdjustCategoryPicker()"
-            class="text-gray-400 hover:text-white p-1 rounded-lg cursor-pointer"
-          >
-            <i data-lucide="x" class="w-4 h-4"></i>
-          </button>
-        </div>
-        <div
-          id="month-adjust-category-picker-list"
-          class="flex-1 overflow-y-auto custom-scrollbar space-y-1.5 pr-0.5"
-        ></div>
-      </div>
-    </div>
-
-    <!-- МОДАЛЬНОЕ ОКНО: ОПЛАТА ЕЖЕМЕСЯЧНОГО СЧЕТА И СВЯЗЫВАНИЕ С ОПЕРАЦИЕЙ -->
-    <div
-      id="bill-payment-match-dialog"
-      class="fixed inset-0 bg-black/80 z-[185] hidden flex flex-col justify-center items-center p-3 sm:p-4 backdrop-blur-sm animate-fade-in"
-      onclick="if (event.target === this) closeBillPaymentMatchModal();"
-    >
-      <div
-        class="bg-[#181B24] border border-[rgba(255,255,255,0.1)] w-full max-w-lg rounded-3xl p-4 sm:p-6 shadow-2xl flex flex-col max-h-[92vh] overflow-hidden"
-      >
-        <!-- Шапка -->
-        <div
-          class="flex items-center justify-between pb-3 mb-3 border-b border-[rgba(255,255,255,0.06)] flex-shrink-0"
-        >
-          <div class="flex items-center gap-2.5">
-            <div
-              class="w-9 h-9 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shadow-sm flex-shrink-0"
-            >
-              <i data-lucide="check-circle-2" class="w-5 h-5"></i>
-            </div>
-            <div>
-              <h3 id="bill-match-title" class="font-bold text-white text-base leading-tight">
-                Оплата ежемесячной траты
-              </h3>
-              <p id="bill-match-subtitle" class="text-[11px] text-[#848D99]">
-                Свяжите с операцией или создайте новую
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onclick="closeBillPaymentMatchModal()"
-            class="text-gray-400 hover:text-white p-1 rounded-lg cursor-pointer"
-          >
-            <i data-lucide="x" class="w-5 h-5"></i>
-          </button>
-        </div>
-
-        <!-- Скроллируемый контент -->
-        <div class="flex-1 overflow-y-auto custom-scrollbar space-y-4 pr-0.5">
-          <!-- Карточка информации о счете -->
-          <div
-            id="bill-match-info-card"
-            class="p-3.5 bg-[#12151C] border border-[rgba(255,255,255,0.04)] rounded-2xl flex items-center justify-between"
-          >
-            <div>
-              <span id="bill-match-name" class="font-bold text-white text-sm block"
-                >ЖКХ и квартира</span
-              >
-              <span id="bill-match-date-hint" class="text-[11px] text-[#848D99]">15 число</span>
-            </div>
-            <div class="text-right">
-              <span class="text-[10px] text-[#848D99] uppercase font-bold block"
-                >Сумма по плану</span
-              >
-              <span id="bill-match-amount" class="text-base font-black font-mono text-emerald-400"
-                >12 000 ₽</span
-              >
-            </div>
-          </div>
-
-          <!-- Кнопка быстрого создания операции -->
-          <div class="p-3 bg-[#6C5DD3]/10 border border-[#6C5DD3]/25 rounded-2xl">
-            <div class="flex items-center justify-between gap-2">
-              <div>
-                <span class="text-xs font-bold text-white block">Создать транзакцию оплаты</span>
-                <p class="text-[10px] text-gray-400 mt-0.5">
-                  Автоматически создаст расход и исключит его из лимитов на жизнь
-                </p>
-              </div>
-              <button
-                type="button"
-                id="bill-match-create-tx-btn"
-                onclick="createAndLinkBillTransaction()"
-                class="px-3 py-2 rounded-xl bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white text-xs font-bold transition-all active:scale-95 cursor-pointer flex items-center gap-1.5 flex-shrink-0 shadow-md"
-              >
-                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-                <span>Создать</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- Секция выбора из существующих операций -->
-          <div class="space-y-3">
-            <span class="text-[11px] text-[#848D99] font-bold uppercase tracking-wider block px-1">
-              Или выберите операцию месяца
-            </span>
-
-            <!-- Примерно подходящие по сумме -->
-            <div class="space-y-1.5">
-              <span class="text-[10px] text-emerald-400 font-semibold block px-1"
-                >Примерно подходящие по сумме:</span
-              >
-              <div id="bill-match-suggested-list" class="space-y-1.5"></div>
-            </div>
-
-            <!-- Другие операции -->
-            <div class="space-y-1.5 pt-2">
-              <span class="text-[10px] text-[#848D99] font-semibold block px-1"
-                >Другие операции месяца:</span
-              >
-              <div
-                id="bill-match-other-list"
-                class="space-y-1.5 max-h-40 overflow-y-auto custom-scrollbar"
-              ></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Подвал модалки -->
-        <div
-          class="pt-3.5 mt-3 border-t border-[rgba(255,255,255,0.06)] flex items-center gap-2 flex-shrink-0"
-        >
-          <button
-            type="button"
-            id="bill-match-unlink-btn"
-            onclick="unlinkCurrentBillPayment()"
-            class="hidden py-2.5 px-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/25 text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1"
-          >
-            <i data-lucide="x" class="w-3.5 h-3.5"></i>
-            <span>Снять оплату</span>
-          </button>
-          <button
-            type="button"
-            onclick="closeBillPaymentMatchModal()"
-            class="flex-1 py-2.5 rounded-xl bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 text-xs font-semibold transition-colors cursor-pointer"
-          >
-            Закрыть
-          </button>
-          <button
-            type="button"
-            id="bill-match-apply-btn"
-            onclick="applySelectedBillMatch()"
-            class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-[#6C5DD3] to-[#8C7DFF] hover:from-[#5e4fc9] hover:to-[#7b6ceb] text-white text-xs font-bold shadow-lg shadow-[#6C5DD3]/25 border border-[rgba(255,255,255,0.1)] transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
-          >
-            <i data-lucide="check" class="w-4 h-4"></i>
-            <span>Привязать</span>
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- АНИМАЦИОННЫЙ ОВЕРЛЕЙ ПЕРЕТЕКАНИЯ СРЕДСТВ В ЦЕЛИ -->
-    <div
-      id="goal-flow-animation-overlay"
-      class="fixed inset-0 z-[250] pointer-events-none hidden flex flex-col items-center justify-center p-4 backdrop-blur-md bg-black/80 transition-all duration-300"
-    >
-      <div
-        id="goal-flow-card"
-        class="bg-[#181B24]/95 border border-emerald-500/40 rounded-3xl p-5 shadow-2xl backdrop-blur-xl flex flex-col items-center text-center max-w-sm w-full mx-4 transform scale-100 transition-all duration-300 pointer-events-auto"
-      >
-        <div
-          class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-500/20 to-teal-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 mb-2 shadow-lg animate-bounce"
-        >
-          <i data-lucide="award" class="w-7 h-7"></i>
-        </div>
-        <h3 class="text-base font-black text-white tracking-tight">Средства переведены в цели!</h3>
-        <p id="goal-flow-amount-text" class="text-2xl font-black font-mono text-emerald-400 my-1">
-          +0 ₽
-        </p>
-        <p id="goal-flow-subtitle" class="text-xs text-[#848D99] mt-1">
-          Отложенные за закрытый месяц средства успешно распределены в шкалу ваших целей.
-        </p>
-      </div>
-    </div>
-
     <!-- ВСПЛЫВАЮЩАЯ ПАНЕЛЬ УСТАНОВКИ PWA ПРИЛОЖЕНИЯ -->
     <div
       id="pwa-install-banner"
@@ -8314,6 +7117,109 @@
             style="width: 100%"
           ></div>
         </div>
+      </div>
+    </div>
+
+    <!-- МОДАЛЬНОЕ ОКНО: ОНБОРДИНГ / ЗНАКОМСТВО С ПРИЛОЖЕНИЕМ -->
+    <div
+      id="onboarding-modal"
+      class="fixed inset-0 bg-[#0F1117] z-[200] hidden flex flex-col justify-between p-5 sm:p-8 animate-fade-in"
+    >
+      <div class="flex items-center justify-between pb-3">
+        <div class="flex items-center gap-2">
+          <div
+            class="w-8 h-8 rounded-xl bg-[#6C5DD3]/20 text-[#8C7DFF] flex items-center justify-center"
+          >
+            <i data-lucide="landmark" class="w-4 h-4"></i>
+          </div>
+          <span class="text-xs font-bold uppercase tracking-wider text-white">Капитал</span>
+        </div>
+        <button
+          type="button"
+          onclick="closeOnboardingModal()"
+          class="w-8 h-8 rounded-xl bg-[#181B24] border border-[rgba(255,255,255,0.06)] text-gray-400 hover:text-white flex items-center justify-center transition-all cursor-pointer text-xs"
+          title="Пропустить"
+        >
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="max-w-md mx-auto my-auto w-full space-y-6 text-left">
+        <div>
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            Управление семейным капиталом
+          </h2>
+          <p class="text-xs sm:text-sm text-[#848D99] mt-2 leading-relaxed">
+            Следите за ростом накоплений и свободными средствами без ежедневного ручного ввода
+            чеков.
+          </p>
+        </div>
+
+        <div class="space-y-3">
+          <!-- Карточка 1 -->
+          <div
+            class="p-3.5 rounded-2xl bg-[#181B24] border border-[rgba(255,255,255,0.06)] flex items-start gap-3"
+          >
+            <div
+              class="w-8 h-8 rounded-xl bg-[#6C5DD3]/15 text-[#8C7DFF] flex items-center justify-center flex-shrink-0 mt-0.5"
+            >
+              <i data-lucide="landmark" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <h4 class="text-xs font-bold text-white">Все активы в одном месте</h4>
+              <p class="text-[11px] text-[#848D99] mt-0.5 leading-snug">
+                Вклады, накопительные счета и портфель акций Мосбиржи обновляются и показывают
+                суммарный капитал семьи.
+              </p>
+            </div>
+          </div>
+
+          <!-- Карточка 2 -->
+          <div
+            class="p-3.5 rounded-2xl bg-[#181B24] border border-[rgba(255,255,255,0.06)] flex items-start gap-3"
+          >
+            <div
+              class="w-8 h-8 rounded-xl bg-[#6C5DD3]/15 text-[#8C7DFF] flex items-center justify-center flex-shrink-0 mt-0.5"
+            >
+              <i data-lucide="file-up" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <h4 class="text-xs font-bold text-white">Пакетный импорт выписок</h4>
+              <p class="text-[11px] text-[#848D99] mt-0.5 leading-snug">
+                Заходите 1–2 раза в месяц: загружайте PDF-выписку любого банка, а умный алгоритм сам
+                распределит операции по категориям.
+              </p>
+            </div>
+          </div>
+
+          <!-- Карточка 3 -->
+          <div
+            class="p-3.5 rounded-2xl bg-[#181B24] border border-[rgba(255,255,255,0.06)] flex items-start gap-3"
+          >
+            <div
+              class="w-8 h-8 rounded-xl bg-[#6C5DD3]/15 text-[#8C7DFF] flex items-center justify-center flex-shrink-0 mt-0.5"
+            >
+              <i data-lucide="target" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <h4 class="text-xs font-bold text-white">Цели и свободный остаток</h4>
+              <p class="text-[11px] text-[#848D99] mt-0.5 leading-snug">
+                Цели автоматически привязаны к долям капитала. На главном экране вы всегда видите
+                реальный свободный остаток месяца.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="max-w-md mx-auto w-full pt-4">
+        <button
+          type="button"
+          onclick="closeOnboardingModal()"
+          class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#6C5DD3] to-[#8C7DFF] hover:from-[#5e4fc9] hover:to-[#7b6ceb] text-white font-bold text-xs sm:text-sm shadow-lg shadow-[#6C5DD3]/25 border border-[rgba(255,255,255,0.1)] transition-all active:scale-[0.98] cursor-pointer text-center"
+        >
+          Начать работу
+        </button>
       </div>
     </div>
   </body>

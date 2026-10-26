@@ -12,27 +12,30 @@ if ('serviceWorker' in navigator) {
   });
 
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').then((reg) => {
-      // Принудительно проверяем наличие новой версии sw.js на сервере при каждом открытии
-      reg.update().catch(() => {});
+    navigator.serviceWorker
+      .register('./sw.js')
+      .then(reg => {
+        // Принудительно проверяем наличие новой версии sw.js на сервере при каждом открытии
+        reg.update().catch(() => {});
 
-      if (reg.waiting) {
-        reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-      }
-
-      reg.addEventListener('updatefound', () => {
-        const newWorker = reg.installing;
-        if (newWorker) {
-          newWorker.addEventListener('statechange', () => {
-            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              newWorker.postMessage({ type: 'SKIP_WAITING' });
-            }
-          });
+        if (reg.waiting) {
+          reg.waiting.postMessage({ type: 'SKIP_WAITING' });
         }
+
+        reg.addEventListener('updatefound', () => {
+          const newWorker = reg.installing;
+          if (newWorker) {
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                newWorker.postMessage({ type: 'SKIP_WAITING' });
+              }
+            });
+          }
+        });
+      })
+      .catch(err => {
+        console.warn('SW registration failed:', err);
       });
-    }).catch(err => {
-      console.log('SW registration failed:', err);
-    });
   });
 
   // При возврате пользователя на вкладку браузера проверяем обновления
@@ -87,12 +90,12 @@ initOfflineResilience();
 // Firebase Configuration & Initialization
 // ==========================================
 const firebaseConfig = {
-  apiKey: "AIzaSyC_JkUF__UfStFrTKecRasKqKBKXlQ4D88",
-  authDomain: "familybudget-4245a.firebaseapp.com",
-  projectId: "familybudget-4245a",
-  storageBucket: "familybudget-4245a.firebasestorage.app",
-  messagingSenderId: "129164761119",
-  appId: "1:129164761119:web:0303fd6ccd41e071655d2a"
+  apiKey: 'AIzaSyC_JkUF__UfStFrTKecRasKqKBKXlQ4D88',
+  authDomain: 'familybudget-4245a.firebaseapp.com',
+  projectId: 'familybudget-4245a',
+  storageBucket: 'familybudget-4245a.firebasestorage.app',
+  messagingSenderId: '129164761119',
+  appId: '1:129164761119:web:0303fd6ccd41e071655d2a',
 };
 
 // Инициализируем приложение
@@ -118,7 +121,9 @@ if (typeof firebase !== 'undefined') {
           console.warn('Firestore persistence is not supported by the browser');
         }
       });
-    } catch (e) {}
+    } catch (_e) {
+      /* ignore */
+    }
   }
   if (typeof firebase.auth === 'function') {
     auth = firebase.auth();
@@ -143,7 +148,7 @@ window.Cache = {
   settings: {},
   userProfile: { displayName: 'Пользователь', avatarId: '' },
   family: null,
-  brokerAssets: []
+  brokerAssets: [],
 };
 let Cache = window.Cache;
 
@@ -163,18 +168,9 @@ function resetGlobalCache() {
     userProfile: { displayName: 'Пользователь', avatarId: '' },
     family: null,
     isInitialDataLoaded: false,
-    isServerSyncComplete: false
+    isServerSyncComplete: false,
   };
   Cache = window.Cache;
-
-  // Сброс сохраненного шага мастера первого запуска
-  try {
-    localStorage.removeItem('budget_wizard_step');
-  } catch (e) {}
-
-  if (typeof window.currentWizardStep !== 'undefined') {
-    window.currentWizardStep = 1;
-  }
 
   // Сброс базовых состояний аналитики и анимаций
   window._budgetBaselineState = null;
@@ -214,12 +210,19 @@ window.brokerChartObj = null;
 
 function getCurrentUserProfile() {
   const user = typeof auth !== 'undefined' ? auth.currentUser : null;
-  const defName = user ? (user.displayName || (user.email?.includes('@budget.local') ? user.email.replace('@budget.local', '') : user.email?.split('@')[0]) || 'Пользователь') : 'Пользователь';
+  const defName = user
+    ? user.displayName ||
+      (user.email?.includes('@budget.local')
+        ? user.email.replace('@budget.local', '')
+        : user.email?.split('@')[0]) ||
+      'Пользователь'
+    : 'Пользователь';
   const rawAvatarId = Cache?.userProfile?.avatarId;
-  const avatarId = (rawAvatarId !== undefined && rawAvatarId !== null && rawAvatarId !== '') ? rawAvatarId : 'user';
+  const avatarId =
+    rawAvatarId !== undefined && rawAvatarId !== null && rawAvatarId !== '' ? rawAvatarId : 'user';
   return {
     displayName: Cache?.userProfile?.displayName || defName,
-    avatarId: avatarId
+    avatarId: avatarId,
   };
 }
 
@@ -252,7 +255,7 @@ function cleanFirestoreData(data) {
 function getUserCol(table) {
   const user = auth.currentUser;
   if (!user) throw new Error('Пользователь не авторизован');
-  
+
   let colRef;
   if (Cache?.family?.id) {
     colRef = db.collection('families').doc(Cache.family.id).collection(table);
@@ -262,15 +265,15 @@ function getUserCol(table) {
 
   // Защита от сбоя Firestore DocumentReference.update/set из-за undefined полей
   const origDoc = colRef.doc.bind(colRef);
-  colRef.doc = function(docId) {
+  colRef.doc = function (docId) {
     const docRef = origDoc(docId);
     const origUpdate = docRef.update.bind(docRef);
     const origSet = docRef.set.bind(docRef);
 
-    docRef.update = function(data, ...rest) {
+    docRef.update = function (data, ...rest) {
       return origUpdate(cleanFirestoreData(data), ...rest);
     };
-    docRef.set = function(data, ...rest) {
+    docRef.set = function (data, ...rest) {
       return origSet(cleanFirestoreData(data), ...rest);
     };
     return docRef;
@@ -280,7 +283,10 @@ function getUserCol(table) {
 }
 
 function hideLoadingScreen() {
-  if (typeof window.hideLoadingScreen === 'function' && window.hideLoadingScreen !== hideLoadingScreen) {
+  if (
+    typeof window.hideLoadingScreen === 'function' &&
+    window.hideLoadingScreen !== hideLoadingScreen
+  ) {
     window.hideLoadingScreen();
     return;
   }
@@ -303,7 +309,10 @@ function hideLoadingScreen() {
 }
 
 function showLoadingScreen() {
-  if (typeof window.showLoadingScreen === 'function' && window.showLoadingScreen !== showLoadingScreen) {
+  if (
+    typeof window.showLoadingScreen === 'function' &&
+    window.showLoadingScreen !== showLoadingScreen
+  ) {
     window.showLoadingScreen();
     return;
   }
@@ -321,7 +330,17 @@ function showLoadingScreen() {
 }
 
 async function fetchAllData(isSilent = false) {
-  const tables = ['Transactions', 'Deposits', 'Broker', 'Goals', 'Categories', 'CategoryRules', 'BudgetPlan', 'CalendarBills', 'BrokerAssets'];
+  const tables = [
+    'Transactions',
+    'Deposits',
+    'Broker',
+    'Goals',
+    'Categories',
+    'CategoryRules',
+    'BudgetPlan',
+    'CalendarBills',
+    'BrokerAssets',
+  ];
 
   // ЭТАП 1: Мгновенное чтение из локального кэша IndexedDB (15-40 мс)
   try {
@@ -332,24 +351,27 @@ async function fetchAllData(isSilent = false) {
       await applySnapshotsToUI(cachedSnaps, false);
       hideLoadingScreen();
     }
-  } catch (e) {}
+  } catch (_e) {
+    /* ignore */
+  }
 
   // ЭТАП 2: Фоновая синхронизация со свежими данными сервера
   let syncToastTimer = null;
   try {
     if (!isSilent) {
-      showToast("Синхронизация...", false, true);
+      showToast('Синхронизация...', false, true);
       syncToastTimer = setTimeout(() => {
         if (typeof dismissToast === 'function') dismissToast(0);
       }, 2500);
     }
-    const serverSnaps = await Promise.all(
-      tables.map(tbl => getUserCol(tbl).get())
-    );
+    const serverSnaps = await Promise.all(tables.map(tbl => getUserCol(tbl).get()));
     await applySnapshotsToUI(serverSnaps, true);
     const syncTimeEl = document.getElementById('last-sync');
     if (syncTimeEl) {
-      syncTimeEl.innerText = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      syncTimeEl.innerText = new Date().toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+      });
     }
     if (syncToastTimer) clearTimeout(syncToastTimer);
     if (!isSilent && typeof dismissToast === 'function') {
@@ -361,7 +383,7 @@ async function fetchAllData(isSilent = false) {
       checkFamilyBudgetReviewPrompt();
     }
     initRealtimeListeners();
-  } catch (err) {
+  } catch (_err) {
     if (syncToastTimer) clearTimeout(syncToastTimer);
     if (!isSilent && typeof dismissToast === 'function') {
       dismissToast(0);
@@ -371,7 +393,7 @@ async function fetchAllData(isSilent = false) {
       Cache.isServerSyncComplete = true;
       if (typeof renderBudgetTab === 'function') renderBudgetTab();
     } else if (!isSilent) {
-      showToast("Нет подключения к сети", true);
+      showToast('Нет подключения к сети', true);
     }
     initRealtimeListeners();
   }
@@ -387,7 +409,9 @@ function stopRealtimeListeners() {
     _realtimeUnsubscribes.forEach(unsub => {
       try {
         if (typeof unsub === 'function') unsub();
-      } catch {}
+      } catch {
+        /* ignore */
+      }
     });
     _realtimeUnsubscribes = [];
   }
@@ -403,7 +427,7 @@ function initRealtimeListeners() {
   try {
     const unsubTx = getUserCol('Transactions').onSnapshot(
       { includeMetadataChanges: true },
-      (snapshot) => {
+      snapshot => {
         // Пропускаем незавершенные локальные записи — Optimistic UI уже обновил экран
         if (snapshot.metadata.hasPendingWrites) return;
 
@@ -414,9 +438,10 @@ function initRealtimeListeners() {
         Cache.transactions = processTransactions(data);
 
         markTabsDirty();
-        const currentTab = (typeof window.getCurrentActiveTab === 'function')
-          ? window.getCurrentActiveTab()
-          : (localStorage.getItem('budget_active_tab') || 'budget');
+        const currentTab =
+          typeof window.getCurrentActiveTab === 'function'
+            ? window.getCurrentActiveTab()
+            : localStorage.getItem('budget_active_tab') || 'budget';
 
         if (currentTab === 'transactions' && typeof renderTransactions === 'function') {
           renderTransactions();
@@ -430,10 +455,13 @@ function initRealtimeListeners() {
 
         const syncTimeEl = document.getElementById('last-sync');
         if (syncTimeEl) {
-          syncTimeEl.innerText = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          syncTimeEl.innerText = new Date().toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit',
+          });
         }
       },
-      (err) => {
+      err => {
         console.warn('Realtime Transactions listener warning:', err);
       }
     );
@@ -446,17 +474,17 @@ function initRealtimeListeners() {
   try {
     const unsubPlan = getUserCol('BudgetPlan').onSnapshot(
       { includeMetadataChanges: true },
-      (snapshot) => {
+      snapshot => {
         if (snapshot.metadata.hasPendingWrites) return;
         const changes = snapshot.docChanges();
         if (changes.length === 0) return;
 
-        Cache.budgetPlan = (!snapshot.empty && snapshot.docs[0]) ? snapshot.docs[0].data() : {};
+        Cache.budgetPlan = !snapshot.empty && snapshot.docs[0] ? snapshot.docs[0].data() : {};
         if (typeof renderBudgetTab === 'function') {
           renderBudgetTab();
         }
       },
-      (err) => console.warn('Realtime BudgetPlan listener warning:', err)
+      err => console.warn('Realtime BudgetPlan listener warning:', err)
     );
     _realtimeUnsubscribes.push(unsubPlan);
   } catch (err) {
@@ -467,7 +495,7 @@ function initRealtimeListeners() {
   try {
     const unsubBills = getUserCol('CalendarBills').onSnapshot(
       { includeMetadataChanges: true },
-      (snapshot) => {
+      snapshot => {
         if (snapshot.metadata.hasPendingWrites) return;
         const changes = snapshot.docChanges();
         if (changes.length === 0) return;
@@ -477,7 +505,7 @@ function initRealtimeListeners() {
           renderBudgetTab();
         }
       },
-      (err) => console.warn('Realtime CalendarBills listener warning:', err)
+      err => console.warn('Realtime CalendarBills listener warning:', err)
     );
     _realtimeUnsubscribes.push(unsubBills);
   } catch (err) {
@@ -488,7 +516,7 @@ function initRealtimeListeners() {
   try {
     const unsubAssets = getUserCol('BrokerAssets').onSnapshot(
       { includeMetadataChanges: true },
-      (snapshot) => {
+      snapshot => {
         if (snapshot.metadata.hasPendingWrites) return;
         const changes = snapshot.docChanges();
         if (changes.length === 0) return;
@@ -498,7 +526,7 @@ function initRealtimeListeners() {
           renderBroker();
         }
       },
-      (err) => console.warn('Realtime BrokerAssets listener warning:', err)
+      err => console.warn('Realtime BrokerAssets listener warning:', err)
     );
     _realtimeUnsubscribes.push(unsubAssets);
   } catch (err) {
@@ -508,18 +536,21 @@ function initRealtimeListeners() {
   // 5. Слушатель документа семьи (если пользователь в семье)
   if (Cache?.family?.id) {
     try {
-      const unsubFam = db.collection('families').doc(Cache.family.id).onSnapshot(
-        (docSnap) => {
-          if (docSnap.exists) {
-            const famData = docSnap.data() || {};
-            const members = Array.isArray(famData.members) ? famData.members : [];
-            Cache.family = { id: docSnap.id, ...famData, members };
-            if (typeof updateHeaderProfileUI === 'function') updateHeaderProfileUI();
-            if (typeof renderFamilySettingsUI === 'function') renderFamilySettingsUI();
-          }
-        },
-        (err) => console.warn('Realtime Family listener warning:', err)
-      );
+      const unsubFam = db
+        .collection('families')
+        .doc(Cache.family.id)
+        .onSnapshot(
+          docSnap => {
+            if (docSnap.exists) {
+              const famData = docSnap.data() || {};
+              const members = Array.isArray(famData.members) ? famData.members : [];
+              Cache.family = { id: docSnap.id, ...famData, members };
+              if (typeof updateHeaderProfileUI === 'function') updateHeaderProfileUI();
+              if (typeof renderFamilySettingsUI === 'function') renderFamilySettingsUI();
+            }
+          },
+          err => console.warn('Realtime Family listener warning:', err)
+        );
       _realtimeUnsubscribes.push(unsubFam);
     } catch (err) {
       console.warn('Не удалось подключить Realtime-слушатель Family:', err);
@@ -563,7 +594,10 @@ async function fetchCollection(table) {
         break;
       case 'Categories': {
         const prevCats = Cache.categories || { expense: [], income: [] };
-        const fetchedCats = (typeof processCategories === 'function') ? processCategories(data) : { expense: [], income: [] };
+        const fetchedCats =
+          typeof processCategories === 'function'
+            ? processCategories(data)
+            : { expense: [], income: [] };
         // Сохраняем локально созданные категории, если они еще не успели синхронизироваться в ответе БД
         (prevCats.expense || []).forEach(e => {
           if (e && e.name && !fetchedCats.expense.some(item => item && item.name === e.name)) {
@@ -591,26 +625,31 @@ async function fetchCollection(table) {
         if (typeof renderBudgetTab === 'function') renderBudgetTab();
         break;
     }
-  } catch (e) {
-    showToast("Ошибка загрузки", true);
+  } catch (_e) {
+    showToast('Ошибка загрузки', true);
   }
 }
 
 // Гибридная загрузка: системный словарь из default-rules.js + пользовательские оверрайды из Firestore
 async function processOrSeedRules(snapshot) {
   const userDocs = snapshot ? snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) : [];
-  const norm = (str) => typeof StatementCategorizer !== 'undefined' ? StatementCategorizer.normalize(str) : String(str || '').toLowerCase().trim();
+  const norm = str =>
+    typeof StatementCategorizer !== 'undefined'
+      ? StatementCategorizer.normalize(str)
+      : String(str || '')
+          .toLowerCase()
+          .trim();
 
-  const disabledPatterns = new Set(
-    userDocs.filter(d => d.disabled).map(d => norm(d.pattern))
-  );
+  const disabledPatterns = new Set(userDocs.filter(d => d.disabled).map(d => norm(d.pattern)));
 
-  const customRules = userDocs.filter(d => !d.disabled && d.pattern && d.category).map(d => ({
-    id: d.id,
-    pattern: d.pattern.trim(),
-    category: d.category,
-    isSystem: false
-  }));
+  const customRules = userDocs
+    .filter(d => !d.disabled && d.pattern && d.category)
+    .map(d => ({
+      id: d.id,
+      pattern: d.pattern.trim(),
+      category: d.category,
+      isSystem: false,
+    }));
 
   const customMap = new Map();
   customRules.forEach(r => customMap.set(norm(r.pattern), r));
@@ -630,7 +669,7 @@ async function processOrSeedRules(snapshot) {
         id: 'sys_' + idx,
         pattern: rule.pattern,
         category: rule.category,
-        isSystem: true
+        isSystem: true,
       });
     }
   });
@@ -639,23 +678,28 @@ async function processOrSeedRules(snapshot) {
   return combined;
 }
 
-async function applySnapshotsToUI([txS, depS, brS, goalS, catS, rulesS, planS, billsS, assetsS], fromServer = false) {
+async function applySnapshotsToUI(
+  [txS, depS, brS, goalS, catS, rulesS, planS, billsS, assetsS],
+  fromServer = false
+) {
   const txData = txS.docs.map(d => ({ id: d.id, ...d.data() }));
   const depData = depS.docs.map(d => ({ id: d.id, ...d.data() }));
   const brData = brS.docs.map(d => ({ id: d.id, ...d.data() }));
   const goalData = goalS ? goalS.docs.map(d => ({ id: d.id, ...d.data() })) : [];
   const planData = planS && !planS.empty ? planS.docs[0].data() : {};
   const billsData = billsS ? billsS.docs.map(d => ({ id: d.id, ...d.data() })) : [];
-  const assetsData = assetsS && assetsS.docs ? assetsS.docs.map(d => ({ id: d.id, ...d.data() })) : [];
-  
+  const assetsData =
+    assetsS && assetsS.docs ? assetsS.docs.map(d => ({ id: d.id, ...d.data() })) : [];
+
   const processedDeposits = processDeposits(depData, goalData);
   const processedBroker = processBroker(brData, goalData);
   const catData = catS.docs.map(d => ({ id: d.id, ...d.data() }));
   const categories = processCategories(catData);
 
-  const existingSettings = (Cache && Cache.settings) ? Cache.settings : {};
-  const existingUserProfile = (Cache && Cache.userProfile) ? Cache.userProfile : { displayName: 'Пользователь', avatarId: '' };
-  const existingFamily = (Cache && Cache.family) ? Cache.family : null;
+  const existingSettings = Cache && Cache.settings ? Cache.settings : {};
+  const existingUserProfile =
+    Cache && Cache.userProfile ? Cache.userProfile : { displayName: 'Пользователь', avatarId: '' };
+  const existingFamily = Cache && Cache.family ? Cache.family : null;
   const wasServerSyncComplete = Cache ? !!Cache.isServerSyncComplete : false;
 
   Cache = {
@@ -672,7 +716,7 @@ async function applySnapshotsToUI([txS, depS, brS, goalS, catS, rulesS, planS, b
     categories: categories,
     categoryRules: await processOrSeedRules(rulesS),
     budgetPlan: planData,
-    calendarBills: billsData
+    calendarBills: billsData,
   };
   window.Cache = Cache;
 
@@ -680,9 +724,10 @@ async function applySnapshotsToUI([txS, depS, brS, goalS, catS, rulesS, planS, b
 
   // Умный ленивый рендеринг: мгновенно строим DOM только для АКТИВНОЙ вкладки
   markTabsDirty();
-  const currentTab = (typeof window.getCurrentActiveTab === 'function') 
-    ? window.getCurrentActiveTab() 
-    : (localStorage.getItem('budget_active_tab') || 'budget');
+  const currentTab =
+    typeof window.getCurrentActiveTab === 'function'
+      ? window.getCurrentActiveTab()
+      : localStorage.getItem('budget_active_tab') || 'budget';
 
   if (currentTab === 'transactions') {
     if (typeof renderTransactions === 'function') renderTransactions();
@@ -759,11 +804,14 @@ async function submitAction(btnId, table, data) {
 
   // 2. Оптимистично обновляем данные в памяти Cache и вызываем моментальный перерендер
   if (table === 'Transactions') {
-    const userProfile = (typeof getCurrentUserProfile === 'function') ? getCurrentUserProfile() : (Cache?.userProfile || { displayName: 'Пользователь', avatarId: 'user' });
+    const userProfile =
+      typeof getCurrentUserProfile === 'function'
+        ? getCurrentUserProfile()
+        : Cache?.userProfile || { displayName: 'Пользователь', avatarId: 'user' };
     const defaultAuthor = {
       uid: auth?.currentUser?.uid || '',
       name: userProfile.displayName,
-      avatarId: userProfile.avatarId || 'user'
+      avatarId: userProfile.avatarId || 'user',
     };
 
     const now = Date.now();
@@ -773,14 +821,17 @@ async function submitAction(btnId, table, data) {
       if (!item.createdAt) item.createdAt = now + idx;
     });
 
-    const newIds = items.map((item, idx) => isEdit ? targetId : `opt_tx_${now}_${idx}`);
+    const newIds = items.map((item, idx) => (isEdit ? targetId : `opt_tx_${now}_${idx}`));
     window.lastAddedTxIds = newIds;
     window.lastAddedTxTime = now;
 
-    const allFlat = typeof getAllCachedTransactionsFlat === 'function' ? getAllCachedTransactionsFlat() : [];
+    const allFlat =
+      typeof getAllCachedTransactionsFlat === 'function' ? getAllCachedTransactionsFlat() : [];
     items.forEach((item, idx) => {
       const id = newIds[idx];
-      const parsedDate = (typeof parseAnyDate === 'function' ? parseAnyDate(item.date) : new Date(item.date)) || new Date();
+      const parsedDate =
+        (typeof parseAnyDate === 'function' ? parseAnyDate(item.date) : new Date(item.date)) ||
+        new Date();
       const txObj = {
         id,
         type: item.type || 'Расход',
@@ -789,17 +840,43 @@ async function submitAction(btnId, table, data) {
         rawDate: formatDateStr(parsedDate, 'yyyy-MM-dd'),
         formattedDate: formatDateStr(parsedDate, 'dd.MM.yyyy'),
         category: item.category,
-        comment: (typeof getTxComment === 'function') ? getTxComment(item) : (item.comment || item.description || item.merchant || item.title || item.name || item.note || item.notes || item.payee || item.details || ''),
-        description: (typeof getTxComment === 'function') ? getTxComment(item) : (item.comment || item.description || item.merchant || item.title || item.name || item.note || item.notes || item.payee || item.details || ''),
+        comment:
+          typeof getTxComment === 'function'
+            ? getTxComment(item)
+            : item.comment ||
+              item.description ||
+              item.merchant ||
+              item.title ||
+              item.name ||
+              item.note ||
+              item.notes ||
+              item.payee ||
+              item.details ||
+              '',
+        description:
+          typeof getTxComment === 'function'
+            ? getTxComment(item)
+            : item.comment ||
+              item.description ||
+              item.merchant ||
+              item.title ||
+              item.name ||
+              item.note ||
+              item.notes ||
+              item.payee ||
+              item.details ||
+              '',
         author: item.author || defaultAuthor,
         excludeFromBudget: !!item.excludeFromBudget,
         spreadMonths: parseInt(item.spreadMonths, 10) || 1,
         isBillPayment: !!item.isBillPayment,
         billId: item.billId || null,
         billName: item.billName || '',
-        billType: item.billType || (item.spreadMonths > 1 ? 'onetime' : (item.isBillPayment ? 'recurring' : '')),
-        createdAt: item.createdAt || (now + idx),
-        timestamp: item.createdAt || (now + idx)
+        billType:
+          item.billType ||
+          (item.spreadMonths > 1 ? 'onetime' : item.isBillPayment ? 'recurring' : ''),
+        createdAt: item.createdAt || now + idx,
+        timestamp: item.createdAt || now + idx,
       };
       if (isEdit) {
         const foundIdx = allFlat.findIndex(t => t.id === targetId);
@@ -813,7 +890,15 @@ async function submitAction(btnId, table, data) {
     if (typeof processTransactions === 'function') {
       Cache.transactions = processTransactions(allFlat);
     }
-    const hasExpensesInSubmit = items.some(d => d.type === 'Расход' || d.type === 'expense' || String(d.type || '').trim().toLowerCase() === 'расход' || d.isBillPayment);
+    const hasExpensesInSubmit = items.some(
+      d =>
+        d.type === 'Расход' ||
+        d.type === 'expense' ||
+        String(d.type || '')
+          .trim()
+          .toLowerCase() === 'расход' ||
+        d.isBillPayment
+    );
     if (hasExpensesInSubmit) {
       triggerBudgetExpenseAnimation();
     }
@@ -838,7 +923,7 @@ async function submitAction(btnId, table, data) {
         const docRef = getUserCol(table).doc();
         batch.set(docRef, {
           ...item,
-          createdAt: item.createdAt || (saveTime + idx)
+          createdAt: item.createdAt || saveTime + idx,
         });
         realAddedIds.push(docRef.id);
       });
@@ -847,7 +932,7 @@ async function submitAction(btnId, table, data) {
     } else {
       const payload = {
         ...data,
-        createdAt: data.createdAt || saveTime
+        createdAt: data.createdAt || saveTime,
       };
       const docRef = await getUserCol(table).add(payload);
       if (table === 'Transactions') {
@@ -868,7 +953,9 @@ function deleteRecord(table, id) {
   showDialog('Удаление', 'Точно удалить запись? Это нельзя отменить.', true, async () => {
     try {
       // Плавная анимация схлопывания и исчезновения удаляемого элемента
-      const targetEl = document.querySelector(`.card[data-id="${id}"]`) || document.querySelector(`[data-id="${id}"]`);
+      const targetEl =
+        document.querySelector(`.card[data-id="${id}"]`) ||
+        document.querySelector(`[data-id="${id}"]`);
       if (targetEl) {
         targetEl.classList.add('tx-row-deleting');
         setTimeout(() => targetEl.remove(), 250);
@@ -876,7 +963,8 @@ function deleteRecord(table, id) {
 
       // Мгновенно удаляем из локального кэша Cache в 0мс
       if (table === 'Transactions') {
-        const allTxs = typeof getAllCachedTransactionsFlat === 'function' ? getAllCachedTransactionsFlat() : [];
+        const allTxs =
+          typeof getAllCachedTransactionsFlat === 'function' ? getAllCachedTransactionsFlat() : [];
         const deletedTx = allTxs.find(t => t.id === id);
         const filtered = allTxs.filter(t => t.id !== id);
         if (typeof processTransactions === 'function') {
@@ -895,7 +983,8 @@ function deleteRecord(table, id) {
 
         // Если удаляемая операция была разовой тратой, покрытой из цели — восполняем цель
         if (deletedTx && deletedTx.fundingGoalId) {
-          const refundAmt = parseFloat(deletedTx.fundingGoalAmount) || parseFloat(deletedTx.amount) || 0;
+          const refundAmt =
+            parseFloat(deletedTx.fundingGoalAmount) || parseFloat(deletedTx.amount) || 0;
           if (refundAmt > 0 && typeof adjustGoalSaved === 'function') {
             adjustGoalSaved(deletedTx.fundingGoalId, refundAmt).catch(err => {
               console.error('Ошибка восполнения цели при удалении операции:', err);
@@ -924,7 +1013,7 @@ function deleteRecord(table, id) {
       fetchCollection(table).catch(() => {});
     } catch (e) {
       console.error(e);
-      showToast("Ошибка удаления", true);
+      showToast('Ошибка удаления', true);
       fetchCollection(table).catch(() => {});
     }
   });
@@ -933,7 +1022,14 @@ function deleteRecord(table, id) {
 // Корректировка накоплений цели (списание при разовой покупке или возврат при удалении/отмене)
 async function adjustGoalSaved(goalId, deltaAmount, existingBatch = null) {
   if (!goalId || !deltaAmount) return null;
-  const numDelta = typeof deltaAmount === 'number' ? deltaAmount : (parseFloat(String(deltaAmount || 0).replace(/\s/g, '').replace(/,/g, '.')) || 0);
+  const numDelta =
+    typeof deltaAmount === 'number'
+      ? deltaAmount
+      : parseFloat(
+          String(deltaAmount || 0)
+            .replace(/\s/g, '')
+            .replace(/,/g, '.')
+        ) || 0;
   if (numDelta === 0) return null;
 
   const goals = Cache?.goals || [];
@@ -957,7 +1053,7 @@ async function adjustGoalSaved(goalId, deltaAmount, existingBatch = null) {
     const updateData = {
       saved: newSaved,
       status: newStatus,
-      updatedAt: Date.now()
+      updatedAt: Date.now(),
     };
 
     if (existingBatch) {
@@ -1002,16 +1098,20 @@ async function seedNewUserInitialData(user) {
 
     const displayName = user.displayName || user.email?.split('@')[0] || 'Пользователь';
     // Документ пользователя
-    batch.set(db.collection('users').doc(user.uid), {
-      migrated: true,
-      displayName: displayName,
-      email: user.email || '',
-      profile: {
+    batch.set(
+      db.collection('users').doc(user.uid),
+      {
+        migrated: true,
         displayName: displayName,
-        avatarId: ''
+        email: user.email || '',
+        profile: {
+          displayName: displayName,
+          avatarId: '',
+        },
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       },
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    }, { merge: true });
+      { merge: true }
+    );
 
     await batch.commit();
   } catch (err) {
@@ -1024,10 +1124,10 @@ async function seedNewUserInitialData(user) {
 // ==========================================
 
 // Режим приватности (скрытие/показ сумм для защиты от посторонних глаз)
-window.isPrivacyModeEnabled = (function() {
+window.isPrivacyModeEnabled = (function () {
   try {
     return localStorage.getItem('budget_privacy_mode') === '1';
-  } catch (e) {
+  } catch (_e) {
     return false;
   }
 })();
@@ -1065,12 +1165,18 @@ function togglePrivacyMode() {
   window.isPrivacyModeEnabled = !window.isPrivacyModeEnabled;
   try {
     localStorage.setItem('budget_privacy_mode', window.isPrivacyModeEnabled ? '1' : '0');
-  } catch (e) {}
+  } catch (_e) {
+    /* ignore */
+  }
 
   updatePrivacyModeUI();
 
   if (typeof navigator !== 'undefined' && navigator.vibrate) {
-    try { navigator.vibrate(15); } catch (e) {}
+    try {
+      navigator.vibrate(15);
+    } catch (_e) {
+      /* ignore */
+    }
   }
 
   showToast(window.isPrivacyModeEnabled ? 'Режим приватности включен' : 'Суммы снова отображаются');
@@ -1088,7 +1194,8 @@ function togglePrivacyMode() {
   });
 
   // 2. Обновляем открытую модалку редактирования операции
-  const editModal = document.getElementById('tx-edit-modal') || document.getElementById('edit-tx-modal');
+  const editModal =
+    document.getElementById('tx-edit-modal') || document.getElementById('edit-tx-modal');
   if (editModal && !editModal.classList.contains('hidden')) {
     if (typeof handleEditTxAmountChange === 'function') {
       handleEditTxAmountChange();
@@ -1128,7 +1235,8 @@ function togglePrivacyMode() {
   // 6. Перерисовываем активный экран
   const currentTab = typeof getCurrentActiveTab === 'function' ? getCurrentActiveTab() : 'budget';
   if (currentTab === 'budget' && typeof renderBudgetTab === 'function') renderBudgetTab();
-  else if (currentTab === 'transactions' && typeof renderTransactions === 'function') renderTransactions();
+  else if (currentTab === 'transactions' && typeof renderTransactions === 'function')
+    renderTransactions();
   else if (currentTab === 'deposits' && typeof renderDeposits === 'function') renderDeposits();
   else if (currentTab === 'broker' && typeof renderBroker === 'function') renderBroker();
 }
@@ -1141,8 +1249,10 @@ const formatMoney = (sum, isInputOrDetails = false) => {
     style: 'currency',
     currency: 'RUB',
     minimumFractionDigits: isInputOrDetails ? 2 : 0, // Убираем копейки везде по умолчанию
-    maximumFractionDigits: isInputOrDetails ? 2 : 0
-  }).format(sum).replace(',', '.'); // Использует неразрывные пробелы встроенно
+    maximumFractionDigits: isInputOrDetails ? 2 : 0,
+  })
+    .format(sum)
+    .replace(',', '.'); // Использует неразрывные пробелы встроенно
 };
 
 // Плавная выразительная анимация числовых счетчиков (Rolling Counter / Odometer)
@@ -1262,7 +1372,7 @@ function animatePercentage(el, targetPct, color, duration = 3000, fromPct = null
   el._pctFrame = requestAnimationFrame(step);
 }
 
-const getUnformattedVal = (el) => parseFloat(el.value.replace(/\s/g, '')) || 0;
+const getUnformattedVal = el => parseFloat(el.value.replace(/\s/g, '')) || 0;
 const setFormattedVal = (id, val) => {
   const el = document.getElementById(id);
   el.value = val;
@@ -1270,10 +1380,10 @@ const setFormattedVal = (id, val) => {
 };
 
 function formatSumInput(el) {
-  let val = el.value.replace(/[^\d.,]/g, '').replace(',', '.');
+  const val = el.value.replace(/[^\d.,]/g, '').replace(',', '.');
   if (val) {
-    let parts = val.split('.');
-    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+    const parts = val.split('.');
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
     el.value = parts.join('.');
   }
 }
@@ -1293,7 +1403,11 @@ function parseAnyDate(val) {
   if (val instanceof Date) return isNaN(val.getTime()) ? null : val;
   if (typeof val === 'object') {
     if (typeof val.toDate === 'function') {
-      try { return val.toDate(); } catch(e) {}
+      try {
+        return val.toDate();
+      } catch (_e) {
+        /* ignore */
+      }
     }
     if (typeof val.seconds === 'number') {
       return new Date(val.seconds * 1000);
@@ -1310,7 +1424,9 @@ function parseAnyDate(val) {
   if (!str) return null;
 
   // 1. DD.MM.YYYY or DD/MM/YYYY or DD-MM-YYYY with optional time
-  const ruMatch = str.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{2,4})(?:[ T](\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?$/);
+  const ruMatch = str.match(
+    /^(\d{1,2})[./-](\d{1,2})[./-](\d{2,4})(?:[ T](\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?$/
+  );
   if (ruMatch) {
     const d = parseInt(ruMatch[1], 10);
     const m = parseInt(ruMatch[2], 10) - 1;
@@ -1323,7 +1439,9 @@ function parseAnyDate(val) {
   }
 
   // 2. YYYY-MM-DD or YYYY/MM/DD with optional time
-  const isoMatch = str.match(/^(\d{4})[./-](\d{1,2})[./-](\d{1,2})(?:[ T](\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/);
+  const isoMatch = str.match(
+    /^(\d{4})[./-](\d{1,2})[./-](\d{1,2})(?:[ T](\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/
+  );
   if (isoMatch) {
     const y = parseInt(isoMatch[1], 10);
     const m = parseInt(isoMatch[2], 10) - 1;
@@ -1341,7 +1459,10 @@ function parseAnyDate(val) {
 function parseAmount(val) {
   if (typeof val === 'number') return isNaN(val) ? 0 : val;
   if (!val) return 0;
-  const clean = String(val).replace(/\s/g, '').replace(/,/g, '.').replace(/[^\d.-]/g, '');
+  const clean = String(val)
+    .replace(/\s/g, '')
+    .replace(/,/g, '.')
+    .replace(/[^\d.-]/g, '');
   const num = parseFloat(clean);
   return isNaN(num) ? 0 : num;
 }
@@ -1351,7 +1472,20 @@ function formatDateStr(dateStr, format) {
   const d = parseAnyDate(dateStr);
   if (!d) return String(dateStr);
 
-  const RU_MONTHS_SHORT = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+  const RU_MONTHS_SHORT = [
+    'янв',
+    'фев',
+    'мар',
+    'апр',
+    'мая',
+    'июн',
+    'июл',
+    'авг',
+    'сен',
+    'окт',
+    'ноя',
+    'дек',
+  ];
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
@@ -1382,7 +1516,10 @@ function getAllCachedTransactionsFlat() {
       m.items.forEach(tx => {
         const item = { ...tx };
         if (!item.date && (item.rawDate || item.formattedDate)) {
-          const parsed = typeof parseAnyDate === 'function' ? parseAnyDate(item.rawDate || item.formattedDate) : null;
+          const parsed =
+            typeof parseAnyDate === 'function'
+              ? parseAnyDate(item.rawDate || item.formattedDate)
+              : null;
           if (parsed && !isNaN(parsed.getTime()) && typeof formatDateStr === 'function') {
             item.date = formatDateStr(parsed, 'yyyy-MM-dd');
           } else {
@@ -1502,7 +1639,11 @@ function dismissToast(direction = 0) {
   if (direction !== 0) {
     // Тактильный виброотклик при смахивании тоста
     if (typeof navigator !== 'undefined' && navigator.vibrate) {
-      try { navigator.vibrate(10); } catch (e) {}
+      try {
+        navigator.vibrate(10);
+      } catch (_e) {
+        /* ignore */
+      }
     }
     content.classList.add('is-dismissing');
     const exitX = direction > 0 ? window.innerWidth : -window.innerWidth;
@@ -1575,7 +1716,8 @@ function showToast(text, isError = false, keep = false) {
 // Универсальный хелпер надежного извлечения комментария/описания/названия транзакции
 function getTxComment(tx) {
   if (!tx || typeof tx !== 'object') return '';
-  const val = tx.comment ??
+  const val =
+    tx.comment ??
     tx.description ??
     tx.merchant ??
     tx.note ??
@@ -1614,7 +1756,8 @@ let openModalsCount = 0;
 
 function lockBodyScroll() {
   if (openModalsCount === 0) {
-    modalScrollPos = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+    modalScrollPos =
+      window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
     document.body.style.top = `-${modalScrollPos}px`;
     document.body.style.position = 'fixed';
     document.body.style.left = '0';
@@ -1640,9 +1783,14 @@ function unlockBodyScroll(force = false) {
 
   // Проверяем, есть ли на экране реально открытые модальные окна
   const activeDialogs = Array.from(document.querySelectorAll('.fixed.inset-0')).filter(el => {
-    if (el.id === 'loading-screen' || el.id === 'login-screen' || el.id === 'goal-flow-animation-overlay') return false;
+    if (
+      el.id === 'loading-screen' ||
+      el.id === 'login-screen' ||
+      el.id === 'goal-flow-animation-overlay'
+    )
+      return false;
     if (el.classList.contains('hidden')) return false;
-    return (el.offsetWidth > 0 || el.offsetHeight > 0 || el.getClientRects().length > 0);
+    return el.offsetWidth > 0 || el.offsetHeight > 0 || el.getClientRects().length > 0;
   });
 
   if (activeDialogs.length === 0) {
@@ -1673,7 +1821,15 @@ function unlockBodyScroll(force = false) {
 }
 
 /* Кастомное диалоговое окно */
-function showDialog(title, message, isConfirm, callback, cancelCallback, customOkText, customCancelText) {
+function showDialog(
+  title,
+  message,
+  isConfirm,
+  callback,
+  cancelCallback,
+  customOkText,
+  customCancelText
+) {
   const dialog = document.getElementById('custom-dialog');
   if (!dialog) return;
   lockBodyScroll();
@@ -1690,13 +1846,13 @@ function showDialog(title, message, isConfirm, callback, cancelCallback, customO
 
     btns.innerHTML = `<button id="dialog-cancel" type="button" class="flex-1 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 hover:text-white py-3 rounded-xl font-semibold text-xs cursor-pointer transition-colors active:scale-95">${escapeHtml(cancelBtnText)}</button>
                       <button id="dialog-ok" type="button" class="flex-1 ${okBtnClass} text-white py-3 rounded-xl font-semibold text-xs cursor-pointer transition-colors active:scale-95 shadow-md">${escapeHtml(okBtnText)}</button>`;
-    document.getElementById('dialog-cancel').onclick = (e) => {
+    document.getElementById('dialog-cancel').onclick = e => {
       if (e) e.stopPropagation();
       dialog.classList.add('hidden');
       unlockBodyScroll();
       if (cancelCallback) cancelCallback();
     };
-    document.getElementById('dialog-ok').onclick = (e) => {
+    document.getElementById('dialog-ok').onclick = e => {
       if (e) e.stopPropagation();
       dialog.classList.add('hidden');
       unlockBodyScroll();
@@ -1705,7 +1861,7 @@ function showDialog(title, message, isConfirm, callback, cancelCallback, customO
   } else {
     const okBtnText = customOkText || 'Понятно';
     btns.innerHTML = `<button id="dialog-ok" type="button" class="w-full bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white py-3 rounded-xl font-semibold text-xs cursor-pointer transition-colors active:scale-95 shadow-md">${escapeHtml(okBtnText)}</button>`;
-    document.getElementById('dialog-ok').onclick = (e) => {
+    document.getElementById('dialog-ok').onclick = e => {
       if (e) e.stopPropagation();
       dialog.classList.add('hidden');
       unlockBodyScroll();
@@ -1728,7 +1884,10 @@ function isNativeAppPlatform() {
       return false;
     }
   }
-  if (typeof location !== 'undefined' && (location.protocol === 'capacitor:' || location.protocol === 'ionic:')) {
+  if (
+    typeof location !== 'undefined' &&
+    (location.protocol === 'capacitor:' || location.protocol === 'ionic:')
+  ) {
     return true;
   }
   return false;

@@ -4980,18 +4980,7 @@ async function importSelectedTransactions() {
 
     showToast(`Успешно добавлено ${selected.length} операций!`);
 
-    // Если импорт вызывался из мастера бюджета — возвращаем на сохраненный шаг и обновляем доходы
-    if (window._returnToWizardStep) {
-      const returnStep = window._returnToWizardStep;
-      window._returnToWizardStep = null;
-      if (typeof switchTab === 'function') switchTab('budget');
-      if (typeof goToWizardStep === 'function') goToWizardStep(returnStep);
-      if (typeof renderWizardIncomeSources === 'function') renderWizardIncomeSources();
-      if (typeof calculateHistoricalIncomeForWizard === 'function')
-        calculateHistoricalIncomeForWizard();
-    } else {
-      if (typeof renderBudgetTab === 'function') renderBudgetTab();
-    }
+    if (typeof renderBudgetTab === 'function') renderBudgetTab();
 
     // Проверяем наличие крупных трат среди импортированных операций (не входящих в закрытые месяца)
     const largeTxs = getImportedLargeExpenses(selected);
@@ -5307,14 +5296,6 @@ function closeStatementLargeExpensesModal() {
     if (typeof unlockBodyScroll === 'function') unlockBodyScroll();
   }
   window._statementLargeTxs = [];
-
-  // Если импорт вызывался из мастера бюджета — возвращаем в мастер
-  if (window._returnToWizardStep) {
-    const returnStep = window._returnToWizardStep;
-    window._returnToWizardStep = null;
-    if (typeof switchTab === 'function') switchTab('budget');
-    if (typeof goToWizardStep === 'function') goToWizardStep(returnStep);
-  }
 }
 
 async function submitStatementLargeExpenses() {
@@ -5392,14 +5373,6 @@ async function submitStatementLargeExpenses() {
   showToast(
     `Списано из целей ${items.length} ${items.length === 1 ? 'крупная трата' : 'крупных трат'}`
   );
-
-  // Если был возврат в мастер
-  if (window._returnToWizardStep) {
-    const returnStep = window._returnToWizardStep;
-    window._returnToWizardStep = null;
-    if (typeof switchTab === 'function') switchTab('budget');
-    if (typeof goToWizardStep === 'function') goToWizardStep(returnStep);
-  }
 
   // Фоновая синхронизация с Firestore (не блокирует UI)
   Promise.all(backgroundTasks).catch(err => {

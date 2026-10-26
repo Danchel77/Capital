@@ -71,37 +71,94 @@ function shareToVirtualPos(share) {
   return found ? found.center : (s / 100) * GOAL_SHARE_TOTAL_VIRTUAL;
 }
 
+function getTotalDepositsValue() {
+  const data = Cache?.deposits || [];
+  return data.filter(d => !d.isClosed).reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0);
+}
+window.getTotalDepositsValue = getTotalDepositsValue;
+
+function getTotalBrokerValue() {
+  const assets = Cache?.brokerAssets || [];
+  let total = 0;
+  assets.forEach(a => {
+    const qty = parseFloat(a.quantity) || 0;
+    const price = a.type === 'cash' ? 1 : parseFloat(a.currentPrice) || parseFloat(a.price) || 0;
+    total += qty * price;
+  });
+  return total;
+}
+window.getTotalBrokerValue = getTotalBrokerValue;
+
+function getTotalCapitalValue() {
+  return getTotalDepositsValue() + getTotalBrokerValue();
+}
+window.getTotalCapitalValue = getTotalCapitalValue;
+
+function calculateRecentMonthlySurplus(monthsCount = 3) {
+  const months = (Cache?.transactions || []).slice(0, monthsCount);
+  if (months.length === 0) return 0;
+
+  let totalIncome = 0;
+  let totalExpense = 0;
+
+  months.forEach(m => {
+    (m.items || []).forEach(tx => {
+      const isExpense =
+        tx.type === 'Расход' ||
+        tx.type === 'expense' ||
+        String(tx.type || '')
+          .trim()
+          .toLowerCase() === 'расход';
+      const isIncome =
+        tx.type === 'Доход' ||
+        tx.type === 'income' ||
+        String(tx.type || '')
+          .trim()
+          .toLowerCase() === 'доход';
+      const isExcluded = !!(tx.excludeFromBudget || tx.isExcludedFromBudget);
+      if (isExcluded) return;
+
+      const val = parseFloat(tx.amount) || 0;
+      if (isExpense) totalExpense += val;
+      if (isIncome) totalIncome += val;
+    });
+  });
+
+  return Math.round((totalIncome - totalExpense) / Math.max(1, months.length));
+}
+window.calculateRecentMonthlySurplus = calculateRecentMonthlySurplus;
+
 function getMonthlyPlannedSavingsTotal() {
-  const plan = Cache?.budgetPlan || {};
-  if (!plan.isConfigured) return 0;
-
-  const income = parseFloat(plan.income || plan.monthlyIncome) || 0;
-  const bills = Cache?.calendarBills || [];
-  const recurringBills = bills.filter(b => b.type !== 'onetime' && b.type !== 'Разовый');
-  const billsTotal = recurringBills.reduce((acc, b) => acc + (parseFloat(b.amount) || 0), 0);
-
-  const limits = plan.categoryLimits || {};
-  const limitsTotal = Object.values(limits).reduce((acc, val) => acc + (parseFloat(val) || 0), 0);
-
-  return Math.max(0, income - billsTotal - limitsTotal);
+  const surplus = calculateRecentMonthlySurplus(3);
+  return Math.max(0, surplus);
 }
 window.getMonthlyPlannedSavingsTotal = getMonthlyPlannedSavingsTotal;
 
 function processGoals(goals) {
-  return (goals || []).map(g => {
-    const tar = parseFloat(g.target) || 0;
-    const sav = parseFloat(g.saved) || 0;
-    const share = parseFloat(g.share) || (goals.length > 0 ? Math.round(100 / goals.length) : 100);
+  const totalCapital = getTotalCapitalValue();
+  const rawGoals = goals || Cache?.goals || [];
+
+  return rawGoals.map(g => {
+    const target = parseFloat(g.target) || 0;
+    const manualSaved = parseFloat(g.saved) || 0;
+    const share =
+      parseFloat(g.share) || (rawGoals.length > 0 ? Math.round(100 / rawGoals.length) : 100);
+    const capitalAlloc = Math.round(totalCapital * (share / 100));
+    const totalAccumulated = manualSaved + capitalAlloc;
+    const progress = Math.min(100, target > 0 ? (totalAccumulated / target) * 100 : 0);
+    const isAchieved = target > 0 && totalAccumulated >= target;
     const icon = g.icon || getGoalIcon(g.name) || 'target';
+
     return {
-      id: g.id,
-      name: g.name,
-      target: tar,
-      saved: sav,
-      share: share,
-      icon: icon,
-      progress: Math.min(100, tar > 0 ? (sav / tar) * 100 : 0).toFixed(1),
-      isAchieved: tar > 0 && sav >= tar,
+      ...g,
+      target,
+      manualSaved,
+      capitalAlloc,
+      saved: totalAccumulated,
+      share,
+      progress: progress.toFixed(1),
+      isAchieved,
+      icon,
     };
   });
 }
@@ -120,42 +177,27 @@ function getGoalIcon(name) {
 }
 window.getGoalIcon = getGoalIcon;
 
-function renderBudgetGoals(goals, plan, bills, targetDate) {
+function renderBudgetGoals(goals) {
   const container = document.getElementById('budget-goals-list');
   const surplusEl = document.getElementById('budget-goals-surplus');
   if (!container) return;
 
-  const currentSelectedDate =
-    targetDate ||
-    (typeof getSelectedBudgetDate === 'function' ? getSelectedBudgetDate() : new Date());
-  const monthlyIncome = plan?.monthlyIncome || 0;
-  const monthlyLimit = plan?.monthlyVariableLimit || 0;
-  const activeBills = (bills || []).filter(b => {
-    return typeof getOneTimeBillMonthInfo === 'function'
-      ? getOneTimeBillMonthInfo(b, currentSelectedDate).isActive
-      : true;
-  });
-  const totalBills = activeBills.reduce((s, b) => {
-    return (
-      s +
-      (typeof getEffectiveBillAmount === 'function'
-        ? getEffectiveBillAmount(b, currentSelectedDate)
-        : parseFloat(b.amount) || 0)
-    );
-  }, 0);
-  const netSurplus = monthlyIncome - monthlyLimit - totalBills;
+  const totalCapital = getTotalCapitalValue();
+  const processedGoals = processGoals(goals || Cache?.goals || []);
+  const avgSurplus = calculateRecentMonthlySurplus(3);
+  const totalAllocatedCapital = processedGoals.reduce((sum, g) => sum + g.capitalAlloc, 0);
 
   if (surplusEl) {
-    if (netSurplus < 0) {
-      surplusEl.innerText = `Дефицит по плану: -${formatMoney(Math.abs(netSurplus))}/мес`;
-      surplusEl.className = 'text-xs font-semibold text-[#FF453A]';
+    if (totalCapital > 0) {
+      surplusEl.innerText = `В целях: ${formatMoney(totalAllocatedCapital)} из ${formatMoney(totalCapital)} капитала`;
+      surplusEl.className = 'text-xs text-gray-400 mt-0.5';
     } else {
-      surplusEl.innerText = `Накопления по плану: +${formatMoney(netSurplus)}/мес`;
-      surplusEl.className = 'text-xs font-semibold text-[#30D158]';
+      surplusEl.innerText = 'Накопления распределяются от капитала';
+      surplusEl.className = 'text-xs text-gray-400 mt-0.5';
     }
   }
 
-  if (!goals || goals.length === 0) {
+  if (processedGoals.length === 0) {
     container.innerHTML = `
       <div class="card rounded-2xl p-5 text-center flex flex-col items-center justify-center gap-2.5 bg-[#181B24] border border-[rgba(255,255,255,0.06)]">
         <div class="w-10 h-10 rounded-xl bg-[#6C5DD3]/15 text-[#727cff] flex items-center justify-center">
@@ -163,7 +205,7 @@ function renderBudgetGoals(goals, plan, bills, targetDate) {
         </div>
         <div>
           <p class="text-xs font-semibold text-gray-200">Целей пока нет</p>
-          <p class="text-[11px] text-[#848D99] mt-0.5">Создайте финансовую цель для накопления средств</p>
+          <p class="text-[11px] text-[#848D99] mt-0.5">Создайте цель, чтобы распределить долю накоплений капитала</p>
         </div>
         <button type="button" onclick="openGoalModal()" class="px-3.5 py-1.5 rounded-xl bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white text-xs font-semibold transition-all active:scale-95 cursor-pointer flex items-center gap-1.5">
           <i data-lucide="plus" class="w-3.5 h-3.5"></i>
@@ -175,204 +217,72 @@ function renderBudgetGoals(goals, plan, bills, targetDate) {
     return;
   }
 
-  const activeDeposits = (Cache?.deposits || []).filter(d => !d.isClosed);
-
-  container.innerHTML = goals
+  container.innerHTML = processedGoals
     .map(g => {
-      const goalMonthlyAlloc = Math.round(netSurplus * (g.share / 100));
-      const linkedDeposits = activeDeposits.filter(d => d.goalId === g.id);
-      const monthlyDepInterest = Math.round(
-        linkedDeposits.reduce((sum, d) => sum + (d.amount * (d.rate / 100)) / 12, 0)
-      );
-      const totalMonthlyGrowth = goalMonthlyAlloc + monthlyDepInterest;
-
       const remaining = Math.max(0, g.target - g.saved);
-      let monthsNeeded = 0;
       let timeHint = '';
-
-      if (g.isAchieved || (g.target > 0 && g.saved >= g.target)) {
-        timeHint = 'Цель выполнена';
-      } else if (totalMonthlyGrowth > 0) {
-        monthsNeeded = Math.ceil(remaining / totalMonthlyGrowth);
-        timeHint = `~${monthsNeeded} мес. при текущем плане`;
-      } else if (totalMonthlyGrowth < 0) {
-        timeHint = 'Дефицит темпа';
+      if (g.isAchieved) {
+        timeHint = '<span class="text-emerald-400 font-medium">Цель достигнута</span>';
+      } else if (avgSurplus > 0) {
+        const monthlyAlloc = Math.round(avgSurplus * (g.share / 100));
+        const monthsNeeded = monthlyAlloc > 0 ? Math.ceil(remaining / monthlyAlloc) : 0;
+        timeHint =
+          monthsNeeded > 0 ? `~${monthsNeeded} мес. при текущем темпе` : 'Скоро будет достигнута';
       } else {
-        timeHint = 'Увеличьте профицит';
-      }
-
-      let badgeText = '0 ₽/мес';
-      let badgeClass =
-        'bg-[#212430] text-[#848D99] hover:bg-[#2A2D3C] border-[rgba(255,255,255,0.06)]';
-      let tooltipHeaderClass = 'text-gray-400';
-
-      if (totalMonthlyGrowth > 0) {
-        badgeText = `+${formatMoney(totalMonthlyGrowth)}/мес`;
-        badgeClass = 'bg-[#30D158]/10 text-[#30D158] hover:bg-[#30D158]/20 border-[#30D158]/25';
-        tooltipHeaderClass = 'text-[#30D158]';
-      } else if (totalMonthlyGrowth < 0) {
-        badgeText = `-${formatMoney(Math.abs(totalMonthlyGrowth))}/мес`;
-        badgeClass = 'bg-[#FF453A]/10 text-[#FF453A] hover:bg-[#FF453A]/20 border-[#FF453A]/25';
-        tooltipHeaderClass = 'text-[#FF453A]';
+        timeHint = 'Зависит от накоплений';
       }
 
       return `
-      <div class="card bg-[#181B24] border border-[rgba(255,255,255,0.06)] rounded-2xl p-4 shadow-sm cursor-pointer relative hover:border-[rgba(255,255,255,0.12)] transition-all"
+      <div class="card bg-[#181B24] border border-[rgba(255,255,255,0.06)] hover:border-[rgba(255,255,255,0.12)] rounded-2xl p-4 shadow-sm cursor-pointer relative transition-all"
            data-id="${g.id}"
            data-table="Goals"
            onclick="openEditGoalModal('${g.id}')">
         
         <input type="checkbox" class="select-checkbox hidden" data-id="${g.id}">
 
-        <div class="flex items-start justify-between mb-2 gap-2">
+        <div class="flex items-start justify-between mb-2.5 gap-2">
           <div class="flex items-center gap-2.5 min-w-0 flex-1">
-            <div class="w-8 h-8 rounded-xl bg-[#6C5DD3]/15 text-[#6C5DD3] flex items-center justify-center flex-shrink-0">
-              <i data-lucide="${g.icon || 'target'}" class="w-4 h-4"></i>
+            <div class="w-9 h-9 rounded-xl bg-[#6C5DD3]/15 text-[#727cff] flex items-center justify-center flex-shrink-0">
+              <i data-lucide="${g.icon || 'target'}" class="w-4.5 h-4.5"></i>
             </div>
             <div class="min-w-0 flex-1">
-              <h4 class="text-sm font-bold text-white truncate">${escapeHtml(g.name)}</h4>
+              <h4 class="text-xs sm:text-sm font-bold text-white truncate">${escapeHtml(g.name)}</h4>
               <p class="text-[11px] text-[#848D99] mt-0.5">${timeHint}</p>
             </div>
           </div>
           
-          <button type="button" onclick="event.stopPropagation(); openGoalTopupModal('${g.id}', '${escapeHtml(g.name)}')" class="goal-topup-btn bg-[#212430] hover:bg-[#2A2D3C] text-gray-200 border border-[rgba(255,255,255,0.06)] text-xs font-semibold px-2.5 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1 flex-shrink-0 active:scale-95">
+          <button type="button" 
+                  onclick="event.stopPropagation(); openGoalTopupModal('${g.id}', '${escapeHtml(g.name)}')" 
+                  class="bg-[#212430] hover:bg-[#2A2D3C] text-gray-200 border border-[rgba(255,255,255,0.06)] text-xs font-semibold px-2.5 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1 flex-shrink-0 active:scale-95">
             <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-            <span>Пополнить</span>
+            <span>Копилка</span>
           </button>
         </div>
 
-        <div class="flex items-center justify-between gap-2 mb-2 text-[11px]">
-          <span class="text-gray-400 font-medium">Доля в бюджете: <span class="text-[#6C5DD3] font-bold">${g.share}%</span></span>
-          <div class="relative inline-block" onclick="event.stopPropagation();" onmousedown="event.stopPropagation();" ontouchstart="event.stopPropagation();">
-            <button type="button" 
-                    onclick="event.stopPropagation(); toggleGoalPaceTooltip('${g.id}', event);" 
-                    onmousedown="event.stopPropagation();"
-                    ontouchstart="event.stopPropagation();"
-                    class="goal-pace-badge inline-flex items-center px-2 py-0.5 rounded-full ${badgeClass} font-semibold text-[10px] border flex-shrink-0 cursor-pointer transition-all active:scale-95" 
-                    title="Детализация темпа">
-              ${badgeText}
-            </button>
-            <div id="goal-pace-tooltip-${g.id}" class="goal-pace-tooltip hidden absolute right-0 z-50 w-56 bg-[#1E222D] border border-[rgba(255,255,255,0.15)] p-2.5 rounded-2xl shadow-2xl space-y-1.5 text-left pointer-events-auto" onclick="event.stopPropagation();" onmousedown="event.stopPropagation();" ontouchstart="event.stopPropagation();">
-              <div class="flex items-center justify-between border-b border-[rgba(255,255,255,0.06)] pb-1.5">
-                <span class="text-[10px] font-bold text-white">Темп накоплений</span>
-                <span class="text-[10px] font-mono font-bold ${tooltipHeaderClass}">${badgeText}</span>
-              </div>
-              <div class="text-[10px] space-y-1">
-                <div class="flex justify-between text-gray-400">
-                  <span>Из бюджета (${g.share}%):</span>
-                  <b class="font-mono ${goalMonthlyAlloc < 0 ? 'text-[#FF453A]' : goalMonthlyAlloc > 0 ? 'text-[#30D158]' : 'text-gray-300'}">
-                    ${goalMonthlyAlloc < 0 ? '-' : goalMonthlyAlloc > 0 ? '+' : ''}${formatMoney(Math.abs(goalMonthlyAlloc))}
-                  </b>
-                </div>
-                <div class="flex justify-between text-gray-400">
-                  <span>Со вкладов:</span>
-                  <b class="${monthlyDepInterest > 0 ? 'text-[#30D158]' : 'text-gray-400'} font-mono">+${formatMoney(monthlyDepInterest)}</b>
-                </div>
-              </div>
-              ${
-                monthsNeeded > 0
-                  ? `
-                <div class="pt-1 border-t border-[rgba(255,255,255,0.06)] text-[9px] text-[#848D99]">
-                  Срок достижения: ~${monthsNeeded} мес.
-                </div>
-              `
-                  : totalMonthlyGrowth < 0
-                    ? `
-                <div class="pt-1 border-t border-[rgba(255,255,255,0.06)] text-[9px] text-[#FF453A]">
-                  При текущем дефиците цель недостижима
-                </div>
-              `
-                    : ''
-              }
-            </div>
-          </div>
+        <div class="flex justify-between items-baseline text-xs mb-1.5">
+          <span class="text-white font-mono font-bold text-sm">
+            ${formatMoney(g.saved)}
+            <span class="text-[#848D99] font-normal text-xs">/ ${formatMoney(g.target)}</span>
+          </span>
+          <span class="text-xs font-mono font-bold text-[#727cff]">${g.progress}%</span>
         </div>
 
-        <div class="flex justify-between items-end text-xs mb-2">
-          <span class="text-white font-bold font-mono text-sm">${formatMoney(g.saved)} <span class="text-[#848D99] font-normal text-xs">/ ${formatMoney(g.target)}</span></span>
-          <span class="text-[11px] font-semibold text-[#6C5DD3]">${g.progress}%</span>
-        </div>
-
-        <div class="w-full bg-[rgba(255,255,255,0.06)] h-2 rounded-full overflow-hidden">
+        <div class="w-full bg-[rgba(255,255,255,0.06)] h-2 rounded-full overflow-hidden mb-2">
           <div class="bg-gradient-to-r from-[#6C5DD3] to-[#32ADE6] h-full rounded-full transition-all duration-500" style="width: ${g.progress}%"></div>
+        </div>
+
+        <div class="flex items-center justify-between text-[10px] text-[#848D99]">
+          <span>Доля капитала: <strong class="text-gray-300 font-semibold">${g.share}%</strong> (${formatMoney(g.capitalAlloc)})</span>
+          <span>Копилка: <strong class="text-gray-300 font-semibold">${formatMoney(g.manualSaved)}</strong></span>
         </div>
       </div>
     `;
     })
     .join('');
+
   if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 window.renderBudgetGoals = renderBudgetGoals;
-
-function toggleGoalPaceTooltip(goalId, event) {
-  if (event) {
-    event.stopPropagation();
-    event.preventDefault();
-  }
-  const current = document.getElementById(`goal-pace-tooltip-${goalId}`);
-  const isHidden = current ? current.classList.contains('hidden') : true;
-  document.querySelectorAll('.goal-pace-tooltip').forEach(el => {
-    el.classList.add('hidden');
-    const card = el.closest('.card');
-    if (card) card.style.zIndex = '';
-  });
-  if (current && isHidden) {
-    window._hasOpenGoalPaceTooltips = true;
-    current.classList.remove('hidden');
-    const card = current.closest('.card');
-    if (card) card.style.zIndex = '50';
-
-    const trigger =
-      (event && (event.currentTarget || event.target?.closest('.goal-pace-badge'))) ||
-      current.parentElement?.querySelector('.goal-pace-badge');
-    const rect = trigger ? trigger.getBoundingClientRect() : null;
-    const tooltipHeight = current.offsetHeight || 135;
-
-    if (rect && rect.top < tooltipHeight + 16) {
-      current.classList.remove('bottom-full', 'mb-2');
-      current.classList.add('top-full', 'mt-2');
-    } else {
-      current.classList.remove('top-full', 'mt-2');
-      current.classList.add('bottom-full', 'mb-2');
-    }
-  } else {
-    window._hasOpenGoalPaceTooltips = false;
-  }
-}
-window.toggleGoalPaceTooltip = toggleGoalPaceTooltip;
-
-function hideGoalPaceTooltips() {
-  if (!window._hasOpenGoalPaceTooltips) return;
-  const visibleTooltips = document.querySelectorAll('.goal-pace-tooltip:not(.hidden)');
-  if (visibleTooltips.length > 0) {
-    visibleTooltips.forEach(el => {
-      el.classList.add('hidden');
-      const card = el.closest('.card');
-      if (card) card.style.zIndex = '';
-    });
-  }
-  window._hasOpenGoalPaceTooltips = false;
-}
-window.hideGoalPaceTooltips = hideGoalPaceTooltips;
-
-// Event listeners for closing tooltips on outer click or scroll
-if (typeof document !== 'undefined') {
-  document.addEventListener('click', e => {
-    const target = e?.target?.nodeType === 3 ? e.target.parentElement : e?.target;
-    if (
-      target &&
-      typeof target.closest === 'function' &&
-      !target.closest('.goal-pace-tooltip') &&
-      !target.closest('.goal-pace-badge')
-    ) {
-      hideGoalPaceTooltips();
-    }
-  });
-}
-
-if (typeof window !== 'undefined') {
-  window.addEventListener('scroll', hideGoalPaceTooltips, { passive: true, capture: true });
-}
 
 function openBudgetGoalIconPicker(e) {
   toggleBudgetGoalIconPicker(e);
@@ -989,154 +899,3 @@ async function submitGoalTopup() {
   }
 }
 window.submitGoalTopup = submitGoalTopup;
-
-function playGoalFlowAnimation(amount, goalIncrements = []) {
-  const overlay = document.getElementById('goal-flow-animation-overlay');
-  const card = document.getElementById('goal-flow-card');
-  if (!overlay || !card) return;
-
-  const isPositive = amount > 0;
-  const isNegative = amount < 0;
-
-  let goalsListHtml = '';
-  if (goalIncrements.length > 0) {
-    goalsListHtml = `
-      <div class="w-full space-y-2 my-3 text-left">
-        ${goalIncrements
-          .map(g => {
-            const oldPct =
-              g.target > 0 ? Math.min(100, Math.round((g.oldSaved / g.target) * 100)) : 0;
-            const newPct =
-              g.target > 0 ? Math.min(100, Math.round((g.newSaved / g.target) * 100)) : 0;
-            const isInc = g.changeAmount > 0;
-            const diffStr = isInc
-              ? `+${formatMoney(g.changeAmount)}`
-              : `-${formatMoney(Math.abs(g.changeAmount))}`;
-
-            return `
-            <div class="p-3 rounded-2xl bg-[#12151C] border border-[rgba(255,255,255,0.06)] space-y-1.5">
-              <div class="flex items-center justify-between text-xs">
-                <span class="font-bold text-white truncate max-w-[170px]">${escapeHtml(g.name)}</span>
-                <span class="font-mono font-bold ${isInc ? 'text-emerald-400' : 'text-[#FF453A]'}">${diffStr}</span>
-              </div>
-              <div class="w-full bg-[rgba(255,255,255,0.08)] h-2 rounded-full overflow-hidden relative">
-                <div id="anim-goal-bar-${g.id}" class="h-full ${isInc ? 'bg-gradient-to-r from-emerald-500 to-teal-400' : 'bg-gradient-to-r from-rose-500 to-red-400'} rounded-full transition-all duration-1000 ease-out" style="width: ${oldPct}%"></div>
-              </div>
-              <div class="flex justify-between items-center text-[10px] text-[#848D99] font-mono">
-                <span>Было: ${oldPct}%</span>
-                <span class="font-bold ${isInc ? 'text-emerald-400' : 'text-[#FF453A]'}">Стало: ${newPct}%</span>
-              </div>
-            </div>
-          `;
-          })
-          .join('')}
-      </div>
-    `;
-  } else {
-    goalsListHtml = `
-      <div class="w-full p-3 rounded-2xl bg-[#12151C] border border-[rgba(255,255,255,0.06)] my-3 text-center">
-        <p class="text-xs text-gray-400 leading-relaxed">
-          ${
-            isNegative
-              ? 'Активных целей для списания дефицита нет. Баланс целей не изменился.'
-              : 'У вас пока нет активных финансовых целей для автоматического зачисления сбережений.'
-          }
-        </p>
-      </div>
-    `;
-  }
-
-  if (isPositive) {
-    card.className =
-      'bg-[#181B24]/95 border border-emerald-500/40 rounded-3xl p-5 shadow-2xl backdrop-blur-xl flex flex-col items-center text-center max-w-sm w-full mx-4 transform scale-100 transition-all duration-300 pointer-events-auto border-emerald-500/30';
-    card.innerHTML = `
-      <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-500/20 to-teal-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 mb-2 shadow-lg animate-bounce">
-        <i data-lucide="award" class="w-7 h-7"></i>
-      </div>
-      <h3 class="text-base font-black text-white tracking-tight">Средства переведены в цели!</h3>
-      <p class="text-2xl font-black font-mono text-emerald-400 my-1">+${formatMoney(amount)}</p>
-      <p class="text-[11px] text-[#848D99] leading-tight">
-        Отложенный профицит успешно пополнил накопления по вашим финансовым целям.
-      </p>
-      ${goalsListHtml}
-      
-      <div class="w-full my-2.5 p-3 rounded-2xl bg-[#12151C] border border-[#6C5DD3]/25 flex items-start gap-2.5 text-left">
-        <div class="w-7 h-7 rounded-xl bg-[#6C5DD3]/20 flex items-center justify-center text-[#8C7DFF] flex-shrink-0 mt-0.5">
-          <i data-lucide="piggy-bank" class="w-4 h-4"></i>
-        </div>
-        <div class="text-[11px] leading-relaxed text-gray-300 flex-1 min-w-0">
-          <span class="font-bold text-white block mb-0.5">Совет по накоплениям</span>
-          Средства можно положить на вклад или накопительный счет — так вы быстрее сможете достичь поставленных целей!
-        </div>
-      </div>
-
-      <button type="button" onclick="closeGoalFlowAnimationOverlay()" class="w-full mt-2 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-all active:scale-95 cursor-pointer">
-        Отлично!
-      </button>
-    `;
-  } else if (isNegative) {
-    card.className =
-      'bg-[#181B24]/95 border border-red-500/40 rounded-3xl p-5 shadow-2xl backdrop-blur-xl flex flex-col items-center text-center max-w-sm w-full mx-4 transform scale-100 transition-all duration-300 pointer-events-auto border-red-500/30';
-    card.innerHTML = `
-      <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-red-500/20 to-rose-500/20 border border-red-500/40 flex items-center justify-center text-[#FF453A] mb-2 shadow-lg">
-        <i data-lucide="trending-down" class="w-7 h-7"></i>
-      </div>
-      <h3 class="text-base font-black text-white tracking-tight">Корректировка накоплений</h3>
-      <p class="text-2xl font-black font-mono text-[#FF453A] my-1">-${formatMoney(Math.abs(amount))}</p>
-      <p class="text-[11px] text-[#848D99] leading-tight">
-        Из-за дефицита бюджета сумма автоматически вычтена из целей в соответствии с выставленными долями.
-      </p>
-      ${goalsListHtml}
-      <p class="text-[10px] text-gray-400 mt-1 italic leading-tight">
-        При необходимости вы можете скорректировать баланс целей в разделе «Вклады и Цели».
-      </p>
-      <button type="button" onclick="closeGoalFlowAnimationOverlay()" class="w-full mt-3 py-2.5 rounded-xl bg-[#212430] hover:bg-[#2A2D3C] text-gray-200 font-bold text-xs border border-[rgba(255,255,255,0.08)] transition-all active:scale-95 cursor-pointer">
-        Понятно
-      </button>
-    `;
-  } else {
-    card.className =
-      'bg-[#181B24]/95 border border-[rgba(255,255,255,0.1)] rounded-3xl p-5 shadow-2xl backdrop-blur-xl flex flex-col items-center text-center max-w-sm w-full mx-4 transform scale-100 transition-all duration-300 pointer-events-auto';
-    card.innerHTML = `
-      <div class="w-14 h-14 rounded-2xl bg-[#212430] border border-[rgba(255,255,255,0.08)] flex items-center justify-center text-gray-300 mb-2 shadow-lg">
-        <i data-lucide="check-circle-2" class="w-7 h-7 text-[#30D158]"></i>
-      </div>
-      <h3 class="text-base font-black text-white tracking-tight">Месяц успешно закрыт!</h3>
-      <p class="text-[11px] text-[#848D99] my-2">Все расходы в точности сошлись с доходами.</p>
-      <button type="button" onclick="closeGoalFlowAnimationOverlay()" class="w-full mt-2 py-2.5 rounded-xl bg-[#212430] hover:bg-[#2A2D3C] text-gray-200 font-bold text-xs border border-[rgba(255,255,255,0.08)] transition-all active:scale-95 cursor-pointer">
-        Продолжить
-      </button>
-    `;
-  }
-
-  overlay.classList.remove('hidden');
-  if (typeof lucide !== 'undefined') lucide.createIcons();
-
-  setTimeout(() => {
-    goalIncrements.forEach(g => {
-      const bar = document.getElementById(`anim-goal-bar-${g.id}`);
-      if (bar) {
-        const newPct = g.target > 0 ? Math.min(100, Math.round((g.newSaved / g.target) * 100)) : 0;
-        bar.style.width = `${newPct}%`;
-      }
-    });
-  }, 120);
-
-  if (window.goalFlowAnimTimeout) clearTimeout(window.goalFlowAnimTimeout);
-  window.goalFlowAnimTimeout = setTimeout(() => {
-    closeGoalFlowAnimationOverlay();
-  }, 18000);
-}
-window.playGoalFlowAnimation = playGoalFlowAnimation;
-
-function closeGoalFlowAnimationOverlay() {
-  const overlay = document.getElementById('goal-flow-animation-overlay');
-  if (overlay) {
-    overlay.classList.add('animate-fade-out');
-    setTimeout(() => {
-      overlay.classList.add('hidden');
-      overlay.classList.remove('animate-fade-out');
-    }, 300);
-  }
-}
-window.closeGoalFlowAnimationOverlay = closeGoalFlowAnimationOverlay;
