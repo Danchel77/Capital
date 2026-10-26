@@ -181,13 +181,13 @@ function renderBudgetCalendar() {
 
   if (upcomingBills.length === 0) {
     container.innerHTML = `
-      <div class="card rounded-2xl p-4 text-center flex flex-col items-center justify-center gap-2 bg-[#181B24] border border-[rgba(255,255,255,0.06)]">
-        <div class="w-9 h-9 rounded-xl bg-[#212430] text-[#848D99] flex items-center justify-center">
-          <i data-lucide="calendar-check-2" class="w-4 h-4 text-[#6C5DD3]"></i>
+      <div class="rounded-2xl p-4 text-center flex flex-col items-center justify-center gap-2 bg-[#141720] border border-white/[0.07]">
+        <div class="w-8 h-8 rounded-xl bg-white/[0.03] border border-white/[0.05] text-zinc-400 flex items-center justify-center">
+          <i data-lucide="calendar-check-2" class="w-4 h-4 text-zinc-400"></i>
         </div>
         <div>
-          <p class="text-xs font-semibold text-gray-200">Нет списаний на ближайшие две недели</p>
-          <p class="text-[11px] text-[#848D99] mt-0.5">Все регулярные платежи распределены дальше по календарю</p>
+          <p class="text-xs font-medium text-zinc-300">Нет списаний на ближайшие две недели</p>
+          <p class="text-[10px] text-zinc-500 mt-0.5">Все регулярные платежи распределены дальше по календарю</p>
         </div>
       </div>
     `;
@@ -210,51 +210,53 @@ function renderBudgetCalendar() {
     'дек',
   ];
 
-  container.innerHTML = upcomingBills
+  const rows = upcomingBills
     .map(item => {
       const b = item.bill;
       const dayNum = item.date.getDate();
       const monthStr = monthShortNames[item.date.getMonth()];
 
-      let daysBadgeClass = 'bg-[#212430] text-gray-300 border-[rgba(255,255,255,0.06)]';
-      let daysText = `Через ${item.daysLeft} дн.`;
+      let daysBadgeClass = 'text-zinc-400 bg-white/[0.04] border-white/[0.06]';
+      let daysText = `через ${item.daysLeft} дн.`;
       if (item.daysLeft === 0) {
-        daysBadgeClass = 'bg-[#FF453A]/15 text-[#FF453A] border-[#FF453A]/25';
+        daysBadgeClass = 'bg-rose-500/10 text-rose-400 border-rose-500/20';
         daysText = 'Сегодня';
       } else if (item.daysLeft === 1) {
-        daysBadgeClass = 'bg-[#FF9F0A]/15 text-[#FF9F0A] border-[#FF9F0A]/25';
+        daysBadgeClass = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
         daysText = 'Завтра';
       } else if (item.daysLeft <= 4) {
-        daysBadgeClass = 'bg-[#6C5DD3]/15 text-[#9DA5FF] border-[#6C5DD3]/25';
-        daysText = `Через ${item.daysLeft} дн.`;
+        daysBadgeClass = 'bg-blue-500/10 text-blue-400 border-blue-500/20';
+        daysText = `через ${item.daysLeft} дн.`;
       }
 
-      const typeDesc = b.type === 'onetime' ? 'Разовый платеж' : 'Регулярный счет';
+      const typeDesc = b.type === 'onetime' ? 'Разовый' : 'Регулярный';
 
       return `
-      <div class="card p-3 rounded-2xl bg-[#181B24] border border-[rgba(255,255,255,0.06)] hover:border-[rgba(255,255,255,0.14)] hover:bg-[#1C202C] flex items-center justify-between gap-3 transition-all cursor-pointer select-none active:scale-[0.99]"
+      <div class="px-3.5 py-2.5 hover:bg-white/[0.02] flex items-center justify-between gap-3 transition-colors cursor-pointer select-none active:bg-white/[0.04]"
            onclick="openEditBillModal('${b.id}')">
         <div class="flex items-center gap-3 min-w-0">
-          <div class="w-10 h-10 rounded-xl bg-[#212430] border border-[rgba(255,255,255,0.04)] text-gray-300 flex flex-col items-center justify-center flex-shrink-0 leading-tight">
-            <span class="text-xs font-bold text-white leading-none">${dayNum}</span>
-            <span class="text-[9px] text-[#848D99] uppercase font-semibold leading-none mt-0.5">${monthStr}</span>
+          <div class="w-8 h-8 rounded-lg bg-white/[0.03] border border-white/[0.05] text-zinc-300 flex flex-col items-center justify-center flex-shrink-0 leading-tight">
+            <span class="text-xs font-semibold text-white leading-none">${dayNum}</span>
+            <span class="text-[8px] text-zinc-500 uppercase font-medium leading-none mt-0.5">${monthStr}</span>
           </div>
           <div class="min-w-0">
             <div class="flex items-center gap-2">
-              <span class="text-xs font-bold text-white truncate">${escapeHtml(b.name)}</span>
-              <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full border ${daysBadgeClass}">${daysText}</span>
+              <span class="text-xs font-medium text-zinc-100 truncate">${escapeHtml(b.name)}</span>
+              <span class="text-[9px] font-medium px-1.5 py-0.5 rounded border ${daysBadgeClass}">${daysText}</span>
             </div>
-            <span class="text-[10px] text-[#848D99] block mt-0.5">${typeDesc}</span>
+            <span class="text-[10px] text-zinc-500 block mt-0.5">${typeDesc}</span>
           </div>
         </div>
 
         <div class="text-right flex-shrink-0">
-          <span class="text-xs font-mono font-bold text-white">${formatMoney(item.amount)}</span>
+          <span class="text-xs font-mono font-semibold text-zinc-100 [font-variant-numeric:tabular-nums]">${formatMoney(item.amount)}</span>
         </div>
       </div>
     `;
     })
     .join('');
+
+  container.innerHTML = `<div class="bg-[#141720] border border-white/[0.07] rounded-2xl divide-y divide-white/[0.04] overflow-hidden">${rows}</div>`;
 
   if (typeof lucide !== 'undefined') lucide.createIcons();
 }

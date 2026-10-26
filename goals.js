@@ -233,7 +233,7 @@ function renderBudgetGoals(goals) {
       }
 
       return `
-      <div class="card bg-[#181B24] border border-[rgba(255,255,255,0.06)] hover:border-[rgba(255,255,255,0.12)] rounded-2xl p-4 shadow-sm cursor-pointer relative transition-all"
+      <div class="card bg-[#141720] border border-white/[0.07] hover:border-white/[0.12] rounded-2xl p-4 shadow-sm cursor-pointer relative transition-all"
            data-id="${g.id}"
            data-table="Goals"
            onclick="openEditGoalModal('${g.id}')">
@@ -242,38 +242,38 @@ function renderBudgetGoals(goals) {
 
         <div class="flex items-start justify-between mb-2.5 gap-2">
           <div class="flex items-center gap-2.5 min-w-0 flex-1">
-            <div class="w-9 h-9 rounded-xl bg-[#6C5DD3]/15 text-[#727cff] flex items-center justify-center flex-shrink-0">
-              <i data-lucide="${g.icon || 'target'}" class="w-4.5 h-4.5"></i>
+            <div class="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/[0.06] text-zinc-300 flex items-center justify-center flex-shrink-0">
+              <i data-lucide="${g.icon || 'target'}" class="w-4 h-4"></i>
             </div>
             <div class="min-w-0 flex-1">
-              <h4 class="text-xs sm:text-sm font-bold text-white truncate">${escapeHtml(g.name)}</h4>
-              <p class="text-[11px] text-[#848D99] mt-0.5">${timeHint}</p>
+              <h4 class="text-xs sm:text-sm font-semibold text-zinc-100 truncate">${escapeHtml(g.name)}</h4>
+              <p class="text-[10px] text-zinc-500 mt-0.5">${timeHint}</p>
             </div>
           </div>
           
           <button type="button" 
                   onclick="event.stopPropagation(); openGoalTopupModal('${g.id}', '${escapeHtml(g.name)}')" 
-                  class="bg-[#212430] hover:bg-[#2A2D3C] text-gray-200 border border-[rgba(255,255,255,0.06)] text-xs font-semibold px-2.5 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1 flex-shrink-0 active:scale-95">
+                  class="bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 border border-white/[0.06] text-xs font-medium px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1 flex-shrink-0 active:scale-95">
             <i data-lucide="plus" class="w-3.5 h-3.5"></i>
             <span>Копилка</span>
           </button>
         </div>
 
         <div class="flex justify-between items-baseline text-xs mb-1.5">
-          <span class="text-white font-mono font-bold text-sm">
+          <span class="text-zinc-100 font-mono font-semibold text-sm [font-variant-numeric:tabular-nums]">
             ${formatMoney(g.saved)}
-            <span class="text-[#848D99] font-normal text-xs">/ ${formatMoney(g.target)}</span>
+            <span class="text-zinc-500 font-normal text-xs">/ ${formatMoney(g.target)}</span>
           </span>
-          <span class="text-xs font-mono font-bold text-[#727cff]">${g.progress}%</span>
+          <span class="text-xs font-mono font-semibold text-emerald-400 [font-variant-numeric:tabular-nums]">${g.progress}%</span>
         </div>
 
-        <div class="w-full bg-[rgba(255,255,255,0.06)] h-2 rounded-full overflow-hidden mb-2">
-          <div class="bg-gradient-to-r from-[#6C5DD3] to-[#32ADE6] h-full rounded-full transition-all duration-500" style="width: ${g.progress}%"></div>
+        <div class="w-full bg-white/[0.06] h-1.5 rounded-full overflow-hidden mb-2">
+          <div class="bg-emerald-500 h-full rounded-full transition-all duration-500" style="width: ${g.progress}%"></div>
         </div>
 
-        <div class="flex items-center justify-between text-[10px] text-[#848D99]">
-          <span>Доля капитала: <strong class="text-gray-300 font-semibold">${g.share}%</strong> (${formatMoney(g.capitalAlloc)})</span>
-          <span>Копилка: <strong class="text-gray-300 font-semibold">${formatMoney(g.manualSaved)}</strong></span>
+        <div class="flex items-center justify-between text-[10px] text-zinc-500 [font-variant-numeric:tabular-nums]">
+          <span>Доля капитала: <strong class="text-zinc-300 font-medium">${g.share}%</strong> (${formatMoney(g.capitalAlloc)})</span>
+          <span>Копилка: <strong class="text-zinc-300 font-medium">${formatMoney(g.manualSaved)}</strong></span>
         </div>
       </div>
     `;
