@@ -24,13 +24,10 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -188,7 +185,7 @@ public class BankPushService extends NotificationListenerService {
      */
     private boolean isOtpOrSecurityNotice(String text) {
         Pattern otpPattern = Pattern.compile(
-            "(?:код\s+подтверждения|пароль\s+для\s+входа|никому\s+не\s+(?:сообщайте|передавайте)|вход\s+в\s+(?:приложение|банк)|одноразовый\s+пароль|для\s+входа\s+в\s+лк|push[- ]?код|код\s+авторизации|sms[- ]?код)",
+            "(?:код\\s+подтверждения|пароль\\s+для\\s+входа|никому\\s+не\\s+(?:сообщайте|передавайте)|вход\\s+в\\s+(?:приложение|банк)|одноразовый\\s+пароль|для\\s+входа\\s+в\\s+лк|push[- ]?код|код\\s+авторизации|sms[- ]?код)",
             Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE
         );
         return otpPattern.matcher(text).find();
@@ -211,23 +208,15 @@ public class BankPushService extends NotificationListenerService {
             conn.setReadTimeout(4000);
             conn.setDoOutput(true);
 
-            String systemInstruction = "Ты финансовый AI-парсер пуш-уведомлений банков РФ.
-" +
-                "Проанализируй заголовок и текст уведомления.
-" +
-                "Определи:
-" +
-                "1. Это реальная финансовая транзакция (покупка, списание, зачисление, перевод), а не реклама, предложение кредита или акция?
-" +
-                "2. Является ли это внутренним переводом между СВОИМИ счетами (в сейв, копилку, накопительный счет)?
-" +
-                "3. Является ли это переводом другому лицу (СБП, клиенту банка)?
-" +
-                "4. Извлеки сумму (число), тип (Расход или Доход), очисти имя магазина/мерчанта от мусора и выбери наиболее подходящую категорию из списка.
-" +
-                "Отвечай СТРОГО валидным JSON-объектом по схеме:
-" +
-                "{\"isFinancial\": true, \"amount\": 1250.0, \"type\": \"Расход\", \"merchant\": \"ВкусВилл\", \"category\": \"Продукты\", \"isInternalTransfer\": false, \"isPendingTransfer\": false}";
+            String systemInstruction = "Ты финансовый AI-парсер пуш-уведомлений банков РФ.\\n" +
+                "Проанализируй заголовок и текст уведомления.\\n" +
+                "Определи:\\n" +
+                "1. Это реальная финансовая транзакция (покупка, списание, зачисление, перевод), а не реклама, предложение кредита или акция?\\n" +
+                "2. Является ли это внутренним переводом между СВОИМИ счетами (в сейв, копилку, накопительный счет)?\\n" +
+                "3. Является ли это переводом другому лицу (СБП, клиенту банка)?\\n" +
+                "4. Извлеки сумму (число), тип (Расход или Доход), очисти имя магазина/мерчанта от мусора и выбери наиболее подходящую категорию из списка.\\n" +
+                "Отвечай СТРОГО валидным JSON-объектом по схеме:\\n" +
+                "{\\\"isFinancial\\\": true, \\\"amount\\\": 1250.0, \\\"type\\\": \\\"Расход\\\", \\\"merchant\\\": \\\"ВкусВилл\\\", \\\"category\\\": \\\"Продукты\\\", \\\"isInternalTransfer\\\": false, \\\"isPendingTransfer\\\": false}";
 
             JSONObject root = new JSONObject();
             JSONObject sysInst = new JSONObject();
@@ -239,9 +228,7 @@ public class BankPushService extends NotificationListenerService {
             JSONArray contents = new JSONArray();
             JSONObject contentObj = new JSONObject();
             JSONArray parts = new JSONArray();
-            parts.put(new JSONObject().put("text", "Банк: " + bankName + "
-Категории пользователя: " + categoriesJson + "
-Текст уведомления: \"" + fullText + "\""));
+            parts.put(new JSONObject().put("text", "Банк: " + bankName + "\nКатегории пользователя: " + categoriesJson + "\nТекст уведомления: \"" + fullText + "\""));
             contentObj.put("parts", parts);
             contents.put(contentObj);
             root.put("contents", contents);
@@ -301,28 +288,28 @@ public class BankPushService extends NotificationListenerService {
         String lower = full.toLowerCase(Locale.ROOT);
 
         // 1. Marketing / range penalty filter
-        if (Pattern.compile("(?:до|от)\s+\d+.*(?:₽|руб|%|бонус|кэшбэк|кешбэк)", Pattern.CASE_INSENSITIVE).matcher(full).find()) {
+        if (Pattern.compile("(?:до|от)\\s+\\d+.*(?:₽|руб|%|бонус|кэшбэк|кешбэк)", Pattern.CASE_INSENSITIVE).matcher(full).find()) {
             return null;
         }
 
         // 2. Detect internal transfer between own accounts
         boolean isInternal = Pattern.compile(
-            "(?:на\s+сч[её]т\s+в\s+сейвах|в\s+сейвы|пополнение\s+с\s+карты.*на\s+сч[её]т|перевод.*между\s+(?:своими|счетами)|в\s+инвесткопилку|перевод\s+на\s+сч[её]т\s+в\s+сейв)",
+            "(?:на\\s+сч[её]т\\s+в\\s+сейвах|в\\s+сейвы|пополнение\\s+с\\s+карты.*на\\s+сч[её]т|перевод.*между\\s+(?:своими|счетами)|в\\s+инвесткопилку|перевод\\s+на\\s+сч[её]т\\s+в\\s+сейв)",
             Pattern.CASE_INSENSITIVE
         ).matcher(full).find();
 
         // 3. Extract amount
         double amount = 0;
         Pattern[] patterns = new Pattern[] {
-            Pattern.compile("(?:покупка|оплата|списание|списано|снятие|зачисление|пополнение|сумма|чек|на сумму|расход|перевод)\s*:?\s*([+\-]?\s*\d+[\s\d]*(?:[.,]\d{1,2})?)\s*(?:₽|руб|rur|rub|р\b)", Pattern.CASE_INSENSITIVE),
-            Pattern.compile("([+\-]?\s*\d+[\s\d]*(?:[.,]\d{1,2})?)\s*(?:₽|руб|rur|rub|р\b)", Pattern.CASE_INSENSITIVE),
-            Pattern.compile("(?:сумма|итог)\s*[:=]\s*([+\-]?\s*\d+[\s\d]*(?:[.,]\d{1,2})?)", Pattern.CASE_INSENSITIVE)
+            Pattern.compile("(?:покупка|оплата|списание|списано|снятие|зачисление|пополнение|сумма|чек|на сумму|расход|перевод)\\s*:?\\s*([+-]?\\s*\\d+[\\s\\d]*(?:[.,]\\d{1,2})?)\\s*(?:₽|руб|rur|rub|р\\b)", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("([+-]?\\s*\\d+[\\s\\d]*(?:[.,]\\d{1,2})?)\\s*(?:₽|руб|rur|rub|р\\b)", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("(?:сумма|итог)\\s*[:=]\\s*([+-]?\\s*\\d+[\\s\\d]*(?:[.,]\\d{1,2})?)", Pattern.CASE_INSENSITIVE)
         };
 
         for (Pattern p : patterns) {
             Matcher m = p.matcher(full);
             if (m.find()) {
-                String numStr = m.group(1).replaceAll("[\s+]", "").replace(',', '.');
+                String numStr = m.group(1).replaceAll("[\\s+]", "").replace(',', '.');
                 try {
                     double val = Double.parseDouble(numStr);
                     if (val > 0 && val < 10000000) {
@@ -336,11 +323,11 @@ public class BankPushService extends NotificationListenerService {
         if (amount <= 0) return null;
 
         // 4. Type & transfer determination
-        boolean isIncome = Pattern.compile("(?:зачисление|пополнение|перевод от|возврат|зарплата|входящий перевод|\+[\d\s]+)", Pattern.CASE_INSENSITIVE).matcher(full).find()
+        boolean isIncome = Pattern.compile("(?:зачисление|пополнение|перевод от|возврат|зарплата|входящий перевод|\\+[\\d\\s]+)", Pattern.CASE_INSENSITIVE).matcher(full).find()
             && !Pattern.compile("(?:списание|покупка|оплата)", Pattern.CASE_INSENSITIVE).matcher(full).find();
 
         boolean isPendingTransfer = !isInternal && Pattern.compile(
-            "(?:пополнение\s+(?:с|из)\s+сейва|с\s+сейва|из\s+сейва|копилк|перевод|сбп|по\s+номеру|клиенту|зачисление\s+перевода)",
+            "(?:пополнение\\s+(?:с|из)\\s+сейва|с\\s+сейва|из\\s+сейва|копилк|перевод|сбп|по\\s+номеру|клиенту|зачисление\\s+перевода)",
             Pattern.CASE_INSENSITIVE
         ).matcher(full).find();
 
@@ -370,12 +357,12 @@ public class BankPushService extends NotificationListenerService {
 
     private String cleanMerchant(String text, String title) {
         String clean = (text.isEmpty() ? title : text).trim();
-        clean = clean.split("(?i)(?:\.|\n|\r)\s*(?:баланс|доступно|остаток|лимит|карта|кэшб|mcc|счет)")[0];
-        clean = clean.split("(?i)\s+(?:баланс|доступно|остаток|лимит)[\s:]+")[0];
-        clean = clean.replaceAll("(?i)^(?:сбербанк|тинькофф|т-банк|альфа-банк|втб|банк|яндекс\s*пэй|пэй|озон\s*банк|райффайзенбанк|газпромбанк)[:\s]+", "");
-        clean = clean.replaceAll("(?i)^(?:покупка|оплата|списание|списано|зачисление|пополнение|снятие|перевод)(?:\s*(?:на\s+сумму|в\s+размере))?[:\s]+[+\-]?\s*[\d\s.,]+(?:₽|руб|rur|rub|р)?\s*[,.]?\s*(?:в\s+|за\s+|от\s+|клиенту\s+|на\s+карту\s+|с\s+карты\s+)?", "");
-        clean = clean.replaceAll("(?i)\s+(?:карта\s+пэй|карта\s+\*?\d+|кэшбэк.*)$", "");
-        clean = clean.replaceAll("^[\s,.—–:;]+|[\s,.—–:;]+$", "").trim();
+        clean = clean.split("(?i)(?:\\.|\\n|\\r)\\s*(?:баланс|доступно|остаток|лимит|карта|кэшб|mcc|счет)")[0];
+        clean = clean.split("(?i)\\s+(?:баланс|доступно|остаток|лимит)[\\s:]+")[0];
+        clean = clean.replaceAll("(?i)^(?:сбербанк|тинькофф|т-банк|альфа-банк|втб|банк|яндекс\\s*пэй|пэй|озон\\s*банк|райффайзенбанк|газпромбанк)[:\\s]+", "");
+        clean = clean.replaceAll("(?i)^(?:покупка|оплата|списание|списано|зачисление|пополнение|снятие|перевод)(?:\\s*(?:на\\s+сумму|в\\s+размере))?[:\\s]+[+-]?\\s*[\\d\\s.,]+(?:₽|руб|rur|rub|р)?\\s*[,.]?\\s*(?:в\\s+|за\\s+|от\\s+|клиенту\\s+|на\\s+карту\\s+|с\\s+карты\\s+)?", "");
+        clean = clean.replaceAll("(?i)\\s+(?:карта\\s+пэй|карта\\s+\\*?\\d+|кэшбэк.*)$", "");
+        clean = clean.replaceAll("^[\\s,.—–:;]+|[\\s,.—–:;]+$", "").trim();
         return clean.isEmpty() ? "Операция" : clean;
     }
 
@@ -634,8 +621,7 @@ public class BankPushService extends NotificationListenerService {
         StringBuilder sb = new StringBuilder();
         String line;
         while ((line = reader.readLine()) != null) {
-            sb.append(line).append('
-');
+            sb.append(line).append('\n');
         }
         return sb.toString();
     }
