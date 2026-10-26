@@ -234,22 +234,20 @@ function renderBudgetCalendar() {
       return `
       <div class="px-3.5 py-2.5 hover:bg-white/[0.02] flex items-center justify-between gap-3 transition-colors cursor-pointer select-none active:bg-white/[0.04]"
            onclick="openEditBillModal('${b.id}')">
-        <div class="flex items-center gap-3 min-w-0">
+        <div class="flex items-center gap-2.5 min-w-0 flex-1">
           <div class="w-8 h-8 rounded-lg bg-white/[0.03] border border-white/[0.05] text-zinc-300 flex flex-col items-center justify-center flex-shrink-0 leading-tight">
             <span class="text-xs font-semibold text-white leading-none">${dayNum}</span>
             <span class="text-[8px] text-zinc-500 uppercase font-medium leading-none mt-0.5">${monthStr}</span>
           </div>
-          <div class="min-w-0">
-            <div class="flex items-center gap-2">
-              <span class="text-xs font-medium text-zinc-100 truncate">${escapeHtml(b.name)}</span>
-              <span class="text-[9px] font-medium px-1.5 py-0.5 rounded border ${daysBadgeClass}">${daysText}</span>
-            </div>
+          <div class="min-w-0 flex-1">
+            <span class="text-xs font-medium text-zinc-100 truncate block">${escapeHtml(b.name)}</span>
             <span class="text-[10px] text-zinc-500 block mt-0.5">${typeDesc}</span>
           </div>
         </div>
 
-        <div class="text-right flex-shrink-0">
-          <span class="text-xs font-mono font-semibold text-zinc-100 [font-variant-numeric:tabular-nums]">${formatMoney(item.amount)}</span>
+        <div class="flex items-center gap-3 flex-shrink-0">
+          <span class="w-[76px] text-center text-[10px] font-medium py-0.5 rounded-full border ${daysBadgeClass}">${daysText}</span>
+          <span class="min-w-[65px] text-right text-xs font-mono font-semibold text-zinc-100 [font-variant-numeric:tabular-nums]">${formatMoney(item.amount)}</span>
         </div>
       </div>
     `;

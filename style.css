@@ -637,19 +637,19 @@ nav button,
 
 /* ---------- app shell ---------- */
 header {
-  height: 72px !important;
-  padding: 0 22px !important;
-  background: rgba(11, 14, 18, 0.94) !important;
+  height: 52px !important;
+  padding: 0 16px !important;
+  background: rgba(11, 13, 19, 0.94) !important;
   border-bottom: 1px solid var(--line) !important;
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.16) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.16) !important;
   backdrop-filter: blur(18px);
 }
 header h1 {
-  font-size: 24px !important;
-  letter-spacing: -0.04em;
+  font-size: 18px !important;
+  letter-spacing: -0.03em;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 header > div {
   color: var(--muted) !important;
@@ -659,14 +659,14 @@ header button {
   background: var(--surface) !important;
   border: 1px solid var(--line) !important;
   color: var(--muted) !important;
-  border-radius: 16px !important;
-  padding: 10px 16px !important;
+  border-radius: 10px !important;
+  padding: 6px 12px !important;
 }
 #app-content {
   width: 100%;
   max-width: 760px !important;
   margin: 0 auto;
-  padding: 22px 18px 116px !important;
+  padding: 14px 16px 84px !important;
 }
 
 #transactions-list {
@@ -1243,10 +1243,10 @@ select option {
 
 /* ---------- nav ---------- */
 nav {
-  height: 84px !important;
-  background: rgba(11, 14, 18, 0.96) !important;
+  height: 58px !important;
+  background: rgba(11, 13, 19, 0.96) !important;
   border-top: 1px solid var(--line) !important;
-  box-shadow: 0 -12px 30px rgba(0, 0, 0, 0.2) !important;
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.2) !important;
   backdrop-filter: blur(18px);
   padding-bottom: env(safe-area-inset-bottom) !important;
 }
@@ -1255,8 +1255,9 @@ nav button {
   color: #65707d !important;
   background: transparent !important;
   border: 0 !important;
-  font-weight: 650 !important;
-  font-size: 12px !important;
+  font-weight: 600 !important;
+  font-size: 11px !important;
+  padding: 4px 0 !important;
 }
 nav button.text-[#8C7DFF],
 nav button.text-blue-400,
@@ -1268,14 +1269,14 @@ nav button.text-blue-400::before,
 nav button.text-blue-500::before {
   content: '';
   position: absolute;
-  top: 6px;
+  top: 0px;
   left: 50%;
-  width: 42px;
-  height: 4px;
+  width: 32px;
+  height: 3px;
   transform: translateX(-50%);
   border-radius: 999px;
   background: #8c7dff;
-  box-shadow: 0 0 14px rgba(140, 125, 255, 0.45);
+  box-shadow: 0 0 10px rgba(140, 125, 255, 0.45);
 }
 
 /* ---------- dialogs / toast ---------- */

@@ -876,7 +876,9 @@
           <div
             class="bg-[#141720] border border-white/[0.07] rounded-2xl p-4 shadow-sm relative overflow-hidden"
           >
-            <div class="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
+            <div
+              class="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"
+            ></div>
 
             <div class="flex items-center justify-between mb-1">
               <span
@@ -886,7 +888,8 @@
               >
               <span
                 id="budget-month-status-pill"
-                class="text-[10px] font-medium px-2 py-0.5 rounded-full border bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                class="hidden"
+                style="display:none !important;"
                 >Профицит</span
               >
             </div>
@@ -899,9 +902,7 @@
             </p>
 
             <!-- Компактная чистая строка: Доходы и Расходы -->
-            <div
-              class="flex items-center gap-4 mt-3 pt-3 border-t border-white/[0.06] text-xs"
-            >
+            <div class="flex items-center gap-4 mt-3 pt-3 border-t border-white/[0.06] text-xs">
               <div class="flex items-center gap-1.5 min-w-0">
                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"></span>
                 <span class="text-[11px] text-zinc-400">Доходы</span>
@@ -930,54 +931,50 @@
           </div>
 
           <!-- Скрытый блок инсайта (не отображается на главной) -->
-          <div id="budget-insight-card" class="hidden" style="display:none !important;">
+          <div id="budget-insight-card" class="hidden" style="display: none !important">
             <p id="budget-insight-text"></p>
           </div>
 
           <!-- 2. Предстоящие платежи -->
-          <div class="space-y-2.5">
+          <div class="space-y-2">
             <div class="flex items-center justify-between px-1">
               <div>
-                <p class="text-[11px] text-[#848D99] uppercase tracking-wider font-bold">
+                <p class="text-[10px] text-zinc-400 uppercase tracking-widest font-semibold">
                   Предстоящие платежи
                 </p>
-                <p id="budget-bills-total" class="text-xs text-gray-400 mt-0.5">
-                  Ближайшие 14 дней: 0 ₽
-                </p>
+                <p id="budget-bills-total" class="hidden"></p>
               </div>
               <button
                 type="button"
                 onclick="openBudgetCalendarModal()"
-                class="px-3 py-1.5 rounded-xl bg-[#181B24] hover:bg-[#212430] border border-[rgba(255,255,255,0.06)] text-gray-200 flex items-center gap-1.5 transition-all cursor-pointer shadow-sm active:scale-95 text-xs font-semibold"
+                class="px-2.5 py-1 rounded-xl bg-[#141720] hover:bg-[#1C202C] border border-white/[0.06] text-zinc-300 hover:text-white flex items-center gap-1.5 transition-all cursor-pointer shadow-sm active:scale-95 text-xs font-medium"
                 title="Открыть календарь счетов"
               >
-                <i data-lucide="calendar" class="w-3.5 h-3.5 text-[#6C5DD3]"></i>
+                <i data-lucide="calendar" class="w-3.5 h-3.5 text-zinc-400"></i>
                 <span>Календарь</span>
               </button>
             </div>
 
             <!-- Список ближайших списаний -->
-            <div id="budget-calendar-list" class="space-y-2"></div>
+            <div id="budget-calendar-list"></div>
           </div>
 
           <!-- 3. Цели накопления -->
-          <div class="space-y-2.5 relative z-20">
+          <div class="space-y-2 relative z-20">
             <div class="flex items-center justify-between px-1">
               <div>
-                <p class="text-[11px] text-[#848D99] uppercase tracking-wider font-bold">
+                <p class="text-[10px] text-zinc-400 uppercase tracking-widest font-semibold">
                   Цели накопления
                 </p>
-                <p id="budget-goals-surplus" class="text-xs text-gray-400 mt-0.5">
-                  Накопления по плану: +0 ₽/мес
-                </p>
+                <p id="budget-goals-surplus" class="hidden"></p>
               </div>
               <button
                 type="button"
                 onclick="openGoalModal()"
-                class="w-8 h-8 rounded-xl bg-[#181B24] hover:bg-[#212430] border border-[rgba(255,255,255,0.06)] text-gray-200 flex items-center justify-center transition-all cursor-pointer shadow-sm active:scale-95"
+                class="w-7 h-7 rounded-xl bg-[#141720] hover:bg-[#1C202C] border border-white/[0.06] text-zinc-300 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-sm active:scale-95"
                 title="Новая цель"
               >
-                <i data-lucide="plus" class="w-4 h-4 text-[#6C5DD3]"></i>
+                <i data-lucide="plus" class="w-3.5 h-3.5 text-zinc-400"></i>
               </button>
             </div>
 

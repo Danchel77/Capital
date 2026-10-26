@@ -89,12 +89,9 @@ function renderBudgetTab() {
 
   const bills = Cache.calendarBills || [];
   const goals = Cache.goals || [];
-  const today = new Date();
   const targetDate = getSelectedBudgetDate();
   const targetYear = targetDate.getFullYear();
   const targetMonth = targetDate.getMonth();
-  const isCurrentCalendarMonth =
-    targetYear === today.getFullYear() && targetMonth === today.getMonth();
 
   // Проверка граничных месяцев для скрытия стрелок навигации
   const minDate = getBudgetStartMonthDate();
@@ -132,17 +129,11 @@ function renderBudgetTab() {
     monthLabel.innerText = `${monthNames[targetMonth]} ${targetYear}`;
   }
 
-  // Бейдж статуса месяца (Текущий / Архив)
+  // Бейдж статуса месяца (скрыт)
   const statusBadge = document.getElementById('budget-month-status-badge');
   if (statusBadge) {
-    if (isCurrentCalendarMonth) {
-      statusBadge.className =
-        'text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 inline-block';
-      statusBadge.innerText = 'Текущий';
-      statusBadge.classList.remove('hidden');
-    } else {
-      statusBadge.classList.add('hidden');
-    }
+    statusBadge.classList.add('hidden');
+    statusBadge.style.display = 'none';
   }
 
   const startOfMonth = new Date(targetYear, targetMonth, 1, 0, 0, 0, 0);
@@ -240,15 +231,8 @@ function renderBudgetTab() {
   }
 
   if (deltaPillEl) {
-    if (delta >= 0) {
-      deltaPillEl.className =
-        'text-[10px] font-semibold px-2.5 py-0.5 rounded-full border bg-emerald-500/10 text-emerald-400 border-emerald-500/25';
-      deltaPillEl.innerText = 'Профицит';
-    } else {
-      deltaPillEl.className =
-        'text-[10px] font-semibold px-2.5 py-0.5 rounded-full border bg-rose-500/10 text-rose-400 border-rose-500/25';
-      deltaPillEl.innerText = 'Дефицит';
-    }
+    deltaPillEl.classList.add('hidden');
+    deltaPillEl.style.display = 'none';
   }
 
   if (incomeValEl) incomeValEl.innerText = `+${formatMoney(monthlyIncome)}`;
