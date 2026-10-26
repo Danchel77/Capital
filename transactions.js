@@ -421,6 +421,16 @@ function renderTxRowHtml(tx, largeThreshold, hasDynamicThreshold) {
     isTxMonthTracked &&
     parseFloat(tx.amount) >= largeThreshold;
 
+  const isBankPush = tx.source === 'bank_push' || tx.source === 'bank_push_auto';
+  let pushBadgeHtml = '';
+  if (isBankPush) {
+    pushBadgeHtml = `
+      <span class="h-5 px-1.5 rounded-md bg-sky-500/15 text-sky-300 border border-sky-500/25 text-[10px] font-medium flex items-center gap-1 flex-shrink-0 leading-none select-none" title="Внесено автоматически по пуш-уведомлению банка${tx.bank ? ' (' + escapeHtml(tx.bank) + ')' : ''}">
+        <i data-lucide="zap" class="w-2.5 h-2.5 text-sky-400"></i>Пуш
+      </span>
+    `;
+  }
+
   let badgeHtml = '';
   if (isPending) {
     badgeHtml = `
@@ -579,7 +589,8 @@ function renderTxRowHtml(tx, largeThreshold, hasDynamicThreshold) {
          </div>
       </div>
 
-      <div class="tx-row-right flex items-center gap-2 flex-shrink-0 ml-2">
+      <div class="tx-row-right flex items-center gap-1.5 flex-shrink-0 ml-2">
+        ${pushBadgeHtml}
         ${badgeHtml}
         ${
           isPending

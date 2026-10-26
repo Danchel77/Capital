@@ -1,6 +1,6 @@
 /**
  * apk-features.js - Модуль нативных возможностей и виджетов для Android APK
- * 
+ *
  * Включает:
  * 1. Определение нативной платформы (APK Capacitor vs PWA vs Browser).
  * 2. Расчет и фоновую синхронизацию данных для виджетов домашнего экрана смартфона.
@@ -23,7 +23,10 @@ function isNativeAppPlatform() {
       return false;
     }
   }
-  if (typeof location !== 'undefined' && (location.protocol === 'capacitor:' || location.protocol === 'ionic:')) {
+  if (
+    typeof location !== 'undefined' &&
+    (location.protocol === 'capacitor:' || location.protocol === 'ionic:')
+  ) {
     return true;
   }
   return false;
@@ -61,8 +64,24 @@ function getLiveWidgetData() {
 
   const dayOfWeek = today.getDay();
   const diffToMonday = (dayOfWeek + 6) % 7;
-  const startOfWeek = new Date(today.getFullYear(), today.getMonth(), today.getDate() - diffToMonday, 0, 0, 0, 0);
-  const endOfWeek = new Date(today.getFullYear(), today.getMonth(), today.getDate() - diffToMonday + 6, 23, 59, 59, 999);
+  const startOfWeek = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate() - diffToMonday,
+    0,
+    0,
+    0,
+    0
+  );
+  const endOfWeek = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate() - diffToMonday + 6,
+    23,
+    59,
+    59,
+    999
+  );
   const startOfWeekTime = startOfWeek.getTime();
   const endOfWeekTime = endOfWeek.getTime();
 
@@ -73,16 +92,33 @@ function getLiveWidgetData() {
   const currentMonthObj = (window.Cache?.transactions || []).find(m => m.id === targetMonthKey);
   if (currentMonthObj && Array.isArray(currentMonthObj.items)) {
     currentMonthObj.items.forEach(tx => {
-      const isExpense = tx.type === 'Расход' || tx.type === 'expense' || String(tx.type || '').trim().toLowerCase() === 'расход';
+      const isExpense =
+        tx.type === 'Расход' ||
+        tx.type === 'expense' ||
+        String(tx.type || '')
+          .trim()
+          .toLowerCase() === 'расход';
       const isExcluded = !!(tx.excludeFromBudget || tx.isExcludedFromBudget);
       if (!isExpense || isExcluded) return;
 
-      const val = typeof tx.amount === 'number'
-        ? tx.amount
-        : (parseFloat(String(tx.amount || 0).replace(/\s/g, '').replace(/,/g, '.')) || 0);
+      const val =
+        typeof tx.amount === 'number'
+          ? tx.amount
+          : parseFloat(
+              String(tx.amount || 0)
+                .replace(/\s/g, '')
+                .replace(/,/g, '.')
+            ) || 0;
       if (val <= 0) return;
 
-      const txTime = tx.dayTimestamp || tx.timestamp || (tx.rawDate ? (typeof window.parseAnyDate === 'function' ? window.parseAnyDate(tx.rawDate)?.getTime() : new Date(tx.rawDate).getTime()) : 0);
+      const txTime =
+        tx.dayTimestamp ||
+        tx.timestamp ||
+        (tx.rawDate
+          ? typeof window.parseAnyDate === 'function'
+            ? window.parseAnyDate(tx.rawDate)?.getTime()
+            : new Date(tx.rawDate).getTime()
+          : 0);
       if (txTime >= startOfMonthTime && txTime <= endOfMonthTime) {
         monthlySpent += val;
         if (txTime >= startOfWeekTime && txTime <= endOfWeekTime) {
@@ -98,13 +134,23 @@ function getLiveWidgetData() {
     const prevMonthObj = (window.Cache?.transactions || []).find(m => m.id === startWeekMonthKey);
     if (prevMonthObj && Array.isArray(prevMonthObj.items)) {
       prevMonthObj.items.forEach(tx => {
-        const isExpense = tx.type === 'Расход' || tx.type === 'expense' || String(tx.type || '').trim().toLowerCase() === 'расход';
+        const isExpense =
+          tx.type === 'Расход' ||
+          tx.type === 'expense' ||
+          String(tx.type || '')
+            .trim()
+            .toLowerCase() === 'расход';
         const isExcluded = !!(tx.excludeFromBudget || tx.isExcludedFromBudget);
         if (!isExpense || isExcluded) return;
 
-        const val = typeof tx.amount === 'number'
-          ? tx.amount
-          : (parseFloat(String(tx.amount || 0).replace(/\s/g, '').replace(/,/g, '.')) || 0);
+        const val =
+          typeof tx.amount === 'number'
+            ? tx.amount
+            : parseFloat(
+                String(tx.amount || 0)
+                  .replace(/\s/g, '')
+                  .replace(/,/g, '.')
+              ) || 0;
         if (val <= 0) return;
 
         const txTime = tx.dayTimestamp || tx.timestamp || 0;
@@ -118,8 +164,10 @@ function getLiveWidgetData() {
   const weeklyAvailable = Math.max(0, weeklyLimit - weeklySpent);
   const monthlyAvailable = Math.max(0, monthlyLimit - monthlySpent);
 
-  const weeklyPct = weeklyLimit > 0 ? Math.min(100, Math.round((weeklySpent / weeklyLimit) * 100)) : 0;
-  const monthlyPct = monthlyLimit > 0 ? Math.min(100, Math.round((monthlySpent / monthlyLimit) * 100)) : 0;
+  const weeklyPct =
+    weeklyLimit > 0 ? Math.min(100, Math.round((weeklySpent / weeklyLimit) * 100)) : 0;
+  const monthlyPct =
+    monthlyLimit > 0 ? Math.min(100, Math.round((monthlySpent / monthlyLimit) * 100)) : 0;
 
   const lastDayOfMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
   const daysRemaining = Math.max(1, lastDayOfMonth - today.getDate() + 1);
@@ -147,7 +195,7 @@ function getLiveWidgetData() {
     daysRemaining,
     bgOpacity,
     updatedAt: `${hours}:${minutes}`,
-    timestamp: Date.now()
+    timestamp: Date.now(),
   };
 }
 
@@ -166,7 +214,7 @@ function syncWidgetData() {
     if (window.Capacitor?.Plugins?.Preferences) {
       window.Capacitor.Plugins.Preferences.set({
         key: 'budget_widget_data',
-        value: JSON.stringify(data)
+        value: JSON.stringify(data),
       }).catch(() => {});
     }
 
@@ -199,9 +247,20 @@ function renderWidgetCircleSvg(pct, color, size = 52, strokeWidth = 5.2) {
 
 // 5. Рендеринг Варианта 1: 4×1 виджет (Недельные траты + Траты за месяц, компактный масштаб без обрезания)
 function renderFullWidgetPreviewHtml(data) {
-  const format = typeof window.formatMoney === 'function' ? window.formatMoney : (n) => `${Math.round(n).toLocaleString('ru-RU')} ₽`;
-  const weekColor = data.weeklyOverbudget ? '#FF453A' : (data.weeklyPct >= 80 ? '#FF9F0A' : '#30D158');
-  const monthColor = data.monthlyOverbudget ? '#FF453A' : (data.monthlyPct >= 80 ? '#FF9F0A' : '#30D158');
+  const format =
+    typeof window.formatMoney === 'function'
+      ? window.formatMoney
+      : n => `${Math.round(n).toLocaleString('ru-RU')} ₽`;
+  const weekColor = data.weeklyOverbudget
+    ? '#FF453A'
+    : data.weeklyPct >= 80
+      ? '#FF9F0A'
+      : '#30D158';
+  const monthColor = data.monthlyOverbudget
+    ? '#FF453A'
+    : data.monthlyPct >= 80
+      ? '#FF9F0A'
+      : '#30D158';
   const bgOpacity = (data.bgOpacity !== undefined ? data.bgOpacity : 75) / 100;
 
   return `
@@ -246,8 +305,15 @@ function renderFullWidgetPreviewHtml(data) {
 
 // 6. Рендеринг Варианта 2: 2×1 компактный виджет месяца
 function renderCompactWidgetPreviewHtml(data) {
-  const format = typeof window.formatMoney === 'function' ? window.formatMoney : (n) => `${Math.round(n).toLocaleString('ru-RU')} ₽`;
-  const monthColor = data.monthlyOverbudget ? '#FF453A' : (data.monthlyPct >= 80 ? '#FF9F0A' : '#30D158');
+  const format =
+    typeof window.formatMoney === 'function'
+      ? window.formatMoney
+      : n => `${Math.round(n).toLocaleString('ru-RU')} ₽`;
+  const monthColor = data.monthlyOverbudget
+    ? '#FF453A'
+    : data.monthlyPct >= 80
+      ? '#FF9F0A'
+      : '#30D158';
   const bgOpacity = (data.bgOpacity !== undefined ? data.bgOpacity : 75) / 100;
 
   return `
@@ -339,8 +405,9 @@ function openWidgetHubModal(selectedVariant = 'full') {
   if (!modal) {
     modal = document.createElement('div');
     modal.id = 'widget-hub-modal';
-    modal.className = 'fixed inset-0 z-[1300] bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-fade-in';
-    modal.onclick = (e) => {
+    modal.className =
+      'fixed inset-0 z-[1300] bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-fade-in';
+    modal.onclick = e => {
       if (e.target === modal) closeWidgetHubModal();
     };
     document.body.appendChild(modal);
@@ -365,7 +432,7 @@ const WIDGET_OPACITY_STEPS = [0, 25, 50, 75, 100];
 function handleWidgetOpacityChange(val) {
   const opacity = parseInt(val, 10);
   localStorage.setItem('budget_widget_bg_opacity', opacity);
-  
+
   syncWidgetData();
   updateWidgetHubUI();
 }
@@ -397,9 +464,12 @@ function updateWidgetHubUI() {
   // 2. Обновляем контейнер превью
   const previewArea = document.getElementById('widget-preview-area');
   if (previewArea) {
-    previewArea.innerHTML = currentWidgetTab === 'full' 
-      ? renderFullWidgetPreviewHtml(data) 
-      : (currentWidgetTab === 'compact' ? renderCompactWidgetPreviewHtml(data) : renderActionWidgetPreviewHtml(data));
+    previewArea.innerHTML =
+      currentWidgetTab === 'full'
+        ? renderFullWidgetPreviewHtml(data)
+        : currentWidgetTab === 'compact'
+          ? renderCompactWidgetPreviewHtml(data)
+          : renderActionWidgetPreviewHtml(data);
     if (typeof lucide !== 'undefined') lucide.createIcons({ root: previewArea });
   }
 
@@ -469,7 +539,7 @@ function renderWidgetHubContent() {
       <div class="relative rounded-2xl p-3 bg-gradient-to-tr from-slate-900 via-indigo-950 to-slate-900 border border-white/10 shadow-inner overflow-hidden">
         <div class="absolute inset-0 opacity-40 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none"></div>
         <div id="widget-preview-area" class="relative z-10">
-          ${currentWidgetTab === 'full' ? renderFullWidgetPreviewHtml(data) : (currentWidgetTab === 'compact' ? renderCompactWidgetPreviewHtml(data) : renderActionWidgetPreviewHtml(data))}
+          ${currentWidgetTab === 'full' ? renderFullWidgetPreviewHtml(data) : currentWidgetTab === 'compact' ? renderCompactWidgetPreviewHtml(data) : renderActionWidgetPreviewHtml(data)}
         </div>
       </div>
 
@@ -483,12 +553,14 @@ function renderWidgetHubContent() {
           <span id="widget-opacity-val" class="text-xs font-bold text-[#8C7DFF] font-mono">${currentOpacity}%</span>
         </div>
         <div class="grid grid-cols-5 gap-1.5 pt-0.5">
-          ${WIDGET_OPACITY_STEPS.map(step => `
+          ${WIDGET_OPACITY_STEPS.map(
+            step => `
             <button type="button" id="widget-opacity-btn-${step}" onclick="handleWidgetOpacityChange(${step})" 
                     class="py-1.5 text-center text-xs font-bold rounded-xl transition-all cursor-pointer ${currentOpacity === step ? 'bg-[#6C5DD3] text-white shadow-md shadow-[#6C5DD3]/30 scale-105' : 'bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white'}">
               ${step}%
             </button>
-          `).join('')}
+          `
+          ).join('')}
         </div>
       </div>
 
@@ -512,9 +584,10 @@ function handleWidgetPinRequest(variant) {
   // Нативное закрепление через Capacitor плагин WidgetPin
   if (window.Capacitor?.Plugins?.WidgetPin?.requestPin) {
     window.Capacitor.Plugins.WidgetPin.requestPin({ variant })
-      .then((res) => {
+      .then(res => {
         if (res && res.success) {
-          if (typeof showToast === 'function') showToast('Подтвердите добавление виджета на экран телефона');
+          if (typeof showToast === 'function')
+            showToast('Подтвердите добавление виджета на экран телефона');
           closeWidgetHubModal();
         } else {
           showWidgetPinFallback();
@@ -602,7 +675,8 @@ function checkAndShowWidgetPrompt(delayMs = 3500) {
 function createWidgetBannerElement() {
   const div = document.createElement('div');
   div.id = 'widget-install-banner';
-  div.className = 'fixed bottom-[74px] sm:bottom-6 left-3.5 right-3.5 sm:left-auto sm:right-6 sm:w-[390px] z-50 hidden translate-y-10 opacity-0 transition-all duration-300 pointer-events-none select-none';
+  div.className =
+    'fixed bottom-[74px] sm:bottom-6 left-3.5 right-3.5 sm:left-auto sm:right-6 sm:w-[390px] z-50 hidden translate-y-10 opacity-0 transition-all duration-300 pointer-events-none select-none';
   div.onmouseenter = pauseWidgetTimer;
   div.onmouseleave = resumeWidgetTimer;
 
@@ -725,33 +799,42 @@ function initWidgetSwipeGesture() {
   if (!card || card.dataset.swipeBound === 'true') return;
   card.dataset.swipeBound = 'true';
 
-  card.addEventListener('touchstart', (e) => {
-    if (e.touches.length !== 1) return;
-    const target = (e?.target?.nodeType === 3) ? e.target.parentElement : e?.target;
-    if (target && typeof target.closest === 'function' && target.closest('button, a, input')) return;
+  card.addEventListener(
+    'touchstart',
+    e => {
+      if (e.touches.length !== 1) return;
+      const target = e?.target?.nodeType === 3 ? e.target.parentElement : e?.target;
+      if (target && typeof target.closest === 'function' && target.closest('button, a, input'))
+        return;
 
-    widgetTouchStartX = e.touches[0].clientX;
-    widgetTouchCurrentX = widgetTouchStartX;
-    widgetTouchStartY = e.touches[0].clientY;
-    widgetTouchCurrentY = widgetTouchStartY;
-    widgetIsDragging = true;
-    pauseWidgetTimer();
-    card.style.transition = 'none';
-  }, { passive: true });
+      widgetTouchStartX = e.touches[0].clientX;
+      widgetTouchCurrentX = widgetTouchStartX;
+      widgetTouchStartY = e.touches[0].clientY;
+      widgetTouchCurrentY = widgetTouchStartY;
+      widgetIsDragging = true;
+      pauseWidgetTimer();
+      card.style.transition = 'none';
+    },
+    { passive: true }
+  );
 
-  card.addEventListener('touchmove', (e) => {
-    if (!widgetIsDragging || e.touches.length !== 1) return;
-    widgetTouchCurrentX = e.touches[0].clientX;
-    widgetTouchCurrentY = e.touches[0].clientY;
-    const deltaX = widgetTouchCurrentX - widgetTouchStartX;
-    const deltaY = widgetTouchCurrentY - widgetTouchStartY;
-    const clampedY = Math.max(-15, deltaY);
+  card.addEventListener(
+    'touchmove',
+    e => {
+      if (!widgetIsDragging || e.touches.length !== 1) return;
+      widgetTouchCurrentX = e.touches[0].clientX;
+      widgetTouchCurrentY = e.touches[0].clientY;
+      const deltaX = widgetTouchCurrentX - widgetTouchStartX;
+      const deltaY = widgetTouchCurrentY - widgetTouchStartY;
+      const clampedY = Math.max(-15, deltaY);
 
-    card.style.transform = `translate3d(${deltaX}px, ${clampedY}px, 0)`;
-    const distance = Math.hypot(deltaX, Math.max(0, clampedY));
-    const opacity = Math.max(0.15, 1 - (distance / 260));
-    card.style.opacity = opacity.toString();
-  }, { passive: true });
+      card.style.transform = `translate3d(${deltaX}px, ${clampedY}px, 0)`;
+      const distance = Math.hypot(deltaX, Math.max(0, clampedY));
+      const opacity = Math.max(0.15, 1 - distance / 260);
+      card.style.opacity = opacity.toString();
+    },
+    { passive: true }
+  );
 
   const endDrag = () => {
     if (!widgetIsDragging) return;
@@ -763,7 +846,8 @@ function initWidgetSwipeGesture() {
     const isVerticalSwipe = deltaY > 50;
 
     if (isHorizontalSwipe || isVerticalSwipe) {
-      card.style.transition = 'transform 0.4s cubic-bezier(0.2, 0.9, 0.35, 1), opacity 0.35s ease-out';
+      card.style.transition =
+        'transform 0.4s cubic-bezier(0.2, 0.9, 0.35, 1), opacity 0.35s ease-out';
       if (Math.abs(deltaX) > Math.abs(deltaY)) {
         card.style.transform = `translate3d(${deltaX > 0 ? '120%' : '-120%'}, 0, 0)`;
       } else {
@@ -773,7 +857,8 @@ function initWidgetSwipeGesture() {
 
       dismissWidgetBannerForToday();
     } else {
-      card.style.transition = 'transform 0.35s cubic-bezier(0.2, 0.9, 0.35, 1), opacity 0.3s ease-out';
+      card.style.transition =
+        'transform 0.35s cubic-bezier(0.2, 0.9, 0.35, 1), opacity 0.3s ease-out';
       card.style.transform = 'translate3d(0, 0, 0)';
       card.style.opacity = '1';
       setTimeout(() => {
@@ -805,7 +890,7 @@ const BANK_PACKAGE_NAMES = {
   'ru.mts.money': 'МТС Банк',
   'ru.rosbank.android': 'Росбанк',
   'ru.sovcomcard.halva.v1': 'Совкомбанк',
-  'ru.psbank.mobile.individual': 'ПСБ'
+  'ru.psbank.mobile.individual': 'ПСБ',
 };
 
 function getBankNameByPackage(pkgName) {
@@ -819,20 +904,23 @@ const recentBankPushesBuffer = [];
 function checkAndCancelPairPush(parsedData) {
   const now = Date.now();
   // Очищаем события старше 60 секунд
-  while (recentBankPushesBuffer.length > 0 && (now - recentBankPushesBuffer[0].time > 60000)) {
+  while (recentBankPushesBuffer.length > 0 && now - recentBankPushesBuffer[0].time > 60000) {
     recentBankPushesBuffer.shift();
   }
 
   // Ищем встречную операцию с такой же суммой и противоположным типом (от того же банка или в пределах 60 сек)
-  const pairIdx = recentBankPushesBuffer.findIndex(p => 
-    Math.abs(p.amount - parsedData.amount) < 0.01 && 
-    p.type !== parsedData.type
+  const pairIdx = recentBankPushesBuffer.findIndex(
+    p => Math.abs(p.amount - parsedData.amount) < 0.01 && p.type !== parsedData.type
   );
 
   if (pairIdx !== -1) {
     const pair = recentBankPushesBuffer.splice(pairIdx, 1)[0];
-    console.log('[BankPush] Обнаружена встречная парная операция (+-), отменяем обе:', pair, parsedData);
-    
+    console.warn(
+      '[BankPush] Обнаружена встречная парная операция (+-), отменяем обе:',
+      pair,
+      parsedData
+    );
+
     // Если первая операция успела сохраниться как pending transfer, тихо удаляем её
     if (pair.txId && typeof window.dismissPendingTransferSilent === 'function') {
       window.dismissPendingTransferSilent(pair.txId);
@@ -854,33 +942,58 @@ function scoreBankPushNotification(title = '', text = '', packageName = '') {
 
   // 1. АБСОЛЮТНЫЕ СТОП-ФАКТОРЫ (Hard Gate -> Score = -999, мгновенный отброс)
   // 1.1. Одноразовые коды и данные авторизации / безопасности
-  if (/(?:код\s+подтверждения|пароль\s+для\s+входа|никому\s+не\s+(?:сообщайте|передавайте)|вход\s+в\s+(?:приложение|банк)|одноразовый\s+пароль|для\s+входа\s+в\s+лк|push[- ]?код|код\s+авторизации|sms[- ]?код)/i.test(fullText)) {
+  if (
+    /(?:код\s+подтверждения|пароль\s+для\s+входа|никому\s+не\s+(?:сообщайте|передавайте)|вход\s+в\s+(?:приложение|банк)|одноразовый\s+пароль|для\s+входа\s+в\s+лк|push[- ]?код|код\s+авторизации|sms[- ]?код)/i.test(
+      fullText
+    )
+  ) {
     return { score: -999, isFinancial: false, reason: 'auth_otp_code', factors: ['auth_otp_code'] };
   }
   // 1.2. Сервисные/технические уведомления банков
-  if (/(?:обновление\s+условий|изменение\s+тарифов|график\s+работы|технические\s+работы|безопасность\s+аккаунта|новая\s+версия\s+приложения|оцените\s+приложение|опрос\s+о\s+качестве)/i.test(fullText)) {
-    return { score: -999, isFinancial: false, reason: 'system_service_alert', factors: ['system_service_alert'] };
+  if (
+    /(?:обновление\s+условий|изменение\s+тарифов|график\s+работы|технические\s+работы|безопасность\s+аккаунта|новая\s+версия\s+приложения|оцените\s+приложение|опрос\s+о\s+качестве)/i.test(
+      fullText
+    )
+  ) {
+    return {
+      score: -999,
+      isFinancial: false,
+      reason: 'system_service_alert',
+      factors: ['system_service_alert'],
+    };
   }
 
   let score = 0;
   const factors = [];
 
   // 2. ПОЛОЖИТЕЛЬНЫЕ СИГНАЛЫ (ФАКТ СОВЕРШЕННОЙ ФИНАНСОВОЙ ОПЕРАЦИИ)
-  
+
   // 2.1. Глаголы совершенного действия / прошедшее время (+40)
-  if (/(?:покупка|оплата|оплачено|списано|списание|снятие|зачисление|зачислено|пополнение|пополнено|выдача\s+наличных|чек\b)/i.test(fullText)) {
+  if (
+    /(?:покупка|оплата|оплачено|списано|списание|снятие|зачисление|зачислено|пополнение|пополнено|выдача\s+наличных|чек\b)/i.test(
+      fullText
+    )
+  ) {
     score += 40;
     factors.push('action_verb_match (+40)');
   }
 
   // 2.2. Наличие статуса счета / карты / баланса (+35)
-  if (/(?:баланс|остаток|доступно|лимит\s+карты|карта\s+\*?\d+|сч[её]т\s+\*?\d+|mir-\d+|ecmc\d+|visa\d+|authcode|mcc\b)/i.test(fullText)) {
+  if (
+    /(?:баланс|остаток|доступно|лимит\s+карты|карта\s+\*?\d+|сч[её]т\s+\*?\d+|mir-\d+|ecmc\d+|visa\d+|authcode|mcc\b)/i.test(
+      fullText
+    )
+  ) {
     score += 35;
     factors.push('balance_or_card_state (+35)');
   }
 
   // 2.3. Переводы (+30)
-  if (/(?:перевод\s+от|перевод\s+клиенту|перевод\s+на|входящий\s+перевод|исходящий\s+перевод|перевод\s+по\s+сбп|сбп\b)/i.test(fullText)) {
+  if (
+    /(?:перевод\s+от|перевод\s+клиенту|перевод\s+на|входящий\s+перевод|исходящий\s+перевод|перевод\s+по\s+сбп|сбп\b)/i.test(
+      fullText
+    )
+  ) {
     score += 30;
     factors.push('transfer_marker (+30)');
   }
@@ -892,7 +1005,11 @@ function scoreBankPushNotification(title = '', text = '', packageName = '') {
   }
 
   // 2.5. Сумма в жесткой связке с операцией (+20)
-  if (/(?:покупка|оплата|списание|списано|зачисление|пополнение|перевод)\s*[:=]?\s*[+\-]?\s*\d+[\s\d]*[.,]?\d*\s*(?:₽|руб|rur|rub|р\b)/i.test(fullText)) {
+  if (
+    /(?:покупка|оплата|списание|списано|зачисление|пополнение|перевод)\s*[:=]?\s*[-+]?\s*\d+[\s\d]*[.,]?\d*\s*(?:₽|руб|rur|rub|р\b)/i.test(
+      fullText
+    )
+  ) {
     score += 20;
     factors.push('amount_bound_to_action (+20)');
   }
@@ -901,20 +1018,32 @@ function scoreBankPushNotification(title = '', text = '', packageName = '') {
 
   // 3.1. Предлоги диапазонов и условий перед суммами (-50)
   // Примеры: "до 10 000 ₽", "от 500 ₽", "кешбэк до 5 000", "скидка до 30%"
-  if (/(?:до|от)\s+\d+[\s\d]*\s*(?:₽|руб|рубл|rur|rub|р\b|%)/i.test(fullText) ||
-      /(?:лимит(?:\s+до|\s+на)?|кешбэк(?:\s+до)?|кэшбэк(?:\s+до)?|ставка(?:\s+от)?|скидк[аи](?:\s+до)?|рассрочк[аи](?:\s+на)?|кредит(?:\s+до|\s+на)?|одобрен[ао]?\s+на)\s+\d+/i.test(fullText)) {
+  if (
+    /(?:до|от)\s+\d+[\s\d]*\s*(?:₽|руб|рубл|rur|rub|р\b|%)/i.test(fullText) ||
+    /(?:лимит(?:\s+до|\s+на)?|кешбэк(?:\s+до)?|кэшбэк(?:\s+до)?|ставка(?:\s+от)?|скидк[аи](?:\s+до)?|рассрочк[аи](?:\s+на)?|кредит(?:\s+до|\s+на)?|одобрен[ао]?\s+на)\s+\d+/i.test(
+      fullText
+    )
+  ) {
     score -= 50;
     factors.push('range_or_future_offer_penalty (-50)');
   }
 
   // 3.2. Повелительное наклонение и рекламные глаголы (-40)
-  if (/\b(?:оформите|получите|попробуйте|откройте|возьмите|узнайте|дарим|выиграйте|успейте|инвестируйте|подключите|заберите|выбирайте|закажите|увеличьте|подайте\s+заявку|активируйте|пригласите|копите)\b/i.test(fullText)) {
+  if (
+    /\b(?:оформите|получите|попробуйте|откройте|возьмите|узнайте|дарим|выиграйте|успейте|инвестируйте|подключите|заберите|выбирайте|закажите|увеличьте|подайте\s+заявку|активируйте|пригласите|копите)\b/i.test(
+      fullText
+    )
+  ) {
     score -= 40;
     factors.push('imperative_marketing_verb (-40)');
   }
 
   // 3.3. Рекламные ключевые слова и акции (-35)
-  if (/\b(?:промокод|специальное\s+предложение|персональное\s+предложение|акция|выгода|партнеры\s+банка|рассрочка|кредитные\s+каникулы|бонусы\s+спасибо|кэшбэк|кешбэк|выгодн[а-я]+|шанс\s+выиграть|розыгрыш|дополнительный\s+доход|начните\s+инвестировать)\b/i.test(fullText)) {
+  if (
+    /\b(?:промокод|специальное\s+предложение|персональное\s+предложение|акция|выгода|партнеры\s+банка|рассрочка|кредитные\s+каникулы|бонусы\s+спасибо|кэшбэк|кешбэк|выгодн[а-я]+|шанс\s+выиграть|розыгрыш|дополнительный\s+доход|начните\s+инвестировать)\b/i.test(
+      fullText
+    )
+  ) {
     score -= 35;
     factors.push('marketing_buzzwords (-35)');
   }
@@ -924,25 +1053,33 @@ function scoreBankPushNotification(title = '', text = '', packageName = '') {
     score,
     isFinancial,
     factors,
-    reason: isFinancial ? 'valid_transaction' : 'low_confidence_or_marketing'
+    reason: isFinancial ? 'valid_transaction' : 'low_confidence_or_marketing',
   };
 }
 
 function cleanBankPushMerchant(text = '', title = '') {
-  let combined = `${title} ${text}`.trim();
+  const combined = `${title} ${text}`.trim();
   let clean = text || combined;
 
   // 1. Отрезаем всё после точки, двоеточия или перевода строки, если там начинается баланс/доступно/остаток/счет/карта/кэшбэк
-  clean = clean.split(/(?:\.|\n|\r)\s*(?:баланс|доступно|остаток|лимит|карта\b|карты\b|кэшб|authcode|mcc\b|сч[её]т\b|счета\b|сч[её]та\b|накопительн)/i)[0];
-  
+  clean = clean.split(
+    /(?:\.|\n|\r)\s*(?:баланс|доступно|остаток|лимит|карта\b|карты\b|кэшб|authcode|mcc\b|сч[её]т\b|счета\b|сч[её]та\b|накопительн)/i
+  )[0];
+
   // 2. Если слово баланс встретилось без точки перед ним
   clean = clean.split(/\s+(?:баланс|доступно|остаток|лимит)[\s:]+/i)[0];
 
   // 3. Срезаем префиксы банков
-  clean = clean.replace(/^(?:сбербанк|тинькофф|т-банк|альфа-банк|втб|банк|яндекс\s*пэй|пэй|озон\s*банк|райффайзенбанк|газпромбанк)[:\s]+/i, '');
+  clean = clean.replace(
+    /^(?:сбербанк|тинькофф|т-банк|альфа-банк|втб|банк|яндекс\s*пэй|пэй|озон\s*банк|райффайзенбанк|газпромбанк)[:\s]+/i,
+    ''
+  );
 
   // 4. Срезаем тип операции и сумму в начале
-  clean = clean.replace(/^(?:покупка|оплата|списание|списано|зачисление|пополнение|снятие|перевод)(?:\s*(?:на\s+сумму|в\s+размере))?[:\s]+[+\-]?\s*[\d\s.,]+(?:₽|руб|rur|rub|р)?\s*[,.]?\s*(?:в\s+|за\s+|от\s+|клиенту\s+|на\s+карту\s+|с\s+карты\s+)?/i, '');
+  clean = clean.replace(
+    /^(?:покупка|оплата|списание|списано|зачисление|пополнение|снятие|перевод)(?:\s*(?:на\s+сумму|в\s+размере))?[:\s]+[-+]?\s*[\d\s.,]+(?:₽|руб|rur|rub|р)?\s*[,.]?\s*(?:в\s+|за\s+|от\s+|клиенту\s+|на\s+карту\s+|с\s+карты\s+)?/i,
+    ''
+  );
 
   // 5. Срезаем хвосты «карта Пэй», «карта *1234», «кэшбэк ...»
   clean = clean.replace(/\s+(?:карта\s+пэй|карта\s+\*?\d+|кэшбэк.*)$/i, '');
@@ -952,8 +1089,8 @@ function cleanBankPushMerchant(text = '', title = '') {
 
   // 7. Если строка пустая, пробуем взять заголовок
   if (!clean || clean.length < 2) {
-    let titleClean = (title || '')
-      .replace(/^[+\-]?\s*[\d\s.,]+(?:₽|руб|rur|rub|р)?\s*/i, '')
+    const titleClean = (title || '')
+      .replace(/^[-+]?\s*[\d\s.,]+(?:₽|руб|rur|rub|р)?\s*/i, '')
       .replace(/^[,\s.—–:;]+|[,\s.—–:;]+$/g, '')
       .trim();
     if (titleClean.length >= 2) clean = titleClean;
@@ -969,7 +1106,11 @@ function parseBankPushText(title = '', text = '', packageName = '') {
   // 1. Прогон через скоринговую модель оценки доверия к транзакции
   const scoring = scoreBankPushNotification(title, text, packageName);
   if (!scoring.isFinancial) {
-    console.log(`[BankPush] Пуш отфильтрован скорингом (Score: ${scoring.score}, Причина: ${scoring.reason}):`, fullText, scoring.factors);
+    console.warn(
+      `[BankPush] Пуш отфильтрован скорингом (Score: ${scoring.score}, Причина: ${scoring.reason}):`,
+      fullText,
+      scoring.factors
+    );
     return null;
   }
 
@@ -977,7 +1118,13 @@ function parseBankPushText(title = '', text = '', packageName = '') {
   let bankName = getBankNameByPackage(packageName);
   const lowerFull = fullText.toLowerCase();
   if (bankName === 'Банк') {
-    if (lowerFull.includes('тинькофф') || lowerFull.includes('т-банк') || lowerFull.includes('tinkoff') || lowerFull.includes('t-bank')) bankName = 'Т-Банк';
+    if (
+      lowerFull.includes('тинькофф') ||
+      lowerFull.includes('т-банк') ||
+      lowerFull.includes('tinkoff') ||
+      lowerFull.includes('t-bank')
+    )
+      bankName = 'Т-Банк';
     else if (lowerFull.includes('сбер') || lowerFull.includes('sber')) bankName = 'СберБанк';
     else if (lowerFull.includes('альфа') || lowerFull.includes('alfa')) bankName = 'Альфа-Банк';
     else if (lowerFull.includes('втб') || lowerFull.includes('vtb')) bankName = 'ВТБ';
@@ -988,21 +1135,30 @@ function parseBankPushText(title = '', text = '', packageName = '') {
   }
 
   // 3. Распознавание внутреннего перевода между счетами / в накопительные счета
-  const isInternalAccountTransfer = /(?:на\s+сч[её]т\s+в\s+сейвах|в\s+сейвы|пополнение\s+с\s+карты.*на\s+сч[её]т|перевод.*между\s+(?:своими|счетами)|в\s+инвесткопилку|перевод\s+на\s+сч[её]т\s+в\s+сейв)/i.test(fullText);
+  const isInternalAccountTransfer =
+    /(?:на\s+сч[её]т\s+в\s+сейвах|в\s+сейвы|пополнение\s+с\s+карты.*на\s+сч[её]т|перевод.*между\s+(?:своими|счетами)|в\s+инвесткопилку|перевод\s+на\s+сч[её]т\s+в\s+сейв)/i.test(
+      fullText
+    );
 
   // 4. Определение типа операции (Расход vs Доход)
-  const isIncome = /(?:зачисление|пополнение|перевод от|возврат|зарплата|входящий перевод|\+[\d\s]+)/i.test(fullText) && !/(?:списание|покупка|оплата)/i.test(fullText);
-  const isExpense = /(?:покупка|оплата|списание|списано|снятие|чек|заказ|перевод клиенту|перевод на|в адрес)/i.test(fullText) || !isIncome;
+  const isIncome =
+    /(?:зачисление|пополнение|перевод от|возврат|зарплата|входящий перевод|\+[\d\s]+)/i.test(
+      fullText
+    ) && !/(?:списание|покупка|оплата)/i.test(fullText);
 
   // 5. Определение обычного перевода и пополнений с сейва/накопительных счетов (требует подтверждения)
-  const isTransferOperation = !isInternalAccountTransfer && /(?:пополнение\s+(?:с|из)\s+сейва|с\s+сейва|из\s+сейва|сейв|сейва|пополнение\s+(?:с|из)\s+накопительн|с\s+накопительн|из\s+накопительн|накопительного\s+сч[её]та|копилк|перевод|сбп|по\s+номеру|клиенту|зачисление\s+перевода|входящий\s+перевод|исходящий\s+перевод)/i.test(fullText);
+  const isTransferOperation =
+    !isInternalAccountTransfer &&
+    /(?:пополнение\s+(?:с|из)\s+сейва|с\s+сейва|из\s+сейва|сейв|сейва|пополнение\s+(?:с|из)\s+накопительн|с\s+накопительн|из\s+накопительн|накопительного\s+сч[её]та|копилк|перевод|сбп|по\s+номеру|клиенту|зачисление\s+перевода|входящий\s+перевод|исходящий\s+перевод)/i.test(
+      fullText
+    );
 
   // 6. Извлечение суммы операции
   let amount = 0;
   const amountRegexes = [
-    /(?:покупка|оплата|списание|списано|снятие|зачисление|пополнение|сумма|чек|на сумму|расход|перевод)\s*(?::)?\s*([+\-]?\s*[\d\s]+(?:[.,]\d{1,2})?)\s*(?:₽|руб|рубл|rur|rub|р\b)/i,
-    /([+\-]?\s*[\d\s]+(?:[.,]\d{1,2})?)\s*(?:₽|руб|рубл|rur|rub|р\b)/i,
-    /(?:сумма|итог)\s*[:=]\s*([+\-]?\s*[\d\s]+(?:[.,]\d{1,2})?)/i
+    /(?:покупка|оплата|списание|списано|снятие|зачисление|пополнение|сумма|чек|на сумму|расход|перевод)\s*(?::)?\s*([-+]?\s*[\d\s]+(?:[.,]\d{1,2})?)\s*(?:₽|руб|рубл|rur|rub|р\b)/i,
+    /([-+]?\s*[\d\s]+(?:[.,]\d{1,2})?)\s*(?:₽|руб|рубл|rur|rub|р\b)/i,
+    /(?:сумма|итог)\s*[:=]\s*([-+]?\s*[\d\s]+(?:[.,]\d{1,2})?)/i,
   ];
 
   for (const reg of amountRegexes) {
@@ -1027,7 +1183,11 @@ function parseBankPushText(title = '', text = '', packageName = '') {
   if (isTransferOperation || isInternalAccountTransfer) {
     category = isIncome ? 'Входящий перевод' : 'Перевод';
   } else if (typeof window.StatementCategorizer?.categorize === 'function') {
-    category = window.StatementCategorizer.categorize(finalMerchant, fullText, isIncome ? 'Доход' : 'Расход');
+    category = window.StatementCategorizer.categorize(
+      finalMerchant,
+      fullText,
+      isIncome ? 'Доход' : 'Расход'
+    );
   } else {
     const rules = window.Cache?.categoryRules || window.DEFAULT_CATEGORY_RULES || [];
     const lowerNorm = (finalMerchant + ' ' + fullText).toLowerCase();
@@ -1049,7 +1209,7 @@ function parseBankPushText(title = '', text = '', packageName = '') {
     score: scoring.score,
     isInternalTransfer: isInternalAccountTransfer,
     isPendingTransfer: isTransferOperation,
-    timestamp: Date.now()
+    timestamp: Date.now(),
   };
 }
 
@@ -1060,7 +1220,7 @@ async function saveAutoExpenseTransaction(parsedData) {
 
   // 1. Если это явный внутренний перевод между своими счетами — пропускаем учет в тратах
   if (parsedData.isInternalTransfer) {
-    console.log('[BankPush] Внутренний перевод между своими счетами пропущен:', parsedData);
+    console.warn('[BankPush] Внутренний перевод между своими счетами пропущен:', parsedData);
     return null;
   }
 
@@ -1077,7 +1237,8 @@ async function saveAutoExpenseTransaction(parsedData) {
   const tempTxId = `auto_push_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
 
   // Проверка на дубликат
-  const allFlat = typeof getAllCachedTransactionsFlat === 'function' ? getAllCachedTransactionsFlat() : [];
+  const allFlat =
+    typeof getAllCachedTransactionsFlat === 'function' ? getAllCachedTransactionsFlat() : [];
   const isDuplicate = allFlat.some(t => {
     if (t.date !== dateStr) return false;
     const diff = Math.abs(parseFloat(t.amount) - parsedData.amount);
@@ -1089,16 +1250,19 @@ async function saveAutoExpenseTransaction(parsedData) {
   });
 
   if (isDuplicate) {
-    console.log('[BankPush] Операция пропущена (обнаружен дубликат):', parsedData);
+    console.warn('[BankPush] Операция пропущена (обнаружен дубликат):', parsedData);
     return null;
   }
 
   const isPending = !!parsedData.isPendingTransfer;
-  const userProfile = (typeof getCurrentUserProfile === 'function') ? getCurrentUserProfile() : { displayName: 'Пользователь', avatarId: 'user' };
+  const userProfile =
+    typeof getCurrentUserProfile === 'function'
+      ? getCurrentUserProfile()
+      : { displayName: 'Пользователь', avatarId: 'user' };
   const authorInfo = {
     uid: window.auth.currentUser.uid || '',
     name: userProfile.displayName || 'Пользователь',
-    avatarId: userProfile.avatarId || 'user'
+    avatarId: userProfile.avatarId || 'user',
   };
 
   const txObj = {
@@ -1122,7 +1286,7 @@ async function saveAutoExpenseTransaction(parsedData) {
     bank: parsedData.bank || '',
     timestamp: parsedData.timestamp || Date.now(),
     createdAt: Date.now(),
-    author: authorInfo
+    author: authorInfo,
   };
 
   // Добавляем в буфер недавних пушей для проверки встречных парных списаний/пополнений
@@ -1131,7 +1295,7 @@ async function saveAutoExpenseTransaction(parsedData) {
     amount: parsedData.amount,
     type: parsedData.type,
     bank: parsedData.bank,
-    time: Date.now()
+    time: Date.now(),
   });
 
   // Мгновенное добавление в кэш
@@ -1159,8 +1323,11 @@ async function saveAutoExpenseTransaction(parsedData) {
   if (typeof renderTransactions === 'function') renderTransactions();
 
   // Локальный тост и push-уведомление
-  const format = typeof window.formatMoney === 'function' ? window.formatMoney : (n) => `${Math.round(n).toLocaleString('ru-RU')} ₽`;
-  
+  const format =
+    typeof window.formatMoney === 'function'
+      ? window.formatMoney
+      : n => `${Math.round(n).toLocaleString('ru-RU')} ₽`;
+
   if (isPending) {
     if (typeof showToast === 'function') {
       showToast(`Перевод: ${format(parsedData.amount)} • Требует подтверждения`);
@@ -1171,7 +1338,9 @@ async function saveAutoExpenseTransaction(parsedData) {
     );
   } else {
     if (typeof showToast === 'function') {
-      showToast(`Авто-расход: ${format(parsedData.amount)} • ${parsedData.merchant} (${parsedData.category})`);
+      showToast(
+        `Авто-расход: ${format(parsedData.amount)} • ${parsedData.merchant} (${parsedData.category})`
+      );
     }
     sendAppLocalNotification(
       `Расход внесен: ${format(parsedData.amount)}`,
@@ -1219,10 +1388,12 @@ function sendAppLocalNotification(title, body) {
       new Notification(title, {
         body,
         icon: 'icon-pwa.svg?v=3',
-        badge: 'icon-pwa.svg?v=3'
+        badge: 'icon-pwa.svg?v=3',
       });
     }
-  } catch (_) {}
+  } catch (_e) {
+    /* ignore */
+  }
 }
 
 // Проверка и запрос разрешений нативного сервиса пушей
@@ -1257,11 +1428,15 @@ async function requestPostNotificationPermission() {
   if (window.Capacitor?.Plugins?.BankPush?.requestPostNotificationPermission) {
     try {
       await window.Capacitor.Plugins.BankPush.requestPostNotificationPermission();
-    } catch (_) {}
+    } catch (_e) {
+      /* ignore */
+    }
   } else if (typeof Notification !== 'undefined' && Notification.requestPermission) {
     try {
       await Notification.requestPermission();
-    } catch (_) {}
+    } catch (_e) {
+      /* ignore */
+    }
   }
 }
 
@@ -1287,6 +1462,46 @@ function toggleBankPushAutoExpense(enabled) {
   renderBankPushModalContent();
 }
 
+async function syncAuthCredentialsToBankPush() {
+  if (!window.Capacitor?.Plugins?.BankPush?.setAuthCredentials) return;
+  if (!window.auth?.currentUser) return;
+  try {
+    const user = window.auth.currentUser;
+    const idToken = await user.getIdToken();
+    const refreshToken = user.refreshToken || '';
+    const profile = typeof getCurrentUserProfile === 'function' ? getCurrentUserProfile() : {};
+    const familyId = window.Cache?.family?.id || '';
+    const geminiApiKey =
+      typeof window.GeminiService?.getAuthCredential === 'function'
+        ? window.GeminiService.getAuthCredential()?.value || ''
+        : '';
+
+    const categories = [
+      ...(window.Cache?.categories?.expense || []).map(c => (typeof c === 'string' ? c : c?.name)),
+      ...(window.Cache?.categories?.income || []).map(c => (typeof c === 'string' ? c : c?.name)),
+    ].filter(Boolean);
+
+    const categoryRules = window.Cache?.categoryRules || window.DEFAULT_CATEGORY_RULES || [];
+
+    await window.Capacitor.Plugins.BankPush.setAuthCredentials({
+      userId: user.uid,
+      familyId: familyId,
+      idToken: idToken,
+      refreshToken: refreshToken,
+      apiKey: 'AIzaSyC_JkUF__UfStFrTKecRasKqKBKXlQ4D88',
+      projectId: 'familybudget-4245a',
+      geminiApiKey: geminiApiKey,
+      authorName: profile.displayName || user.displayName || 'Пользователь',
+      authorAvatarId: profile.avatarId || 'user',
+      categoriesJson: JSON.stringify(categories),
+      categoryRulesJson: JSON.stringify(categoryRules),
+    });
+  } catch (err) {
+    console.warn('[BankPush] Error syncing credentials to native layer:', err);
+  }
+}
+window.syncAuthCredentialsToBankPush = syncAuthCredentialsToBankPush;
+
 // Инициализация фонового слушателя входящих банковских пушей
 function initBankPushListener() {
   if (window._bankPushListenerInitialized) return;
@@ -1294,25 +1509,43 @@ function initBankPushListener() {
 
   if (window.Capacitor?.Plugins?.BankPush) {
     // Подписка на событие прихода пуша в реальном времени
-    window.Capacitor.Plugins.BankPush.addListener('bankPushReceived', async (eventData) => {
+    window.Capacitor.Plugins.BankPush.addListener('bankPushReceived', async eventData => {
       if (!isBankPushAutoExpenseEnabled()) return;
-      const parsed = parseBankPushText(eventData.title, eventData.text || eventData.body, eventData.packageName);
+      if (eventData && eventData.alreadySynced) {
+        if (typeof fetchAllData === 'function') fetchAllData();
+        return;
+      }
+      const parsed = parseBankPushText(
+        eventData.title,
+        eventData.text || eventData.body,
+        eventData.packageName
+      );
       if (parsed && parsed.amount > 0) {
         await saveAutoExpenseTransaction(parsed);
       }
     }).catch(() => {});
 
     // Получение пушей, накопившихся пока приложение было закрыто
-    window.Capacitor.Plugins.BankPush.getPendingBankPushes?.().then(async (res) => {
-      if (res && Array.isArray(res.pushes) && isBankPushAutoExpenseEnabled()) {
-        for (const p of res.pushes) {
-          const parsed = parseBankPushText(p.title, p.text || p.body, p.packageName);
-          if (parsed && parsed.amount > 0) {
-            await saveAutoExpenseTransaction(parsed);
+    window.Capacitor.Plugins.BankPush.getPendingBankPushes?.()
+      .then(async res => {
+        if (res && Array.isArray(res.pushes) && isBankPushAutoExpenseEnabled()) {
+          let hasSynced = false;
+          for (const p of res.pushes) {
+            if (p.alreadySynced) {
+              hasSynced = true;
+              continue;
+            }
+            const parsed = parseBankPushText(p.title, p.text || p.body, p.packageName);
+            if (parsed && parsed.amount > 0) {
+              await saveAutoExpenseTransaction(parsed);
+            }
+          }
+          if (hasSynced && typeof fetchAllData === 'function') {
+            fetchAllData();
           }
         }
-      }
-    }).catch(() => {});
+      })
+      .catch(() => {});
   }
 }
 
@@ -1332,11 +1565,13 @@ async function checkAndUpdatePushPermissionsUI() {
   }
 
   try {
-    const isGranted = typeof checkBankPushPermissions === 'function' ? await checkBankPushPermissions() : true;
+    const isGranted =
+      typeof checkBankPushPermissions === 'function' ? await checkBankPushPermissions() : true;
     if (warnEl) {
       if (isGranted) {
         if (!warnEl.classList.contains('hidden')) {
-          warnEl.style.transition = 'opacity 0.25s ease, max-height 0.3s ease, margin 0.3s ease, padding 0.3s ease';
+          warnEl.style.transition =
+            'opacity 0.25s ease, max-height 0.3s ease, margin 0.3s ease, padding 0.3s ease';
           warnEl.style.overflow = 'hidden';
           warnEl.style.opacity = '0';
           warnEl.style.maxHeight = '0px';
@@ -1353,7 +1588,9 @@ async function checkAndUpdatePushPermissionsUI() {
         warnEl.classList.remove('hidden');
       }
     }
-  } catch (_) {}
+  } catch (_e) {
+    /* ignore */
+  }
 }
 
 function openBankPushModal(options = {}) {
@@ -1361,8 +1598,9 @@ function openBankPushModal(options = {}) {
   if (!modal) {
     modal = document.createElement('div');
     modal.id = 'bank-push-modal';
-    modal.className = 'fixed inset-0 z-[1400] bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-fade-in custom-scrollbar';
-    modal.onclick = (e) => {
+    modal.className =
+      'fixed inset-0 z-[1400] bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-fade-in custom-scrollbar';
+    modal.onclick = e => {
       if (e.target === modal) closeBankPushModal();
     };
     document.body.appendChild(modal);
@@ -1512,8 +1750,9 @@ function openBankPushPermissionPrompt() {
   if (!modal) {
     modal = document.createElement('div');
     modal.id = 'bank-push-permission-prompt-modal';
-    modal.className = 'fixed inset-0 z-[1500] bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-fade-in [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden';
-    modal.onclick = (e) => {
+    modal.className =
+      'fixed inset-0 z-[1500] bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-fade-in [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden';
+    modal.onclick = e => {
       if (e.target === modal) closeBankPushPermissionPrompt();
     };
     document.body.appendChild(modal);
@@ -1623,8 +1862,11 @@ async function checkAndPromptBankPushPermission(delayMs = 2500) {
     }
     return;
   }
-  
-  const dismissedAt = parseInt(localStorage.getItem('bank_push_permission_prompt_dismissed_at') || '0', 10);
+
+  const dismissedAt = parseInt(
+    localStorage.getItem('bank_push_permission_prompt_dismissed_at') || '0',
+    10
+  );
   // Не показываем чаще, чем раз в 24 часа, если пользователь уже закрывал окно
   if (Date.now() - dismissedAt < 24 * 60 * 60 * 1000) {
     if (typeof checkAndShowWidgetPrompt === 'function') {
@@ -1663,6 +1905,7 @@ async function checkAndPromptBankPushPermission(delayMs = 2500) {
 
 // 13. Глобальный экспорт функций
 window.isNativeAppPlatform = isNativeAppPlatform;
+window.isPwaStandalone = isPwaStandalone;
 window.getLiveWidgetData = getLiveWidgetData;
 window.syncWidgetData = syncWidgetData;
 window.openWidgetHubModal = openWidgetHubModal;
@@ -1706,11 +1949,19 @@ window.checkAndPromptBankPushPermission = checkAndPromptBankPushPermission;
 if (typeof window !== 'undefined') {
   setTimeout(() => {
     initBankPushListener();
+    syncAuthCredentialsToBankPush();
   }, 1000);
 
   window.addEventListener('focus', () => {
     checkAndUpdatePushPermissionsUI();
+    syncAuthCredentialsToBankPush();
   });
+
+  if (window.auth?.onIdTokenChanged) {
+    window.auth.onIdTokenChanged(() => {
+      syncAuthCredentialsToBankPush();
+    });
+  }
 
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
@@ -1720,11 +1971,13 @@ if (typeof window !== 'undefined') {
 
   if (window.Capacitor?.Plugins?.App?.addListener) {
     try {
-      window.Capacitor.Plugins.App.addListener('appStateChange', (state) => {
+      window.Capacitor.Plugins.App.addListener('appStateChange', state => {
         if (state && state.isActive) {
           checkAndUpdatePushPermissionsUI();
         }
       }).catch(() => {});
-    } catch (_) {}
+    } catch (_e) {
+      /* ignore */
+    }
   }
 }

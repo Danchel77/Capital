@@ -154,6 +154,38 @@ public class BankPushPlugin extends Plugin {
         call.resolve();
     }
 
+    @PluginMethod
+    public void setAuthCredentials(PluginCall call) {
+        String userId = call.getString("userId", "");
+        String familyId = call.getString("familyId", "");
+        String idToken = call.getString("idToken", "");
+        String refreshToken = call.getString("refreshToken", "");
+        String apiKey = call.getString("apiKey", "");
+        String projectId = call.getString("projectId", "");
+        String geminiApiKey = call.getString("geminiApiKey", "");
+        String authorName = call.getString("authorName", "Пользователь");
+        String authorAvatarId = call.getString("authorAvatarId", "user");
+        String categoriesJson = call.getString("categoriesJson", "[]");
+        String categoryRulesJson = call.getString("categoryRulesJson", "[]");
+
+        SharedPreferences prefs = getContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        prefs.edit()
+            .putString("auth_user_id", userId)
+            .putString("auth_family_id", familyId)
+            .putString("auth_id_token", idToken)
+            .putString("auth_refresh_token", refreshToken)
+            .putString("firebase_api_key", apiKey)
+            .putString("firebase_project_id", projectId)
+            .putString("gemini_api_key", geminiApiKey)
+            .putString("author_name", authorName)
+            .putString("author_avatar_id", authorAvatarId)
+            .putString("user_categories", categoriesJson)
+            .putString("category_rules", categoryRulesJson)
+            .apply();
+
+        call.resolve();
+    }
+
     private boolean isNotificationServiceEnabled(Context context) {
         String pkgName = context.getPackageName();
         final String flat = Settings.Secure.getString(context.getContentResolver(), "enabled_notification_listeners");
