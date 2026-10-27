@@ -193,13 +193,13 @@ function renderBudgetGoals(goals) {
 
   if (processedGoals.length === 0) {
     container.innerHTML = `
-      <div class="card rounded-2xl p-5 text-center flex flex-col items-center justify-center gap-2.5 bg-[#0E1016] border border-white/[0.07]">
-        <div class="w-9 h-9 rounded-full bg-white/[0.04] border border-white/[0.06] text-zinc-300 flex items-center justify-center">
-          <i data-lucide="target" class="w-4.5 h-4.5"></i>
+      <div class="card rounded-2xl p-5 text-center flex flex-col items-center justify-center gap-2.5 bg-[#0E1016] border border-[#1E222D]">
+        <div class="w-10 h-10 rounded-xl bg-[#13251E] border border-[#1E3E32] text-[#34D399] flex items-center justify-center">
+          <i data-lucide="target" class="w-5 h-5 text-[#34D399]"></i>
         </div>
         <div>
-          <p class="text-xs font-semibold text-zinc-200">Целей пока нет</p>
-          <p class="text-[11px] text-zinc-500 mt-0.5">Создайте цель, чтобы распределить долю накоплений капитала</p>
+          <p class="text-sm font-medium text-zinc-200">Целей пока нет</p>
+          <p class="text-xs text-zinc-500 mt-0.5">Создайте цель, чтобы распределить долю накоплений капитала</p>
         </div>
         <button type="button" onclick="openGoalModal()" class="btn-primary px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 active:scale-95 cursor-pointer">
           <i data-lucide="plus" class="w-3.5 h-3.5"></i>
@@ -227,7 +227,7 @@ function renderBudgetGoals(goals) {
       }
 
       return `
-      <div class="card bg-[#0E1016] border border-white/[0.07] hover:border-white/[0.12] rounded-2xl p-4 shadow-sm cursor-pointer relative transition-all"
+      <div class="card bg-[#0E1016] border border-[#1E222D] hover:border-[#2E364A] rounded-2xl p-4 shadow-sm cursor-pointer relative transition-all"
            data-id="${g.id}"
            data-table="Goals"
            onclick="openEditGoalModal('${g.id}')">
@@ -235,19 +235,19 @@ function renderBudgetGoals(goals) {
         <input type="checkbox" class="select-checkbox hidden" data-id="${g.id}">
 
         <div class="flex items-start justify-between mb-2.5 gap-2">
-          <div class="flex items-center gap-2.5 min-w-0 flex-1">
-            <div class="w-8 h-8 rounded-full bg-white/[0.04] border border-white/[0.06] text-zinc-300 flex items-center justify-center flex-shrink-0">
-              <i data-lucide="${g.icon || 'target'}" class="w-4 h-4"></i>
+          <div class="flex items-center gap-3 min-w-0 flex-1">
+            <div class="w-10 h-10 rounded-xl bg-[#13251E] border border-[#1E3E32] text-[#34D399] flex items-center justify-center flex-shrink-0">
+              <i data-lucide="${g.icon || 'target'}" class="w-5 h-5"></i>
             </div>
             <div class="min-w-0 flex-1">
-              <h4 class="text-xs sm:text-sm font-semibold text-white truncate">${escapeHtml(g.name)}</h4>
-              <p class="text-[10px] text-zinc-500 mt-0.5">${timeHint}</p>
+              <h4 class="text-sm font-semibold text-white truncate">${escapeHtml(g.name)}</h4>
+              <p class="text-xs text-zinc-400 mt-0.5">${timeHint}</p>
             </div>
           </div>
           
           <button type="button" 
                   onclick="event.stopPropagation(); openGoalTopupModal('${g.id}', '${escapeHtml(g.name)}')" 
-                  class="btn-secondary text-xs font-medium px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1 flex-shrink-0 active:scale-95">
+                  class="btn-secondary text-xs font-medium px-2.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 flex-shrink-0 active:scale-95">
             <i data-lucide="plus" class="w-3.5 h-3.5"></i>
             <span>Копилка</span>
           </button>
@@ -258,10 +258,10 @@ function renderBudgetGoals(goals) {
             ${formatMoney(g.saved)}
             <span class="text-zinc-500 font-normal text-xs">/ ${formatMoney(g.target)}</span>
           </span>
-          <span class="text-xs font-mono font-semibold text-emerald-400 [font-variant-numeric:tabular-nums]">${g.progress}%</span>
+          <span class="text-sm font-mono font-bold text-emerald-400 [font-variant-numeric:tabular-nums]">${g.progress}%</span>
         </div>
 
-        <div class="w-full bg-white/[0.06] h-1.5 rounded-full overflow-hidden">
+        <div class="w-full bg-[#1A1F2C] h-2 rounded-full overflow-hidden">
           <div class="bg-emerald-500 h-full rounded-full transition-all duration-500" style="width: ${g.progress}%"></div>
         </div>
       </div>

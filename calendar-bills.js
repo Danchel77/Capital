@@ -181,13 +181,13 @@ function renderBudgetCalendar() {
 
   if (upcomingBills.length === 0) {
     container.innerHTML = `
-      <div class="rounded-2xl p-4 text-center flex flex-col items-center justify-center gap-2 bg-[#0E1016] border border-white/[0.07]">
-        <div class="w-8 h-8 rounded-full bg-white/[0.04] border border-white/[0.06] text-zinc-400 flex items-center justify-center">
-          <i data-lucide="calendar-check-2" class="w-4 h-4 text-zinc-400"></i>
+      <div class="rounded-2xl p-4 text-center flex flex-col items-center justify-center gap-2 bg-[#0E1016] border border-[#1E222D]">
+        <div class="w-10 h-10 rounded-xl bg-[#151B26] border border-[#232D3E] text-[#93C5FD] flex items-center justify-center">
+          <i data-lucide="calendar-check-2" class="w-5 h-5 text-[#93C5FD]"></i>
         </div>
         <div>
-          <p class="text-xs font-medium text-zinc-300">Нет списаний на ближайшие две недели</p>
-          <p class="text-[10px] text-zinc-500 mt-0.5">Все регулярные платежи распределены дальше по календарю</p>
+          <p class="text-sm font-medium text-zinc-200">Нет списаний на ближайшие две недели</p>
+          <p class="text-xs text-zinc-500 mt-0.5">Все регулярные платежи распределены дальше по календарю</p>
         </div>
       </div>
     `;
@@ -220,35 +220,35 @@ function renderBudgetCalendar() {
       let daysTextColor = 'text-zinc-500';
       if (item.daysLeft === 0) {
         daysText = 'сегодня';
-        daysTextColor = 'text-rose-400 font-medium';
+        daysTextColor = 'text-amber-400 font-semibold';
       } else if (item.daysLeft === 1) {
         daysText = 'завтра';
-        daysTextColor = 'text-amber-400 font-medium';
+        daysTextColor = 'text-amber-200 font-medium';
       }
 
       return `
-      <div class="px-3.5 py-3 hover:bg-white/[0.02] flex items-center justify-between gap-3 transition-colors cursor-pointer select-none active:bg-white/[0.04]"
+      <div class="px-3.5 py-3 hover:bg-[#131620] flex items-center justify-between gap-3 transition-colors cursor-pointer select-none active:bg-[#181C26]"
            onclick="openEditBillModal('${b.id}')">
         <div class="flex items-center gap-3 min-w-0 flex-1">
-          <div class="w-8 h-8 rounded-full bg-white/[0.04] border border-white/[0.06] text-zinc-300 flex flex-col items-center justify-center flex-shrink-0 leading-tight">
-            <span class="text-xs font-semibold text-white leading-none">${dayNum}</span>
-            <span class="text-[8px] text-zinc-500 uppercase font-medium leading-none mt-0.5">${monthStr}</span>
+          <div class="w-10 h-10 rounded-xl bg-[#151B26] border border-[#232D3E] text-zinc-300 flex flex-col items-center justify-center flex-shrink-0 leading-tight">
+            <span class="text-sm font-bold text-white leading-none">${dayNum}</span>
+            <span class="text-[9px] text-[#93C5FD] uppercase font-semibold leading-none mt-0.5">${monthStr}</span>
           </div>
           <div class="min-w-0 flex-1">
-            <span class="text-xs font-medium text-white truncate block">${escapeHtml(b.name)}</span>
+            <span class="text-sm font-medium text-white truncate block">${escapeHtml(b.name)}</span>
           </div>
         </div>
 
         <div class="text-right flex-shrink-0 leading-tight">
-          <span class="text-xs font-mono font-semibold text-white block [font-variant-numeric:tabular-nums]">${formatMoney(item.amount)}</span>
-          <span class="text-[10px] ${daysTextColor} block mt-0.5">${daysText}</span>
+          <span class="text-sm font-mono font-semibold text-white block [font-variant-numeric:tabular-nums]">${formatMoney(item.amount)}</span>
+          <span class="text-xs ${daysTextColor} block mt-0.5">${daysText}</span>
         </div>
       </div>
     `;
     })
     .join('');
 
-  container.innerHTML = `<div class="bg-[#0E1016] border border-white/[0.07] rounded-2xl divide-y divide-white/[0.04] overflow-hidden">${rows}</div>`;
+  container.innerHTML = `<div class="bg-[#0E1016] border border-[#1E222D] rounded-2xl divide-y divide-[#1A1F2C] overflow-hidden">${rows}</div>`;
 
   if (typeof lucide !== 'undefined') lucide.createIcons();
 }

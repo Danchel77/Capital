@@ -639,10 +639,10 @@ nav button,
 header {
   height: 52px !important;
   padding: 0 16px !important;
-  background: rgba(0, 0, 0, 0.85) !important;
-  border-bottom: 1px solid var(--line) !important;
-  box-shadow: none !important;
-  backdrop-filter: blur(20px);
+  background: #0e1016 !important;
+  border-bottom: 1px solid #1e222d !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5) !important;
+  backdrop-filter: none !important;
 }
 header h1 {
   font-size: 18px !important;
@@ -688,13 +688,13 @@ header button:hover {
 }
 
 .btn-secondary {
-  background: rgba(255, 255, 255, 0.05) !important;
-  color: #94a3b8 !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: #181c26 !important;
+  color: #a0aec0 !important;
+  border: 1px solid #282e3e !important;
   transition: all 0.15s ease;
 }
 .btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.08) !important;
+  background: #202634 !important;
   color: #ffffff !important;
 }
 .btn-secondary:active {
@@ -702,13 +702,13 @@ header button:hover {
 }
 
 .btn-destructive {
-  background: rgba(244, 63, 94, 0.1) !important;
+  background: #2a151b !important;
   color: #fb7185 !important;
-  border: 1px solid rgba(244, 63, 94, 0.2) !important;
+  border: 1px solid #4a212c !important;
   transition: all 0.15s ease;
 }
 .btn-destructive:hover {
-  background: rgba(244, 63, 94, 0.18) !important;
+  background: #361b23 !important;
 }
 .btn-destructive:active {
   transform: scale(0.98);
@@ -1289,10 +1289,10 @@ select option {
 /* ---------- nav ---------- */
 nav {
   height: 58px !important;
-  background: rgba(11, 13, 19, 0.96) !important;
-  border-top: 1px solid var(--line) !important;
-  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.2) !important;
-  backdrop-filter: blur(18px);
+  background: #0e1016 !important;
+  border-top: 1px solid #1e222d !important;
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.5) !important;
+  backdrop-filter: none !important;
   padding-bottom: env(safe-area-inset-bottom) !important;
 }
 nav button {
