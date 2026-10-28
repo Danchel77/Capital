@@ -878,7 +878,7 @@
 
           <!-- 1. Сводная карточка финансового результата месяца -->
           <div
-            class="bg-[#0E1016] border border-[#1E222D] rounded-2xl p-4.5 shadow-sm relative overflow-hidden"
+            class="bg-[#0E1016] border border-[#1E222D] rounded-2xl p-4 shadow-sm relative overflow-hidden"
           >
             <div class="flex items-center justify-between mb-1">
               <span
@@ -898,11 +898,11 @@
               0 ₽
             </p>
 
-            <!-- Компактная чистая строка: Доходы и Расходы -->
-            <div class="flex items-center gap-4 mt-3 pt-3 border-t border-[#1E222D] text-xs">
+            <!-- Фиксированная сетка 50/50: Доходы и Расходы -->
+            <div class="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-[#1E222D] text-xs">
               <div class="flex items-center gap-2 min-w-0">
                 <span class="w-2 h-2 rounded-full bg-[#10B981] shrink-0"></span>
-                <span class="text-xs text-zinc-400">Доходы</span>
+                <span class="text-xs text-zinc-400 shrink-0">Доходы</span>
                 <span
                   id="budget-month-income-val"
                   class="font-mono font-bold text-[#10B981] text-sm truncate"
@@ -910,11 +910,9 @@
                 >
               </div>
 
-              <div class="h-3.5 w-px bg-[#282E3E]"></div>
-
               <div class="flex items-center gap-2 min-w-0">
                 <span class="w-2 h-2 rounded-full bg-[#F43F5E] shrink-0"></span>
-                <span class="text-xs text-zinc-400">Расходы</span>
+                <span class="text-xs text-zinc-400 shrink-0">Расходы</span>
                 <span
                   id="budget-month-expense-val"
                   class="font-mono font-bold text-zinc-200 text-sm truncate"
