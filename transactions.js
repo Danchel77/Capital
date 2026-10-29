@@ -421,16 +421,6 @@ function renderTxRowHtml(tx, largeThreshold, hasDynamicThreshold) {
     isTxMonthTracked &&
     parseFloat(tx.amount) >= largeThreshold;
 
-  const isBankPush = tx.source === 'bank_push' || tx.source === 'bank_push_auto';
-  let pushBadgeHtml = '';
-  if (isBankPush) {
-    pushBadgeHtml = `
-      <span class="h-5 px-1.5 rounded-md bg-sky-500/15 text-sky-300 border border-sky-500/25 text-[10px] font-medium flex items-center gap-1 flex-shrink-0 leading-none select-none" title="Внесено автоматически по пуш-уведомлению банка${tx.bank ? ' (' + escapeHtml(tx.bank) + ')' : ''}">
-        <i data-lucide="zap" class="w-2.5 h-2.5 text-sky-400"></i>Пуш
-      </span>
-    `;
-  }
-
   let badgeHtml = '';
   if (isPending) {
     badgeHtml = `
@@ -537,18 +527,13 @@ function renderTxRowHtml(tx, largeThreshold, hasDynamicThreshold) {
     }
 
     if (authorInfo) {
-      const authorPreset = (window.AVATAR_PRESETS && window.AVATAR_PRESETS[authorInfo.avatarId]) ||
-        window.AVATAR_PRESETS?.user || { bg: 'bg-[#6C5DD3]', icon: 'user' };
-      authorBadgeHtml = `
-        <div class="tx-author-badge absolute top-2 right-2.5 flex items-center justify-center w-[18px] h-[18px] rounded-full ${authorPreset.bg} text-white ring-2 ring-[#181B24] shadow-sm select-none pointer-events-none z-10" title="Добавил(а): ${escapeHtml(authorInfo.name)}">
-          <i data-lucide="${authorPreset.icon}" class="w-2.5 h-2.5 stroke-[2.5]"></i>
-        </div>
-      `;
+      // Автор сохраняется для карточки деталей (попапа), но не выводится в виде стикера в общем списке
+      authorBadgeHtml = '';
     }
   }
 
   return `
-    <div class="card cursor-pointer w-full py-[13px] px-4 relative flex items-center justify-between ${authorBadgeHtml ? 'tx-has-author' : ''} ${isJustAdded ? 'tx-row-new' : ''} ${isPending ? 'border border-[#6C5DD3]/25 bg-[#171926]/90' : ''}"
+    <div class="card cursor-pointer w-full py-3 px-3.5 relative flex items-center justify-between hover:bg-[#131620] active:bg-[#181C26] transition-colors ${authorBadgeHtml ? 'tx-has-author' : ''} ${isJustAdded ? 'tx-row-new' : ''} ${isPending ? 'border border-[#3B82F6]/30 bg-[#151B26]' : ''}"
          data-id="${tx.id}"
          data-table="Transactions"
          onclick="openTxContextMenu(event, '${tx.id}')">
@@ -556,12 +541,12 @@ function renderTxRowHtml(tx, largeThreshold, hasDynamicThreshold) {
       <input type="checkbox" class="select-checkbox hidden" data-id="${tx.id}">
       ${authorBadgeHtml}
 
-      <div class="flex items-center gap-3.5 min-w-0 flex-1 mr-2">
+      <div class="flex items-center gap-3 min-w-0 flex-1 mr-2">
          <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${iconBg}">
-            <i data-lucide="${iconStr}" class="w-[22px] h-[22px] stroke-[1.75px]"></i>
+            <i data-lucide="${iconStr}" class="w-5 h-5 stroke-[1.75px]"></i>
          </div>
          <div class="min-w-0 flex flex-col justify-center flex-1">
-           <span class="text-[15px] font-semibold text-gray-200 truncate leading-snug">${escapeHtml(mainTitle)}</span>
+           <span class="text-sm font-medium text-white truncate leading-snug">${escapeHtml(mainTitle)}</span>
            ${
              isPending
                ? `
@@ -583,27 +568,26 @@ function renderTxRowHtml(tx, largeThreshold, hasDynamicThreshold) {
              </div>
            `
                : subCategory
-                 ? `<span class="text-[12px] text-[#848D99] truncate leading-tight">${escapeHtml(subCategory)}</span>`
+                 ? `<span class="text-xs text-zinc-400 truncate leading-tight mt-0.5">${escapeHtml(subCategory)}</span>`
                  : ''
            }
          </div>
       </div>
 
       <div class="tx-row-right flex items-center gap-1.5 flex-shrink-0 ml-2">
-        ${pushBadgeHtml}
         ${badgeHtml}
         ${
           isPending
             ? `
-          <div class="tx-amount text-right flex flex-col items-end flex-shrink-0">
-            <span class="font-bold text-gray-200 text-[15px]">
+          <div class="tx-amount text-right flex flex-col items-end flex-shrink-0 font-mono [font-variant-numeric:tabular-nums]">
+            <span class="font-semibold text-white text-sm sm:text-base">
               ${window.isPrivacyModeEnabled ? '•••• ₽' : (isExp ? '-' : '+') + formatMoney(tx.amount)}
             </span>
-            <span class="text-[9.5px] font-semibold text-[#A594FD] bg-[#6C5DD3]/20 border border-[#6C5DD3]/30 px-1.5 py-0.2 rounded-md mt-0.5">Ожидает</span>
+            <span class="text-[9px] font-medium text-[#93C5FD] bg-[#1E2738] border border-[#232D3E] px-1.5 py-0.2 rounded-md mt-0.5">Ожидает</span>
           </div>
         `
             : `
-          <div class="tx-amount text-right font-medium ${isExp ? 'text-gray-200' : 'text-[#30D158]'} text-[16px] whitespace-nowrap">
+          <div class="tx-amount text-right font-mono font-semibold ${isExp ? 'text-white' : 'text-[#10B981]'} text-sm sm:text-base whitespace-nowrap [font-variant-numeric:tabular-nums]">
             ${window.isPrivacyModeEnabled ? '•••• ₽' : (isExp ? '-' : '+') + formatMoney(tx.amount)}
           </div>
         `
@@ -651,9 +635,9 @@ function appendTxChunk() {
   const chunkHtml = nextGroups
     .map(
       group => `
-    <div class="mb-5 tx-day-group">
-      <h3 class="font-semibold text-[#848D99] text-[13px] mb-2 px-1 tracking-wide">${getRelativeDayName(group.day)}</h3>
-      <div class="bg-[#181B24] border border-[rgba(255,255,255,0.06)] rounded-2xl overflow-hidden divide-y divide-[rgba(255,255,255,0.03)] shadow-sm">
+    <div class="mb-4 tx-day-group">
+      <h3 class="font-semibold text-zinc-400 text-xs mb-2 px-1 tracking-wider uppercase">${getRelativeDayName(group.day)}</h3>
+      <div class="bg-[#0E1016] border border-[#1E222D] rounded-2xl overflow-hidden divide-y divide-[#1A1F2C] shadow-sm">
         ${group.items.map(tx => renderTxRowHtml(tx, largeThreshold, hasDynamicThreshold)).join('')}
       </div>
     </div>
@@ -998,21 +982,21 @@ function renderTransactions() {
     const isTotallyEmpty = data.length === 0;
     if (isTotallyEmpty) {
       listEl.innerHTML = `
-        <div class="card rounded-2xl p-6 text-center flex flex-col items-center justify-center gap-3 mt-4 border border-[rgba(255,255,255,0.06)] bg-[#181B24]">
-          <div class="w-12 h-12 rounded-2xl bg-[#6C5DD3]/15 text-[#8C7DFF] flex items-center justify-center">
+        <div class="card rounded-2xl p-6 text-center flex flex-col items-center justify-center gap-3 mt-4 border border-[#1E222D] bg-[#0E1016]">
+          <div class="w-12 h-12 rounded-2xl bg-[#151B26] border border-[#232D3E] text-[#93C5FD] flex items-center justify-center">
             <i data-lucide="receipt" class="w-6 h-6"></i>
           </div>
           <div>
-            <p class="text-sm font-semibold text-gray-200">Операций пока нет</p>
-            <p class="text-xs text-[#848D99] mt-1 max-w-[280px]">Внесите свои первые расходы или доходы вручную, либо загрузите банковскую выписку</p>
+            <p class="text-sm font-semibold text-white">Операций пока нет</p>
+            <p class="text-xs text-zinc-500 mt-1 max-w-[280px]">Внесите свои первые расходы или доходы вручную, либо загрузите банковскую выписку</p>
           </div>
           <div class="flex flex-col sm:flex-row gap-2 mt-2 w-full max-w-xs">
-            <button type="button" onclick="toggleForm('tx-form-container', 'tx-submit-btn', 'Сохранить', 'tx-form', 'tx')" class="flex-1 py-2.5 px-4 rounded-xl bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white text-xs font-semibold transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-1.5">
+            <button type="button" onclick="toggleForm('tx-form-container', 'tx-submit-btn', 'Сохранить', 'tx-form', 'tx')" class="btn-primary flex-1 py-2.5 px-4 rounded-xl text-xs font-semibold transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-1.5 shadow-sm">
               <i data-lucide="plus" class="w-3.5 h-3.5"></i>
               <span>Добавить операцию</span>
             </button>
-            <button type="button" onclick="openPdfInfoModal()" class="py-2.5 px-4 rounded-xl bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 text-xs font-semibold transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-1.5 border border-[rgba(255,255,255,0.06)]">
-              <i data-lucide="file-up" class="w-3.5 h-3.5 text-[#8C7DFF]"></i>
+            <button type="button" onclick="openPdfInfoModal()" class="btn-secondary py-2.5 px-4 rounded-xl text-xs font-medium transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-1.5 shadow-sm">
+              <i data-lucide="file-up" class="w-3.5 h-3.5 text-zinc-400"></i>
               <span>Импорт PDF</span>
             </button>
           </div>
@@ -1020,15 +1004,15 @@ function renderTransactions() {
       `;
     } else {
       listEl.innerHTML = `
-        <div class="card rounded-2xl p-6 text-center flex flex-col items-center justify-center gap-3 mt-4 border border-[rgba(255,255,255,0.06)] bg-[#181B24]">
-          <div class="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-400 flex items-center justify-center">
+        <div class="card rounded-2xl p-6 text-center flex flex-col items-center justify-center gap-3 mt-4 border border-[#1E222D] bg-[#0E1016]">
+          <div class="w-12 h-12 rounded-2xl bg-[#231A10] border border-[#3E2B18] text-amber-400 flex items-center justify-center">
             <i data-lucide="search-x" class="w-6 h-6"></i>
           </div>
           <div>
-            <p class="text-sm font-semibold text-gray-200">Ничего не найдено</p>
-            <p class="text-xs text-[#848D99] mt-1 max-w-[280px]">По выбранным фильтрам и поисковому запросу нет подходящих операций</p>
+            <p class="text-sm font-semibold text-white">Ничего не найдено</p>
+            <p class="text-xs text-zinc-500 mt-1 max-w-[280px]">По выбранным фильтрам и поисковому запросу нет подходящих операций</p>
           </div>
-          <button type="button" onclick="resetAllTxFilters()" class="mt-1 px-4 py-2 rounded-xl bg-[#212430] hover:bg-[#2A2D3C] text-[#8C7DFF] hover:text-white text-xs font-semibold transition-all active:scale-95 cursor-pointer border border-[rgba(255,255,255,0.08)] flex items-center gap-1.5">
+          <button type="button" onclick="resetAllTxFilters()" class="btn-secondary mt-1 px-4 py-2 rounded-xl text-xs font-medium transition-all active:scale-95 cursor-pointer flex items-center gap-1.5">
             <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
             <span>Сбросить фильтры и поиск</span>
           </button>

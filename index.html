@@ -980,29 +980,44 @@
 
       <!-- ЭКРАН ТРАНЗАКЦИЙ -->
       <div id="transactions-tab" class="tab-pane space-y-3 hidden">
-        <!-- 1. Суммы расходов и доходов -->
-        <div class="grid grid-cols-2 gap-3 mb-1">
-          <div
-            class="bg-[#181B24] p-4 rounded-2xl border border-[rgba(255,255,255,0.06)] shadow-sm"
-          >
-            <p
-              id="month-expense-label"
-              class="text-[10px] text-[#848D99] uppercase font-bold tracking-wider mb-1 truncate"
-            >
-              Расходы (Тек. мес)
-            </p>
-            <p id="month-expense" class="font-bold text-white text-lg truncate">0 ₽</p>
-          </div>
-          <div
-            class="bg-[#181B24] p-4 rounded-2xl border border-[rgba(255,255,255,0.06)] shadow-sm"
-          >
-            <p
-              id="month-income-label"
-              class="text-[10px] text-[#848D99] uppercase font-bold tracking-wider mb-1 truncate"
-            >
-              Доходы (Тек. мес)
-            </p>
-            <p id="month-income" class="font-bold text-[#30D158] text-lg truncate">0 ₽</p>
+        <!-- 1. Сводная карточка расходов и доходов -->
+        <div class="bg-[#0E1016] border border-[#1E222D] rounded-2xl p-4 shadow-sm">
+          <div class="grid grid-cols-2 gap-3 text-xs">
+            <div class="min-w-0">
+              <div class="flex items-center gap-1.5 mb-1">
+                <span class="w-2 h-2 rounded-full bg-[#F43F5E] shrink-0"></span>
+                <span
+                  id="month-expense-label"
+                  class="text-xs font-medium text-zinc-400 uppercase tracking-wider truncate"
+                >
+                  Расходы (Тек. мес)
+                </span>
+              </div>
+              <p
+                id="month-expense"
+                class="font-mono font-bold text-white text-xl sm:text-2xl truncate [font-variant-numeric:tabular-nums]"
+              >
+                0 ₽
+              </p>
+            </div>
+
+            <div class="min-w-0">
+              <div class="flex items-center gap-1.5 mb-1">
+                <span class="w-2 h-2 rounded-full bg-[#10B981] shrink-0"></span>
+                <span
+                  id="month-income-label"
+                  class="text-xs font-medium text-zinc-400 uppercase tracking-wider truncate"
+                >
+                  Доходы (Тек. мес)
+                </span>
+              </div>
+              <p
+                id="month-income"
+                class="font-mono font-bold text-[#10B981] text-xl sm:text-2xl truncate [font-variant-numeric:tabular-nums]"
+              >
+                0 ₽
+              </p>
+            </div>
           </div>
         </div>
 
@@ -1026,16 +1041,29 @@
 
         <!-- 3. КОНТЕНТ ВКЛАДКИ «СПИСОК» -->
         <div id="transactions-list-wrap" class="space-y-3">
-          <!-- Кнопки импорта выписки и ручного добавления операций -->
-          <div id="tx-top-actions" class="flex gap-2">
-            <!-- Кнопка вызова окна импорта выписки (Главное действие) -->
+          <!-- Кнопки добавления операций и импорта выписки -->
+          <div id="tx-top-actions" class="grid grid-cols-2 gap-2.5">
+            <!-- Кнопка добавления операций вручную (Primary) -->
+            <button
+              type="button"
+              onclick="
+                toggleForm('tx-form-container', 'tx-submit-btn', 'Сохранить', 'tx-form', 'tx')
+              "
+              class="btn-primary py-2.5 px-3 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] cursor-pointer shadow-sm"
+              title="Добавить операцию вручную"
+            >
+              <i data-lucide="plus" class="w-4 h-4"></i>
+              <span>Операция</span>
+            </button>
+
+            <!-- Кнопка вызова окна импорта выписки (Secondary) -->
             <button
               type="button"
               onclick="openPdfInfoModal()"
-              class="flex-1 bg-gradient-to-r from-[#6C5DD3] to-[#8C7DFF] hover:from-[#5e4fc9] hover:to-[#7b6ceb] text-white font-bold rounded-2xl text-xs sm:text-sm px-4 py-3 shadow-lg shadow-[#6C5DD3]/25 border border-[rgba(255,255,255,0.1)] flex items-center justify-center gap-2 transition-all active:scale-[0.98] cursor-pointer"
+              class="btn-secondary py-2.5 px-3 rounded-xl text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] cursor-pointer shadow-sm"
             >
-              <i data-lucide="file-up" class="w-4 h-4"></i>
-              <span>Импорт выписки (PDF)</span>
+              <i data-lucide="file-up" class="w-4 h-4 text-zinc-400"></i>
+              <span>Импорт PDF</span>
             </button>
 
             <!-- Скрытый инпут для выбора PDF -->
@@ -1047,25 +1075,12 @@
               class="hidden"
               onchange="handleStatementUpload(event)"
             />
-
-            <!-- Кнопка добавления операций вручную -->
-            <button
-              type="button"
-              onclick="
-                toggleForm('tx-form-container', 'tx-submit-btn', 'Сохранить', 'tx-form', 'tx')
-              "
-              class="bg-[#181B24] hover:bg-[#212430] active:scale-[0.98] border border-[rgba(255,255,255,0.06)] text-gray-200 px-3.5 py-3 rounded-2xl flex items-center justify-center gap-1.5 text-xs font-semibold transition-all cursor-pointer shadow-sm"
-              title="Добавить операцию вручную"
-            >
-              <i data-lucide="plus" class="w-4 h-4 text-[#727cff]"></i>
-              <span class="hidden sm:inline">Вручную</span>
-            </button>
           </div>
 
           <!-- Форма добавления транзакций -->
           <div
             id="tx-form-container"
-            class="hidden relative z-30 bg-[#181B24] p-2.5 rounded-2xl border border-[rgba(255,255,255,0.08)] shadow-xl animate-fade-in"
+            class="hidden relative z-30 bg-[#0E1016] p-3 rounded-2xl border border-[#1E222D] shadow-xl animate-fade-in"
           >
             <form id="tx-form" onsubmit="submitTransactions(event)">
               <div id="tx-items-list" class="space-y-2 mb-2"></div>
@@ -1073,7 +1088,7 @@
                 type="button"
                 id="add-tx-row-btn"
                 onclick="addTxRow()"
-                class="w-full mb-2.5 py-1.5 border border-dashed border-gray-600/70 rounded-xl text-gray-400 text-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 active:scale-[0.99] outline-none focus:outline-none focus:ring-0 focus-visible:outline-none select-none"
+                class="w-full mb-2.5 py-1.5 border border-dashed border-[#282E3E] rounded-xl text-zinc-400 text-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 active:scale-[0.99] outline-none select-none"
               >
                 + Добавить еще транзакцию
               </button>
@@ -1081,14 +1096,14 @@
                 <button
                   type="button"
                   onclick="closeForm('tx-form-container', 'tx-submit-btn', 'Сохранить', 'tx-form')"
-                  class="w-1/3 h-full bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 font-semibold rounded-xl text-xs flex items-center justify-center cursor-pointer transition-colors active:scale-95 leading-none"
+                  class="w-1/3 h-full btn-secondary rounded-xl text-xs font-semibold flex items-center justify-center cursor-pointer transition-all active:scale-95 leading-none"
                 >
                   Отмена
                 </button>
                 <button
                   type="submit"
                   id="tx-submit-btn"
-                  class="w-2/3 h-full bg-[#6C5DD3] hover:bg-[#5E4FC9] text-white font-semibold rounded-xl text-xs flex items-center justify-center cursor-pointer shadow-md shadow-[#6C5DD3]/25 transition-all active:scale-95 leading-none"
+                  class="w-2/3 h-full btn-primary rounded-xl text-xs font-semibold flex items-center justify-center cursor-pointer shadow-sm transition-all active:scale-95 leading-none"
                 >
                   Сохранить
                 </button>
@@ -1099,11 +1114,11 @@
           <!-- Баннер переводов на подтверждении -->
           <div id="tx-pending-transfers-banner" class="hidden">
             <div
-              class="bg-gradient-to-r from-[#6C5DD3]/15 to-[#8C7DFF]/10 border border-[#6C5DD3]/30 rounded-2xl p-3 flex items-center justify-between gap-2.5 shadow-sm"
+              class="bg-[#151B26] border border-[#232D3E] rounded-2xl p-3 flex items-center justify-between gap-2.5 shadow-sm"
             >
               <div class="flex items-center gap-2.5 min-w-0 flex-1">
                 <div
-                  class="w-8 h-8 rounded-xl bg-[#6C5DD3]/20 flex items-center justify-center text-[#A594FD] flex-shrink-0"
+                  class="w-8 h-8 rounded-xl bg-[#1E2738] flex items-center justify-center text-[#93C5FD] flex-shrink-0"
                 >
                   <i data-lucide="arrow-left-right" class="w-4 h-4"></i>
                 </div>
@@ -1114,11 +1129,11 @@
                     >
                     <span
                       id="tx-pending-count-badge"
-                      class="px-1.5 py-0.2 rounded-full bg-[#6C5DD3] text-white text-[10px] font-black font-mono flex-shrink-0"
+                      class="px-1.5 py-0.2 rounded-full bg-[#3B82F6] text-white text-[10px] font-black font-mono flex-shrink-0"
                       >0</span
                     >
                   </div>
-                  <span class="text-[11px] text-gray-400 block truncate mt-0.5"
+                  <span class="text-[11px] text-zinc-400 block truncate mt-0.5"
                     >Требуют подтверждения для учета в бюджете</span
                   >
                 </div>
@@ -1127,7 +1142,7 @@
                 type="button"
                 id="tx-pending-filter-btn"
                 onclick="togglePendingTransfersFilter()"
-                class="px-3 py-1.5 rounded-xl bg-[#6C5DD3] hover:bg-[#5E4FC9] active:scale-95 text-white text-xs font-bold transition-all flex items-center gap-1 flex-shrink-0 cursor-pointer shadow-sm"
+                class="px-3 py-1.5 rounded-xl btn-primary text-xs font-bold transition-all flex items-center gap-1 flex-shrink-0 cursor-pointer shadow-sm active:scale-95"
               >
                 <span id="tx-pending-filter-btn-text">Показать</span>
               </button>
@@ -1141,14 +1156,14 @@
               <button
                 type="button"
                 onclick="toggleCustomFilterMenu('month')"
-                class="w-full bg-[#181B24] border border-[rgba(255,255,255,0.06)] text-xs text-gray-200 rounded-xl px-3 py-2.5 flex items-center justify-between outline-none cursor-pointer hover:border-[rgba(255,255,255,0.12)] transition-colors"
+                class="w-full bg-[#0E1016] border border-[#1E222D] text-xs text-zinc-200 rounded-xl px-3 py-2 flex items-center justify-between outline-none cursor-pointer hover:border-[#282E3E] transition-colors"
               >
                 <span id="label-filter-month" class="truncate">Все месяцы</span>
-                <span class="text-gray-400 text-[9px] ml-1 flex-shrink-0">▼</span>
+                <span class="text-zinc-500 text-[9px] ml-1 flex-shrink-0">▼</span>
               </button>
               <div
                 id="menu-filter-month"
-                class="hidden absolute left-0 top-full mt-1.5 w-full max-h-60 overflow-y-auto bg-[#181B24]/95 backdrop-blur-md border border-[rgba(255,255,255,0.08)] rounded-2xl shadow-2xl z-40 p-1 space-y-0.5"
+                class="hidden absolute left-0 top-full mt-1.5 w-full max-h-60 overflow-y-auto bg-[#0E1016] border border-[#1E222D] rounded-2xl shadow-2xl z-40 p-1 space-y-0.5"
               ></div>
             </div>
 
@@ -1157,14 +1172,14 @@
               <button
                 type="button"
                 onclick="toggleCustomFilterMenu('cat')"
-                class="w-full bg-[#181B24] border border-[rgba(255,255,255,0.06)] text-xs text-gray-200 rounded-xl px-3 py-2.5 flex items-center justify-between outline-none cursor-pointer hover:border-[rgba(255,255,255,0.12)] transition-colors"
+                class="w-full bg-[#0E1016] border border-[#1E222D] text-xs text-zinc-200 rounded-xl px-3 py-2 flex items-center justify-between outline-none cursor-pointer hover:border-[#282E3E] transition-colors"
               >
                 <span id="label-filter-cat" class="truncate">Все категории</span>
-                <span class="text-gray-400 text-[9px] ml-1 flex-shrink-0">▼</span>
+                <span class="text-zinc-500 text-[9px] ml-1 flex-shrink-0">▼</span>
               </button>
               <div
                 id="menu-filter-cat"
-                class="hidden absolute right-0 top-full mt-1.5 w-full max-h-60 overflow-y-auto bg-[#181B24]/95 backdrop-blur-md border border-[rgba(255,255,255,0.08)] rounded-2xl shadow-2xl z-40 p-1 space-y-0.5"
+                class="hidden absolute right-0 top-full mt-1.5 w-full max-h-60 overflow-y-auto bg-[#0E1016] border border-[#1E222D] rounded-2xl shadow-2xl z-40 p-1 space-y-0.5"
               ></div>
             </div>
 
@@ -1173,7 +1188,7 @@
               type="button"
               id="tx-search-toggle-btn"
               onclick="toggleTxSearchBar()"
-              class="h-[38px] w-[38px] bg-[#181B24] hover:bg-[#212430] border border-[rgba(255,255,255,0.06)] text-gray-400 hover:text-white rounded-xl flex items-center justify-center transition-all cursor-pointer flex-shrink-0 active:scale-95"
+              class="h-[34px] w-[34px] bg-[#0E1016] hover:bg-[#181C26] border border-[#1E222D] text-zinc-400 hover:text-white rounded-xl flex items-center justify-center transition-all cursor-pointer flex-shrink-0 active:scale-95"
               title="Поиск по операциям"
             >
               <i data-lucide="search" class="w-4 h-4"></i>
@@ -1183,22 +1198,22 @@
           <!-- Выдвижная строка поиска -->
           <div id="tx-search-bar-container" class="hidden animate-fade-in relative w-full">
             <div
-              class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400"
+              class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-500"
             >
-              <i data-lucide="search" class="w-4 h-4 text-[#848D99]"></i>
+              <i data-lucide="search" class="w-4 h-4"></i>
             </div>
             <input
               type="text"
               id="tx-search-input"
               oninput="handleTxSearchInput(event)"
               placeholder="Поиск по магазинам, комментариям или суммам..."
-              class="w-full bg-[#181B24] border border-[rgba(255,255,255,0.08)] focus:border-[#727cff]/60 text-xs text-white placeholder-gray-500 rounded-xl pl-10 pr-9 py-2.5 outline-none transition-all shadow-sm"
+              class="w-full bg-[#0E1016] border border-[#1E222D] focus:border-zinc-500 text-xs text-white placeholder-zinc-500 rounded-xl pl-9 pr-9 py-2 outline-none transition-all shadow-sm"
             />
             <button
               type="button"
               id="tx-search-clear-btn"
               onclick="clearTxSearch()"
-              class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-white transition-colors cursor-pointer"
+              class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-zinc-500 hover:text-white transition-colors cursor-pointer"
               title="Очистить поиск"
             >
               <i data-lucide="x" class="w-3.5 h-3.5"></i>
