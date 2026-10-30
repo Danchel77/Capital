@@ -1469,12 +1469,28 @@ function openTxContextMenu(e, txId) {
   }
   if (!tx) return;
 
-  // Формируем мета-информацию (источник, автор, аватар)
+  // Формируем мета-информацию (источник, автор, аватар, иконка банка)
   let sourceLabel = 'Вручную';
+  let bankIconKey = null;
+  const rawBank = (tx.bank || '').toLowerCase();
+
+  if (rawBank.includes('сбер') || rawBank.includes('sber')) bankIconKey = 'sber';
+  else if (
+    rawBank.includes('тинькофф') ||
+    rawBank.includes('т-банк') ||
+    rawBank.includes('tbank') ||
+    rawBank.includes('tinkoff')
+  )
+    bankIconKey = 'tbank';
+  else if (rawBank.includes('втб') || rawBank.includes('vtb')) bankIconKey = 'vtb';
+  else if (rawBank.includes('альфа') || rawBank.includes('alfa')) bankIconKey = 'alfa';
+  else if (rawBank.includes('озон') || rawBank.includes('ozon')) bankIconKey = 'ozon';
+  else if (rawBank.includes('яндекс') || rawBank.includes('yandex')) bankIconKey = 'yandex';
+
   if (tx.source === 'bank_push' || tx.source === 'bank_push_auto') {
-    sourceLabel = tx.bank ? `Пуш (${tx.bank})` : 'Пуш';
+    sourceLabel = 'Пуш-уведомление';
   } else if (tx.source === 'pdf_statement' || tx.source === 'statement') {
-    sourceLabel = tx.bank ? `Выписка (${tx.bank})` : 'Выписка';
+    sourceLabel = 'Выписка банка';
   }
 
   // Корректно извлекаем имя автора и аватар
@@ -1498,6 +1514,7 @@ function openTxContextMenu(e, txId) {
 
   const metaInfo = {
     sourceLabel,
+    bankIconKey,
     authorName,
     authorBg: preset.bg,
     authorIcon: preset.icon,

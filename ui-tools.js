@@ -276,7 +276,6 @@ function openCardContextMenu(e, title, onEdit, onDelete, metaInfo = null) {
   const titleEl = document.getElementById('context-menu-title');
   const editBtn = document.getElementById('context-btn-edit');
   const deleteBtn = document.getElementById('context-btn-delete');
-  const metaRow = document.getElementById('context-meta-row');
   const authorLabel = document.getElementById('context-author-label');
   const sourceText = document.getElementById('context-source-text');
   if (!menu) return;
@@ -323,11 +322,10 @@ function openCardContextMenu(e, title, onEdit, onDelete, metaInfo = null) {
   };
 
   const authorAvatar = document.getElementById('context-author-avatar');
+  const sourceIcon = document.getElementById('context-source-icon');
 
-  // Настройка мета-информации [Аватар] [Имя] · [Источник]
-  if (metaRow && metaInfo) {
-    metaRow.classList.remove('hidden');
-    metaRow.classList.add('flex');
+  // Настройка мета-информации [Аватар] [Имя] и [SVG банка] [Источник]
+  if (metaInfo) {
     if (authorLabel) authorLabel.textContent = metaInfo.authorName || 'Пользователь';
     if (sourceText) sourceText.textContent = metaInfo.sourceLabel || 'Вручную';
 
@@ -337,13 +335,32 @@ function openCardContextMenu(e, title, onEdit, onDelete, metaInfo = null) {
       } else {
         const bg = metaInfo.authorBg || 'bg-[#3B82F6]';
         const icon = metaInfo.authorIcon || 'user';
-        authorAvatar.className = `w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-white overflow-hidden text-[9px] ${bg}`;
+        authorAvatar.className = `w-4.5 h-4.5 rounded-full flex items-center justify-center flex-shrink-0 text-white overflow-hidden text-[9px] ${bg}`;
         authorAvatar.innerHTML = `<i data-lucide="${icon}" class="w-3 h-3"></i>`;
       }
     }
-  } else if (metaRow) {
-    metaRow.classList.add('hidden');
-    metaRow.classList.remove('flex');
+
+    if (sourceIcon) {
+      const bankSvg =
+        metaInfo.bankIconKey && window.BANK_ICONS ? window.BANK_ICONS[metaInfo.bankIconKey] : null;
+      if (bankSvg) {
+        sourceIcon.innerHTML = bankSvg;
+        const svg = sourceIcon.querySelector('svg');
+        if (svg) {
+          svg.removeAttribute('width');
+          svg.removeAttribute('height');
+          svg.style.width = '16px';
+          svg.style.height = '16px';
+          svg.style.display = 'block';
+        }
+      } else if (metaInfo.sourceLabel && metaInfo.sourceLabel.includes('Пуш')) {
+        sourceIcon.innerHTML = `<i data-lucide="zap" class="w-3.5 h-3.5 text-sky-400"></i>`;
+      } else if (metaInfo.sourceLabel && metaInfo.sourceLabel.includes('Выписка')) {
+        sourceIcon.innerHTML = `<i data-lucide="file-text" class="w-3.5 h-3.5 text-zinc-400"></i>`;
+      } else {
+        sourceIcon.innerHTML = `<i data-lucide="pen-tool" class="w-3.5 h-3.5 text-zinc-400"></i>`;
+      }
+    }
   }
 
   menu.classList.remove('hidden');

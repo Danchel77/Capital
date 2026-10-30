@@ -5951,24 +5951,30 @@
     <!-- ПЛАВАЮЩЕЕ КОНТЕКСТНОЕ МИНИ-МЕНЮ (ПОЯВЛЯЕТСЯ ПРЯМО У КАРТОЧКИ) -->
     <div
       id="card-context-menu"
-      class="card-context-menu hidden flex flex-col p-1.5 min-w-[200px] bg-[#161A24] border border-[#2A3245] shadow-[0_12px_40px_rgba(0,0,0,0.8)] rounded-2xl z-[150]"
+      class="card-context-menu hidden flex flex-col p-1.5 w-[215px] bg-[#161A24] border border-[#2A3245] shadow-[0_12px_40px_rgba(0,0,0,0.8)] rounded-2xl z-[150] select-none"
     >
-      <!-- Шапка с мета-информацией: [Аватар] [Имя] · [Источник] -->
-      <div id="context-menu-header" class="px-2.5 py-1.5 border-b border-[#283144] mb-1">
-        <div id="context-meta-row" class="flex items-center gap-2 text-xs text-zinc-300 min-w-0">
-          <!-- Аватарка автора -->
+      <!-- Шапка с мета-информацией в 2 строки: [Аватар] [Имя] и [SVG банка] [Источник] -->
+      <div id="context-menu-header" class="px-2.5 py-2 border-b border-[#283144] mb-1 space-y-1.5">
+        <!-- Строка 1: Автор операции -->
+        <div class="flex items-center gap-2 text-xs min-w-0">
           <div
             id="context-author-avatar"
-            class="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-white overflow-hidden text-[9px]"
+            class="w-4.5 h-4.5 rounded-full flex items-center justify-center flex-shrink-0 text-white overflow-hidden text-[9px]"
           >
             <i data-lucide="user" class="w-3 h-3"></i>
           </div>
-          <!-- Имя и источник единой строкой с отчетливой точкой-разделителем -->
-          <div class="min-w-0 flex-1 truncate flex items-center gap-1.5">
-            <span id="context-author-label" class="font-semibold text-white"></span>
-            <span class="w-1 h-1 rounded-full bg-zinc-400 shrink-0 inline-block"></span>
-            <span id="context-source-text" class="text-zinc-400 font-medium"></span>
+          <span id="context-author-label" class="font-semibold text-white truncate min-w-0 flex-1"></span>
+        </div>
+
+        <!-- Строка 2: Источник операции с векторной SVG-иконкой банка -->
+        <div class="flex items-center gap-2 text-xs min-w-0 text-zinc-400">
+          <div
+            id="context-source-icon"
+            class="w-4 h-4 flex items-center justify-center flex-shrink-0 text-zinc-400 overflow-hidden"
+          >
+            <i data-lucide="receipt" class="w-3.5 h-3.5"></i>
           </div>
+          <span id="context-source-text" class="text-[11px] font-medium text-zinc-300 truncate min-w-0 flex-1"></span>
         </div>
         <div id="context-menu-title" class="hidden">Действия</div>
       </div>

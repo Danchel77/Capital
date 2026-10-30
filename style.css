@@ -135,8 +135,8 @@ body::before {
   will-change: auto;
 }
 @media (hover: hover) and (pointer: fine) {
-  .card:active {
-    background: var(--surface-2) !important;
+  #transactions-list .card:hover {
+    background: #131620 !important;
   }
 }
 

@@ -596,7 +596,7 @@ function renderTxRowHtml(tx, largeThreshold, hasDynamicThreshold) {
   }
 
   return `
-    <div class="card cursor-pointer w-full py-3 px-3.5 relative flex items-center justify-between hover:bg-[#131620] active:bg-[#181C26] transition-colors ${authorBadgeHtml ? 'tx-has-author' : ''} ${isJustAdded ? 'tx-row-new' : ''} ${isPending ? 'border border-[#3B82F6]/30 bg-[#151B26]' : ''}"
+    <div class="card cursor-pointer w-full py-3 px-3.5 relative flex items-center justify-between transition-colors ${authorBadgeHtml ? 'tx-has-author' : ''} ${isJustAdded ? 'tx-row-new' : ''} ${isPending ? 'border border-[#3B82F6]/30 bg-[#151B26]' : ''}"
          data-id="${tx.id}"
          data-table="Transactions"
          onclick="openTxContextMenu(event, '${tx.id}')">
