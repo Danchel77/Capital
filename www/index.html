@@ -1003,9 +1003,7 @@
           <!-- Кнопка добавления операций вручную -->
           <button
             type="button"
-            onclick="
-              toggleForm('tx-form-container', 'tx-submit-btn', 'Сохранить', 'tx-form', 'tx')
-            "
+            onclick="toggleForm('tx-form-container', 'tx-submit-btn', 'Сохранить', 'tx-form', 'tx')"
             class="btn-secondary py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] cursor-pointer shadow-sm text-white"
             title="Добавить операцию вручную"
           >
@@ -1034,8 +1032,8 @@
           />
         </div>
 
-        <!-- 3. Карточка «Фильтры + Справочная сводка» -->
-        <div class="bg-[#0E1016] border border-[#1E222D] rounded-2xl p-3 shadow-sm space-y-2.5">
+        <!-- 3. Панель «Фильтры и Сводка» (Чистый плоский блок без матрешки) -->
+        <div class="space-y-2">
           <!-- Верхний ряд: Меню фильтрации + кнопка поиска -->
           <div id="tx-filter-bar" class="flex gap-2 items-center">
             <!-- Меню выбора месяца -->
@@ -1043,7 +1041,7 @@
               <button
                 type="button"
                 onclick="toggleCustomFilterMenu('month')"
-                class="w-full bg-[#181C26] border border-[#282E3E] text-xs text-zinc-200 rounded-xl px-3 py-1.5 flex items-center justify-between outline-none cursor-pointer hover:border-[#384156] transition-colors"
+                class="w-full bg-[#0E1016] border border-[#1E222D] text-xs text-zinc-200 rounded-xl px-3 py-2 flex items-center justify-between outline-none cursor-pointer hover:border-[#282E3E] transition-colors"
               >
                 <span id="label-filter-month" class="truncate font-medium">Все месяцы</span>
                 <span class="text-zinc-500 text-[9px] ml-1 flex-shrink-0">▼</span>
@@ -1059,7 +1057,7 @@
               <button
                 type="button"
                 onclick="toggleCustomFilterMenu('cat')"
-                class="w-full bg-[#181C26] border border-[#282E3E] text-xs text-zinc-200 rounded-xl px-3 py-1.5 flex items-center justify-between outline-none cursor-pointer hover:border-[#384156] transition-colors"
+                class="w-full bg-[#0E1016] border border-[#1E222D] text-xs text-zinc-200 rounded-xl px-3 py-2 flex items-center justify-between outline-none cursor-pointer hover:border-[#282E3E] transition-colors"
               >
                 <span id="label-filter-cat" class="truncate font-medium">Все категории</span>
                 <span class="text-zinc-500 text-[9px] ml-1 flex-shrink-0">▼</span>
@@ -1075,7 +1073,7 @@
               type="button"
               id="tx-search-toggle-btn"
               onclick="toggleTxSearchBar()"
-              class="h-[32px] w-[32px] bg-[#181C26] hover:bg-[#202634] border border-[#282E3E] text-zinc-400 hover:text-white rounded-xl flex items-center justify-center transition-all cursor-pointer flex-shrink-0 active:scale-95"
+              class="h-[34px] w-[34px] bg-[#0E1016] hover:bg-[#181C26] border border-[#1E222D] text-zinc-400 hover:text-white rounded-xl flex items-center justify-center transition-all cursor-pointer flex-shrink-0 active:scale-95"
               title="Поиск по операциям"
             >
               <i data-lucide="search" class="w-3.5 h-3.5"></i>
@@ -1083,7 +1081,7 @@
           </div>
 
           <!-- Нижний ряд: Компактная справочная сводка (сетка 50/50, как на Главной) -->
-          <div class="grid grid-cols-2 gap-3 pt-2 border-t border-[#1E222D] text-xs">
+          <div class="grid grid-cols-2 gap-3 px-1 text-xs">
             <div class="flex items-center gap-2 min-w-0">
               <span class="w-2 h-2 rounded-full bg-[#F43F5E] shrink-0"></span>
               <span id="month-expense-label" class="text-xs text-zinc-400 shrink-0">Расходы</span>
@@ -1110,7 +1108,6 @@
 
         <!-- 4. КОНТЕНТ ВКЛАДКИ «СПИСОК» -->
         <div id="transactions-list-wrap" class="space-y-2.5">
-
           <!-- Форма добавления транзакций -->
           <div
             id="tx-form-container"

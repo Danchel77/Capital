@@ -131,8 +131,8 @@ body::before {
 
 .card {
   position: relative !important;
-  contain: layout style;
   transition: background-color 0.06s ease;
+  will-change: auto;
 }
 @media (hover: hover) and (pointer: fine) {
   .card:active {

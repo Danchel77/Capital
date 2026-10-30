@@ -228,32 +228,38 @@ function renderMonthDropdownMenu() {
   const yearStr = String(currentDropdownYear);
   const yearMonths = data.filter(m => m.id && m.id.startsWith(yearStr));
 
-  // Проверяем минимальный и максимальный год в данных
+  // Проверяем реальные годы в данных
   const allYears = data.map(m => parseInt((m.id || '').split('-')[0], 10)).filter(y => !isNaN(y));
   const minYear = allYears.length > 0 ? Math.min(...allYears) : currentDropdownYear;
-  const canGoPrev = currentDropdownYear > minYear - 5;
-  const canGoNext = currentDropdownYear < new Date().getFullYear() + 1;
+  const maxYear = allYears.length > 0 ? Math.max(...allYears) : new Date().getFullYear();
+
+  // Стрелки показываем ТОЛЬКО если есть куда переключаться
+  const canGoPrev = currentDropdownYear > minYear;
+  const canGoNext = currentDropdownYear < maxYear;
 
   let mHtml = `
     <!-- Переключатель года: < 2026 > -->
     <div class="flex items-center justify-between px-2 py-1.5 mb-1 border-b border-[#1E222D]" onclick="event.stopPropagation()">
-      <button type="button" 
-              onclick="shiftDropdownYear(-1, event)" 
-              class="w-6 h-6 rounded-lg bg-[#181C26] hover:bg-[#202634] text-zinc-300 hover:text-white flex items-center justify-center transition-colors ${!canGoPrev ? 'opacity-25 pointer-events-none' : ''}">
-        ‹
-      </button>
+      ${
+        canGoPrev
+          ? `<button type="button" 
+                     onclick="shiftDropdownYear(-1, event)" 
+                     class="w-6 h-6 rounded-lg bg-[#181C26] hover:bg-[#202634] text-zinc-300 hover:text-white flex items-center justify-center transition-colors">
+               ‹
+             </button>`
+          : `<span class="w-6 h-6"></span>`
+      }
       <span class="text-xs font-semibold text-white tracking-wide">${currentDropdownYear} год</span>
-      <button type="button" 
-              onclick="shiftDropdownYear(1, event)" 
-              class="w-6 h-6 rounded-lg bg-[#181C26] hover:bg-[#202634] text-zinc-300 hover:text-white flex items-center justify-center transition-colors ${!canGoNext ? 'opacity-25 pointer-events-none' : ''}">
-        ›
-      </button>
+      ${
+        canGoNext
+          ? `<button type="button" 
+                     onclick="shiftDropdownYear(1, event)" 
+                     class="w-6 h-6 rounded-lg bg-[#181C26] hover:bg-[#202634] text-zinc-300 hover:text-white flex items-center justify-center transition-colors">
+               ›
+             </button>`
+          : `<span class="w-6 h-6"></span>`
+      }
     </div>
-
-    <!-- Весь выбранный год -->
-    <button type="button" onclick="selectFilterValue('month', 'year-${currentDropdownYear}', 'Весь ${currentDropdownYear} год')" class="custom-dropdown-item ${currentFilterMonth === 'year-' + currentDropdownYear ? 'is-active' : ''}">
-      <span>Весь ${currentDropdownYear} год</span>
-    </button>
   `;
 
   if (yearMonths.length > 0) {
@@ -274,7 +280,7 @@ function renderMonthDropdownMenu() {
     `;
   }
 
-  // Кнопка «Все время»
+  // Кнопка «Все время» (все операции)
   mHtml += `
     <div class="pt-1 mt-1 border-t border-[#1E222D]">
       <button type="button" onclick="selectFilterValue('month', 'all', 'Все время')" class="custom-dropdown-item ${currentFilterMonth === 'all' ? 'is-active' : ''}">
@@ -722,9 +728,9 @@ function appendTxChunk() {
   const chunkHtml = nextGroups
     .map(
       group => `
-    <div class="mb-4 tx-day-group">
-      <h3 class="font-semibold text-zinc-400 text-xs mb-2 px-1 tracking-wider uppercase">${getRelativeDayName(group.day)}</h3>
-      <div class="bg-[#0E1016] border border-[#1E222D] rounded-2xl overflow-hidden divide-y divide-[#1A1F2C] shadow-sm">
+    <div class="mb-2.5 tx-day-group">
+      <h3 class="font-semibold text-zinc-400 text-xs mb-1 px-1 tracking-wider uppercase">${getRelativeDayName(group.day)}</h3>
+      <div class="bg-[#0E1016] border border-[#1E222D] rounded-2xl overflow-hidden divide-y divide-[#1A1F2C]">
         ${group.items.map(tx => renderTxRowHtml(tx, largeThreshold, hasDynamicThreshold)).join('')}
       </div>
     </div>

@@ -1621,6 +1621,12 @@ function editTx(id) {
 
 // Контекстное меню для транзакции с пунктом «Сделать разовой» / «Вернуть в лимит»
 function openTxContextMenu(e, txId) {
+  // Закрываем открытые выпадающие списки фильтров при тапе по карточке
+  const mm = document.getElementById('menu-filter-month');
+  const cm = document.getElementById('menu-filter-cat');
+  if (mm) mm.classList.add('hidden');
+  if (cm) cm.classList.add('hidden');
+
   if (typeof isSelectionMode === 'function' && isSelectionMode()) return;
   if (window.isSelectionMode && window.isSelectionMode()) return;
 
