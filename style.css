@@ -288,15 +288,15 @@ nav button:active,
   background: var(--surface-2) !important;
 }
 
-/* Выделение выбранной карточки при открытом меню действий или модальном окне (Zero Lag, Solid OLED, идеальные скругления) */
+/* Выделение выбранной карточки при открытом меню действий или модальном окне (Zero Lag, Solid OLED, чистый фон без обрезки углов) */
 .card.context-active,
 #transactions-list .card.context-active,
 #deposits-list .card.context-active,
 #goals-list .card.context-active,
 #budget-category-limits-list .card.context-active,
 [data-budget-cat].context-active {
-  background: #181d2a !important;
-  box-shadow: inset 0 0 0 1px #3b82f6 !important;
+  background: #182236 !important;
+  box-shadow: none !important;
   outline: none !important;
   position: relative !important;
   z-index: 15 !important;

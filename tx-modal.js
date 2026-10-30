@@ -182,109 +182,15 @@ function addTxRow() {
   }
 }
 
-function handleInlineTxAmountChange(inputEl) {
-  if (!inputEl) return;
-  const row = inputEl.closest('.tx-item');
-  if (!row) return;
-
-  const amount = getUnformattedVal(inputEl) || 0;
-  const type = row.querySelector('.tx-type:checked')?.value || 'Расход';
-  const isExp = type === 'Расход';
-
-  const amortizeWrap = row.querySelector('.inline-tx-amortize-wrap');
-  const noticeEl = row.querySelector('.inline-tx-large-notice');
-  const badgeEl = row.querySelector('.inline-tx-large-badge');
-  const titleEl = row.querySelector('.inline-tx-amortize-title');
-  const cb = row.querySelector('.tx-exclude-budget');
-
-  if (!amortizeWrap) return;
-
-  if (!isExp) {
-    amortizeWrap.classList.add('hidden');
-    return;
-  }
-
-  const details =
-    typeof getLargeExpenseThresholdDetails === 'function'
-      ? getLargeExpenseThresholdDetails()
-      : { threshold: 10000, isDynamic: false, reason: 'базовый порог' };
-  const threshold = details.threshold;
-  const isLarge = isFinite(threshold) && threshold > 0 && amount >= threshold;
-  const isChecked = cb && cb.checked;
-
-  if (amount > 0 || isChecked) {
-    amortizeWrap.classList.remove('hidden');
-
-    if (isLarge) {
-      if (noticeEl) {
-        noticeEl.classList.remove('hidden');
-        noticeEl.classList.add('flex');
-      }
-      if (badgeEl && typeof formatMoney === 'function') {
-        badgeEl.innerText = `Крупная трата (от ${formatMoney(threshold)})`;
-      }
-      if (titleEl) titleEl.innerText = 'Сделать разовой тратой?';
-      amortizeWrap.classList.add('border-violet-500/35', 'bg-violet-950/20');
-      amortizeWrap.classList.remove('border-[rgba(255,255,255,0.06)]', 'bg-[#181B24]');
-    } else {
-      if (noticeEl) {
-        noticeEl.classList.add('hidden');
-        noticeEl.classList.remove('flex');
-      }
-      if (titleEl) titleEl.innerText = 'Сделать разовой тратой';
-      amortizeWrap.classList.remove('border-violet-500/35', 'bg-violet-950/20');
-      amortizeWrap.classList.add('border-[rgba(255,255,255,0.06)]', 'bg-[#181B24]');
-    }
-    if (typeof lucide !== 'undefined') lucide.createIcons({ root: amortizeWrap });
-  } else {
-    amortizeWrap.classList.add('hidden');
-  }
-
-  updateInlineTxGoalRemaining(row);
+function handleInlineTxAmountChange(_inputEl) {
+  // Устаревший функционал разовых трат полностью деактивирован
 }
 window.handleInlineTxAmountChange = handleInlineTxAmountChange;
 
-function toggleInlineTxAmortizeHelp(btn) {
-  if (!btn) return;
-  const row = btn.closest('.tx-item');
-  if (!row) return;
-  const helpEl = row.querySelector('.inline-tx-amortize-help');
-  if (helpEl) {
-    helpEl.classList.toggle('hidden');
-  }
-}
+function toggleInlineTxAmortizeHelp(_btn) {}
 window.toggleInlineTxAmortizeHelp = toggleInlineTxAmortizeHelp;
 
-function toggleInlineTxAmortize(cb) {
-  if (!cb) return;
-  const row = cb.closest('.tx-item');
-  if (!row) return;
-  const details = row.querySelector('.inline-tx-amortize-details');
-  if (details) {
-    if (cb.checked) {
-      const activeGoals = (Cache?.goals || []).filter(
-        g => g.status !== 'Выполнена' || (parseFloat(g.saved) || 0) > 0
-      );
-      if (activeGoals.length === 0) {
-        cb.checked = false;
-        showToast('Для разовой траты нужна финансовая цель. Создайте цель во вкладке «Цели»', true);
-        return;
-      }
-      details.classList.remove('hidden');
-      const curGoalId = row.querySelector('.tx-goal-id')?.value;
-      if (!curGoalId || !activeGoals.some(g => g.id === curGoalId)) {
-        selectInlineTxGoal(row, activeGoals[0].id);
-      } else {
-        updateInlineTxGoalRemaining(row);
-      }
-    } else {
-      details.classList.add('hidden');
-      const menu = row.querySelector('.tx-goal-menu');
-      if (menu) menu.classList.add('hidden');
-      row.style.zIndex = '';
-    }
-  }
-}
+function toggleInlineTxAmortize(_cb) {}
 window.toggleInlineTxAmortize = toggleInlineTxAmortize;
 
 function renderInlineTxGoalMenu(row) {
@@ -1034,89 +940,11 @@ function toggleEditTxCategoryMenu(e) {
   }
 }
 
-function toggleTxAmortizeHelp() {
-  const helpEl = document.getElementById('edit-tx-amortize-help');
-  if (helpEl) {
-    helpEl.classList.toggle('hidden');
-  }
-}
+function toggleTxAmortizeHelp() {}
 window.toggleTxAmortizeHelp = toggleTxAmortizeHelp;
 
 function handleEditTxAmountChange() {
-  const amount = getUnformattedVal(document.getElementById('edit-tx-amount')) || 0;
-  const type = document.getElementById('edit-tx-type')?.value || 'Расход';
-  const isExp = type === 'Расход' || type === 'expense';
-  const isBill =
-    document.getElementById('edit-tx-is-bill-payment')?.value === 'true' ||
-    !!document.getElementById('edit-tx-bill-id')?.value;
-  const amortizeWrap = document.getElementById('wrap-edit-tx-amortize');
-  const noticeEl = document.getElementById('edit-tx-large-notice');
-  const badgeEl = document.getElementById('edit-tx-large-threshold-badge');
-  const titleEl = document.getElementById('edit-tx-amortize-title');
-  const descEl = document.getElementById('edit-tx-amortize-desc');
-  const cb = document.getElementById('edit-tx-exclude-budget');
-  const hasExistingId = !!document.getElementById('edit-tx-id')?.value;
-
-  if (!amortizeWrap) return;
-
-  if (!isExp || isBill) {
-    amortizeWrap.classList.add('hidden');
-    return;
-  }
-
-  const details =
-    typeof getLargeExpenseThresholdDetails === 'function'
-      ? getLargeExpenseThresholdDetails()
-      : { threshold: 10000, isDynamic: false, reason: 'базовый порог' };
-  const threshold = details.threshold;
-  const isLarge = isFinite(threshold) && threshold > 0 && amount >= threshold;
-  const isAlreadyAmortized = cb && cb.checked;
-
-  if (amount > 0 || isAlreadyAmortized || hasExistingId) {
-    amortizeWrap.classList.remove('hidden');
-
-    if (isLarge) {
-      if (noticeEl) {
-        noticeEl.classList.remove('hidden');
-        noticeEl.classList.add('flex');
-      }
-      if (badgeEl && typeof formatMoney === 'function') {
-        badgeEl.innerText = `Крупная трата (от ${formatMoney(threshold)})`;
-      }
-      if (titleEl) titleEl.innerText = 'Сделать разовой тратой?';
-      if (descEl) descEl.innerText = 'Покупка не уменьшит недельный лимит трат на жизнь';
-      amortizeWrap.classList.add(
-        'border-violet-500/35',
-        'bg-gradient-to-b',
-        'from-violet-950/25',
-        'to-[#12151C]'
-      );
-      amortizeWrap.classList.remove('border-[rgba(255,255,255,0.06)]', 'bg-[#12151C]');
-    } else {
-      if (noticeEl) {
-        noticeEl.classList.add('hidden');
-        noticeEl.classList.remove('flex');
-      }
-      if (titleEl) titleEl.innerText = 'Сделать разовой';
-      if (descEl) descEl.innerText = 'Исключает покупку из недельного лимита трат';
-      amortizeWrap.classList.remove(
-        'border-violet-500/35',
-        'bg-gradient-to-b',
-        'from-violet-950/25'
-      );
-      amortizeWrap.classList.add('border-[rgba(255,255,255,0.06)]', 'bg-[#12151C]');
-    }
-
-    if (typeof lucide !== 'undefined') lucide.createIcons({ root: amortizeWrap });
-  } else {
-    amortizeWrap.classList.add('hidden');
-    if (noticeEl) {
-      noticeEl.classList.add('hidden');
-      noticeEl.classList.remove('flex');
-    }
-  }
-
-  updateEditTxGoalPreview();
+  // Устаревший функционал разовых трат полностью деактивирован
 }
 
 function toggleTxAmortizeSection(enabled) {
