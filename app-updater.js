@@ -9,8 +9,14 @@ window.RELEASES_API_URL = `https://api.github.com/repos/${window.GITHUB_REPO}/re
 
 // Helper для строгого семантического сравнения версий (например, 1.0.1 > 1.0.0)
 function compareSemver(v1, v2) {
-  const p1 = String(v1 || '0').replace(/^v/i, '').split('.').map(x => parseInt(x, 10) || 0);
-  const p2 = String(v2 || '0').replace(/^v/i, '').split('.').map(x => parseInt(x, 10) || 0);
+  const p1 = String(v1 || '0')
+    .replace(/^v/i, '')
+    .split('.')
+    .map(x => parseInt(x, 10) || 0);
+  const p2 = String(v2 || '0')
+    .replace(/^v/i, '')
+    .split('.')
+    .map(x => parseInt(x, 10) || 0);
   const len = Math.max(p1.length, p2.length);
   for (let i = 0; i < len; i++) {
     const num1 = p1[i] || 0;
@@ -25,10 +31,10 @@ window.compareSemver = compareSemver;
 // Глобальный перехват события установки PWA
 window.deferredPwaPrompt = null;
 
-window.addEventListener('beforeinstallprompt', (e) => {
+window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
   window.deferredPwaPrompt = e;
-  
+
   // Показываем плашку или кнопку установки, если мы в браузере
   if (typeof updateInstallerUI === 'function') {
     updateInstallerUI();
@@ -64,14 +70,19 @@ async function checkAppUpdates(isManual = false) {
 
     const data = await res.json();
     const releaseNotes = data.body || 'Улучшения производительности и исправления ошибок.';
-    const publishedAt = data.published_at ? new Date(data.published_at).toLocaleDateString('ru-RU') : '';
+    const publishedAt = data.published_at
+      ? new Date(data.published_at).toLocaleDateString('ru-RU')
+      : '';
     const releaseTimestamp = data.published_at ? new Date(data.published_at).getTime() : 0;
     const remoteTag = (data.tag_name || '1.0.0').replace(/^v/i, '');
     const currentAppVer = window.APP_VERSION || '1.0.1';
 
     // Синхронизируем установленную версию с текущей версией запущенного кода
     let installedVersion = localStorage.getItem('app_installed_version');
-    let installedTimestamp = parseInt(localStorage.getItem('app_installed_release_timestamp') || '0', 10);
+    let installedTimestamp = parseInt(
+      localStorage.getItem('app_installed_release_timestamp') || '0',
+      10
+    );
 
     if (!installedVersion || compareSemver(currentAppVer, installedVersion) > 0) {
       installedVersion = currentAppVer;
@@ -83,22 +94,36 @@ async function checkAppUpdates(isManual = false) {
     }
 
     // Сравнение версий
-    const isNewerTag = (remoteTag !== 'latest' && (compareSemver(remoteTag, installedVersion) > 0 || compareSemver(remoteTag, currentAppVer) > 0));
-    const isNewerTime = releaseTimestamp > 0 && installedTimestamp > 0 && releaseTimestamp > installedTimestamp && (remoteTag !== installedVersion);
+    const isNewerTag =
+      remoteTag !== 'latest' &&
+      (compareSemver(remoteTag, installedVersion) > 0 ||
+        compareSemver(remoteTag, currentAppVer) > 0);
+    const isNewerTime =
+      releaseTimestamp > 0 &&
+      installedTimestamp > 0 &&
+      releaseTimestamp > installedTimestamp &&
+      remoteTag !== installedVersion;
 
     // Новое обновление доступно, если на сервере более свежий тег или время публикации
     const isNewer = isNewerTag || isNewerTime;
 
     if (!isNewer) {
       if (isManual) {
-        if (document.getElementById('toast-container')) document.getElementById('toast-container').classList.add('hidden');
+        if (document.getElementById('toast-container'))
+          document.getElementById('toast-container').classList.add('hidden');
         showToast('У вас установлена самая свежая версия!');
       }
       return;
     }
 
-    if (document.getElementById('toast-container')) document.getElementById('toast-container').classList.add('hidden');
-    showUpdateAvailableModal(data.tag_name || 'latest', releaseNotes, publishedAt, releaseTimestamp);
+    if (document.getElementById('toast-container'))
+      document.getElementById('toast-container').classList.add('hidden');
+    showUpdateAvailableModal(
+      data.tag_name || 'latest',
+      releaseNotes,
+      publishedAt,
+      releaseTimestamp
+    );
   } catch (err) {
     console.warn('Ошибка проверки обновлений:', err);
     if (isManual) showToast('Ошибка сети при проверке обновлений', true);
@@ -114,16 +139,24 @@ function formatReleaseNotesHtml(rawNotes) {
   }
 
   // Удаляем эмодзи для соответствия строгому UI-стилю
-  let text = rawNotes.replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E6}-\u{1F1FF}]/gu, '').trim();
+  let text = rawNotes
+    .replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E6}-\u{1F1FF}]/gu, '')
+    .trim();
 
   // Удаляем заголовок "### Что нового..." если он дублирует шапку
   text = text.replace(/^#+\s*Что нового[^\n]*\n?/gim, '').trim();
 
-  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  const lines = text
+    .split('\n')
+    .map(l => l.trim())
+    .filter(Boolean);
   const items = [];
 
   for (const line of lines) {
-    const cleanLine = line.replace(/^[-*•]\s+/, '').replace(/^\d+\.\s+/, '').trim();
+    const cleanLine = line
+      .replace(/^[-*•]\s+/, '')
+      .replace(/^\d+\.\s+/, '')
+      .trim();
     if (!cleanLine) continue;
 
     // Парсим формат вида: **Заголовок:** подробное описание
@@ -141,7 +174,10 @@ function formatReleaseNotesHtml(rawNotes) {
         </div>
       `);
     } else {
-      const formatted = cleanLine.replace(/\*\*([^*]+)\*\*/g, '<strong class="text-white font-semibold">$1</strong>');
+      const formatted = cleanLine.replace(
+        /\*\*([^*]+)\*\*/g,
+        '<strong class="text-white font-semibold">$1</strong>'
+      );
       items.push(`
         <div class="flex items-start gap-2.5 p-2 rounded-xl bg-white/[0.02] border border-white/[0.04]">
           <div class="w-1.5 h-1.5 rounded-full bg-indigo-400/80 mt-1.5 flex-shrink-0"></div>
@@ -178,7 +214,8 @@ function showUpdateAvailableModal(tag, notes, dateStr, releaseTimestamp) {
   if (!modal) {
     modal = document.createElement('div');
     modal.id = 'app-update-modal';
-    modal.className = 'fixed inset-0 z-[1200] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 overscroll-contain no-scrollbar transition-all duration-300 select-none';
+    modal.className =
+      'fixed inset-0 z-[1200] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 overscroll-contain no-scrollbar transition-all duration-300 select-none';
     document.body.appendChild(modal);
   }
 
@@ -247,7 +284,9 @@ function downloadApkDirectly(releaseTimestamp) {
   if (releaseTimestamp) {
     try {
       localStorage.setItem('app_installed_release_timestamp', releaseTimestamp.toString());
-    } catch (e) {}
+    } catch (_err) {
+      /* ignore */
+    }
   }
 
   showToast('Загрузка установочного файла началась...');
@@ -307,21 +346,28 @@ function openAppInstallOptionsModal() {
   if (!modal) {
     modal = document.createElement('div');
     modal.id = 'app-install-options-modal';
-    modal.className = 'fixed inset-0 z-[1200] bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-hidden select-none transition-all duration-300';
-    modal.onclick = (e) => {
+    modal.className =
+      'fixed inset-0 z-[1200] bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-hidden select-none transition-all duration-300';
+    modal.onclick = e => {
       if (e.target === modal) closeAppInstallOptionsModal();
     };
-    modal.addEventListener('wheel', (e) => {
-      e.stopPropagation();
-    }, { passive: true });
+    modal.addEventListener(
+      'wheel',
+      e => {
+        e.stopPropagation();
+      },
+      { passive: true }
+    );
     document.body.appendChild(modal);
   } else {
-    modal.className = 'fixed inset-0 z-[1200] bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-hidden select-none transition-all duration-300';
+    modal.className =
+      'fixed inset-0 z-[1200] bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-hidden select-none transition-all duration-300';
   }
 
-  const isNative = (typeof window.isNativeAppPlatform === 'function') 
-    ? window.isNativeAppPlatform() 
-    : !!(window.Capacitor?.isNativePlatform && window.Capacitor.isNativePlatform() === true);
+  const isNative =
+    typeof window.isNativeAppPlatform === 'function'
+      ? window.isNativeAppPlatform()
+      : !!(window.Capacitor?.isNativePlatform && window.Capacitor.isNativePlatform() === true);
   if (isNative) {
     if (typeof showToast === 'function') showToast('Приложение уже установлено на вашем телефоне');
     return;
@@ -329,9 +375,11 @@ function openAppInstallOptionsModal() {
 
   if (typeof lockBodyScroll === 'function') lockBodyScroll();
 
-  const isPwa = (typeof window.isPwaStandalone === 'function') 
-    ? window.isPwaStandalone() 
-    : (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true);
+  const isPwa =
+    typeof window.isPwaStandalone === 'function'
+      ? window.isPwaStandalone()
+      : window.matchMedia('(display-mode: standalone)').matches ||
+        window.navigator.standalone === true;
 
   modal.innerHTML = `
     <div class="relative bg-[#161822] border border-white/10 rounded-[28px] p-5 sm:p-6 max-w-sm w-full shadow-2xl space-y-3.5 animate-in fade-in zoom-in duration-200">
@@ -377,7 +425,9 @@ function openAppInstallOptionsModal() {
           </div>
         </div>
 
-        ${(!isPwa && !isNative) ? `
+        ${
+          !isPwa && !isNative
+            ? `
         <!-- Вариант 2: Добавить на главный экран -->
         <div class="bg-[#1B1E2B] border border-white/[0.08] rounded-2xl p-4 transition-colors">
           <div class="flex items-start gap-3">
@@ -399,7 +449,9 @@ function openAppInstallOptionsModal() {
             </button>
           </div>
         </div>
-        ` : ''}
+        `
+            : ''
+        }
       </div>
 
       <div class="pt-1">

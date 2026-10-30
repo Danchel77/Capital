@@ -150,7 +150,7 @@ body::before {
   box-shadow:
     0 16px 40px rgba(0, 0, 0, 0.6),
     0 0 0 1px rgba(255, 255, 255, 0.04);
-  min-width: 190px;
+  min-width: 140px;
   animation: context-menu-in 0.16s cubic-bezier(0.16, 1, 0.3, 1);
   overflow: hidden;
 }

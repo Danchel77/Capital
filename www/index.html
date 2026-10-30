@@ -5951,47 +5951,93 @@
     <!-- ПЛАВАЮЩЕЕ КОНТЕКСТНОЕ МИНИ-МЕНЮ (ПОЯВЛЯЕТСЯ ПРЯМО У КАРТОЧКИ) -->
     <div
       id="card-context-menu"
-      class="card-context-menu hidden flex flex-col p-1.5 w-[215px] bg-[#161A24] border border-[#2A3245] shadow-[0_12px_40px_rgba(0,0,0,0.8)] rounded-2xl z-[150] select-none"
+      class="card-context-menu hidden flex flex-col p-1.5 w-[160px] bg-[#161A24] border border-[#2A3245] shadow-[0_12px_40px_rgba(0,0,0,0.8)] rounded-2xl z-[150] select-none"
     >
-      <!-- Шапка с мета-информацией в 2 строки: [Аватар] [Имя] и [SVG банка] [Источник] -->
-      <div id="context-menu-header" class="px-2.5 py-2 border-b border-[#283144] mb-1 space-y-1.5">
-        <!-- Строка 1: Автор операции -->
-        <div class="flex items-center gap-2 text-xs min-w-0">
+      <!-- Шапка с мета-информацией: однострочная или аккуратные 2 строки по единой вертикальной оси -->
+      <div id="context-menu-header" class="border-b border-[#283144] mb-1">
+        <!-- Однострочный режим (когда помещается) -->
+        <div
+          id="context-meta-single"
+          class="hidden items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium min-w-0"
+        >
           <div
-            id="context-author-avatar"
-            class="w-4.5 h-4.5 rounded-full flex items-center justify-center flex-shrink-0 text-white overflow-hidden text-[9px]"
+            id="context-author-avatar-single"
+            class="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 text-white overflow-hidden text-[9px]"
           >
-            <i data-lucide="user" class="w-3 h-3"></i>
+            <i data-lucide="user" class="w-2.5 h-2.5"></i>
           </div>
-          <span id="context-author-label" class="font-semibold text-white truncate min-w-0 flex-1"></span>
-        </div>
-
-        <!-- Строка 2: Источник операции с векторной SVG-иконкой банка -->
-        <div class="flex items-center gap-2 text-xs min-w-0 text-zinc-400">
+          <span
+            id="context-author-label-single"
+            class="text-xs font-medium text-white truncate min-w-0"
+          ></span>
+          <span class="text-zinc-500 font-bold select-none flex-shrink-0 leading-none">&bull;</span>
           <div
-            id="context-source-icon"
+            id="context-source-icon-single"
             class="w-4 h-4 flex items-center justify-center flex-shrink-0 text-zinc-400 overflow-hidden"
           >
             <i data-lucide="receipt" class="w-3.5 h-3.5"></i>
           </div>
-          <span id="context-source-text" class="text-[11px] font-medium text-zinc-300 truncate min-w-0 flex-1"></span>
+          <span
+            id="context-source-text-single"
+            class="text-xs font-medium text-zinc-300 truncate min-w-0"
+          ></span>
         </div>
-        <div id="context-menu-title" class="hidden">Действия</div>
+
+        <!-- Двухстрочный режим (строго по единой оси с кнопками: px-2.5, слот w-4 h-4, gap-2.5, text-xs) -->
+        <div id="context-meta-multi" class="flex flex-col gap-1.5 px-2.5 py-1.5">
+          <!-- Строка 1: Автор операции -->
+          <div class="flex items-center gap-2.5 text-xs font-medium min-w-0">
+            <div
+              id="context-author-avatar"
+              class="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 text-white overflow-hidden text-[9px]"
+            >
+              <i data-lucide="user" class="w-2.5 h-2.5"></i>
+            </div>
+            <span
+              id="context-author-label"
+              class="text-xs font-medium text-white truncate min-w-0 flex-1"
+            ></span>
+          </div>
+
+          <!-- Строка 2: Источник операции -->
+          <div class="flex items-center gap-2.5 text-xs font-medium min-w-0 text-zinc-400">
+            <div
+              id="context-source-icon"
+              class="w-4 h-4 flex items-center justify-center flex-shrink-0 text-zinc-400 overflow-hidden"
+            >
+              <i data-lucide="receipt" class="w-3.5 h-3.5"></i>
+            </div>
+            <span
+              id="context-source-text"
+              class="text-xs font-medium text-zinc-300 truncate min-w-0 flex-1"
+            ></span>
+          </div>
+        </div>
+
+        <!-- Заголовок для карточек без metaInfo (например, Вклады / Цели) -->
+        <div
+          id="context-menu-title"
+          class="hidden text-xs font-medium text-zinc-400 truncate px-2.5 py-1.5"
+        >
+          Действия
+        </div>
       </div>
 
       <button
         type="button"
         id="context-btn-edit"
-        class="context-menu-btn w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-[#202636] text-[13px] font-medium text-zinc-200 hover:text-white transition-colors cursor-pointer text-left"
+        class="context-menu-btn w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl hover:bg-[#202636] text-xs font-medium text-zinc-200 hover:text-white transition-colors cursor-pointer text-left"
       >
-        <i data-lucide="pencil" class="w-4 h-4 text-zinc-400"></i> Редактировать
+        <i data-lucide="pencil" class="w-4 h-4 text-zinc-400 flex-shrink-0"></i>
+        <span class="truncate">Редактировать</span>
       </button>
       <button
         type="button"
         id="context-btn-delete"
-        class="context-menu-btn w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-[#341820] text-[13px] font-medium text-rose-400 transition-colors cursor-pointer text-left"
+        class="context-menu-btn w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl hover:bg-[#341820] text-xs font-medium text-rose-400 transition-colors cursor-pointer text-left"
       >
-        <i data-lucide="trash-2" class="w-4 h-4"></i> Удалить
+        <i data-lucide="trash-2" class="w-4 h-4 text-rose-400 flex-shrink-0"></i>
+        <span class="truncate">Удалить</span>
       </button>
     </div>
 

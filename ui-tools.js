@@ -4,7 +4,7 @@
 
 // Мультиселект
 let selectionMode = false;
-let selectedItems = new Set();
+const selectedItems = new Set();
 let longPressTimer = null;
 let longPressTriggered = false;
 let suppressClick = false;
@@ -273,11 +273,23 @@ function openCardContextMenu(e, title, onEdit, onDelete, metaInfo = null) {
     if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
   }
   const menu = document.getElementById('card-context-menu');
+  const headerEl = document.getElementById('context-menu-header');
   const titleEl = document.getElementById('context-menu-title');
   const editBtn = document.getElementById('context-btn-edit');
   const deleteBtn = document.getElementById('context-btn-delete');
+  const singleLineEl = document.getElementById('context-meta-single');
+  const multiLineEl = document.getElementById('context-meta-multi');
+
   const authorLabel = document.getElementById('context-author-label');
   const sourceText = document.getElementById('context-source-text');
+  const authorAvatar = document.getElementById('context-author-avatar');
+  const sourceIcon = document.getElementById('context-source-icon');
+
+  const authorLabelSingle = document.getElementById('context-author-label-single');
+  const sourceTextSingle = document.getElementById('context-source-text-single');
+  const authorAvatarSingle = document.getElementById('context-author-avatar-single');
+  const sourceIconSingle = document.getElementById('context-source-icon-single');
+
   if (!menu) return;
 
   const el = getEventTargetElement(e?.target);
@@ -321,46 +333,96 @@ function openCardContextMenu(e, title, onEdit, onDelete, metaInfo = null) {
     triggerPopoverAction(deleteBtn, onDelete);
   };
 
-  const authorAvatar = document.getElementById('context-author-avatar');
-  const sourceIcon = document.getElementById('context-source-icon');
+  // Хелперы отрисовки аватара и источника со строгим слотом w-4 h-4 (16px)
+  const renderAvatarSlot = (targetEl, meta) => {
+    if (!targetEl) return;
+    if (meta.avatarHtml) {
+      targetEl.className =
+        'w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 text-white overflow-hidden text-[9px]';
+      targetEl.innerHTML = meta.avatarHtml;
+    } else {
+      const bg = meta.authorBg || 'bg-[#3B82F6]';
+      const icon = meta.authorIcon || 'user';
+      targetEl.className = `w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 text-white overflow-hidden text-[9px] ${bg}`;
+      targetEl.innerHTML = `<i data-lucide="${icon}" class="w-2.5 h-2.5"></i>`;
+    }
+  };
 
-  // Настройка мета-информации [Аватар] [Имя] и [SVG банка] [Источник]
+  const renderSourceSlot = (targetEl, meta) => {
+    if (!targetEl) return;
+    targetEl.className =
+      'w-4 h-4 flex items-center justify-center flex-shrink-0 text-zinc-400 overflow-hidden';
+    const bankSvg =
+      meta.bankIconKey && window.BANK_ICONS ? window.BANK_ICONS[meta.bankIconKey] : null;
+    if (bankSvg) {
+      targetEl.innerHTML = bankSvg;
+      const svg = targetEl.querySelector('svg');
+      if (svg) {
+        svg.removeAttribute('width');
+        svg.removeAttribute('height');
+        svg.style.width = '16px';
+        svg.style.height = '16px';
+        svg.style.display = 'block';
+      }
+    } else if (meta.sourceLabel && meta.sourceLabel.includes('Пуш')) {
+      targetEl.innerHTML = `<i data-lucide="zap" class="w-3.5 h-3.5 text-sky-400"></i>`;
+    } else if (meta.sourceLabel && meta.sourceLabel.includes('Выписка')) {
+      targetEl.innerHTML = `<i data-lucide="file-text" class="w-3.5 h-3.5 text-zinc-400"></i>`;
+    } else {
+      // Ручной ввод: зеркально отраженное перо (-scale-x-100), сонаправленное с карандашом
+      targetEl.innerHTML = `<i data-lucide="pen-tool" class="w-3.5 h-3.5 text-zinc-400 -scale-x-100" style="transform: scaleX(-1);"></i>`;
+    }
+  };
+
+  // Настройка мета-информации шапки
   if (metaInfo) {
-    if (authorLabel) authorLabel.textContent = metaInfo.authorName || 'Пользователь';
-    if (sourceText) sourceText.textContent = metaInfo.sourceLabel || 'Вручную';
+    if (headerEl) headerEl.classList.remove('hidden');
+    if (titleEl) titleEl.classList.add('hidden');
 
-    if (authorAvatar) {
-      if (metaInfo.avatarHtml) {
-        authorAvatar.innerHTML = metaInfo.avatarHtml;
-      } else {
-        const bg = metaInfo.authorBg || 'bg-[#3B82F6]';
-        const icon = metaInfo.authorIcon || 'user';
-        authorAvatar.className = `w-4.5 h-4.5 rounded-full flex items-center justify-center flex-shrink-0 text-white overflow-hidden text-[9px] ${bg}`;
-        authorAvatar.innerHTML = `<i data-lucide="${icon}" class="w-3 h-3"></i>`;
-      }
-    }
+    const authorName = metaInfo.authorName || 'Пользователь';
+    const sourceLabel = metaInfo.sourceLabel || 'Вручную';
 
-    if (sourceIcon) {
-      const bankSvg =
-        metaInfo.bankIconKey && window.BANK_ICONS ? window.BANK_ICONS[metaInfo.bankIconKey] : null;
-      if (bankSvg) {
-        sourceIcon.innerHTML = bankSvg;
-        const svg = sourceIcon.querySelector('svg');
-        if (svg) {
-          svg.removeAttribute('width');
-          svg.removeAttribute('height');
-          svg.style.width = '16px';
-          svg.style.height = '16px';
-          svg.style.display = 'block';
-        }
-      } else if (metaInfo.sourceLabel && metaInfo.sourceLabel.includes('Пуш')) {
-        sourceIcon.innerHTML = `<i data-lucide="zap" class="w-3.5 h-3.5 text-sky-400"></i>`;
-      } else if (metaInfo.sourceLabel && metaInfo.sourceLabel.includes('Выписка')) {
-        sourceIcon.innerHTML = `<i data-lucide="file-text" class="w-3.5 h-3.5 text-zinc-400"></i>`;
-      } else {
-        sourceIcon.innerHTML = `<i data-lucide="pen-tool" class="w-3.5 h-3.5 text-zinc-400"></i>`;
-      }
+    // Заполняем двухстрочный вариант (строгая единая вертикальная ось)
+    if (authorLabel) authorLabel.textContent = authorName;
+    if (sourceText) sourceText.textContent = sourceLabel;
+    renderAvatarSlot(authorAvatar, metaInfo);
+    renderSourceSlot(sourceIcon, metaInfo);
+
+    // Заполняем однострочный вариант
+    if (authorLabelSingle) authorLabelSingle.textContent = authorName;
+    if (sourceTextSingle) sourceTextSingle.textContent = sourceLabel;
+    renderAvatarSlot(authorAvatarSingle, metaInfo);
+    renderSourceSlot(sourceIconSingle, metaInfo);
+
+    // Оценка полезной ширины в попапе ~160px:
+    // Ширина попапа (160) - padding (12) - header padding px-2.5 (20) = 128px
+    // Иконка 16 + gap 6 + имя + gap 6 + точка 6 + gap 6 + иконка 16 + gap 6 + источник
+    // Приблизительная длина шрифтом IBM Plex Sans 12px (text-xs) font-medium: ~6.8px на символ
+    const singleLineWidth =
+      16 + 6 + authorName.length * 6.8 + 6 + 6 + 6 + 16 + 6 + sourceLabel.length * 6.8;
+
+    if (singleLineWidth <= 128 && singleLineEl && multiLineEl) {
+      singleLineEl.classList.remove('hidden');
+      singleLineEl.classList.add('flex');
+      multiLineEl.classList.add('hidden');
+    } else if (singleLineEl && multiLineEl) {
+      singleLineEl.classList.add('hidden');
+      singleLineEl.classList.remove('flex');
+      multiLineEl.classList.remove('hidden');
     }
+  } else if (title) {
+    if (headerEl) headerEl.classList.remove('hidden');
+    if (singleLineEl) {
+      singleLineEl.classList.add('hidden');
+      singleLineEl.classList.remove('flex');
+    }
+    if (multiLineEl) multiLineEl.classList.add('hidden');
+    if (titleEl) {
+      titleEl.textContent = title;
+      titleEl.classList.remove('hidden');
+    }
+  } else {
+    if (headerEl) headerEl.classList.add('hidden');
   }
 
   menu.classList.remove('hidden');
@@ -373,9 +435,9 @@ function openCardContextMenu(e, title, onEdit, onDelete, metaInfo = null) {
   }
 
   const rect = card.getBoundingClientRect();
-  const hasMeta = Boolean(metaInfo);
-  const menuHeight = menu.offsetHeight || (hasMeta ? 150 : 115);
-  const menuWidth = menu.offsetWidth || 210;
+  const hasHeader = Boolean(metaInfo || title);
+  const menuHeight = menu.offsetHeight || (hasHeader ? 120 : 80);
+  const menuWidth = menu.offsetWidth || 160;
 
   // Учитываем нижнюю панель навигации (nav) и границы вьюпорта
   const nav = document.querySelector('nav');
@@ -399,7 +461,7 @@ function openCardContextMenu(e, title, onEdit, onDelete, metaInfo = null) {
     }
   }
 
-  let left = Math.min(window.innerWidth - menuWidth - 12, Math.max(12, rect.right - menuWidth));
+  const left = Math.min(window.innerWidth - menuWidth - 12, Math.max(12, rect.right - menuWidth));
 
   menu.style.top = `${top}px`;
   menu.style.left = `${left}px`;

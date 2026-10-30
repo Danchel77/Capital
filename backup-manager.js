@@ -10,7 +10,7 @@ let currentBackupFileSize = 0;
 
 // Состояние модального окна инспекции (детального просмотра)
 let currentInspectSection = null; // 'tx' | 'dep' | 'broker' | 'goals' | 'bills' | 'rules'
-let currentInspectFilter = 'all';  // 'all' | 'new' | 'dup'
+let currentInspectFilter = 'all'; // 'all' | 'new' | 'dup'
 
 /**
  * Открытие модального окна резервного копирования
@@ -61,7 +61,7 @@ function switchBackupTab(tab) {
     importTabBtn?.classList.remove('text-gray-400', 'hover:text-gray-200');
     exportTabBtn?.classList.remove('bg-[#6C5DD3]', 'text-white', 'shadow-sm');
     exportTabBtn?.classList.add('text-gray-400', 'hover:text-gray-200');
-    
+
     if (currentParsedBackup) {
       updateImportAnalysis();
     }
@@ -76,7 +76,11 @@ function switchBackupTab(tab) {
  */
 function updateExportCounters() {
   const txCount = Array.isArray(Cache?.transactions)
-    ? Cache.transactions.reduce((sum, m) => sum + (Array.isArray(m.items) ? m.items.length : (m.amount !== undefined ? 1 : 0)), 0)
+    ? Cache.transactions.reduce(
+        (sum, m) =>
+          sum + (Array.isArray(m.items) ? m.items.length : m.amount !== undefined ? 1 : 0),
+        0
+      )
     : 0;
   const depCount = Cache?.deposits?.length || 0;
   const brokerCount = Cache?.broker?.history?.length || 0;
@@ -176,7 +180,8 @@ async function downloadBackupJson() {
   const expRules = document.getElementById('chk-exp-rules')?.checked;
 
   if (!expTx && !expDep && !expBroker && !expGoals && !expBills && !expBudget && !expRules) {
-    if (typeof showToast === 'function') showToast('Выберите хотя бы одну категорию для экспорта', true);
+    if (typeof showToast === 'function')
+      showToast('Выберите хотя бы одну категорию для экспорта', true);
     return;
   }
 
@@ -184,18 +189,30 @@ async function downloadBackupJson() {
     version: '1.0',
     appName: 'Семейный Бюджет',
     exportedAt: new Date().toISOString(),
-    data: {}
+    data: {},
   };
 
   if (expTx && Cache?.transactions) {
-    const rawTxList = Array.isArray(Cache.transactions) 
+    const rawTxList = Array.isArray(Cache.transactions)
       ? Cache.transactions.flatMap(m => m.items || (m.amount !== undefined ? [m] : []))
       : [];
     exportPayload.data.transactions = rawTxList.map(t => {
-      const commentVal = (typeof getTxComment === 'function')
-        ? getTxComment(t)
-        : (t.comment || t.description || t.merchant || t.title || t.name || t.note || t.notes || t.payee || t.details || '');
-      const rawType = String(t.type || '').trim().toLowerCase();
+      const commentVal =
+        typeof getTxComment === 'function'
+          ? getTxComment(t)
+          : t.comment ||
+            t.description ||
+            t.merchant ||
+            t.title ||
+            t.name ||
+            t.note ||
+            t.notes ||
+            t.payee ||
+            t.details ||
+            '';
+      const rawType = String(t.type || '')
+        .trim()
+        .toLowerCase();
       const isInc = rawType === 'income' || rawType === 'доход';
       const typeVal = isInc ? 'Доход' : 'Расход';
       return {
@@ -217,7 +234,7 @@ async function downloadBackupJson() {
         goalId: t.goalId || null,
         goalName: t.goalName || null,
         authorName: t.authorName || (t.author ? t.author.name : null),
-        createdAt: t.createdAt || null
+        createdAt: t.createdAt || null,
       };
     });
   }
@@ -226,19 +243,21 @@ async function downloadBackupJson() {
     exportPayload.data.deposits = (Cache.deposits || []).map(d => ({
       id: d.id,
       name: d.name || '',
-      amount: Number(d.amount !== undefined ? d.amount : (d.initialAmount || d.currentAmount || 0)),
-      rate: Number(d.rate !== undefined ? d.rate : (d.percent || 0)),
+      amount: Number(d.amount !== undefined ? d.amount : d.initialAmount || d.currentAmount || 0),
+      rate: Number(d.rate !== undefined ? d.rate : d.percent || 0),
       startDate: d.rawStart || d.startDate || '',
       endDate: d.rawEnd || d.endDate || '',
       goalId: d.goalId || '',
       goalName: d.goalName || '',
       bank: d.bank || '',
-      status: d.isClosed ? 'Закрыт' : (d.status || 'Активен'),
+      status: d.isClosed ? 'Закрыт' : d.status || 'Активен',
       isInterestCredited: !!d.isInterestCredited,
       // Алиасы для обратной совместимости
-      initialAmount: Number(d.amount !== undefined ? d.amount : (d.initialAmount || 0)),
-      currentAmount: Number(d.amount !== undefined ? d.amount : (d.currentAmount || d.initialAmount || 0)),
-      percent: Number(d.rate !== undefined ? d.rate : (d.percent || 0))
+      initialAmount: Number(d.amount !== undefined ? d.amount : d.initialAmount || 0),
+      currentAmount: Number(
+        d.amount !== undefined ? d.amount : d.currentAmount || d.initialAmount || 0
+      ),
+      percent: Number(d.rate !== undefined ? d.rate : d.percent || 0),
     }));
   }
 
@@ -250,7 +269,7 @@ async function downloadBackupJson() {
       amount: b.amount || 0,
       balance: b.balance !== undefined ? b.balance : null,
       note: b.note || '',
-      timestamp: b.timestamp || null
+      timestamp: b.timestamp || null,
     }));
   }
 
@@ -259,11 +278,11 @@ async function downloadBackupJson() {
       id: g.id,
       name: g.name,
       target: Number(g.target) || 0,
-      saved: Number(g.saved !== undefined ? g.saved : (g.current || 0)),
-      current: Number(g.saved !== undefined ? g.saved : (g.current || 0)),
+      saved: Number(g.saved !== undefined ? g.saved : g.current || 0),
+      current: Number(g.saved !== undefined ? g.saved : g.current || 0),
       icon: g.icon || 'target',
       share: Number(g.share) || 100,
-      status: g.status || 'В процессе'
+      status: g.status || 'В процессе',
     }));
   }
 
@@ -275,7 +294,7 @@ async function downloadBackupJson() {
       day: Number(b.day) || 1,
       category: b.category || 'Счета',
       paid: !!b.paid,
-      icon: b.icon || 'receipt'
+      icon: b.icon || 'receipt',
     }));
   }
 
@@ -285,7 +304,7 @@ async function downloadBackupJson() {
       isConfigured: bPlan.isConfigured !== false,
       monthlyIncome: Number(bPlan.monthlyIncome || bPlan.income || 0),
       monthlyVariableLimit: Number(bPlan.monthlyVariableLimit || bPlan.dailyLimit || 0),
-      categoryLimits: bPlan.categoryLimits || bPlan.categories || {}
+      categoryLimits: bPlan.categoryLimits || bPlan.categories || {},
     };
   }
 
@@ -296,7 +315,7 @@ async function downloadBackupJson() {
         id: doc.id,
         pattern: doc.data().pattern,
         category: doc.data().category,
-        disabled: !!doc.data().disabled
+        disabled: !!doc.data().disabled,
       }));
 
       if (docsRules.length > 0) {
@@ -308,7 +327,7 @@ async function downloadBackupJson() {
             id: r.id,
             pattern: r.pattern,
             category: r.category,
-            disabled: !!r.disabled
+            disabled: !!r.disabled,
           }));
       }
     } catch (e) {
@@ -320,7 +339,7 @@ async function downloadBackupJson() {
   const jsonStr = JSON.stringify(exportPayload, null, 2);
   const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
-  
+
   const now = new Date();
   const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   const filename = `budget_backup_${dateStr}.json`;
@@ -355,7 +374,7 @@ function triggerBackupFileSelect() {
 function handleBackupFileDrop(event) {
   event.preventDefault();
   event.stopPropagation();
-  
+
   const zone = document.getElementById('backup-dropzone');
   if (zone) zone.classList.remove('border-[#6C5DD3]', 'bg-[#6C5DD3]/10');
 
@@ -395,7 +414,8 @@ function processSelectedBackupFile(file) {
   if (!file) return;
 
   if (!file.name.endsWith('.json') && file.type !== 'application/json') {
-    if (typeof showToast === 'function') showToast('Пожалуйста, выберите файл в формате .json', true);
+    if (typeof showToast === 'function')
+      showToast('Пожалуйста, выберите файл в формате .json', true);
     return;
   }
 
@@ -403,13 +423,14 @@ function processSelectedBackupFile(file) {
   currentBackupFileSize = file.size;
 
   const reader = new FileReader();
-  reader.onload = (e) => {
+  reader.onload = e => {
     try {
       const rawText = e.target.result;
       const parsed = JSON.parse(rawText);
       analyzeAndDisplayBackup(parsed);
     } catch (err) {
-      if (typeof showToast === 'function') showToast('Не удалось прочитать JSON: поврежденный файл', true);
+      if (typeof showToast === 'function')
+        showToast('Не удалось прочитать JSON: поврежденный файл', true);
       console.error(err);
     }
   };
@@ -420,14 +441,14 @@ function processSelectedBackupFile(file) {
  * Анализ содержимого бэкапа и нормализация данных
  */
 function analyzeAndDisplayBackup(parsed) {
-  let rawSections = {
+  const rawSections = {
     transactions: [],
     deposits: [],
     broker: [],
     goals: [],
     calendarBills: [],
     budget: null,
-    categoryRules: []
+    categoryRules: [],
   };
 
   // Поддерживаем как полный формат { data: {...} }, так и плоский { transactions: [...] } или массив операций
@@ -441,12 +462,17 @@ function analyzeAndDisplayBackup(parsed) {
     else if (Array.isArray(src.records)) rawSections.transactions = src.records;
     else if (Array.isArray(src['транзакции'])) rawSections.transactions = src['транзакции'];
     else if (Array.isArray(src['операции'])) rawSections.transactions = src['операции'];
-    if (Array.isArray(src.deposits || src['вклады'])) rawSections.deposits = src.deposits || src['вклады'];
-    if (Array.isArray(src.broker || src['брокер'])) rawSections.broker = src.broker || src['брокер'];
+    if (Array.isArray(src.deposits || src['вклады']))
+      rawSections.deposits = src.deposits || src['вклады'];
+    if (Array.isArray(src.broker || src['брокер']))
+      rawSections.broker = src.broker || src['брокер'];
     if (Array.isArray(src.goals || src['цели'])) rawSections.goals = src.goals || src['цели'];
-    if (Array.isArray(src.calendarBills || src.bills || src['счета'])) rawSections.calendarBills = src.calendarBills || src.bills || src['счета'];
-    if (src.budget || src.budgetPlans || src['бюджет']) rawSections.budget = src.budget || src.budgetPlans || src['бюджет'];
-    if (Array.isArray(src.categoryRules || src.rules || src['правила'])) rawSections.categoryRules = src.categoryRules || src.rules || src['правила'];
+    if (Array.isArray(src.calendarBills || src.bills || src['счета']))
+      rawSections.calendarBills = src.calendarBills || src.bills || src['счета'];
+    if (src.budget || src.budgetPlans || src['бюджет'])
+      rawSections.budget = src.budget || src.budgetPlans || src['бюджет'];
+    if (Array.isArray(src.categoryRules || src.rules || src['правила']))
+      rawSections.categoryRules = src.categoryRules || src.rules || src['правила'];
   }
 
   const existingTxs = Array.isArray(Cache?.transactions)
@@ -455,23 +481,52 @@ function analyzeAndDisplayBackup(parsed) {
   const existingDeps = Array.isArray(Cache?.deposits) ? Cache.deposits : [];
   const existingBroker = Array.isArray(Cache?.broker?.history)
     ? Cache.broker.history
-    : (Array.isArray(Cache?.broker) ? Cache.broker : []);
+    : Array.isArray(Cache?.broker)
+      ? Cache.broker
+      : [];
   const existingGoals = Array.isArray(Cache?.goals) ? Cache.goals : [];
   const existingBills = Array.isArray(Cache?.calendarBills) ? Cache.calendarBills : [];
-  const existingRules = Array.isArray(Cache?.categoryRules) ? Cache.categoryRules : (window.DEFAULT_CATEGORY_RULES || []);
+  const existingRules = Array.isArray(Cache?.categoryRules)
+    ? Cache.categoryRules
+    : window.DEFAULT_CATEGORY_RULES || [];
 
   // Анализируем каждую секцию в структурированный список элементов с признаком дубликата и дефолтным чекбоксом
   const processedSections = {
-    tx: prepareAnalyzedItems(rawSections.transactions, (item) => isBackupTransactionDuplicate(item, existingTxs), 'Совпадает дата, сумма и категория'),
-    dep: prepareAnalyzedItems(rawSections.deposits, (item) => isDepositDuplicate(item, existingDeps), 'Уже есть вклад с таким названием и суммой'),
-    broker: prepareAnalyzedItems(rawSections.broker, (item) => isBrokerPointDuplicate(item, existingBroker), 'Совпадает дата, сумма и операция'),
-    goals: prepareAnalyzedItems(rawSections.goals, (item) => isGoalDuplicate(item, existingGoals), 'Цель с таким названием и суммой уже существует'),
-    bills: prepareAnalyzedItems(rawSections.calendarBills, (item) => isBillDuplicate(item, existingBills), 'Платеж с таким названием, суммой и днем уже есть'),
-    rules: prepareAnalyzedItems(rawSections.categoryRules, (item) => isRuleDuplicate(item, existingRules), 'Правило для этого слова/фразы уже есть в словаре'),
-    budget: rawSections.budget
+    tx: prepareAnalyzedItems(
+      rawSections.transactions,
+      item => isBackupTransactionDuplicate(item, existingTxs),
+      'Совпадает дата, сумма и категория'
+    ),
+    dep: prepareAnalyzedItems(
+      rawSections.deposits,
+      item => isDepositDuplicate(item, existingDeps),
+      'Уже есть вклад с таким названием и суммой'
+    ),
+    broker: prepareAnalyzedItems(
+      rawSections.broker,
+      item => isBrokerPointDuplicate(item, existingBroker),
+      'Совпадает дата, сумма и операция'
+    ),
+    goals: prepareAnalyzedItems(
+      rawSections.goals,
+      item => isGoalDuplicate(item, existingGoals),
+      'Цель с таким названием и суммой уже существует'
+    ),
+    bills: prepareAnalyzedItems(
+      rawSections.calendarBills,
+      item => isBillDuplicate(item, existingBills),
+      'Платеж с таким названием, суммой и днем уже есть'
+    ),
+    rules: prepareAnalyzedItems(
+      rawSections.categoryRules,
+      item => isRuleDuplicate(item, existingRules),
+      'Правило для этого слова/фразы уже есть в словаре'
+    ),
+    budget: rawSections.budget,
   };
 
-  const totalItemsCount = processedSections.tx.length +
+  const totalItemsCount =
+    processedSections.tx.length +
     processedSections.dep.length +
     processedSections.broker.length +
     processedSections.goals.length +
@@ -480,13 +535,14 @@ function analyzeAndDisplayBackup(parsed) {
     (processedSections.budget ? 1 : 0);
 
   if (totalItemsCount === 0) {
-    if (typeof showToast === 'function') showToast('В файле не найдено поддерживаемых данных для импорта', true);
+    if (typeof showToast === 'function')
+      showToast('В файле не найдено поддерживаемых данных для импорта', true);
     return;
   }
 
   currentParsedBackup = {
     sections: processedSections,
-    budget: rawSections.budget
+    budget: rawSections.budget,
   };
 
   // Показываем блок предпросмотра импорта
@@ -515,7 +571,7 @@ function prepareAnalyzedItems(rawList, duplicateChecker, defaultReason) {
       raw: item,
       isDuplicate: isDup,
       duplicateReason: isDup ? defaultReason : '',
-      selected: !isDup // По умолчанию отмечаем только новые
+      selected: !isDup, // По умолчанию отмечаем только новые
     };
   });
 }
@@ -530,11 +586,41 @@ function updateImportAnalysis() {
 
   // Обновляем плашки каждой секции
   setupImportSectionRow('import-row-tx', 'chk-imp-tx', 'import-count-tx', sections.tx, 'операций');
-  setupImportSectionRow('import-row-dep', 'chk-imp-dep', 'import-count-dep', sections.dep, 'вкладов');
-  setupImportSectionRow('import-row-broker', 'chk-imp-broker', 'import-count-broker', sections.broker, 'записей');
-  setupImportSectionRow('import-row-goals', 'chk-imp-goals', 'import-count-goals', sections.goals, 'целей');
-  setupImportSectionRow('import-row-bills', 'chk-imp-bills', 'import-count-bills', sections.bills, 'платежей');
-  setupImportSectionRow('import-row-rules', 'chk-imp-rules', 'import-count-rules', sections.rules, 'правил');
+  setupImportSectionRow(
+    'import-row-dep',
+    'chk-imp-dep',
+    'import-count-dep',
+    sections.dep,
+    'вкладов'
+  );
+  setupImportSectionRow(
+    'import-row-broker',
+    'chk-imp-broker',
+    'import-count-broker',
+    sections.broker,
+    'записей'
+  );
+  setupImportSectionRow(
+    'import-row-goals',
+    'chk-imp-goals',
+    'import-count-goals',
+    sections.goals,
+    'целей'
+  );
+  setupImportSectionRow(
+    'import-row-bills',
+    'chk-imp-bills',
+    'import-count-bills',
+    sections.bills,
+    'платежей'
+  );
+  setupImportSectionRow(
+    'import-row-rules',
+    'chk-imp-rules',
+    'import-count-rules',
+    sections.rules,
+    'правил'
+  );
 
   // Бюджет
   const budgetRow = document.getElementById('import-row-budget');
@@ -571,7 +657,7 @@ function setupImportSectionRow(rowId, chkId, countId, itemsList, unitName) {
 
     if (chk) {
       chk.checked = selectedCount > 0;
-      chk.indeterminate = (selectedCount > 0 && selectedCount < itemsList.length);
+      chk.indeterminate = selectedCount > 0 && selectedCount < itemsList.length;
     }
 
     if (countEl) {
@@ -641,38 +727,38 @@ const SECTION_CONFIGS = {
     title: 'Просмотр операций',
     subtitle: 'Выберите транзакции для импорта в историю',
     icon: 'arrow-left-right',
-    iconWrapClass: 'bg-[#6C5DD3]/15 text-[#8C7DFF]'
+    iconWrapClass: 'bg-[#6C5DD3]/15 text-[#8C7DFF]',
   },
   dep: {
     title: 'Просмотр вкладов и счетов',
     subtitle: 'Выберите накопительные счета и вклады для добавления',
     icon: 'piggy-bank',
-    iconWrapClass: 'bg-emerald-500/15 text-emerald-400'
+    iconWrapClass: 'bg-emerald-500/15 text-emerald-400',
   },
   broker: {
     title: 'Просмотр операций брокера',
     subtitle: 'Выберите движения средств брокерского портфеля',
     icon: 'trending-up',
-    iconWrapClass: 'bg-cyan-500/15 text-cyan-400'
+    iconWrapClass: 'bg-cyan-500/15 text-cyan-400',
   },
   goals: {
     title: 'Просмотр финансовых целей',
     subtitle: 'Выберите цели для добавления в приложение',
     icon: 'target',
-    iconWrapClass: 'bg-amber-500/15 text-amber-400'
+    iconWrapClass: 'bg-amber-500/15 text-amber-400',
   },
   bills: {
     title: 'Просмотр обязательных платежей',
     subtitle: 'Выберите регулярные счета и подписки для календаря',
     icon: 'calendar',
-    iconWrapClass: 'bg-rose-500/15 text-rose-400'
+    iconWrapClass: 'bg-rose-500/15 text-rose-400',
   },
   rules: {
     title: 'Просмотр словаря категорий',
     subtitle: 'Выберите ключевые фразы и правила автокатегоризации',
     icon: 'book-open-check',
-    iconWrapClass: 'bg-fuchsia-500/15 text-fuchsia-400'
-  }
+    iconWrapClass: 'bg-fuchsia-500/15 text-fuchsia-400',
+  },
 };
 
 /**
@@ -685,7 +771,7 @@ function openBackupInspectModal(secKey) {
   currentInspectFilter = 'all';
 
   const cfg = SECTION_CONFIGS[secKey] || SECTION_CONFIGS.tx;
-  
+
   const titleEl = document.getElementById('backup-inspect-title');
   const subtitleEl = document.getElementById('backup-inspect-subtitle');
   const iconWrap = document.getElementById('backup-inspect-icon-wrap');
@@ -693,7 +779,8 @@ function openBackupInspectModal(secKey) {
 
   if (titleEl) titleEl.textContent = cfg.title;
   if (subtitleEl) subtitleEl.textContent = cfg.subtitle;
-  if (iconWrap) iconWrap.className = `w-9 h-9 rounded-2xl flex items-center justify-center flex-shrink-0 ${cfg.iconWrapClass}`;
+  if (iconWrap)
+    iconWrap.className = `w-9 h-9 rounded-2xl flex items-center justify-center flex-shrink-0 ${cfg.iconWrapClass}`;
   if (icon) icon.setAttribute('data-lucide', cfg.icon);
 
   renderInspectDialogContent();
@@ -751,9 +838,11 @@ function renderInspectDialogContent() {
     const tabBtn = document.getElementById(`backup-inspect-filter-${f}`);
     if (tabBtn) {
       if (f === currentInspectFilter) {
-        tabBtn.className = 'px-2.5 py-1 rounded-lg font-medium transition-colors bg-white/10 text-white cursor-pointer';
+        tabBtn.className =
+          'px-2.5 py-1 rounded-lg font-medium transition-colors bg-white/10 text-white cursor-pointer';
       } else {
-        tabBtn.className = 'px-2.5 py-1 rounded-lg font-medium transition-colors text-gray-400 hover:text-gray-200 cursor-pointer';
+        tabBtn.className =
+          'px-2.5 py-1 rounded-lg font-medium transition-colors text-gray-400 hover:text-gray-200 cursor-pointer';
       }
     }
   });
@@ -779,10 +868,12 @@ function renderInspectDialogContent() {
   }
 
   // Рендерим элементы
-  listEl.innerHTML = visibleItems.map((item, vIdx) => {
-    const actualIndex = items.indexOf(item);
-    return renderInspectItemRow(currentInspectSection, item, actualIndex);
-  }).join('');
+  listEl.innerHTML = visibleItems
+    .map((item, vIdx) => {
+      const actualIndex = items.indexOf(item);
+      return renderInspectItemRow(currentInspectSection, item, actualIndex);
+    })
+    .join('');
 
   updateInspectToggleAllButton(visibleItems);
   updateInspectSelectedSummary();
@@ -807,7 +898,7 @@ function formatInspectDate(dateVal) {
     }
     if (!d || isNaN(d.getTime())) return String(dateVal);
     return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' });
-  } catch (e) {
+  } catch (_e) {
     return String(dateVal);
   }
 }
@@ -837,15 +928,28 @@ function renderInspectItemRow(secKey, item, actualIndex) {
 
   switch (secKey) {
     case 'tx': {
-      const rawType = String(raw.type || '').trim().toLowerCase();
-      const isIncome = rawType === 'income' || rawType === 'доход' || (Number(raw.amount) > 0 && raw.isIncome);
+      const rawType = String(raw.type || '')
+        .trim()
+        .toLowerCase();
+      const isIncome =
+        rawType === 'income' || rawType === 'доход' || (Number(raw.amount) > 0 && raw.isIncome);
       const amountFormatted = Math.abs(Number(raw.amount || 0)).toLocaleString('ru-RU');
       const sign = isIncome ? '+' : '−';
       const amountColor = isIncome ? 'text-emerald-400' : 'text-gray-100';
       const dateStr = formatInspectDate(raw.date || raw.rawDate);
-      const comment = (typeof getTxComment === 'function')
-        ? getTxComment(raw)
-        : (raw.comment || raw.description || raw.merchant || raw.title || raw.name || raw.note || raw.notes || raw.payee || raw.details || '');
+      const comment =
+        typeof getTxComment === 'function'
+          ? getTxComment(raw)
+          : raw.comment ||
+            raw.description ||
+            raw.merchant ||
+            raw.title ||
+            raw.name ||
+            raw.note ||
+            raw.notes ||
+            raw.payee ||
+            raw.details ||
+            '';
       const title = comment || raw.category || 'Операция';
 
       topRowLeft = `<span class="text-xs font-semibold text-white break-words">${escapeHtml(title)}</span>`;
@@ -855,9 +959,11 @@ function renderInspectItemRow(secKey, item, actualIndex) {
     }
 
     case 'dep': {
-      const amountVal = Number(raw.amount !== undefined ? raw.amount : (raw.initialAmount || raw.currentAmount || 0));
+      const amountVal = Number(
+        raw.amount !== undefined ? raw.amount : raw.initialAmount || raw.currentAmount || 0
+      );
       const amount = amountVal.toLocaleString('ru-RU');
-      const rateVal = raw.rate !== undefined ? raw.rate : (raw.percent || 0);
+      const rateVal = raw.rate !== undefined ? raw.rate : raw.percent || 0;
       const percent = rateVal ? `${rateVal}%` : '';
 
       topRowLeft = `<span class="text-xs font-semibold text-white break-words">${escapeHtml(raw.name || 'Вклад')}</span>`;
@@ -881,7 +987,9 @@ function renderInspectItemRow(secKey, item, actualIndex) {
 
     case 'goals': {
       const target = Number(raw.target || 0).toLocaleString('ru-RU');
-      const current = Number(raw.saved !== undefined ? raw.saved : (raw.current || 0)).toLocaleString('ru-RU');
+      const current = Number(raw.saved !== undefined ? raw.saved : raw.current || 0).toLocaleString(
+        'ru-RU'
+      );
 
       topRowLeft = `<span class="text-xs font-semibold text-white break-words">${escapeHtml(raw.name || 'Цель')}</span>`;
       topRowRight = `<span class="text-xs font-bold text-amber-400">${target} ₽</span>`;
@@ -1058,70 +1166,122 @@ function isBackupTransactionDuplicate(tx, existingList) {
   if (!tx || !Array.isArray(existingList) || existingList.length === 0) return false;
   const txDate = String(tx.date || tx.rawDate || '').slice(0, 10);
   const txAmount = Math.round(Math.abs(Number(tx.amount || 0)) * 100) / 100;
-  const txCat = String(tx.category || '').trim().toLowerCase();
-  const txDesc = ((typeof getTxComment === 'function') ? getTxComment(tx) : String(tx.description || tx.comment || '')).trim().toLowerCase();
-  const rawTxType = String(tx.type || '').trim().toLowerCase();
-  const txType = (rawTxType === 'income' || rawTxType === 'доход') ? 'доход' : 'расход';
+  const txCat = String(tx.category || '')
+    .trim()
+    .toLowerCase();
+  const txDesc = (
+    typeof getTxComment === 'function'
+      ? getTxComment(tx)
+      : String(tx.description || tx.comment || '')
+  )
+    .trim()
+    .toLowerCase();
+  const rawTxType = String(tx.type || '')
+    .trim()
+    .toLowerCase();
+  const txType = rawTxType === 'income' || rawTxType === 'доход' ? 'доход' : 'расход';
 
   return existingList.some(ex => {
     if (!ex) return false;
     if (tx.id && ex.id && tx.id === ex.id) return true;
     const exDate = String(ex.date || ex.rawDate || '').slice(0, 10);
     const exAmount = Math.round(Math.abs(Number(ex.amount || 0)) * 100) / 100;
-    const exCat = String(ex.category || '').trim().toLowerCase();
-    const exDesc = ((typeof getTxComment === 'function') ? getTxComment(ex) : String(ex.description || ex.comment || '')).trim().toLowerCase();
-    const rawExType = String(ex.type || '').trim().toLowerCase();
-    const exType = (rawExType === 'income' || rawExType === 'доход') ? 'доход' : 'расход';
+    const exCat = String(ex.category || '')
+      .trim()
+      .toLowerCase();
+    const exDesc = (
+      typeof getTxComment === 'function'
+        ? getTxComment(ex)
+        : String(ex.description || ex.comment || '')
+    )
+      .trim()
+      .toLowerCase();
+    const rawExType = String(ex.type || '')
+      .trim()
+      .toLowerCase();
+    const exType = rawExType === 'income' || rawExType === 'доход' ? 'доход' : 'расход';
 
-    return exDate === txDate &&
+    return (
+      exDate === txDate &&
       Math.abs(exAmount - txAmount) < 0.01 &&
       exCat === txCat &&
       (!txDesc || !exDesc || txDesc === exDesc) &&
-      exType === txType;
+      exType === txType
+    );
   });
 }
 
 function isDepositDuplicate(dep, existingList) {
   if (!dep || !Array.isArray(existingList) || existingList.length === 0) return false;
-  const name = String(dep.name || '').trim().toLowerCase();
-  const bank = String(dep.bank || '').trim().toLowerCase();
-  const amount = Math.round(Number(dep.amount !== undefined ? dep.amount : (dep.initialAmount || dep.currentAmount || 0)) * 100) / 100;
+  const name = String(dep.name || '')
+    .trim()
+    .toLowerCase();
+  const bank = String(dep.bank || '')
+    .trim()
+    .toLowerCase();
+  const amount =
+    Math.round(
+      Number(dep.amount !== undefined ? dep.amount : dep.initialAmount || dep.currentAmount || 0) *
+        100
+    ) / 100;
   const startDate = String(dep.startDate || dep.rawStart || '').slice(0, 10);
 
   return existingList.some(ex => {
     if (!ex) return false;
     if (dep.id && ex.id && dep.id === ex.id) return true;
-    const exName = String(ex.name || '').trim().toLowerCase();
-    const exBank = String(ex.bank || '').trim().toLowerCase();
-    const exAmount = Math.round(Number(ex.amount !== undefined ? ex.amount : (ex.initialAmount || ex.currentAmount || 0)) * 100) / 100;
+    const exName = String(ex.name || '')
+      .trim()
+      .toLowerCase();
+    const exBank = String(ex.bank || '')
+      .trim()
+      .toLowerCase();
+    const exAmount =
+      Math.round(
+        Number(ex.amount !== undefined ? ex.amount : ex.initialAmount || ex.currentAmount || 0) *
+          100
+      ) / 100;
     const exStartDate = String(ex.startDate || ex.rawStart || '').slice(0, 10);
 
-    return exName === name &&
+    return (
+      exName === name &&
       Math.abs(exAmount - amount) < 0.01 &&
       (!bank || !exBank || exBank === bank) &&
-      (!startDate || !exStartDate || exStartDate === startDate);
+      (!startDate || !exStartDate || exStartDate === startDate)
+    );
   });
 }
 
 function isBrokerPointDuplicate(bp, existingList) {
   if (!bp || !Array.isArray(existingList) || existingList.length === 0) return false;
   const date = String(bp.date || '').slice(0, 10);
-  const type = String(bp.type || '').trim().toLowerCase();
+  const type = String(bp.type || '')
+    .trim()
+    .toLowerCase();
   const amount = Math.round(Number(bp.amount || 0) * 100) / 100;
-  const balance = bp.balance !== null && bp.balance !== undefined ? Math.round(Number(bp.balance) * 100) / 100 : null;
+  const balance =
+    bp.balance !== null && bp.balance !== undefined
+      ? Math.round(Number(bp.balance) * 100) / 100
+      : null;
 
   return existingList.some(ex => {
     if (!ex) return false;
     if (bp.id && ex.id && bp.id === ex.id) return true;
     const exDate = String(ex.date || '').slice(0, 10);
-    const exType = String(ex.type || '').trim().toLowerCase();
+    const exType = String(ex.type || '')
+      .trim()
+      .toLowerCase();
     const exAmount = Math.round(Number(ex.amount || 0) * 100) / 100;
-    const exBalance = ex.balance !== null && ex.balance !== undefined ? Math.round(Number(ex.balance) * 100) / 100 : null;
+    const exBalance =
+      ex.balance !== null && ex.balance !== undefined
+        ? Math.round(Number(ex.balance) * 100) / 100
+        : null;
 
     const dateMatch = exDate === date;
     const typeMatch = exType === type;
     const amountMatch = Math.abs(exAmount - amount) < 0.01;
-    const balanceMatch = (balance === null && exBalance === null) || (balance !== null && exBalance !== null && Math.abs(exBalance - balance) < 0.01);
+    const balanceMatch =
+      (balance === null && exBalance === null) ||
+      (balance !== null && exBalance !== null && Math.abs(exBalance - balance) < 0.01);
 
     return dateMatch && typeMatch && amountMatch && balanceMatch;
   });
@@ -1129,13 +1289,17 @@ function isBrokerPointDuplicate(bp, existingList) {
 
 function isGoalDuplicate(goal, existingList) {
   if (!goal || !Array.isArray(existingList) || existingList.length === 0) return false;
-  const name = String(goal.name || '').trim().toLowerCase();
+  const name = String(goal.name || '')
+    .trim()
+    .toLowerCase();
   const target = Math.round(Number(goal.target || 0) * 100) / 100;
 
   return existingList.some(ex => {
     if (!ex) return false;
     if (goal.id && ex.id && goal.id === ex.id) return true;
-    const exName = String(ex.name || '').trim().toLowerCase();
+    const exName = String(ex.name || '')
+      .trim()
+      .toLowerCase();
     const exTarget = Math.round(Number(ex.target || 0) * 100) / 100;
     return exName === name && Math.abs(exTarget - target) < 0.01;
   });
@@ -1143,14 +1307,18 @@ function isGoalDuplicate(goal, existingList) {
 
 function isBillDuplicate(bill, existingList) {
   if (!bill || !Array.isArray(existingList) || existingList.length === 0) return false;
-  const name = String(bill.name || '').trim().toLowerCase();
+  const name = String(bill.name || '')
+    .trim()
+    .toLowerCase();
   const amount = Math.round(Number(bill.amount || 0) * 100) / 100;
   const day = Number(bill.day || 0);
 
   return existingList.some(ex => {
     if (!ex) return false;
     if (bill.id && ex.id && bill.id === ex.id) return true;
-    const exName = String(ex.name || '').trim().toLowerCase();
+    const exName = String(ex.name || '')
+      .trim()
+      .toLowerCase();
     const exAmount = Math.round(Number(ex.amount || 0) * 100) / 100;
     const exDay = Number(ex.day || 0);
     return exName === name && Math.abs(exAmount - amount) < 0.01 && exDay === day;
@@ -1159,7 +1327,12 @@ function isBillDuplicate(bill, existingList) {
 
 function isRuleDuplicate(rule, existingRules) {
   if (!rule || !Array.isArray(existingRules) || existingRules.length === 0) return false;
-  const norm = (str) => typeof StatementCategorizer !== 'undefined' ? StatementCategorizer.normalize(str) : String(str || '').toLowerCase().trim();
+  const norm = str =>
+    typeof StatementCategorizer !== 'undefined'
+      ? StatementCategorizer.normalize(str)
+      : String(str || '')
+          .toLowerCase()
+          .trim();
   const pat = norm(rule.pattern);
   return (existingRules || []).some(ex => ex && norm(ex.pattern) === pat);
 }
@@ -1182,8 +1355,14 @@ async function executeBackupImport() {
   const selectedBills = sections.bills.filter(i => i.selected).map(i => i.raw);
   const selectedRules = sections.rules.filter(i => i.selected).map(i => i.raw);
 
-  const totalToImport = selectedTx.length + selectedDep.length + selectedBroker.length +
-    selectedGoals.length + selectedBills.length + selectedRules.length + (impBudget && budget ? 1 : 0);
+  const totalToImport =
+    selectedTx.length +
+    selectedDep.length +
+    selectedBroker.length +
+    selectedGoals.length +
+    selectedBills.length +
+    selectedRules.length +
+    (impBudget && budget ? 1 : 0);
 
   if (totalToImport === 0) {
     if (typeof showToast === 'function') showToast('Не выбрано ни одной записи для импорта', true);
@@ -1193,12 +1372,13 @@ async function executeBackupImport() {
   const btn = document.getElementById('btn-execute-backup-import');
   if (btn) {
     btn.disabled = true;
-    btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin"></i><span>Импортируем данные...</span>';
+    btn.innerHTML =
+      '<i data-lucide="loader" class="w-4 h-4 animate-spin"></i><span>Импортируем данные...</span>';
     if (typeof lucide !== 'undefined') lucide.createIcons({ root: btn });
   }
 
   try {
-    let importedStats = { added: 0, skipped: 0 };
+    const importedStats = { added: 0, skipped: 0 };
 
     // Считаем пропущенные
     ['tx', 'dep', 'broker', 'goals', 'bills', 'rules'].forEach(key => {
@@ -1212,33 +1392,55 @@ async function executeBackupImport() {
         const chunk = selectedTx.slice(i, i + 400);
         const batch = db.batch();
         chunk.forEach(tx => {
-          const docRef = (tx.id && typeof tx.id === 'string' && tx.id.length > 5) ? txCol.doc(tx.id) : txCol.doc();
-          const commentVal = (typeof getTxComment === 'function')
-            ? getTxComment(tx)
-            : String(tx.comment || tx.description || tx.merchant || tx.title || tx.name || tx.note || tx.notes || tx.payee || tx.details || '').trim();
-          const rawType = String(tx.type || '').trim().toLowerCase();
+          const docRef =
+            tx.id && typeof tx.id === 'string' && tx.id.length > 5 ? txCol.doc(tx.id) : txCol.doc();
+          const commentVal =
+            typeof getTxComment === 'function'
+              ? getTxComment(tx)
+              : String(
+                  tx.comment ||
+                    tx.description ||
+                    tx.merchant ||
+                    tx.title ||
+                    tx.name ||
+                    tx.note ||
+                    tx.notes ||
+                    tx.payee ||
+                    tx.details ||
+                    ''
+                ).trim();
+          const rawType = String(tx.type || '')
+            .trim()
+            .toLowerCase();
           const isIncome = rawType === 'income' || rawType === 'доход';
           const typeVal = isIncome ? 'Доход' : 'Расход';
 
-          batch.set(docRef, {
-            amount: Math.abs(Number(tx.amount)) || 0,
-            category: tx.category || 'Прочее',
-            date: String(tx.date || tx.rawDate || new Date().toISOString().slice(0, 10)).slice(0, 10),
-            comment: commentVal,
-            description: commentVal,
-            merchant: commentVal,
-            title: commentVal,
-            note: commentVal,
-            type: typeVal,
-            excludeFromBudget: !!(tx.excludeFromBudget || tx.isExcludedFromBudget),
-            spreadMonths: parseInt(tx.spreadMonths, 10) || 1,
-            isBillPayment: !!tx.isBillPayment,
-            billId: tx.billId || null,
-            billName: tx.billName || '',
-            goalId: tx.goalId || null,
-            goalName: tx.goalName || null,
-            createdAt: tx.createdAt || firebase.firestore.FieldValue.serverTimestamp()
-          }, { merge: true });
+          batch.set(
+            docRef,
+            {
+              amount: Math.abs(Number(tx.amount)) || 0,
+              category: tx.category || 'Прочее',
+              date: String(tx.date || tx.rawDate || new Date().toISOString().slice(0, 10)).slice(
+                0,
+                10
+              ),
+              comment: commentVal,
+              description: commentVal,
+              merchant: commentVal,
+              title: commentVal,
+              note: commentVal,
+              type: typeVal,
+              excludeFromBudget: !!(tx.excludeFromBudget || tx.isExcludedFromBudget),
+              spreadMonths: parseInt(tx.spreadMonths, 10) || 1,
+              isBillPayment: !!tx.isBillPayment,
+              billId: tx.billId || null,
+              billName: tx.billName || '',
+              goalId: tx.goalId || null,
+              goalName: tx.goalName || null,
+              createdAt: tx.createdAt || firebase.firestore.FieldValue.serverTimestamp(),
+            },
+            { merge: true }
+          );
         });
         await batch.commit();
       }
@@ -1251,12 +1453,26 @@ async function executeBackupImport() {
       const batch = db.batch();
       selectedDep.forEach(dep => {
         const docRef = depCol.doc();
-        const amount = Number(dep.amount !== undefined ? dep.amount : (dep.initialAmount !== undefined ? dep.initialAmount : (dep.currentAmount || 0))) || 0;
-        const rate = Number(dep.rate !== undefined ? dep.rate : (dep.percent !== undefined ? dep.percent : (dep.interestRate || 0))) || 0;
-        
-        let startDate = dep.startDate || dep.rawStart || new Date().toISOString().slice(0, 10);
+        const amount =
+          Number(
+            dep.amount !== undefined
+              ? dep.amount
+              : dep.initialAmount !== undefined
+                ? dep.initialAmount
+                : dep.currentAmount || 0
+          ) || 0;
+        const rate =
+          Number(
+            dep.rate !== undefined
+              ? dep.rate
+              : dep.percent !== undefined
+                ? dep.percent
+                : dep.interestRate || 0
+          ) || 0;
+
+        const startDate = dep.startDate || dep.rawStart || new Date().toISOString().slice(0, 10);
         let endDate = dep.endDate || dep.rawEnd || '';
-        
+
         if (!endDate && dep.months) {
           const s = new Date(startDate);
           s.setMonth(s.getMonth() + Number(dep.months));
@@ -1271,7 +1487,7 @@ async function executeBackupImport() {
           rate: rate,
           startDate: startDate,
           endDate: endDate,
-          status: isClosed ? 'Закрыт' : (dep.status || 'Активен'),
+          status: isClosed ? 'Закрыт' : dep.status || 'Активен',
           goalId: dep.goalId || '',
           bank: dep.bank || '',
           isInterestCredited: !!dep.isInterestCredited,
@@ -1279,7 +1495,7 @@ async function executeBackupImport() {
           initialAmount: amount,
           currentAmount: amount,
           percent: rate,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
         });
       });
       await batch.commit();
@@ -1298,7 +1514,7 @@ async function executeBackupImport() {
           amount: Number(bp.amount) || 0,
           balance: bp.balance !== null && bp.balance !== undefined ? Number(bp.balance) : null,
           note: bp.note || '',
-          timestamp: bp.timestamp || Date.now()
+          timestamp: bp.timestamp || Date.now(),
         });
       });
       await batch.commit();
@@ -1314,12 +1530,12 @@ async function executeBackupImport() {
         batch.set(docRef, {
           name: g.name || 'Цель',
           target: Number(g.target) || 0,
-          saved: Number(g.saved !== undefined ? g.saved : (g.current || 0)) || 0,
+          saved: Number(g.saved !== undefined ? g.saved : g.current || 0) || 0,
           icon: g.icon || 'target',
           share: Number(g.share) || 100,
           status: g.status || 'В процессе',
           createdAt: g.createdAt || Date.now(),
-          updatedAt: Date.now()
+          updatedAt: Date.now(),
         });
       });
       await batch.commit();
@@ -1339,7 +1555,7 @@ async function executeBackupImport() {
           category: b.category || 'Счета',
           paid: !!b.paid,
           icon: b.icon || 'receipt',
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
         });
       });
       await batch.commit();
@@ -1352,13 +1568,16 @@ async function executeBackupImport() {
       const mIncome = Number(budget.monthlyIncome || budget.income || 0);
       const mLimit = Number(budget.monthlyVariableLimit || budget.dailyLimit || 0);
       const cLimits = budget.categoryLimits || budget.categories || {};
-      await budgetCol.doc('plan').set({
-        isConfigured: budget.isConfigured !== false,
-        monthlyIncome: mIncome,
-        monthlyVariableLimit: mLimit,
-        categoryLimits: cLimits,
-        updatedAt: Date.now()
-      }, { merge: true });
+      await budgetCol.doc('plan').set(
+        {
+          isConfigured: budget.isConfigured !== false,
+          monthlyIncome: mIncome,
+          monthlyVariableLimit: mLimit,
+          categoryLimits: cLimits,
+          updatedAt: Date.now(),
+        },
+        { merge: true }
+      );
       importedStats.added += 1;
     }
 
@@ -1372,7 +1591,7 @@ async function executeBackupImport() {
           pattern: r.pattern,
           category: r.category,
           disabled: !!r.disabled,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
         });
       });
       await batch.commit();
@@ -1385,7 +1604,9 @@ async function executeBackupImport() {
     closeDataBackupModal();
 
     if (typeof showToast === 'function') {
-      showToast(`Импорт завершен! Добавлено: ${importedStats.added} записей, пропущено: ${importedStats.skipped}`);
+      showToast(
+        `Импорт завершен! Добавлено: ${importedStats.added} записей, пропущено: ${importedStats.skipped}`
+      );
     }
   } catch (err) {
     console.error('Ошибка импорта бэкапа:', err);
@@ -1395,7 +1616,8 @@ async function executeBackupImport() {
   } finally {
     if (btn) {
       btn.disabled = false;
-      btn.innerHTML = '<i data-lucide="upload" class="w-4 h-4"></i><span>Импортировать выбранное</span>';
+      btn.innerHTML =
+        '<i data-lucide="upload" class="w-4 h-4"></i><span>Импортировать выбранное</span>';
       if (typeof lucide !== 'undefined') lucide.createIcons({ root: btn });
     }
   }
