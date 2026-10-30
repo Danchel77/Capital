@@ -1641,30 +1641,43 @@ function openTxContextMenu(e, txId) {
   }
   if (!tx) return;
 
-  // Формируем мета-информацию (источник, автор, оригинальный текст)
+  // Формируем мета-информацию (источник, автор, аватар)
   let sourceLabel = 'Вручную';
-  let rawText = tx.comment || tx.rawText || tx.description || '';
   if (tx.source === 'bank_push' || tx.source === 'bank_push_auto') {
     sourceLabel = tx.bank ? `Пуш (${tx.bank})` : 'Пуш';
-    rawText =
-      tx.rawText || tx.pushText || tx.comment || 'Оригинальный текст пуш-уведомления отсутствует';
   } else if (tx.source === 'pdf_statement' || tx.source === 'statement') {
     sourceLabel = tx.bank ? `Выписка (${tx.bank})` : 'Выписка';
-    rawText =
-      tx.rawText || tx.rawLine || tx.comment || 'Оригинальная строка из выписки отсутствует';
   }
 
-  const authorName = tx.author || tx.authorName || tx.userName || '';
+  // Корректно извлекаем имя автора и аватар
+  let authorName = 'Данила';
+  let authorAvatarId = 'user';
+  if (tx.author) {
+    if (typeof tx.author === 'object') {
+      authorName = tx.author.name || 'Пользователь';
+      authorAvatarId = tx.author.avatarId || 'user';
+    } else if (typeof tx.author === 'string') {
+      authorName = tx.author;
+    }
+  } else if (tx.authorName) {
+    authorName = tx.authorName;
+  }
+
+  const preset = (window.AVATAR_PRESETS && window.AVATAR_PRESETS[authorAvatarId]) || {
+    bg: 'bg-[#3B82F6]',
+    icon: 'user',
+  };
 
   const metaInfo = {
     sourceLabel,
     authorName,
-    rawText,
+    authorBg: preset.bg,
+    authorIcon: preset.icon,
   };
 
   openCardContextMenu(
     e,
-    `${tx.category || 'Операция'} · ${formatMoney(tx.amount)}`,
+    '',
     () => openEditTxModal(txId),
     () => deleteRecord('Transactions', txId),
     metaInfo

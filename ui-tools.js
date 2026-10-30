@@ -278,10 +278,7 @@ function openCardContextMenu(e, title, onEdit, onDelete, metaInfo = null) {
   const deleteBtn = document.getElementById('context-btn-delete');
   const metaRow = document.getElementById('context-meta-row');
   const authorLabel = document.getElementById('context-author-label');
-  const sourceBadge = document.getElementById('context-source-badge');
   const sourceText = document.getElementById('context-source-text');
-  const rawTooltip = document.getElementById('context-raw-tooltip');
-  const rawTextEl = document.getElementById('context-raw-text');
   if (!menu) return;
 
   const el = getEventTargetElement(e?.target);
@@ -325,26 +322,24 @@ function openCardContextMenu(e, title, onEdit, onDelete, metaInfo = null) {
     triggerPopoverAction(deleteBtn, onDelete);
   };
 
-  // Закрываем тултип при новом открытии меню
-  if (rawTooltip) rawTooltip.classList.add('hidden');
+  const authorAvatar = document.getElementById('context-author-avatar');
 
-  // Настройка мета-информации (источник, автор, тултип сырой записи)
+  // Настройка мета-информации [Аватар] [Имя] · [Источник]
   if (metaRow && metaInfo) {
     metaRow.classList.remove('hidden');
     metaRow.classList.add('flex');
-    if (authorLabel) authorLabel.textContent = metaInfo.authorName || '';
-    if (sourceText) sourceText.textContent = metaInfo.sourceLabel || 'Запись';
+    if (authorLabel) authorLabel.textContent = metaInfo.authorName || 'Пользователь';
+    if (sourceText) sourceText.textContent = metaInfo.sourceLabel || 'Вручную';
 
-    if (sourceBadge && rawTooltip && rawTextEl && metaInfo.rawText) {
-      sourceBadge.classList.remove('hidden');
-      rawTextEl.textContent = metaInfo.rawText;
-      sourceBadge.onclick = ev => {
-        if (ev) ev.stopPropagation();
-        rawTooltip.classList.toggle('hidden');
-      };
-    } else if (sourceBadge) {
-      sourceBadge.classList.add('hidden');
-      sourceBadge.onclick = null;
+    if (authorAvatar) {
+      if (metaInfo.avatarHtml) {
+        authorAvatar.innerHTML = metaInfo.avatarHtml;
+      } else {
+        const bg = metaInfo.authorBg || 'bg-[#3B82F6]';
+        const icon = metaInfo.authorIcon || 'user';
+        authorAvatar.className = `w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-white overflow-hidden text-[9px] ${bg}`;
+        authorAvatar.innerHTML = `<i data-lucide="${icon}" class="w-3 h-3"></i>`;
+      }
     }
   } else if (metaRow) {
     metaRow.classList.add('hidden');
