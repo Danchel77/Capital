@@ -1269,22 +1269,23 @@ select option {
   font-size: 12px;
   font-weight: 500;
   color: #c3c9d2;
-  border-radius: 10px;
+  border-radius: 9px;
   background: transparent;
-  border: none;
+  border: 1px solid transparent;
   cursor: pointer;
   text-align: left;
   transition: all 0.12s ease;
 }
 
 .custom-dropdown-item:hover {
-  background: #212430;
+  background: #181c26;
   color: #ffffff;
 }
 
 .custom-dropdown-item.is-active {
-  background: rgba(108, 93, 211, 0.15);
-  color: #8c7dff;
+  background: #181c26;
+  border-color: #282e3e;
+  color: #ffffff;
   font-weight: 600;
 }
 

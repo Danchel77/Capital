@@ -3,10 +3,11 @@
 // ==========================================
 
 // Фильтры списка транзакций
-let currentFilterMonth = 'all';
+let currentFilterMonth = null; // null = auto-detect (текущий или последний активный месяц)
 let currentFilterCategory = 'all';
 let currentFilterSearch = '';
 let currentFilterPendingOnly = false;
+let currentDropdownYear = new Date().getFullYear(); // Год для умного переключателя < 2026 >
 
 // ==========================================
 // 1. Data Processing
@@ -201,11 +202,97 @@ function processCategories(cats) {
 // ==========================================
 // 4. Filtering & List Rendering
 // ==========================================
+function shiftDropdownYear(step, event) {
+  if (event) event.stopPropagation();
+  currentDropdownYear += step;
+
+  // Автоматически подгружаем архив, если года еще нет в базе
+  if (typeof window.fetchTransactionsForYear === 'function') {
+    const data = Cache.transactions || [];
+    const hasYear = data.some(m => m.id && m.id.startsWith(String(currentDropdownYear)));
+    if (!hasYear) {
+      window.fetchTransactionsForYear(currentDropdownYear).catch(() => {});
+    }
+  }
+
+  // Перерисовываем меню
+  renderMonthDropdownMenu();
+}
+window.shiftDropdownYear = shiftDropdownYear;
+
+function renderMonthDropdownMenu() {
+  const monthMenu = document.getElementById('menu-filter-month');
+  if (!monthMenu) return;
+
+  const data = Cache.transactions || [];
+  const yearStr = String(currentDropdownYear);
+  const yearMonths = data.filter(m => m.id && m.id.startsWith(yearStr));
+
+  // Проверяем минимальный и максимальный год в данных
+  const allYears = data.map(m => parseInt((m.id || '').split('-')[0], 10)).filter(y => !isNaN(y));
+  const minYear = allYears.length > 0 ? Math.min(...allYears) : currentDropdownYear;
+  const canGoPrev = currentDropdownYear > minYear - 5;
+  const canGoNext = currentDropdownYear < new Date().getFullYear() + 1;
+
+  let mHtml = `
+    <!-- Переключатель года: < 2026 > -->
+    <div class="flex items-center justify-between px-2 py-1.5 mb-1 border-b border-[#1E222D]" onclick="event.stopPropagation()">
+      <button type="button" 
+              onclick="shiftDropdownYear(-1, event)" 
+              class="w-6 h-6 rounded-lg bg-[#181C26] hover:bg-[#202634] text-zinc-300 hover:text-white flex items-center justify-center transition-colors ${!canGoPrev ? 'opacity-25 pointer-events-none' : ''}">
+        ‹
+      </button>
+      <span class="text-xs font-semibold text-white tracking-wide">${currentDropdownYear} год</span>
+      <button type="button" 
+              onclick="shiftDropdownYear(1, event)" 
+              class="w-6 h-6 rounded-lg bg-[#181C26] hover:bg-[#202634] text-zinc-300 hover:text-white flex items-center justify-center transition-colors ${!canGoNext ? 'opacity-25 pointer-events-none' : ''}">
+        ›
+      </button>
+    </div>
+
+    <!-- Весь выбранный год -->
+    <button type="button" onclick="selectFilterValue('month', 'year-${currentDropdownYear}', 'Весь ${currentDropdownYear} год')" class="custom-dropdown-item ${currentFilterMonth === 'year-' + currentDropdownYear ? 'is-active' : ''}">
+      <span>Весь ${currentDropdownYear} год</span>
+    </button>
+  `;
+
+  if (yearMonths.length > 0) {
+    yearMonths.forEach(m => {
+      const active = currentFilterMonth === m.id;
+      const monthOnlyName = m.label.split(' ')[0] || m.label;
+      mHtml += `
+        <button type="button" onclick="selectFilterValue('month', '${m.id}', '${escapeHtml(m.label)}')" class="custom-dropdown-item ${active ? 'is-active' : ''}">
+          <span>${escapeHtml(monthOnlyName)}</span>
+        </button>
+      `;
+    });
+  } else {
+    mHtml += `
+      <div class="px-3 py-2 text-center text-xs text-zinc-500">
+        Нет операций за ${currentDropdownYear} год
+      </div>
+    `;
+  }
+
+  // Кнопка «Все время»
+  mHtml += `
+    <div class="pt-1 mt-1 border-t border-[#1E222D]">
+      <button type="button" onclick="selectFilterValue('month', 'all', 'Все время')" class="custom-dropdown-item ${currentFilterMonth === 'all' ? 'is-active' : ''}">
+        <span>Все время</span>
+      </button>
+    </div>
+  `;
+
+  monthMenu.innerHTML = mHtml;
+}
+window.renderMonthDropdownMenu = renderMonthDropdownMenu;
+
 function toggleCustomFilterMenu(type) {
   const monthMenu = document.getElementById('menu-filter-month');
   const catMenu = document.getElementById('menu-filter-cat');
 
   if (type === 'month') {
+    renderMonthDropdownMenu();
     monthMenu.classList.toggle('hidden');
     catMenu.classList.add('hidden');
   } else {
@@ -848,23 +935,39 @@ function renderTransactions() {
     searchBarContainerEl.classList.add('hidden');
   }
 
-  const monthMenu = document.getElementById('menu-filter-month');
-  if (monthMenu && data.length > 0) {
-    let mHtml = `
-      <button type="button" onclick="selectFilterValue('month', 'all', 'Все месяцы')" class="custom-dropdown-item ${currentFilterMonth === 'all' ? 'is-active' : ''}">
-        Все месяцы
-      </button>
-    `;
-    data.forEach(m => {
-      const active = currentFilterMonth === m.id;
-      mHtml += `
-        <button type="button" onclick="selectFilterValue('month', '${m.id}', '${escapeHtml(m.label)}')" class="custom-dropdown-item ${active ? 'is-active' : ''}">
-          ${escapeHtml(m.label)}
-        </button>
-      `;
-    });
-    monthMenu.innerHTML = mHtml;
+  // Автоматический выбор месяца по умолчанию (текущий или последний активный)
+  if (currentFilterMonth === null && data.length > 0) {
+    const today = new Date();
+    const curMonthKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+    const foundCur = data.find(m => m.id === curMonthKey);
+    if (foundCur) {
+      currentFilterMonth = curMonthKey;
+      currentDropdownYear = today.getFullYear();
+    } else {
+      currentFilterMonth = data[0].id;
+      const y = parseInt((data[0].id || '').split('-')[0], 10);
+      if (!isNaN(y)) currentDropdownYear = y;
+    }
   }
+
+  // Обновляем текст на кнопке выбора месяца
+  const monthBtnLabel = document.getElementById('label-filter-month');
+  if (monthBtnLabel) {
+    if (currentFilterMonth === 'all') {
+      monthBtnLabel.textContent = 'Все время';
+    } else if (currentFilterMonth && currentFilterMonth.startsWith('year-')) {
+      monthBtnLabel.textContent = `Весь ${currentFilterMonth.replace('year-', '')} год`;
+    } else {
+      const activeObj = data.find(m => m.id === currentFilterMonth);
+      if (activeObj) {
+        monthBtnLabel.textContent = activeObj.label;
+      } else {
+        monthBtnLabel.textContent = 'Все месяцы';
+      }
+    }
+  }
+
+  renderMonthDropdownMenu();
 
   const catMenu = document.getElementById('menu-filter-cat');
   if (catMenu && Cache.categories) {
@@ -901,7 +1004,14 @@ function renderTransactions() {
 
   const filteredMonths = data
     .map(m => {
-      if (currentFilterMonth !== 'all' && m.id !== currentFilterMonth) return null;
+      if (currentFilterMonth && currentFilterMonth !== 'all') {
+        if (currentFilterMonth.startsWith('year-')) {
+          const reqYear = currentFilterMonth.replace('year-', '');
+          if (!m.id || !m.id.startsWith(reqYear)) return null;
+        } else if (m.id !== currentFilterMonth) {
+          return null;
+        }
+      }
 
       let items = m.items;
       if (currentFilterPendingOnly) {
@@ -939,24 +1049,10 @@ function renderTransactions() {
     })
     .filter(Boolean);
 
-  let periodText = 'Тек. мес';
-  if (currentFilterMonth === 'all') {
-    periodText = 'Все время';
-  } else {
-    const selectedMonthObj = data.find(m => m.id === currentFilterMonth);
-    if (selectedMonthObj) periodText = selectedMonthObj.label;
-  }
-  if (currentFilterCategory !== 'all') {
-    periodText += ` • ${currentFilterCategory}`;
-  }
-  if (currentFilterSearch) {
-    periodText += ` • Поиск: «${currentFilterSearch}»`;
-  }
-
   const expLabel = document.getElementById('month-expense-label');
   const incLabel = document.getElementById('month-income-label');
-  if (expLabel) expLabel.innerText = `Расходы (${periodText})`;
-  if (incLabel) incLabel.innerText = `Доходы (${periodText})`;
+  if (expLabel) expLabel.innerText = 'Расходы';
+  if (incLabel) incLabel.innerText = 'Доходы';
 
   const totalExp = filteredMonths.reduce((a, b) => a + b.expense, 0);
   const totalInc = filteredMonths.reduce((a, b) => a + b.income, 0);

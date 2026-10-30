@@ -423,7 +423,7 @@ function initRealtimeListeners() {
   const user = auth?.currentUser;
   if (!user || !db) return;
 
-  // 1. Слушатель транзакций (Transactions)
+  // 1. Слушатель транзакций (Transactions) с оптимизацией 12 месяцев + авто-подгрузкой архива
   try {
     const unsubTx = getUserCol('Transactions').onSnapshot(
       { includeMetadataChanges: true },
@@ -435,7 +435,21 @@ function initRealtimeListeners() {
         if (changes.length === 0) return;
 
         const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-        Cache.transactions = processTransactions(data);
+
+        // Мерджим с уже дозагруженным архивом прошлых лет (если был дозагружен)
+        if (
+          Array.isArray(window._loadedArchiveTransactions) &&
+          window._loadedArchiveTransactions.length > 0
+        ) {
+          const map = new Map();
+          data.forEach(t => map.set(t.id, t));
+          window._loadedArchiveTransactions.forEach(t => {
+            if (!map.has(t.id)) map.set(t.id, t);
+          });
+          Cache.transactions = processTransactions(Array.from(map.values()));
+        } else {
+          Cache.transactions = processTransactions(data);
+        }
 
         markTabsDirty();
         const currentTab =
@@ -629,6 +643,52 @@ async function fetchCollection(table) {
     showToast('Ошибка загрузки', true);
   }
 }
+
+// Загрузка архива транзакций за указанный год по требованию (On-Demand Archive Fetcher)
+async function fetchTransactionsForYear(yearNum) {
+  if (!yearNum || !getUserCol) return [];
+  try {
+    const startStr = `${yearNum}-01-01`;
+    const endStr = `${yearNum}-12-31T23:59:59`;
+
+    // Делаем разовый запрос в Firestore
+    const col = getUserCol('Transactions');
+    const snapshot = await col.where('date', '>=', startStr).where('date', '<=', endStr).get();
+
+    const yearData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    // Сохраняем в кэш архива
+    window._loadedArchiveTransactions = window._loadedArchiveTransactions || [];
+    const existingIds = new Set(window._loadedArchiveTransactions.map(t => t.id));
+    yearData.forEach(t => {
+      if (!existingIds.has(t.id)) {
+        window._loadedArchiveTransactions.push(t);
+        existingIds.add(t.id);
+      }
+    });
+
+    // Мерджим с текущим Cache.transactions
+    const allFlat =
+      typeof getAllCachedTransactionsFlat === 'function' ? getAllCachedTransactionsFlat() : [];
+    const map = new Map();
+    allFlat.forEach(t => map.set(t.id, t));
+    yearData.forEach(t => map.set(t.id, t));
+
+    if (typeof processTransactions === 'function') {
+      Cache.transactions = processTransactions(Array.from(map.values()));
+    }
+
+    if (typeof renderTransactions === 'function') {
+      renderTransactions();
+    }
+
+    return yearData;
+  } catch (err) {
+    console.warn(`Не удалось загрузить архив за ${yearNum} год:`, err);
+    return [];
+  }
+}
+window.fetchTransactionsForYear = fetchTransactionsForYear;
 
 // Гибридная загрузка: системный словарь из default-rules.js + пользовательские оверрайды из Firestore
 async function processOrSeedRules(snapshot) {

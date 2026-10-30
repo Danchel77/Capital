@@ -979,49 +979,8 @@
       </div>
 
       <!-- ЭКРАН ТРАНЗАКЦИЙ -->
-      <div id="transactions-tab" class="tab-pane space-y-3 hidden">
-        <!-- 1. Сводная карточка расходов и доходов -->
-        <div class="bg-[#0E1016] border border-[#1E222D] rounded-2xl p-4 shadow-sm">
-          <div class="grid grid-cols-2 gap-3 text-xs">
-            <div class="min-w-0">
-              <div class="flex items-center gap-1.5 mb-1">
-                <span class="w-2 h-2 rounded-full bg-[#F43F5E] shrink-0"></span>
-                <span
-                  id="month-expense-label"
-                  class="text-xs font-medium text-zinc-400 uppercase tracking-wider truncate"
-                >
-                  Расходы (Тек. мес)
-                </span>
-              </div>
-              <p
-                id="month-expense"
-                class="font-mono font-bold text-white text-xl sm:text-2xl truncate [font-variant-numeric:tabular-nums]"
-              >
-                0 ₽
-              </p>
-            </div>
-
-            <div class="min-w-0">
-              <div class="flex items-center gap-1.5 mb-1">
-                <span class="w-2 h-2 rounded-full bg-[#10B981] shrink-0"></span>
-                <span
-                  id="month-income-label"
-                  class="text-xs font-medium text-zinc-400 uppercase tracking-wider truncate"
-                >
-                  Доходы (Тек. мес)
-                </span>
-              </div>
-              <p
-                id="month-income"
-                class="font-mono font-bold text-[#10B981] text-xl sm:text-2xl truncate [font-variant-numeric:tabular-nums]"
-              >
-                0 ₽
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <!-- 2. Компактный переключатель вида: Список / Графики -->
+      <div id="transactions-tab" class="tab-pane space-y-2.5 hidden">
+        <!-- 1. Компактный переключатель вида: Список / Графики -->
         <div class="view-switcher">
           <button
             id="view-list-btn"
@@ -1039,43 +998,118 @@
           </button>
         </div>
 
-        <!-- 3. КОНТЕНТ ВКЛАДКИ «СПИСОК» -->
-        <div id="transactions-list-wrap" class="space-y-3">
-          <!-- Кнопки добавления операций и импорта выписки -->
-          <div id="tx-top-actions" class="grid grid-cols-2 gap-2.5">
-            <!-- Кнопка добавления операций вручную (Primary) -->
+        <!-- 2. Равносильные кнопки добавления операций и импорта выписки (50/50) -->
+        <div id="tx-top-actions" class="grid grid-cols-2 gap-2">
+          <!-- Кнопка добавления операций вручную -->
+          <button
+            type="button"
+            onclick="
+              toggleForm('tx-form-container', 'tx-submit-btn', 'Сохранить', 'tx-form', 'tx')
+            "
+            class="btn-secondary py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] cursor-pointer shadow-sm text-white"
+            title="Добавить операцию вручную"
+          >
+            <i data-lucide="plus" class="w-4 h-4 text-white"></i>
+            <span>Операция</span>
+          </button>
+
+          <!-- Кнопка вызова окна импорта выписки -->
+          <button
+            type="button"
+            onclick="openPdfInfoModal()"
+            class="btn-secondary py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] cursor-pointer shadow-sm text-white"
+          >
+            <i data-lucide="file-up" class="w-4 h-4 text-white"></i>
+            <span>Импорт PDF</span>
+          </button>
+
+          <!-- Скрытый инпут для выбора PDF -->
+          <input
+            type="file"
+            id="pdf-file-input"
+            accept="application/pdf"
+            multiple
+            class="hidden"
+            onchange="handleStatementUpload(event)"
+          />
+        </div>
+
+        <!-- 3. Карточка «Фильтры + Справочная сводка» -->
+        <div class="bg-[#0E1016] border border-[#1E222D] rounded-2xl p-3 shadow-sm space-y-2.5">
+          <!-- Верхний ряд: Меню фильтрации + кнопка поиска -->
+          <div id="tx-filter-bar" class="flex gap-2 items-center">
+            <!-- Меню выбора месяца -->
+            <div class="relative flex-1 min-w-0" id="wrap-filter-month">
+              <button
+                type="button"
+                onclick="toggleCustomFilterMenu('month')"
+                class="w-full bg-[#181C26] border border-[#282E3E] text-xs text-zinc-200 rounded-xl px-3 py-1.5 flex items-center justify-between outline-none cursor-pointer hover:border-[#384156] transition-colors"
+              >
+                <span id="label-filter-month" class="truncate font-medium">Все месяцы</span>
+                <span class="text-zinc-500 text-[9px] ml-1 flex-shrink-0">▼</span>
+              </button>
+              <div
+                id="menu-filter-month"
+                class="hidden absolute left-0 top-full mt-1.5 w-full max-h-64 overflow-y-auto bg-[#0E1016] border border-[#1E222D] rounded-2xl shadow-2xl z-40 p-1.5 space-y-0.5"
+              ></div>
+            </div>
+
+            <!-- Меню выбора категории -->
+            <div class="relative flex-1 min-w-0" id="wrap-filter-cat">
+              <button
+                type="button"
+                onclick="toggleCustomFilterMenu('cat')"
+                class="w-full bg-[#181C26] border border-[#282E3E] text-xs text-zinc-200 rounded-xl px-3 py-1.5 flex items-center justify-between outline-none cursor-pointer hover:border-[#384156] transition-colors"
+              >
+                <span id="label-filter-cat" class="truncate font-medium">Все категории</span>
+                <span class="text-zinc-500 text-[9px] ml-1 flex-shrink-0">▼</span>
+              </button>
+              <div
+                id="menu-filter-cat"
+                class="hidden absolute right-0 top-full mt-1.5 w-full max-h-64 overflow-y-auto bg-[#0E1016] border border-[#1E222D] rounded-2xl shadow-2xl z-40 p-1.5 space-y-0.5"
+              ></div>
+            </div>
+
+            <!-- Кнопка вызова поиска -->
             <button
               type="button"
-              onclick="
-                toggleForm('tx-form-container', 'tx-submit-btn', 'Сохранить', 'tx-form', 'tx')
-              "
-              class="btn-primary py-2.5 px-3 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] cursor-pointer shadow-sm"
-              title="Добавить операцию вручную"
+              id="tx-search-toggle-btn"
+              onclick="toggleTxSearchBar()"
+              class="h-[32px] w-[32px] bg-[#181C26] hover:bg-[#202634] border border-[#282E3E] text-zinc-400 hover:text-white rounded-xl flex items-center justify-center transition-all cursor-pointer flex-shrink-0 active:scale-95"
+              title="Поиск по операциям"
             >
-              <i data-lucide="plus" class="w-4 h-4"></i>
-              <span>Операция</span>
+              <i data-lucide="search" class="w-3.5 h-3.5"></i>
             </button>
-
-            <!-- Кнопка вызова окна импорта выписки (Secondary) -->
-            <button
-              type="button"
-              onclick="openPdfInfoModal()"
-              class="btn-secondary py-2.5 px-3 rounded-xl text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] cursor-pointer shadow-sm"
-            >
-              <i data-lucide="file-up" class="w-4 h-4 text-zinc-400"></i>
-              <span>Импорт PDF</span>
-            </button>
-
-            <!-- Скрытый инпут для выбора PDF -->
-            <input
-              type="file"
-              id="pdf-file-input"
-              accept="application/pdf"
-              multiple
-              class="hidden"
-              onchange="handleStatementUpload(event)"
-            />
           </div>
+
+          <!-- Нижний ряд: Компактная справочная сводка (сетка 50/50, как на Главной) -->
+          <div class="grid grid-cols-2 gap-3 pt-2 border-t border-[#1E222D] text-xs">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="w-2 h-2 rounded-full bg-[#F43F5E] shrink-0"></span>
+              <span id="month-expense-label" class="text-xs text-zinc-400 shrink-0">Расходы</span>
+              <span
+                id="month-expense"
+                class="font-mono font-bold text-white text-sm truncate [font-variant-numeric:tabular-nums]"
+              >
+                0 ₽
+              </span>
+            </div>
+
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="w-2 h-2 rounded-full bg-[#10B981] shrink-0"></span>
+              <span id="month-income-label" class="text-xs text-zinc-400 shrink-0">Доходы</span>
+              <span
+                id="month-income"
+                class="font-mono font-bold text-[#10B981] text-sm truncate [font-variant-numeric:tabular-nums]"
+              >
+                0 ₽
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. КОНТЕНТ ВКЛАДКИ «СПИСОК» -->
+        <div id="transactions-list-wrap" class="space-y-2.5">
 
           <!-- Форма добавления транзакций -->
           <div
@@ -1149,52 +1183,6 @@
             </div>
           </div>
 
-          <!-- Меню фильтрации + кнопка поиска -->
-          <div id="tx-filter-bar" class="flex gap-2 items-center">
-            <!-- Меню выбора месяца -->
-            <div class="relative flex-1 min-w-0" id="wrap-filter-month">
-              <button
-                type="button"
-                onclick="toggleCustomFilterMenu('month')"
-                class="w-full bg-[#0E1016] border border-[#1E222D] text-xs text-zinc-200 rounded-xl px-3 py-2 flex items-center justify-between outline-none cursor-pointer hover:border-[#282E3E] transition-colors"
-              >
-                <span id="label-filter-month" class="truncate">Все месяцы</span>
-                <span class="text-zinc-500 text-[9px] ml-1 flex-shrink-0">▼</span>
-              </button>
-              <div
-                id="menu-filter-month"
-                class="hidden absolute left-0 top-full mt-1.5 w-full max-h-60 overflow-y-auto bg-[#0E1016] border border-[#1E222D] rounded-2xl shadow-2xl z-40 p-1 space-y-0.5"
-              ></div>
-            </div>
-
-            <!-- Меню выбора категории -->
-            <div class="relative flex-1 min-w-0" id="wrap-filter-cat">
-              <button
-                type="button"
-                onclick="toggleCustomFilterMenu('cat')"
-                class="w-full bg-[#0E1016] border border-[#1E222D] text-xs text-zinc-200 rounded-xl px-3 py-2 flex items-center justify-between outline-none cursor-pointer hover:border-[#282E3E] transition-colors"
-              >
-                <span id="label-filter-cat" class="truncate">Все категории</span>
-                <span class="text-zinc-500 text-[9px] ml-1 flex-shrink-0">▼</span>
-              </button>
-              <div
-                id="menu-filter-cat"
-                class="hidden absolute right-0 top-full mt-1.5 w-full max-h-60 overflow-y-auto bg-[#0E1016] border border-[#1E222D] rounded-2xl shadow-2xl z-40 p-1 space-y-0.5"
-              ></div>
-            </div>
-
-            <!-- Кнопка вызова поиска -->
-            <button
-              type="button"
-              id="tx-search-toggle-btn"
-              onclick="toggleTxSearchBar()"
-              class="h-[34px] w-[34px] bg-[#0E1016] hover:bg-[#181C26] border border-[#1E222D] text-zinc-400 hover:text-white rounded-xl flex items-center justify-center transition-all cursor-pointer flex-shrink-0 active:scale-95"
-              title="Поиск по операциям"
-            >
-              <i data-lucide="search" class="w-4 h-4"></i>
-            </button>
-          </div>
-
           <!-- Выдвижная строка поиска -->
           <div id="tx-search-bar-container" class="hidden animate-fade-in relative w-full">
             <div
@@ -1220,7 +1208,7 @@
             </button>
           </div>
 
-          <div id="transactions-list" class="space-y-4 pb-6"></div>
+          <div id="transactions-list" class="space-y-3 pb-6"></div>
         </div>
 
         <!-- 4. КОНТЕНТ ВКЛАДКИ «ГРАФИКИ» (АНАЛИТИКА) -->
