@@ -288,26 +288,24 @@ nav button:active,
   background: var(--surface-2) !important;
 }
 
-/* Выделение выбранной карточки при открытом меню действий или модальном окне */
+/* Выделение выбранной карточки при открытом меню действий или модальном окне (Zero Lag, Solid OLED) */
 .card.context-active,
 #transactions-list .card.context-active,
 #deposits-list .card.context-active,
 #goals-list .card.context-active,
 #budget-category-limits-list .card.context-active,
 [data-budget-cat].context-active {
-  background: rgba(108, 93, 211, 0.18) !important;
-  box-shadow:
-    inset 0 0 0 1.5px rgba(114, 124, 255, 0.75),
-    0 2px 14px rgba(108, 93, 211, 0.22) !important;
-  border-radius: 14px !important;
+  background: #151924 !important;
+  outline: 1.5px solid #2e384d !important;
+  outline-offset: -1.5px;
+  box-shadow: none !important;
   position: relative !important;
   z-index: 15 !important;
-  transition:
-    background-color 0.15s ease,
-    box-shadow 0.15s ease !important;
+  transition: background-color 0.1s ease !important;
 }
 
 .card.context-active .text-gray-200,
+.card.context-active .text-zinc-200,
 [data-budget-cat].context-active .text-gray-200 {
   color: #ffffff !important;
 }

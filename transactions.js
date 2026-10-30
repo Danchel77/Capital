@@ -129,12 +129,6 @@ function processTransactions(txs) {
       excludeFromBudget: isPending ? true : !!(tx.excludeFromBudget || tx.isExcludedFromBudget),
       isPendingTransfer: isPending,
       transferStatus: tx.transferStatus || (isPending ? 'pending' : 'confirmed'),
-      isBillPayment: !!tx.isBillPayment,
-      billId: tx.billId || null,
-      billName: tx.billName || '',
-      billType:
-        tx.billType || (tx.spreadMonths > 1 ? 'onetime' : tx.isBillPayment ? 'recurring' : ''),
-      spreadMonths: parseInt(tx.spreadMonths, 10) || 1,
       date: isoDateStr,
       rawDate: tx.rawDate || tx.date || isoDateStr,
       formattedDate: ruDateStr,
@@ -469,16 +463,6 @@ const TX_DAYS_PER_CHUNK = 8;
 
 function renderTxRowHtml(tx, largeThreshold, hasDynamicThreshold) {
   const isExp = tx.type === 'Расход';
-  const isOneTime =
-    tx.billType === 'onetime' ||
-    !!tx.fundingGoalId ||
-    (!tx.isBillPayment && !!tx.excludeFromBudget);
-  const isBill = !isOneTime && (!!tx.isBillPayment || (!!tx.billId && tx.billType !== 'onetime'));
-  const isAmortized = isOneTime && !!tx.excludeFromBudget;
-  const goalObj = tx.fundingGoalId
-    ? (Cache?.goals || []).find(g => g.id === tx.fundingGoalId)
-    : null;
-  const goalTitle = tx.fundingGoalName || (goalObj ? goalObj.name || goalObj.title : '') || '';
 
   let isTxMonthTracked = true;
   const pDate = typeof parseAnyDate === 'function' ? parseAnyDate(tx.date) : new Date(tx.date);
@@ -507,8 +491,6 @@ function renderTxRowHtml(tx, largeThreshold, hasDynamicThreshold) {
   const isPending = !!(tx.isPendingTransfer || tx.transferStatus === 'pending');
   const isLarge =
     isExp &&
-    !isAmortized &&
-    !isBill &&
     !isPending &&
     hasDynamicThreshold &&
     isTxMonthTracked &&
@@ -517,20 +499,8 @@ function renderTxRowHtml(tx, largeThreshold, hasDynamicThreshold) {
   let badgeHtml = '';
   if (isPending) {
     badgeHtml = `
-      <span class="h-5 px-1.5 rounded-md bg-[#6C5DD3]/20 text-[#A594FD] border border-[#6C5DD3]/30 text-[10px] font-bold flex items-center gap-1 flex-shrink-0 leading-none select-none">
+      <span class="h-5 px-1.5 rounded-md bg-[#1E2738] text-[#93C5FD] border border-[#232D3E] text-[10px] font-bold flex items-center gap-1 flex-shrink-0 leading-none select-none">
         <i data-lucide="arrow-left-right" class="w-2.5 h-2.5"></i>Перевод
-      </span>
-    `;
-  } else if (isBill) {
-    badgeHtml = `
-      <span class="h-5 px-1.5 rounded-md bg-[#6C5DD3]/15 text-[#a594fd] border border-[#6C5DD3]/25 text-[10px] font-medium flex items-center gap-1 flex-shrink-0 leading-none select-none" title="Ежемесячный счет: ${escapeHtml(tx.billName || 'Счет')}">
-        <i data-lucide="calendar" class="w-2.5 h-2.5"></i>Счет
-      </span>
-    `;
-  } else if (isAmortized) {
-    badgeHtml = `
-      <span class="h-5 px-1.5 rounded-md bg-amber-500/15 text-amber-300 border border-amber-500/25 text-[10px] font-medium flex items-center gap-1 flex-shrink-0 leading-none select-none" title="Разовая трата${goalTitle ? ' (списано из цели: ' + escapeHtml(goalTitle) + ')' : ''}">
-        <i data-lucide="sparkles" class="w-2.5 h-2.5 text-amber-400"></i>Разовая
       </span>
     `;
   } else if (isLarge) {

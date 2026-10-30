@@ -405,6 +405,16 @@ function switchTab(rawTab, options = false) {
       });
     }
   }
+
+  // Показ / скрытие подхедера «Список / Графики» для вкладки Аналитики
+  const txSubbar = document.getElementById('tx-view-subbar');
+  if (txSubbar) {
+    if (tab === 'transactions') {
+      txSubbar.classList.remove('hidden');
+    } else {
+      txSubbar.classList.add('hidden');
+    }
+  }
   if (activeNavBtn) {
     activeNavBtn.classList.remove('text-[#848D99]');
     activeNavBtn.classList.add('text-[#727cff]');

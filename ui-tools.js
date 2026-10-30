@@ -52,7 +52,7 @@ function disableSelectionMode() {
   const panel = document.getElementById('selection-panel');
   if (panel) panel.style.display = 'none';
   document.querySelectorAll('.card.selected').forEach(card => card.classList.remove('selected'));
-  document.querySelectorAll('.select-checkbox').forEach(cb => cb.checked = false);
+  document.querySelectorAll('.select-checkbox').forEach(cb => (cb.checked = false));
 }
 
 function toggleItemSelection(id, table) {
@@ -62,17 +62,17 @@ function toggleItemSelection(id, table) {
   } else {
     selectedItems.add(key);
   }
-  
+
   const card = document.querySelector(`.card[data-id="${id}"][data-table="${table}"]`);
   if (card) {
     card.classList.toggle('selected', selectedItems.has(key));
     const checkbox = card.querySelector('.select-checkbox');
     if (checkbox) checkbox.checked = selectedItems.has(key);
   }
-  
+
   const countEl = document.getElementById('selected-count');
   if (countEl) countEl.textContent = `Выбрано: ${selectedItems.size}`;
-  
+
   if (selectedItems.size === 0 && selectionMode) {
     disableSelectionMode();
   }
@@ -94,7 +94,8 @@ async function deleteSelectedItems() {
       });
 
       if (deletedTxIds.length > 0 && typeof handleTransactionsDeleted === 'function') {
-        const allTxs = typeof getAllCachedTransactionsFlat === 'function' ? getAllCachedTransactionsFlat() : [];
+        const allTxs =
+          typeof getAllCachedTransactionsFlat === 'function' ? getAllCachedTransactionsFlat() : [];
         const deletedTxs = allTxs.filter(t => deletedTxIds.includes(t.id));
 
         // Оптимистично удаляем из локального кэша транзакций
@@ -129,10 +130,10 @@ async function deleteSelectedItems() {
       await batch.commit();
       disableSelectionMode();
       await fetchAllData();
-      showToast("Выбранные записи удалены");
+      showToast('Выбранные записи удалены');
     } catch (e) {
       console.error('Ошибка удаления:', e);
-      showToast("Ошибка удаления", true);
+      showToast('Ошибка удаления', true);
     }
   });
 }
@@ -142,10 +143,26 @@ function attachSelectionPanelDirectEvents() {
   const deleteBtn = document.getElementById('delete-selected');
   if (!cancelBtn || !deleteBtn) return;
 
-  cancelBtn.onclick = (e) => { e.preventDefault(); e.stopPropagation(); cancelSelection(); };
-  cancelBtn.ontouchend = (e) => { e.preventDefault(); e.stopPropagation(); cancelSelection(); };
-  deleteBtn.onclick = (e) => { e.preventDefault(); e.stopPropagation(); deleteSelectedItems(); };
-  deleteBtn.ontouchend = (e) => { e.preventDefault(); e.stopPropagation(); deleteSelectedItems(); };
+  cancelBtn.onclick = e => {
+    e.preventDefault();
+    e.stopPropagation();
+    cancelSelection();
+  };
+  cancelBtn.ontouchend = e => {
+    e.preventDefault();
+    e.stopPropagation();
+    cancelSelection();
+  };
+  deleteBtn.onclick = e => {
+    e.preventDefault();
+    e.stopPropagation();
+    deleteSelectedItems();
+  };
+  deleteBtn.ontouchend = e => {
+    e.preventDefault();
+    e.stopPropagation();
+    deleteSelectedItems();
+  };
 }
 
 function cancelSelection() {
@@ -160,8 +177,10 @@ function startLongPress(card) {
   longPressTimer = setTimeout(() => {
     longPressTriggered = true;
     suppressClick = true;
-    setTimeout(() => { suppressClick = false; }, 400);
-    
+    setTimeout(() => {
+      suppressClick = false;
+    }, 400);
+
     // Снимаем возможное системное выделение текста в мобильном браузере
     if (window.getSelection) {
       window.getSelection().removeAllRanges();
@@ -175,14 +194,19 @@ function startLongPress(card) {
 function getEventTargetElement(target) {
   if (!target) return null;
   if (target.nodeType === 3) return target.parentElement; // TextNode
-  return (typeof target.closest === 'function') ? target : null;
+  return typeof target.closest === 'function' ? target : null;
 }
 
 function handleTouchStart(e) {
   const el = getEventTargetElement(e?.target);
   if (!el) return;
   // Касания по плавающей панели выбора, бейджам темпа целей, тултипам и карточкам лимитов не должны инициировать мультивыбор
-  if (el.closest('#selection-panel, .goal-pace-badge, .goal-pace-tooltip, #budget-categories-list, [data-budget-cat], .category-limit-card')) return;
+  if (
+    el.closest(
+      '#selection-panel, .goal-pace-badge, .goal-pace-tooltip, #budget-categories-list, [data-budget-cat], .category-limit-card'
+    )
+  )
+    return;
   const card = el.closest('[data-id][data-table]');
   if (!card || !card.dataset.id || !card.dataset.table) return;
   if (selectionMode) return;
@@ -206,7 +230,12 @@ function handleMouseDown(e) {
   if (e.button !== 0) return;
   const el = getEventTargetElement(e?.target);
   if (!el) return;
-  if (el.closest('#selection-panel, .goal-pace-badge, .goal-pace-tooltip, #budget-categories-list, [data-budget-cat], .category-limit-card')) return;
+  if (
+    el.closest(
+      '#selection-panel, .goal-pace-badge, .goal-pace-tooltip, #budget-categories-list, [data-budget-cat], .category-limit-card'
+    )
+  )
+    return;
   const card = el.closest('[data-id][data-table]');
   if (!card || !card.dataset.id || !card.dataset.table) return;
   if (selectionMode) return;
@@ -228,11 +257,11 @@ function handleMouseMove(e) {
 // ==========================================
 // 2. Context Menu (Контекстное меню)
 // ==========================================
-function openCardContextMenu(e, title, onEdit, onDelete, extraAction = null) {
+function openCardContextMenu(e, title, onEdit, onDelete, metaInfo = null) {
   if (selectionMode) {
     if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
     const el = getEventTargetElement(e?.target);
-    const card = e ? (e.currentTarget || (el && el.closest('.card'))) : null;
+    const card = e ? e.currentTarget || (el && el.closest('.card')) : null;
     if (card) {
       toggleItemSelection(card.dataset.id, card.dataset.table);
     }
@@ -247,13 +276,16 @@ function openCardContextMenu(e, title, onEdit, onDelete, extraAction = null) {
   const titleEl = document.getElementById('context-menu-title');
   const editBtn = document.getElementById('context-btn-edit');
   const deleteBtn = document.getElementById('context-btn-delete');
-  const amortizeBtn = document.getElementById('context-btn-amortize');
-  const amortizeText = document.getElementById('context-amortize-text');
-  const amortizeIcon = document.getElementById('context-amortize-icon');
+  const metaRow = document.getElementById('context-meta-row');
+  const authorLabel = document.getElementById('context-author-label');
+  const sourceBadge = document.getElementById('context-source-badge');
+  const sourceText = document.getElementById('context-source-text');
+  const rawTooltip = document.getElementById('context-raw-tooltip');
+  const rawTextEl = document.getElementById('context-raw-text');
   if (!menu) return;
 
   const el = getEventTargetElement(e?.target);
-  const card = e ? (e.currentTarget || (el && el.closest('.card'))) : null;
+  const card = e ? e.currentTarget || (el && el.closest('.card')) : null;
   if (!card) return;
 
   // Снимаем подсветку с предыдущей активной карточки, если была
@@ -284,21 +316,39 @@ function openCardContextMenu(e, title, onEdit, onDelete, extraAction = null) {
   }
 
   titleEl.innerText = title || 'Действия';
-  editBtn.onclick = (ev) => { if (ev) ev.stopPropagation(); triggerPopoverAction(editBtn, onEdit); };
-  deleteBtn.onclick = (ev) => { if (ev) ev.stopPropagation(); triggerPopoverAction(deleteBtn, onDelete); };
+  editBtn.onclick = ev => {
+    if (ev) ev.stopPropagation();
+    triggerPopoverAction(editBtn, onEdit);
+  };
+  deleteBtn.onclick = ev => {
+    if (ev) ev.stopPropagation();
+    triggerPopoverAction(deleteBtn, onDelete);
+  };
 
-  if (amortizeBtn) {
-    if (extraAction && typeof extraAction.handler === 'function') {
-      amortizeBtn.classList.remove('hidden');
-      amortizeBtn.classList.add('flex');
-      if (amortizeText) amortizeText.innerText = extraAction.label || 'Сделать разовой';
-      if (amortizeIcon && extraAction.icon) amortizeIcon.setAttribute('data-lucide', extraAction.icon);
-      amortizeBtn.onclick = (ev) => { if (ev) ev.stopPropagation(); triggerPopoverAction(amortizeBtn, extraAction.handler); };
-    } else {
-      amortizeBtn.classList.add('hidden');
-      amortizeBtn.classList.remove('flex');
-      amortizeBtn.onclick = null;
+  // Закрываем тултип при новом открытии меню
+  if (rawTooltip) rawTooltip.classList.add('hidden');
+
+  // Настройка мета-информации (источник, автор, тултип сырой записи)
+  if (metaRow && metaInfo) {
+    metaRow.classList.remove('hidden');
+    metaRow.classList.add('flex');
+    if (authorLabel) authorLabel.textContent = metaInfo.authorName || '';
+    if (sourceText) sourceText.textContent = metaInfo.sourceLabel || 'Запись';
+
+    if (sourceBadge && rawTooltip && rawTextEl && metaInfo.rawText) {
+      sourceBadge.classList.remove('hidden');
+      rawTextEl.textContent = metaInfo.rawText;
+      sourceBadge.onclick = ev => {
+        if (ev) ev.stopPropagation();
+        rawTooltip.classList.toggle('hidden');
+      };
+    } else if (sourceBadge) {
+      sourceBadge.classList.add('hidden');
+      sourceBadge.onclick = null;
     }
+  } else if (metaRow) {
+    metaRow.classList.add('hidden');
+    metaRow.classList.remove('flex');
   }
 
   menu.classList.remove('hidden');
@@ -306,16 +356,18 @@ function openCardContextMenu(e, title, onEdit, onDelete, extraAction = null) {
   menu.style.zIndex = '150';
   try {
     if (typeof lucide !== 'undefined') lucide.createIcons();
-  } catch (err) {}
+  } catch (_err) {
+    /* ignore */
+  }
 
   const rect = card.getBoundingClientRect();
-  const hasExtra = (extraAction && typeof extraAction.handler === 'function');
-  const menuHeight = menu.offsetHeight || (hasExtra ? 175 : 125);
-  const menuWidth = menu.offsetWidth || 200;
+  const hasMeta = Boolean(metaInfo);
+  const menuHeight = menu.offsetHeight || (hasMeta ? 150 : 115);
+  const menuWidth = menu.offsetWidth || 210;
 
   // Учитываем нижнюю панель навигации (nav) и границы вьюпорта
   const nav = document.querySelector('nav');
-  const navHeight = (nav && nav.offsetHeight > 0) ? nav.offsetHeight : 64;
+  const navHeight = nav && nav.offsetHeight > 0 ? nav.offsetHeight : 58;
   const bottomLimit = window.innerHeight - navHeight - 8;
   const topLimit = 10;
 
@@ -353,7 +405,9 @@ function closeCardContextMenu() {
     activeContextCard.classList.remove('context-active');
     activeContextCard = null;
   }
-  document.querySelectorAll('.card.context-active').forEach(el => el.classList.remove('context-active'));
+  document
+    .querySelectorAll('.card.context-active')
+    .forEach(el => el.classList.remove('context-active'));
 }
 
 // Скрытие тултипов графиков при клике в пустое место страницы или скролле
@@ -365,20 +419,27 @@ function hideAllChartTooltips(e) {
 
   const hasBrokerPopup = brokerPointPopup && !brokerPointPopup.classList.contains('hidden');
   const hasBrokerActive = brokerChart?.tooltip?.getActiveElements()?.length > 0;
-  const hasMonthlyActive = (monthlyChart?.getActiveElements()?.length > 0) || (monthlyChart?._activeElementKey != null);
-  const hasCatActive = (catChart?.getActiveElements()?.length > 0) || (catChart?._activeSliceIdx >= 0);
+  const hasMonthlyActive =
+    monthlyChart?.getActiveElements()?.length > 0 || monthlyChart?._activeElementKey != null;
+  const hasCatActive = catChart?.getActiveElements()?.length > 0 || catChart?._activeSliceIdx >= 0;
 
   if (!hasBrokerPopup && !hasBrokerActive && !hasMonthlyActive && !hasCatActive) {
     return;
   }
 
-  const isTargetInside = (selector) => e && e.target && e.target.closest && e.target.closest(selector);
+  const isTargetInside = selector =>
+    e && e.target && e.target.closest && e.target.closest(selector);
 
   // 1. График брокера и контекстный попап точки
   if (!isTargetInside('#brokerChart') && !isTargetInside('#broker-point-popup')) {
     if (typeof closeBrokerPointPopup === 'function') closeBrokerPointPopup();
   }
-  if (brokerChart && !isTargetInside('#brokerChart') && brokerChart.tooltip && brokerChart.tooltip.getActiveElements().length > 0) {
+  if (
+    brokerChart &&
+    !isTargetInside('#brokerChart') &&
+    brokerChart.tooltip &&
+    brokerChart.tooltip.getActiveElements().length > 0
+  ) {
     brokerChart.setActiveElements([]);
     brokerChart.tooltip.setActiveElements([], { x: 0, y: 0 });
     brokerChart.update('none');
@@ -396,7 +457,12 @@ function hideAllChartTooltips(e) {
   }
 
   // 3. Круговая диаграмма структуры категорий
-  if (catChart && !isTargetInside('#categoryExpensesChart') && !isTargetInside('#category-legend') && !isTargetInside('.donut-center')) {
+  if (
+    catChart &&
+    !isTargetInside('#categoryExpensesChart') &&
+    !isTargetInside('#category-legend') &&
+    !isTargetInside('.donut-center')
+  ) {
     if (catChart.getActiveElements().length > 0 || catChart._activeSliceIdx >= 0) {
       if (typeof window.resetCategoryDonutCenter === 'function') {
         window.resetCategoryDonutCenter();
@@ -426,8 +492,12 @@ function openCustomDatePicker(inputEl) {
   const picker = document.getElementById('custom-datepicker');
   if (!picker && !modal) return;
 
-  const currentVal = inputEl?.value ? (typeof parseAnyDate === 'function' ? parseAnyDate(inputEl.value) : new Date(inputEl.value)) : new Date();
-  currentPickerDate = (currentVal && !isNaN(currentVal.getTime())) ? currentVal : new Date();
+  const currentVal = inputEl?.value
+    ? typeof parseAnyDate === 'function'
+      ? parseAnyDate(inputEl.value)
+      : new Date(inputEl.value)
+    : new Date();
+  currentPickerDate = currentVal && !isNaN(currentVal.getTime()) ? currentVal : new Date();
 
   renderCustomDatePicker();
 
@@ -462,7 +532,9 @@ function openCustomDatePicker(inputEl) {
 
   try {
     if (typeof lucide !== 'undefined') lucide.createIcons();
-  } catch (err) {}
+  } catch (_err) {
+    /* ignore */
+  }
 }
 
 function closeCustomDatePicker() {
@@ -480,7 +552,20 @@ function closeCustomDatePicker() {
 }
 
 function renderCustomDatePicker() {
-  const monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+  const monthNames = [
+    'Январь',
+    'Февраль',
+    'Март',
+    'Апрель',
+    'Май',
+    'Июнь',
+    'Июль',
+    'Август',
+    'Сентябрь',
+    'Октябрь',
+    'Ноябрь',
+    'Декабрь',
+  ];
   const label = document.getElementById('datepicker-month-year');
   const grid = document.getElementById('datepicker-days-grid');
   if (!label || !grid) return;
@@ -504,7 +589,7 @@ function renderCustomDatePicker() {
     const monthStr = String(month + 1).padStart(2, '0');
     const fullDate = `${year}-${monthStr}-${dayStr}`;
     const fullDateRu = `${dayStr}.${monthStr}.${year}`;
-    const isSelected = (selectedDateStr === fullDate || selectedDateStr === fullDateRu);
+    const isSelected = selectedDateStr === fullDate || selectedDateStr === fullDateRu;
 
     html += `
       <button type="button" onclick="applyCustomDate('${fullDate}')" class="h-8 rounded-lg flex items-center justify-center transition-all cursor-pointer font-medium ${isSelected ? 'bg-[#6C5DD3] text-white font-bold' : 'hover:bg-[#212430] text-gray-300'}">
@@ -517,13 +602,17 @@ function renderCustomDatePicker() {
 
 function applyCustomDate(dateStr) {
   if (activeDateInput) {
-    const isNativeDate = (activeDateInput.type === 'date');
-    const formatted = (typeof formatDateStr === 'function') ? formatDateStr(dateStr, isNativeDate ? 'yyyy-MM-dd' : 'dd.MM.yyyy') : dateStr;
+    const isNativeDate = activeDateInput.type === 'date';
+    const formatted =
+      typeof formatDateStr === 'function'
+        ? formatDateStr(dateStr, isNativeDate ? 'yyyy-MM-dd' : 'dd.MM.yyyy')
+        : dateStr;
     activeDateInput.value = formatted;
 
     const label = document.getElementById('edit-tx-date-label');
     if (label && activeDateInput.id === 'edit-tx-date') {
-      label.innerText = (typeof formatDateStr === 'function') ? formatDateStr(dateStr, 'dd.MM.yyyy') : dateStr;
+      label.innerText =
+        typeof formatDateStr === 'function' ? formatDateStr(dateStr, 'dd.MM.yyyy') : dateStr;
     }
 
     activeDateInput.dispatchEvent(new Event('change'));
@@ -596,7 +685,7 @@ function parseManualDate(str) {
     year = currentPickerDate.getFullYear() || now.getFullYear();
   } else if (parts.length === 1 && clean.length <= 2) {
     day = parseInt(parts[0], 10);
-    month = (currentPickerDate.getMonth() + 1) || (now.getMonth() + 1);
+    month = currentPickerDate.getMonth() + 1 || now.getMonth() + 1;
     year = currentPickerDate.getFullYear() || now.getFullYear();
   } else if (clean.length === 8) {
     day = parseInt(clean.slice(0, 2), 10);
@@ -639,7 +728,8 @@ function selectCustomDatePickerToday() {
 // ==========================================
 // Управление информационным окном импорта PDF
 function openPdfInfoModal(forceShow = false) {
-  const showPdfInfo = Cache?.settings?.showPdfInfo !== undefined ? Cache.settings.showPdfInfo : true;
+  const showPdfInfo =
+    Cache?.settings?.showPdfInfo !== undefined ? Cache.settings.showPdfInfo : true;
   if (!forceShow && !showPdfInfo) {
     triggerPdfFileInput();
     return;
@@ -678,79 +768,99 @@ setTimeout(setupCustomDatePickers, 500);
 
 // При скролле страницы мягко скрываем только контекстное мини-меню карточек
 let lastScrollY = window.scrollY || window.pageYOffset || 0;
-window.addEventListener('scroll', () => {
-  const curY = window.scrollY || window.pageYOffset || 0;
-  if (Math.abs(curY - lastScrollY) > 16) {
-    lastScrollY = curY;
-    closeCardContextMenu();
-    hideAllChartTooltips();
-  }
-}, { passive: true });
+window.addEventListener(
+  'scroll',
+  () => {
+    const curY = window.scrollY || window.pageYOffset || 0;
+    if (Math.abs(curY - lastScrollY) > 16) {
+      lastScrollY = curY;
+      closeCardContextMenu();
+      hideAllChartTooltips();
+    }
+  },
+  { passive: true }
+);
 
 // Перехват нативного календаря Android / iOS (Capture phase)
-document.addEventListener('click', (e) => {
-  const el = getEventTargetElement(e?.target);
-  if (!el) return;
-  const dateInput = el.closest('input[type="date"], input[data-datepicker]');
-  if (dateInput) {
-    e.preventDefault();
-    e.stopPropagation();
-    dateInput.readOnly = true;
-    dateInput.setAttribute('inputmode', 'none');
-    dateInput.blur();
-    openCustomDatePicker(dateInput, e);
-  }
-}, true);
-
-document.addEventListener('pointerdown', (e) => {
-  const el = getEventTargetElement(e?.target);
-  if (!el) return;
-  const dateInput = el.closest('input[type="date"], input[data-datepicker]');
-  if (dateInput) {
-    dateInput.readOnly = true;
-    dateInput.setAttribute('inputmode', 'none');
-  }
-}, true);
-
-// Перехват кликов в capture-фазе: гарантированная блокировка действий при мультивыборе
-document.addEventListener('click', (e) => {
-  // 1. Подавление синтетического клика сразу после долгого нажатия
-  if (suppressClick) {
-    e.preventDefault();
-    e.stopImmediatePropagation();
-    suppressClick = false;
-    return;
-  }
-
-  // 2. Блокировщик действий в режиме мультивыбора
-  if (selectionMode) {
+document.addEventListener(
+  'click',
+  e => {
     const el = getEventTargetElement(e?.target);
     if (!el) return;
+    const dateInput = el.closest('input[type="date"], input[data-datepicker]');
+    if (dateInput) {
+      e.preventDefault();
+      e.stopPropagation();
+      dateInput.readOnly = true;
+      dateInput.setAttribute('inputmode', 'none');
+      dateInput.blur();
+      openCustomDatePicker(dateInput, e);
+    }
+  },
+  true
+);
 
-    // Клики по кнопкам самой панели мультивыбора, кастомным диалогам и модальным окнам не блокируем
-    if (el.closest('#selection-panel, #custom-dialog, [id$="-dialog"], [id$="-modal"], .dialog, .modal')) {
+document.addEventListener(
+  'pointerdown',
+  e => {
+    const el = getEventTargetElement(e?.target);
+    if (!el) return;
+    const dateInput = el.closest('input[type="date"], input[data-datepicker]');
+    if (dateInput) {
+      dateInput.readOnly = true;
+      dateInput.setAttribute('inputmode', 'none');
+    }
+  },
+  true
+);
+
+// Перехват кликов в capture-фазе: гарантированная блокировка действий при мультивыборе
+document.addEventListener(
+  'click',
+  e => {
+    // 1. Подавление синтетического клика сразу после долгого нажатия
+    if (suppressClick) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      suppressClick = false;
       return;
     }
 
-    // Клик по любой карточке сущности (транзакция, брокер, вклад, счет, цель)
-    const card = el.closest('.card, [data-table]');
-    if (card && card.dataset.id && card.dataset.table) {
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      toggleItemSelection(card.dataset.id, card.dataset.table);
-      return;
-    }
+    // 2. Блокировщик действий в режиме мультивыбора
+    if (selectionMode) {
+      const el = getEventTargetElement(e?.target);
+      if (!el) return;
 
-    // Блокируем любые сторонние клики по кнопкам, ссылкам и onclick при активном мультивыборе
-    if (el.closest('button, a, [onclick], .cursor-pointer')) {
-      e.preventDefault();
-      e.stopImmediatePropagation();
+      // Клики по кнопкам самой панели мультивыбора, кастомным диалогам и модальным окнам не блокируем
+      if (
+        el.closest(
+          '#selection-panel, #custom-dialog, [id$="-dialog"], [id$="-modal"], .dialog, .modal'
+        )
+      ) {
+        return;
+      }
+
+      // Клик по любой карточке сущности (транзакция, брокер, вклад, счет, цель)
+      const card = el.closest('.card, [data-table]');
+      if (card && card.dataset.id && card.dataset.table) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        toggleItemSelection(card.dataset.id, card.dataset.table);
+        return;
+      }
+
+      // Блокируем любые сторонние клики по кнопкам, ссылкам и onclick при активном мультивыборе
+      if (el.closest('button, a, [onclick], .cursor-pointer')) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+      }
     }
-  }
-}, true);
+  },
+  true
+);
 
 // Глобальный клик: мультиселект, закрытие меню и тултипов
-document.addEventListener('click', (e) => {
+document.addEventListener('click', e => {
   const el = getEventTargetElement(e?.target);
   if (!el) return;
 
@@ -767,34 +877,49 @@ document.addEventListener('click', (e) => {
   }
 
   // 2. Закрытие контекстного мини-меню карточки при клике мимо карточки и поповера
-  if (activeContextCard && !el.closest('#card-context-menu') && !el.closest('.context-menu-btn') && !el.closest('.card') && !el.closest('[data-table]')) {
+  if (
+    activeContextCard &&
+    !el.closest('#card-context-menu') &&
+    !el.closest('.context-menu-btn') &&
+    !el.closest('.card') &&
+    !el.closest('[data-table]')
+  ) {
     closeCardContextMenu();
   }
 
   // 3. Закрытие DatePicker при клике вне модального окна календаря
   const modal = document.getElementById('custom-datepicker-modal');
   const picker = document.getElementById('custom-datepicker');
-  const isDatepickerOpen = (modal && !modal.classList.contains('hidden')) || (picker && !picker.classList.contains('hidden'));
+  const isDatepickerOpen =
+    (modal && !modal.classList.contains('hidden')) ||
+    (picker && !picker.classList.contains('hidden'));
   if (isDatepickerOpen) {
-    if (!el.closest('#custom-datepicker-modal') && 
-        !el.closest('#custom-datepicker') && 
-        !el.closest('input[type="date"]') && 
-        !el.closest('input[data-datepicker]') && 
-        !el.closest('[data-datepicker]') && 
-        !el.closest('#edit-tx-date-btn') && 
-        !el.closest('#edit-dep-start') && 
-        !el.closest('#edit-dep-end') && 
-        !el.closest('#edit-broker-date') && 
-        !el.closest('.tx-date') && 
-        !el.closest('[onclick*="openCustomDatePicker"]')) {
+    if (
+      !el.closest('#custom-datepicker-modal') &&
+      !el.closest('#custom-datepicker') &&
+      !el.closest('input[type="date"]') &&
+      !el.closest('input[data-datepicker]') &&
+      !el.closest('[data-datepicker]') &&
+      !el.closest('#edit-tx-date-btn') &&
+      !el.closest('#edit-dep-start') &&
+      !el.closest('#edit-dep-end') &&
+      !el.closest('#edit-broker-date') &&
+      !el.closest('.tx-date') &&
+      !el.closest('[onclick*="openCustomDatePicker"]')
+    ) {
       closeCustomDatePicker();
     }
   }
 
   // 4. Закрытие всех кастомных выпадающих меню при клике мимо (не закрывать при работе с дейтпикером)
-  if (!el.closest('.custom-dropdown-wrap') && !el.closest('.custom-dropdown-menu') && !el.closest('#custom-datepicker') && !el.closest('#custom-datepicker-modal')) {
+  if (
+    !el.closest('.custom-dropdown-wrap') &&
+    !el.closest('.custom-dropdown-menu') &&
+    !el.closest('#custom-datepicker') &&
+    !el.closest('#custom-datepicker-modal')
+  ) {
     document.querySelectorAll('.custom-dropdown-menu').forEach(m => m.classList.add('hidden'));
-    document.querySelectorAll('.tx-item').forEach(r => r.style.zIndex = '');
+    document.querySelectorAll('.tx-item').forEach(r => (r.style.zIndex = ''));
   }
 
   // 5. Закрытие тултипов на графиках
@@ -841,8 +966,12 @@ document.addEventListener('mousemove', handleMouseMove);
     // Если фокуса на инпутах нет, обновляем базовую высоту экрана (например, при загрузке или смене ориентации)
     const activeEl = document.activeElement;
     const activeTag = activeEl ? activeEl.tagName : '';
-    const isEditing = activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT' || (activeEl && activeEl.isContentEditable);
-    
+    const isEditing =
+      activeTag === 'INPUT' ||
+      activeTag === 'TEXTAREA' ||
+      activeTag === 'SELECT' ||
+      (activeEl && activeEl.isContentEditable);
+
     if (!isEditing && curHeight > baseHeight * 0.85) {
       baseHeight = Math.max(baseHeight, curHeight);
     }
@@ -873,17 +1002,25 @@ document.addEventListener('mousemove', handleMouseMove);
     }, 200);
   });
 
-  document.addEventListener('focusin', () => {
-    checkHeight();
-    setTimeout(checkHeight, 100);
-    setTimeout(checkHeight, 250);
-    setTimeout(checkHeight, 450);
-  }, { passive: true });
+  document.addEventListener(
+    'focusin',
+    () => {
+      checkHeight();
+      setTimeout(checkHeight, 100);
+      setTimeout(checkHeight, 250);
+      setTimeout(checkHeight, 450);
+    },
+    { passive: true }
+  );
 
-  document.addEventListener('focusout', () => {
-    setTimeout(checkHeight, 80);
-    setTimeout(checkHeight, 250);
-  }, { passive: true });
+  document.addEventListener(
+    'focusout',
+    () => {
+      setTimeout(checkHeight, 80);
+      setTimeout(checkHeight, 250);
+    },
+    { passive: true }
+  );
 
   setInterval(checkHeight, 350);
   checkHeight();

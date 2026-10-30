@@ -822,6 +822,31 @@
       </div>
     </header>
 
+    <!-- ПОДХЕДЕР: Закрепленная полоса переключателя «Список / Графики» (видна только на вкладке Аналитики) -->
+    <div
+      id="tx-view-subbar"
+      class="hidden sticky top-[52px] z-[9] bg-[#0E1016] border-b border-[#1E222D] px-4 py-2"
+    >
+      <div class="max-w-[760px] mx-auto">
+        <div class="view-switcher m-0">
+          <button
+            id="view-list-btn"
+            onclick="switchTransactionView('list')"
+            class="view-switcher__btn is-active"
+          >
+            Список
+          </button>
+          <button
+            id="view-chart-btn"
+            onclick="switchTransactionView('chart')"
+            class="view-switcher__btn"
+          >
+            Графики
+          </button>
+        </div>
+      </div>
+    </div>
+
     <main id="app-content" class="p-3.5 sm:p-4 pb-20 sm:pb-16">
       <!-- ЭКРАН БЮДЖЕТА (ГЛАВНЫЙ ЭКРАН УПРАВЛЕНИЯ ФИНАНСАМИ) -->
       <div id="budget-tab" class="tab-pane space-y-4">
@@ -979,32 +1004,14 @@
       </div>
 
       <!-- ЭКРАН ТРАНЗАКЦИЙ -->
-      <div id="transactions-tab" class="tab-pane space-y-2.5 hidden">
-        <!-- 1. Компактный переключатель вида: Список / Графики -->
-        <div class="view-switcher">
-          <button
-            id="view-list-btn"
-            onclick="switchTransactionView('list')"
-            class="view-switcher__btn is-active"
-          >
-            Список
-          </button>
-          <button
-            id="view-chart-btn"
-            onclick="switchTransactionView('chart')"
-            class="view-switcher__btn"
-          >
-            Графики
-          </button>
-        </div>
-
-        <!-- 2. Равносильные кнопки добавления операций и импорта выписки (50/50) -->
+      <div id="transactions-tab" class="tab-pane space-y-3 hidden">
+        <!-- 1. Равносильные кнопки добавления операций и импорта выписки (50/50) -->
         <div id="tx-top-actions" class="grid grid-cols-2 gap-2">
           <!-- Кнопка добавления операций вручную -->
           <button
             type="button"
             onclick="toggleForm('tx-form-container', 'tx-submit-btn', 'Сохранить', 'tx-form', 'tx')"
-            class="btn-secondary py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] cursor-pointer shadow-sm text-white"
+            class="btn-secondary py-2.5 px-3 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] cursor-pointer shadow-sm text-white"
             title="Добавить операцию вручную"
           >
             <i data-lucide="plus" class="w-4 h-4 text-white"></i>
@@ -1015,7 +1022,7 @@
           <button
             type="button"
             onclick="openPdfInfoModal()"
-            class="btn-secondary py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] cursor-pointer shadow-sm text-white"
+            class="btn-secondary py-2.5 px-3 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] cursor-pointer shadow-sm text-white"
           >
             <i data-lucide="file-up" class="w-4 h-4 text-white"></i>
             <span>Импорт PDF</span>
@@ -1032,8 +1039,8 @@
           />
         </div>
 
-        <!-- 3. Панель «Фильтры и Сводка» (Чистый плоский блок без матрешки) -->
-        <div class="space-y-2">
+        <!-- 2. Панель «Фильтры и Сводка» с разделительной линией снизу -->
+        <div class="space-y-2.5 pb-3 border-b border-[#1E222D]">
           <!-- Верхний ряд: Меню фильтрации + кнопка поиска -->
           <div id="tx-filter-bar" class="flex gap-2 items-center">
             <!-- Меню выбора месяца -->
@@ -6036,32 +6043,57 @@
       </div>
     </div>
     <!-- ПЛАВАЮЩЕЕ КОНТЕКСТНОЕ МИНИ-МЕНЮ (ПОЯВЛЯЕТСЯ ПРЯМО У КАРТОЧКИ) -->
-    <div id="card-context-menu" class="card-context-menu hidden flex flex-col p-1.5">
-      <div
-        id="context-menu-title"
-        class="px-3 py-2 text-xs font-semibold text-gray-400 border-b border-[rgba(255,255,255,0.06)] truncate mb-1"
-      >
-        Действия
+    <div
+      id="card-context-menu"
+      class="card-context-menu hidden flex flex-col p-1.5 min-w-[210px] bg-[#0E1016] border border-[#1E222D] shadow-2xl rounded-2xl z-[150]"
+    >
+      <!-- Шапка с мета-информацией карточки -->
+      <div id="context-menu-header" class="px-3 py-2 border-b border-[#1E222D] mb-1">
+        <div id="context-menu-title" class="text-xs font-semibold text-white truncate">
+          Действия
+        </div>
+        <!-- Мета-строка источника и автора с тултипом -->
+        <div
+          id="context-meta-row"
+          class="hidden flex items-center justify-between gap-1.5 mt-1 text-[11px] text-zinc-400"
+        >
+          <span id="context-author-label" class="truncate font-medium text-zinc-300"></span>
+          <button
+            type="button"
+            id="context-source-badge"
+            class="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded bg-[#181C26] text-zinc-300 border border-[#282E3E] cursor-pointer hover:text-white transition-colors"
+          >
+            <span id="context-source-text">Выписка</span>
+            <i data-lucide="info" class="w-2.5 h-2.5 text-zinc-400"></i>
+          </button>
+        </div>
       </div>
+
+      <!-- Всплывающий тултип оригинального текста выписки / пуша -->
+      <div
+        id="context-raw-tooltip"
+        class="hidden absolute left-2 right-2 bottom-full mb-1.5 bg-[#151924] border border-[#2E384D] text-zinc-200 text-[10px] p-2.5 rounded-xl shadow-2xl leading-relaxed z-[160] max-h-36 overflow-y-auto font-mono select-text"
+      >
+        <div
+          class="text-[9px] uppercase font-bold text-zinc-400 mb-1 font-sans flex items-center justify-between"
+        >
+          <span>Оригинальная запись</span>
+          <span class="text-[8px] text-zinc-500 lowercase font-mono">raw</span>
+        </div>
+        <p id="context-raw-text" class="break-words text-zinc-300"></p>
+      </div>
+
       <button
         type="button"
         id="context-btn-edit"
-        class="context-menu-btn w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-[#212430] text-[13px] font-medium text-gray-200 transition-colors cursor-pointer text-left"
+        class="context-menu-btn w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-[#181C26] text-[13px] font-medium text-zinc-200 hover:text-white transition-colors cursor-pointer text-left"
       >
-        <i data-lucide="pencil" class="w-4 h-4 text-[#848D99]"></i> Редактировать
-      </button>
-      <button
-        type="button"
-        id="context-btn-amortize"
-        class="context-menu-btn w-full hidden items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-[#212430] text-[13px] font-medium text-amber-300 transition-colors cursor-pointer text-left"
-      >
-        <i id="context-amortize-icon" data-lucide="sparkles" class="w-4 h-4 text-amber-400"></i>
-        <span id="context-amortize-text">Сделать разовой</span>
+        <i data-lucide="pencil" class="w-4 h-4 text-zinc-400"></i> Редактировать
       </button>
       <button
         type="button"
         id="context-btn-delete"
-        class="context-menu-btn w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-[#FF453A]/10 text-[13px] font-medium text-[#FF453A] transition-colors cursor-pointer text-left"
+        class="context-menu-btn w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-[#2A151B] text-[13px] font-medium text-rose-400 transition-colors cursor-pointer text-left"
       >
         <i data-lucide="trash-2" class="w-4 h-4"></i> Удалить
       </button>

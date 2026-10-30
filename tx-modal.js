@@ -1641,31 +1641,33 @@ function openTxContextMenu(e, txId) {
   }
   if (!tx) return;
 
-  const isExp = tx.type === 'Расход';
-  let extraAction = null;
-
-  if (isExp) {
-    if (tx.excludeFromBudget) {
-      extraAction = {
-        label: 'Вернуть в лимит',
-        icon: 'rotate-ccw',
-        handler: () => returnTxToBudget(txId),
-      };
-    } else {
-      extraAction = {
-        label: 'Сделать разовой',
-        icon: 'sparkles',
-        handler: () => openQuickAmortizeModal(txId),
-      };
-    }
+  // Формируем мета-информацию (источник, автор, оригинальный текст)
+  let sourceLabel = 'Вручную';
+  let rawText = tx.comment || tx.rawText || tx.description || '';
+  if (tx.source === 'bank_push' || tx.source === 'bank_push_auto') {
+    sourceLabel = tx.bank ? `Пуш (${tx.bank})` : 'Пуш';
+    rawText =
+      tx.rawText || tx.pushText || tx.comment || 'Оригинальный текст пуш-уведомления отсутствует';
+  } else if (tx.source === 'pdf_statement' || tx.source === 'statement') {
+    sourceLabel = tx.bank ? `Выписка (${tx.bank})` : 'Выписка';
+    rawText =
+      tx.rawText || tx.rawLine || tx.comment || 'Оригинальная строка из выписки отсутствует';
   }
+
+  const authorName = tx.author || tx.authorName || tx.userName || '';
+
+  const metaInfo = {
+    sourceLabel,
+    authorName,
+    rawText,
+  };
 
   openCardContextMenu(
     e,
-    tx.category,
+    `${tx.category || 'Операция'} · ${formatMoney(tx.amount)}`,
     () => openEditTxModal(txId),
     () => deleteRecord('Transactions', txId),
-    extraAction
+    metaInfo
   );
 }
 
@@ -2006,6 +2008,7 @@ window.learnMerchantCategory = learnMerchantCategory;
 window.openCreateTxModal = openCreateTxModal;
 window.closeCreateTxModal = closeCreateTxModal;
 window.openEditTxModal = openEditTxModal;
+window.openQuickAmortizeModal = openQuickAmortizeModal;
 window.selectEditTxType = selectEditTxType;
 window.selectEditTxCategory = selectEditTxCategory;
 window.toggleEditTxAmortize = toggleEditTxAmortize;
