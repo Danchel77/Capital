@@ -3283,10 +3283,10 @@
     <!-- Модальное окно предпросмотра сырых данных PDF -->
     <div
       id="pdf-debug-dialog"
-      class="fixed inset-0 bg-black/85 z-[130] hidden flex flex-col justify-center items-center p-3 sm:p-4 backdrop-blur-sm animate-fade-in"
+      class="fixed inset-0 bg-black/85 z-[130] hidden flex flex-col justify-end sm:justify-center items-center p-0 sm:p-4 backdrop-blur-sm animate-fade-in"
     >
       <div
-        class="bg-[#0E1016] border border-white/[0.08] w-full max-w-2xl rounded-3xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden"
+        class="bg-[#0E1016] border border-white/[0.08] w-full max-w-2xl rounded-t-[28px] sm:rounded-3xl shadow-2xl flex flex-col h-[92vh] max-h-[92vh] sm:h-[88vh] overflow-hidden"
       >
         <!-- Фиксированная только верхняя шапка выписки (заголовок, информация и кнопки) -->
         <div class="p-3.5 sm:p-4 border-b border-white/[0.06] bg-[#0E1016] z-20 flex-shrink-0">
@@ -3406,8 +3406,8 @@
               <b id="pdf-stat-count" class="text-white font-semibold font-mono">0 из 0</b>
             </div>
             <div class="flex flex-col sm:flex-row items-center justify-center gap-1 text-[11px]">
-              <span class="text-rose-400">Расход:</span>
-              <b id="pdf-stat-exp" class="text-rose-400 font-semibold font-mono">0 ₽</b>
+              <span class="text-zinc-400">Расход:</span>
+              <b id="pdf-stat-exp" class="text-white font-semibold font-mono">0 ₽</b>
             </div>
             <div class="flex flex-col sm:flex-row items-center justify-center gap-1 text-[11px]">
               <span class="text-emerald-400">Доход:</span>
@@ -3421,78 +3421,91 @@
             class="hidden flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 w-full"
           ></div>
 
-          <!-- Панель управления фильтрами и контекстным выделением (в один ряд) -->
-          <div class="flex items-center gap-1.5 w-full pt-0.5">
-            <div
-              class="flex-1 grid grid-cols-4 bg-[#12151C] p-1 rounded-2xl border border-white/[0.06] gap-1"
-            >
-              <button
-                type="button"
-                id="tab-import-new"
-                onclick="setImportFilter('new')"
-                class="py-1.5 px-1.5 rounded-xl font-semibold bg-white/[0.12] text-white text-xs transition-all cursor-pointer flex flex-col items-center justify-center leading-tight text-center shadow-sm"
-              >
-                <span class="text-[11px] sm:text-xs">Новые</span>
-                <span
-                  id="tab-count-new"
-                  class="opacity-75 font-mono font-normal text-[10px] sm:text-[11px]"
-                  >0</span
-                >
-              </button>
-              <button
-                type="button"
-                id="tab-import-transfers"
-                onclick="setImportFilter('transfers')"
-                class="py-1.5 px-1.5 rounded-xl font-medium text-zinc-400 hover:text-white text-xs transition-all cursor-pointer flex flex-col items-center justify-center leading-tight text-center"
-              >
-                <span class="text-[11px] sm:text-xs">Переводы</span>
-                <span
-                  id="tab-count-transfers"
-                  class="opacity-75 font-mono font-normal text-[10px] sm:text-[11px]"
-                  >0</span
-                >
-              </button>
-              <button
-                type="button"
-                id="tab-import-dupes"
-                onclick="setImportFilter('dupes')"
-                class="py-1.5 px-1.5 rounded-xl font-medium text-zinc-400 hover:text-white text-xs transition-all cursor-pointer flex flex-col items-center justify-center leading-tight text-center"
-              >
-                <span class="text-[11px] sm:text-xs">В базе</span>
-                <span
-                  id="tab-count-dupes"
-                  class="opacity-75 font-mono font-normal text-[10px] sm:text-[11px]"
-                  >0</span
-                >
-              </button>
-              <button
-                type="button"
-                id="tab-import-all"
-                onclick="setImportFilter('all')"
-                class="py-1.5 px-1.5 rounded-xl font-medium text-zinc-400 hover:text-white text-xs transition-all cursor-pointer flex flex-col items-center justify-center leading-tight text-center"
-              >
-                <span class="text-[11px] sm:text-xs">Все</span>
-                <span
-                  id="tab-count-all"
-                  class="opacity-75 font-mono font-normal text-[10px] sm:text-[11px]"
-                  >0</span
-                >
-              </button>
-            </div>
-
-            <!-- Компактная кнопка контекстного массового выбора в текущей вкладке (45px высоты сэкономлено) -->
+          <!-- Панель фильтров по категориям операций (на всю ширину) -->
+          <div
+            class="w-full grid grid-cols-4 bg-[#12151C] p-1 rounded-2xl border border-white/[0.06] gap-1"
+          >
             <button
               type="button"
-              id="btn-select-all-new"
-              onclick="toggleSelectCurrentFilter()"
-              class="w-11 self-stretch rounded-2xl bg-[#12151C] hover:bg-white/[0.08] border border-white/[0.06] hover:border-white/20 text-zinc-400 hover:text-white flex items-center justify-center flex-shrink-0 transition-all cursor-pointer active:scale-95 shadow-sm group"
-              title="Выбрать / снять все в текущей вкладке"
+              id="tab-import-new"
+              onclick="setImportFilter('new')"
+              class="py-1.5 px-1.5 rounded-xl font-semibold bg-white/[0.12] text-white text-xs transition-all cursor-pointer flex flex-col items-center justify-center leading-tight text-center shadow-sm"
             >
-              <i
-                data-lucide="check-check"
-                class="w-4 h-4 transition-transform group-hover:scale-110"
-              ></i>
+              <span class="text-[11px] sm:text-xs">Новые</span>
+              <span
+                id="tab-count-new"
+                class="opacity-75 font-mono font-normal text-[10px] sm:text-[11px]"
+                >0</span
+              >
             </button>
+            <button
+              type="button"
+              id="tab-import-transfers"
+              onclick="setImportFilter('transfers')"
+              class="py-1.5 px-1.5 rounded-xl font-medium text-zinc-400 hover:text-white text-xs transition-all cursor-pointer flex flex-col items-center justify-center leading-tight text-center"
+            >
+              <span class="text-[11px] sm:text-xs">Переводы</span>
+              <span
+                id="tab-count-transfers"
+                class="opacity-75 font-mono font-normal text-[10px] sm:text-[11px]"
+                >0</span
+              >
+            </button>
+            <button
+              type="button"
+              id="tab-import-dupes"
+              onclick="setImportFilter('dupes')"
+              class="py-1.5 px-1.5 rounded-xl font-medium text-zinc-400 hover:text-white text-xs transition-all cursor-pointer flex flex-col items-center justify-center leading-tight text-center"
+            >
+              <span class="text-[11px] sm:text-xs">В базе</span>
+              <span
+                id="tab-count-dupes"
+                class="opacity-75 font-mono font-normal text-[10px] sm:text-[11px]"
+                >0</span
+              >
+            </button>
+            <button
+              type="button"
+              id="tab-import-all"
+              onclick="setImportFilter('all')"
+              class="py-1.5 px-1.5 rounded-xl font-medium text-zinc-400 hover:text-white text-xs transition-all cursor-pointer flex flex-col items-center justify-center leading-tight text-center"
+            >
+              <span class="text-[11px] sm:text-xs">Все</span>
+              <span
+                id="tab-count-all"
+                class="opacity-75 font-mono font-normal text-[10px] sm:text-[11px]"
+                >0</span
+              >
+            </button>
+          </div>
+
+          <!-- Строка контекстного массового выбора прямо над списком транзакций (Вариант Б) -->
+          <div
+            id="statement-select-all-bar"
+            onclick="toggleSelectCurrentFilter()"
+            class="flex items-center justify-between px-3 py-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.04] transition-all cursor-pointer select-none group"
+          >
+            <div class="flex items-center gap-2.5 min-w-0">
+              <input
+                type="checkbox"
+                id="chk-select-all-filter"
+                class="w-4 h-4 rounded bg-white/[0.05] border-white/20 accent-white text-zinc-950 flex-shrink-0 cursor-pointer pointer-events-auto"
+                onclick="event.stopPropagation()"
+                onchange="toggleSelectCurrentFilter()"
+              />
+              <span
+                id="label-select-all-filter"
+                class="text-xs font-medium text-zinc-300 group-hover:text-white transition-colors truncate"
+              >
+                Выбрать все (0)
+              </span>
+            </div>
+            <span
+              id="selected-summary-filter"
+              class="text-[11px] font-mono text-zinc-500 flex-shrink-0"
+            >
+              0 выбрано
+            </span>
           </div>
 
           <!-- Контейнер карточек сверки сомнительных дублей от нейросети (Level 3 AI Review) -->

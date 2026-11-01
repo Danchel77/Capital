@@ -3872,11 +3872,11 @@ function renderFilteredRows(transactions) {
     const isExp = tx.type === 'Расход';
     const amountSign = isExp ? '-' : '+';
 
-    // Цвет суммы: для дублей приглушенный, для расхода - rose (красный в тон сводке), для дохода - emerald (зеленый)
+    // Цвет суммы: для дублей приглушенный, для расхода - чистый белый (канон Capital без стрессового красного), для дохода - изумрудный зеленый (+)
     const amountColor = tx.isDuplicate
       ? 'text-zinc-500 font-semibold'
       : isExp
-        ? 'text-rose-400 font-bold'
+        ? 'text-white font-semibold'
         : 'text-emerald-400 font-bold';
 
     // Стилизация фона и рамки карточки (без вредного opacity):
@@ -4412,10 +4412,39 @@ function renderParsedTransactionsView(loadedStatementsOrFileName, transactions, 
     if (tabTransfers) tabTransfers.style.display = transfersCount > 0 ? 'flex' : 'none';
     if (tabDupes) tabDupes.style.display = dupesCount > 0 ? 'flex' : 'none';
 
-    // Обновляем состояние кнопки контекстного массового выбора в текущей вкладке
+    // Обновляем планку массового выбора в текущей вкладке (Вариант Б: чекбокс над списком транзакций)
+    const selectAllBar = document.getElementById('statement-select-all-bar');
+    const selectAllChk = document.getElementById('chk-select-all-filter');
+    const selectAllLabel = document.getElementById('label-select-all-filter');
+    const selectedSummary = document.getElementById('selected-summary-filter');
+    const visibleTxs = getCurrentlyVisibleTransactions();
+
+    if (selectAllBar) {
+      if (visibleTxs.length === 0) {
+        selectAllBar.style.display = 'none';
+      } else {
+        selectAllBar.style.display = 'flex';
+        const selectedVisibleCount = visibleTxs.filter(t => t.selected).length;
+        const allSelected = selectedVisibleCount === visibleTxs.length;
+        const someSelected = selectedVisibleCount > 0 && !allSelected;
+
+        if (selectAllChk) {
+          selectAllChk.checked = allSelected;
+          selectAllChk.indeterminate = someSelected;
+        }
+        if (selectAllLabel) {
+          selectAllLabel.innerText = allSelected
+            ? `Снять выделение (${visibleTxs.length})`
+            : `Выбрать все (${visibleTxs.length})`;
+        }
+        if (selectedSummary) {
+          selectedSummary.innerText = `${selectedVisibleCount} из ${visibleTxs.length} выбрано`;
+        }
+      }
+    }
+
     const selectAllBtn = document.getElementById('btn-select-all-new');
     if (selectAllBtn) {
-      const visibleTxs = getCurrentlyVisibleTransactions();
       const allSelected = visibleTxs.length > 0 && visibleTxs.every(t => t.selected);
       if (allSelected) {
         selectAllBtn.className =
