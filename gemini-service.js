@@ -6,13 +6,12 @@
 
 class GeminiService {
   constructor() {
-    this.primaryModel = 'gemini-3.8-flash';
+    this.primaryModel = 'gemini-3.5-flash-lite';
     this.fallbackModels = [
-      'gemini-3.6-flash',
-      'gemini-3.5-flash-lite',
-      'gemini-3-flash-preview',
+      'gemini-3-flash-lite',
       'gemini-2.5-flash-lite',
-      'gemini-2.5-flash',
+      'gemini-3-flash-preview',
+      'gemini-3.6-flash',
     ];
     this.apiBaseUrl = 'https://generativelanguage.googleapis.com/v1beta/models';
     this.lastError = null;
@@ -192,24 +191,28 @@ class GeminiService {
         )
         .map(m => (m.name || '').replace(/^models\//, ''));
 
-      // Приоритетный поиск современных Flash-моделей
+      // Приоритетный поиск быстрых и экономичных Lite-моделей
       const preferredOrder = [
-        'gemini-3.8-flash',
-        'gemini-3.6-flash',
         'gemini-3.5-flash-lite',
-        'gemini-3-flash-preview',
+        'gemini-3-flash-lite',
         'gemini-2.5-flash-lite',
-        'gemini-2.5-flash',
+        'gemini-3-flash-preview',
+        'gemini-3.6-flash',
       ];
 
       let selectedModel = preferredOrder.find(m => supportedModels.includes(m));
 
-      // Если точного совпадения нет, берем любую модель с "flash" в названии
+      // Если точного совпадения нет, сначала ищем любую Lite-модель
+      if (!selectedModel) {
+        selectedModel = supportedModels.find(m => m.toLowerCase().includes('lite'));
+      }
+
+      // Затем любую Flash-модель
       if (!selectedModel) {
         selectedModel = supportedModels.find(m => m.toLowerCase().includes('flash'));
       }
 
-      // Если нет flash, берем первую доступную для генерации
+      // Если нет flash/lite, берем первую доступную для генерации
       if (!selectedModel && supportedModels.length > 0) {
         selectedModel = supportedModels[0];
       }
