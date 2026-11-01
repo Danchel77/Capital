@@ -800,19 +800,15 @@ function selectCustomDatePickerToday() {
 // ==========================================
 // 4. PDF Import (Модалка и загрузка)
 // ==========================================
-// Управление информационным окном импорта PDF
-function openPdfInfoModal(forceShow = false) {
-  const showPdfInfo =
-    Cache?.settings?.showPdfInfo !== undefined ? Cache.settings.showPdfInfo : true;
-  if (!forceShow && !showPdfInfo) {
-    triggerPdfFileInput();
-    return;
-  }
+// Управление окном импорта PDF и стейджинга
+function openPdfInfoModal() {
   const dlg = document.getElementById('pdf-info-dialog');
   if (dlg) {
     dlg.classList.remove('hidden');
-    if (typeof renderBankIcons === 'function') renderBankIcons();
-    if (typeof lucide !== 'undefined') lucide.createIcons();
+    if (typeof renderStagedFilesUI === 'function') {
+      renderStagedFilesUI();
+    }
+    if (typeof lucide !== 'undefined') lucide.createIcons({ root: dlg });
   }
 }
 
@@ -822,9 +818,21 @@ function closePdfInfoModal() {
 }
 
 function triggerPdfFileInput() {
-  closePdfInfoModal();
   const fileInput = document.getElementById('pdf-file-input');
   if (fileInput) fileInput.click();
+}
+
+function openStatementHelpModal() {
+  const dlg = document.getElementById('statement-help-dialog');
+  if (dlg) {
+    dlg.classList.remove('hidden');
+    if (typeof lucide !== 'undefined') lucide.createIcons({ root: dlg });
+  }
+}
+
+function closeStatementHelpModal() {
+  const dlg = document.getElementById('statement-help-dialog');
+  if (dlg) dlg.classList.add('hidden');
 }
 
 function triggerPdfImportFromWizard() {
@@ -1132,4 +1140,6 @@ window.selectCustomDatePickerToday = selectCustomDatePickerToday;
 window.openPdfInfoModal = openPdfInfoModal;
 window.closePdfInfoModal = closePdfInfoModal;
 window.triggerPdfFileInput = triggerPdfFileInput;
+window.openStatementHelpModal = openStatementHelpModal;
+window.closeStatementHelpModal = closeStatementHelpModal;
 window.triggerPdfImportFromWizard = triggerPdfImportFromWizard;

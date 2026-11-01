@@ -1035,7 +1035,7 @@
             accept="application/pdf"
             multiple
             class="hidden"
-            onchange="handleStatementUpload(event)"
+            onchange="handleStatementFilesSelected(event)"
           />
         </div>
 
@@ -1964,204 +1964,183 @@
       </div>
     </template>
 
-    <!-- ИНФОРМАЦИОННОЕ ОКНО ПЕРЕД ЗАГРУЗКОЙ ВЫПИСКИ -->
+    <!-- НОВОЕ МОДАЛЬНОЕ ОКНО ИМПОРТА И СТЕЙДЖИНГА ВЫПИСОК (OBSIDIAN MINIMALIST) -->
     <div
       id="pdf-info-dialog"
-      class="fixed inset-0 bg-black/80 z-[140] hidden flex flex-col justify-center items-center p-4 backdrop-blur-sm animate-fade-in"
+      class="fixed inset-0 bg-black/85 z-[140] hidden flex flex-col justify-center items-center p-3.5 sm:p-4 backdrop-blur-sm animate-fade-in"
+      onclick="if (event.target === this) closePdfInfoModal();"
     >
       <div
-        class="bg-[#181B24] border border-[rgba(255,255,255,0.08)] w-full max-w-sm rounded-3xl p-5 shadow-2xl flex flex-col overflow-hidden relative"
+        class="bg-[#0E1016] border border-white/[0.08] w-full max-w-sm sm:max-w-md rounded-3xl p-4 sm:p-5 shadow-2xl flex flex-col overflow-hidden relative max-h-[92vh]"
       >
         <!-- Шапка -->
         <div
-          class="flex items-center justify-between pb-3 mb-3 border-b border-[rgba(255,255,255,0.06)]"
+          class="flex items-center justify-between pb-3 mb-2.5 border-b border-white/[0.06] flex-shrink-0"
         >
-          <div class="flex items-center gap-2.5">
+          <div class="flex items-center gap-2.5 min-w-0">
             <div
-              class="w-8 h-8 rounded-xl bg-[#6C5DD3]/15 text-[#8C7DFF] flex items-center justify-center"
+              class="w-8 h-8 rounded-xl bg-white/[0.05] border border-white/[0.08] text-white flex items-center justify-center flex-shrink-0"
             >
               <i data-lucide="file-text" class="w-4 h-4"></i>
             </div>
-            <h3 class="font-bold text-white text-base">Импорт выписки</h3>
+            <h3 class="font-bold text-white text-base truncate">Импорт выписки</h3>
           </div>
-          <button
-            type="button"
-            onclick="closePdfInfoModal()"
-            class="w-7 h-7 rounded-full bg-[#212430] text-gray-400 hover:text-white flex items-center justify-center cursor-pointer text-sm"
-          >
-            ✕
-          </button>
-        </div>
-
-        <!-- Приватность (Security guarantee) -->
-        <div
-          class="bg-[#12151C] border border-[rgba(48,209,88,0.15)] rounded-2xl p-3 mb-2.5 flex items-start gap-2.5"
-        >
-          <div
-            class="w-6 h-6 rounded-lg bg-[#30D158]/15 text-[#30D158] flex items-center justify-center flex-shrink-0 mt-0.5"
-          >
-            <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
-          </div>
-          <div class="text-[11px] text-gray-300 leading-snug">
-            <b class="text-[#30D158] font-semibold block mb-0.5">100% локальная обработка</b>
-            Файлы никуда не передаются и не загружаются на сервер. Обработка выписок происходит
-            прямо в вашем браузере.
+          <div class="flex items-center gap-1.5 flex-shrink-0">
+            <button
+              type="button"
+              onclick="openStatementHelpModal()"
+              class="text-xs text-zinc-400 hover:text-white flex items-center gap-1 transition-colors px-2 py-1 rounded-lg hover:bg-white/[0.05] cursor-pointer"
+              title="Инструкция как получить выписку"
+            >
+              <i data-lucide="help-circle" class="w-3.5 h-3.5 text-zinc-400"></i>
+              <span>Где взять?</span>
+            </button>
+            <button
+              type="button"
+              onclick="closePdfInfoModal()"
+              class="w-7 h-7 rounded-full bg-white/[0.05] border border-white/[0.08] text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors active:scale-95"
+              title="Закрыть"
+            >
+              <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
           </div>
         </div>
 
-        <!-- Пометка о возможности мультизагрузки -->
-        <div
-          class="bg-[#12151C] border border-[rgba(108,93,211,0.25)] rounded-2xl p-3 mb-4 flex items-start gap-2.5"
-        >
-          <div
-            class="w-6 h-6 rounded-lg bg-[#6C5DD3]/15 text-[#8C7DFF] flex items-center justify-center flex-shrink-0 mt-0.5"
-          >
-            <i data-lucide="layers" class="w-3.5 h-3.5"></i>
-          </div>
-          <div class="text-[11px] text-gray-300 leading-snug">
-            <b class="text-white font-semibold block mb-0.5">Загрузка нескольких выписок за раз</b>
-            Вы можете выбрать сразу несколько PDF-файлов (разных банков или за разные периоды). Они
-            автоматически распознаются и объединятся в единый список с фильтром по банку.
-          </div>
-        </div>
-
-        <!-- Поддерживаемые банки -->
-        <p class="text-[10px] uppercase font-bold tracking-wider text-[#848D99] mb-2 px-1">
-          Поддерживаемые банки
+        <!-- Описание процесса без нейрослопа -->
+        <p class="text-xs text-zinc-400 leading-snug px-0.5 mb-3 flex-shrink-0">
+          Файл выписки считывается локально на устройстве. ИИ используется только для очистки
+          названий операций и проверки дубликатов.
         </p>
 
-        <div class="grid grid-cols-2 gap-2 mb-5">
-          <!-- Сбербанк -->
-          <button
-            type="button"
-            onclick="openBankGuide('SBER')"
-            class="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-[#12151C] hover:bg-[#212430] border border-[rgba(255,255,255,0.04)] hover:border-[rgba(255,255,255,0.12)] transition-all cursor-pointer text-left group active:scale-95"
+        <!-- Фаза А: Файлы еще не выбраны (пустое состояние) -->
+        <div
+          id="statement-staging-empty"
+          class="flex flex-col items-center justify-center py-7 px-4 rounded-2xl bg-[#12151C] border border-dashed border-white/15 hover:border-white/30 transition-all text-center cursor-pointer active:scale-[0.99] mb-3 group"
+          onclick="triggerPdfFileInput()"
+        >
+          <div
+            class="w-12 h-12 rounded-2xl bg-white/[0.05] border border-white/[0.08] text-zinc-300 group-hover:text-white flex items-center justify-center transition-transform group-hover:scale-105 mb-2.5"
           >
-            <div class="flex items-center gap-2.5 min-w-0">
-              <div
-                data-bank-icon="sber"
-                class="w-7 h-7 flex items-center justify-center flex-shrink-0"
-              ></div>
-              <span class="text-xs font-semibold text-white truncate">Сбербанк</span>
-            </div>
-            <i
-              data-lucide="help-circle"
-              class="w-4 h-4 text-[#848D99] group-hover:text-[#8C7DFF] flex-shrink-0 transition-colors"
-            ></i>
-          </button>
-
-          <!-- Яндекс Банк -->
-          <button
-            type="button"
-            onclick="openBankGuide('YANDEX')"
-            class="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-[#12151C] hover:bg-[#212430] border border-[rgba(255,255,255,0.04)] hover:border-[rgba(255,255,255,0.12)] transition-all cursor-pointer text-left group active:scale-95"
+            <i data-lucide="files" class="w-6 h-6"></i>
+          </div>
+          <span class="text-sm font-semibold text-white mb-0.5">Выбрать PDF-выписки</span>
+          <span class="text-xs text-zinc-400 max-w-[240px]"
+            >Нажмите для выбора одного или нескольких файлов</span
           >
-            <div class="flex items-center gap-2.5 min-w-0">
-              <div
-                data-bank-icon="yandex"
-                class="w-7 h-7 flex items-center justify-center flex-shrink-0"
-              ></div>
-              <span class="text-xs font-semibold text-white truncate">Яндекс Банк</span>
-            </div>
-            <i
-              data-lucide="help-circle"
-              class="w-4 h-4 text-[#848D99] group-hover:text-[#8C7DFF] flex-shrink-0 transition-colors"
-            ></i>
-          </button>
-
-          <!-- Газпромбанк -->
-          <button
-            type="button"
-            onclick="openBankGuide('GPB')"
-            class="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-[#12151C] hover:bg-[#212430] border border-[rgba(255,255,255,0.04)] hover:border-[rgba(255,255,255,0.12)] transition-all cursor-pointer text-left group active:scale-95"
-          >
-            <div class="flex items-center gap-2.5 min-w-0">
-              <div
-                data-bank-icon="gpb"
-                class="w-7 h-7 flex items-center justify-center flex-shrink-0"
-              ></div>
-              <span class="text-xs font-semibold text-white truncate">Газпромбанк</span>
-            </div>
-            <i
-              data-lucide="help-circle"
-              class="w-4 h-4 text-[#848D99] group-hover:text-[#8C7DFF] flex-shrink-0 transition-colors"
-            ></i>
-          </button>
-
-          <!-- Озон Банк -->
-          <button
-            type="button"
-            onclick="openBankGuide('OZON')"
-            class="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-[#12151C] hover:bg-[#212430] border border-[rgba(255,255,255,0.04)] hover:border-[rgba(255,255,255,0.12)] transition-all cursor-pointer text-left group active:scale-95"
-          >
-            <div class="flex items-center gap-2.5 min-w-0">
-              <div
-                data-bank-icon="ozon"
-                class="w-7 h-7 flex items-center justify-center flex-shrink-0"
-              ></div>
-              <span class="text-xs font-semibold text-white truncate">Озон Банк</span>
-            </div>
-            <i
-              data-lucide="help-circle"
-              class="w-4 h-4 text-[#848D99] group-hover:text-[#8C7DFF] flex-shrink-0 transition-colors"
-            ></i>
-          </button>
         </div>
 
-        <!-- Кнопка выбора файла -->
-        <button
-          type="button"
-          onclick="triggerPdfFileInput()"
-          class="w-full bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white py-3.5 rounded-xl text-xs font-semibold shadow-lg shadow-[#6C5DD3]/20 flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer"
+        <!-- Фаза Б: Список выбранных файлов (3-колоночная сетка) -->
+        <div
+          id="statement-staging-wrap"
+          class="hidden flex-col min-h-0 flex-1 overflow-hidden mb-3"
         >
-          <i data-lucide="files" class="w-4 h-4"></i> Выбрать PDF-выписки
-        </button>
+          <div class="flex items-center justify-between px-1 mb-2 flex-shrink-0">
+            <span class="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">
+              Выбранные файлы (<span id="statement-staging-count">0</span>)
+            </span>
+            <button
+              type="button"
+              onclick="clearAllStagedFiles()"
+              class="text-[11px] text-zinc-400 hover:text-rose-400 transition-colors cursor-pointer"
+            >
+              Очистить все
+            </button>
+          </div>
+
+          <!-- Контейнер 3-колоночной сетки с прокруткой -->
+          <div
+            id="statement-staging-grid"
+            class="grid grid-cols-3 gap-2 overflow-y-auto max-h-[46vh] pr-0.5 py-0.5"
+          >
+            <!-- Карточки генерируются динамически через renderStagedFilesUI() -->
+          </div>
+        </div>
+
+        <!-- Нижняя панель действий -->
+        <div class="pt-2 border-t border-white/[0.06] flex-shrink-0">
+          <button
+            type="button"
+            id="statement-start-parse-btn"
+            onclick="startProcessingStagedFiles()"
+            class="w-full h-11 btn-primary rounded-xl text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer shadow-sm transition-all active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none"
+            disabled
+          >
+            <i data-lucide="sparkles" class="w-4 h-4"></i>
+            <span id="statement-parse-btn-text">Распознать операции</span>
+          </button>
+        </div>
       </div>
     </div>
 
-    <!-- Модальное окно подсказки по выписке банка -->
+    <!-- УНИВЕРСАЛЬНАЯ ПАМЯТКА: ГДЕ ВЗЯТЬ ВЫПИСКУ БАНКА -->
     <div
-      id="bank-guide-dialog"
-      class="fixed inset-0 bg-black/80 z-[160] hidden flex flex-col justify-center items-center p-4 backdrop-blur-sm animate-fade-in"
+      id="statement-help-dialog"
+      class="fixed inset-0 bg-black/85 z-[150] hidden flex flex-col justify-center items-center p-4 backdrop-blur-sm animate-fade-in"
+      onclick="if (event.target === this) closeStatementHelpModal();"
     >
       <div
-        class="bg-[#181B24] border border-[rgba(255,255,255,0.08)] w-full max-w-sm rounded-3xl p-5 shadow-2xl flex flex-col overflow-hidden relative"
+        class="bg-[#0E1016] border border-white/[0.08] w-full max-w-sm rounded-3xl p-5 shadow-2xl flex flex-col relative"
       >
-        <div
-          class="flex items-center justify-between pb-3 mb-3 border-b border-[rgba(255,255,255,0.06)]"
-        >
+        <div class="flex items-center justify-between pb-3 mb-3 border-b border-white/[0.06]">
           <div class="flex items-center gap-2.5">
             <div
-              id="bank-guide-icon"
-              class="w-7 h-7 flex items-center justify-center flex-shrink-0"
-            ></div>
-            <h3 id="bank-guide-title" class="font-bold text-white text-base">Инструкция</h3>
+              class="w-7 h-7 rounded-lg bg-white/[0.05] border border-white/[0.08] text-white flex items-center justify-center"
+            >
+              <i data-lucide="help-circle" class="w-4 h-4"></i>
+            </div>
+            <h3 class="font-bold text-white text-base">Где взять выписку</h3>
           </div>
           <button
             type="button"
-            onclick="closeBankGuide()"
-            class="w-7 h-7 rounded-full bg-[#212430] text-gray-400 hover:text-white flex items-center justify-center cursor-pointer text-sm"
+            onclick="closeStatementHelpModal()"
+            class="w-7 h-7 rounded-full bg-white/[0.05] border border-white/[0.08] text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors active:scale-95"
           >
-            ✕
+            <i data-lucide="x" class="w-4 h-4"></i>
           </button>
         </div>
 
-        <div class="bg-[#12151C] border border-[rgba(255,255,255,0.06)] rounded-2xl p-3 mb-3">
-          <span class="text-[10px] uppercase font-bold tracking-wider text-[#848D99] block mb-1"
-            >Нужный документ</span
+        <div class="space-y-2.5 mb-4 text-xs">
+          <div
+            class="flex items-start gap-2.5 p-2.5 rounded-xl bg-[#12151C] border border-white/[0.05]"
           >
-          <div id="bank-guide-doc" class="text-xs font-semibold text-[#6C5DD3]"></div>
+            <span
+              class="w-5 h-5 rounded-full bg-white/10 text-white text-[11px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5"
+              >1</span
+            >
+            <span class="text-zinc-300 leading-snug"
+              >Откройте мобильное приложение вашего банка и перейдите в нужную карту или счет.</span
+            >
+          </div>
+          <div
+            class="flex items-start gap-2.5 p-2.5 rounded-xl bg-[#12151C] border border-white/[0.05]"
+          >
+            <span
+              class="w-5 h-5 rounded-full bg-white/10 text-white text-[11px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5"
+              >2</span
+            >
+            <span class="text-zinc-300 leading-snug"
+              >Найдите раздел <b>«Выписки и справки»</b> (обычно в меню карты или внизу
+              истории).</span
+            >
+          </div>
+          <div
+            class="flex items-start gap-2.5 p-2.5 rounded-xl bg-[#12151C] border border-white/[0.05]"
+          >
+            <span
+              class="w-5 h-5 rounded-full bg-white/10 text-white text-[11px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5"
+              >3</span
+            >
+            <span class="text-zinc-300 leading-snug"
+              >Выберите выписку по операциям за нужный период и сохраните в формате
+              <b>PDF</b>.</span
+            >
+          </div>
         </div>
-
-        <p class="text-[10px] uppercase font-bold tracking-wider text-[#848D99] mb-2 px-1">
-          Как заказать в приложении
-        </p>
-        <div id="bank-guide-steps" class="space-y-2 mb-4"></div>
 
         <button
           type="button"
-          onclick="closeBankGuide()"
-          class="w-full bg-[#212430] hover:bg-[#2A2D3C] text-white py-3 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+          onclick="closeStatementHelpModal()"
+          class="w-full btn-secondary py-2.5 rounded-xl text-xs font-semibold"
         >
           Понятно
         </button>
@@ -4370,36 +4349,6 @@
                   type="checkbox"
                   id="toggle-broker-setting"
                   onchange="toggleBrokerSetting(this.checked)"
-                  class="sr-only peer"
-                />
-                <div
-                  class="w-11 h-6 bg-[#2A2D3C] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-[#30D158] after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"
-                ></div>
-              </div>
-            </label>
-
-            <!-- Информационное окно при импорте выписок -->
-            <label
-              class="flex items-center justify-between p-3 sm:p-3.5 cursor-pointer hover:bg-white/[0.01] transition-colors"
-            >
-              <div class="flex items-center gap-3">
-                <div class="p-2 rounded-xl bg-amber-500/15 text-amber-400">
-                  <i data-lucide="file-text" class="w-4 h-4 sm:w-5 sm:h-5"></i>
-                </div>
-                <div class="text-left">
-                  <span class="text-[14px] sm:text-[15px] font-medium text-gray-200 block"
-                    >Подсказка при импорте PDF</span
-                  >
-                  <span class="text-[11px] text-[#848D99] leading-tight block mt-0.5"
-                    >Показывать памятку перед выбором выписки</span
-                  >
-                </div>
-              </div>
-              <div class="relative inline-flex items-center flex-shrink-0">
-                <input
-                  type="checkbox"
-                  id="toggle-pdf-info-setting"
-                  onchange="togglePdfInfoSetting(this.checked)"
                   class="sr-only peer"
                 />
                 <div

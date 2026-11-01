@@ -562,13 +562,6 @@ function openProfileModal() {
     toggle.checked = !!Cache?.settings?.showBroker;
   }
 
-  // Обновляем состояние чекбокса инфо-окна PDF
-  const togglePdf = document.getElementById('toggle-pdf-info-setting');
-  if (togglePdf) {
-    togglePdf.checked =
-      Cache?.settings?.showPdfInfo !== undefined ? !!Cache.settings.showPdfInfo : true;
-  }
-
   // Обновляем видимость пунктов установки, виджетов и пушей
   const pwaBtn = document.getElementById('profile-install-app-btn');
   const widgetsBtn = document.getElementById('profile-widgets-btn');
@@ -1869,28 +1862,6 @@ async function toggleBrokerSetting(enable) {
     Cache.settings.showBroker = enable;
 
     applyBrokerVisibility(enable);
-  } catch (e) {
-    showToast('Ошибка сохранения: ' + e.message, true);
-  }
-}
-
-async function togglePdfInfoSetting(enable) {
-  const user = auth.currentUser;
-  if (!user) return;
-
-  try {
-    await db
-      .collection('users')
-      .doc(user.uid)
-      .set(
-        {
-          settings: { showPdfInfo: enable },
-        },
-        { merge: true }
-      );
-
-    if (!Cache.settings) Cache.settings = {};
-    Cache.settings.showPdfInfo = enable;
   } catch (e) {
     showToast('Ошибка сохранения: ' + e.message, true);
   }

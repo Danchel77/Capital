@@ -2821,53 +2821,9 @@ window.registerBankAdapter = registerBankAdapter;
 
 const BANK_REGISTRY = window.BANK_REGISTRY;
 
-function openBankGuide(bankIdentifier) {
-  const bank = BANK_REGISTRY.find(
-    b => b.id === bankIdentifier || b.iconKey === bankIdentifier || b.slug === bankIdentifier
-  );
-  if (!bank || !bank.guide) return;
-
-  const dialog = document.getElementById('bank-guide-dialog');
-  const titleEl = document.getElementById('bank-guide-title');
-  const docEl = document.getElementById('bank-guide-doc');
-  const stepsEl = document.getElementById('bank-guide-steps');
-  const iconContainer = document.getElementById('bank-guide-icon');
-
-  if (!dialog || !titleEl || !docEl || !stepsEl) return;
-
-  titleEl.textContent = bank.name;
-  docEl.textContent = bank.guide.doc;
-
-  if (iconContainer) {
-    iconContainer.setAttribute('data-bank-icon', bank.iconKey || bank.slug);
-  }
-
-  stepsEl.innerHTML = bank.guide.steps
-    .map(
-      (step, idx) => `
-    <div class="flex items-start gap-2.5 p-2.5 rounded-xl bg-[#12151C] border border-[rgba(255,255,255,0.03)]">
-      <span class="w-5 h-5 rounded-full bg-[#6C5DD3]/20 text-[#6C5DD3] text-[11px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">${idx + 1}</span>
-      <span class="text-xs text-gray-300 leading-snug">${escapeHtml(step)}</span>
-    </div>
-  `
-    )
-    .join('');
-
-  dialog.classList.remove('hidden');
-
-  if (typeof renderBankIcons === 'function') {
-    renderBankIcons();
-  }
-  if (typeof lucide !== 'undefined') {
-    lucide.createIcons();
-  }
-}
-
-function closeBankGuide() {
-  const dialog = document.getElementById('bank-guide-dialog');
-  if (dialog) dialog.classList.add('hidden');
-}
-
+// Устаревшие гайды конкретных банков заменены на единую универсальную памятку
+function openBankGuide() {}
+function closeBankGuide() {}
 window.openBankGuide = openBankGuide;
 window.closeBankGuide = closeBankGuide;
 
@@ -3025,20 +2981,346 @@ class StatementDispatcher {
 }
 
 // -------------------------------------------------------------
-// 3. UI-ОБРАБОТЧИК И ВЫВОД РЕЗУЛЬТАТА (МУЛЬТИЗАГРУЗКА ВЫПИСОК)
+// 3. UI-ОБРАБОТЧИК И СТЕЙДЖИНГ ВЫПИСОК (МУЛЬТИЗАГРУЗКА И ПРЕВЬЮ)
 // -------------------------------------------------------------
-async function handleStatementUpload(event) {
-  const files = Array.from(event.target.files || []);
-  if (files.length === 0) return;
+let _stagedPdfFiles = [];
 
-  const pdfFiles = files.filter(
+/**
+ * Обработка выбора файлов в инпуте: добавление в очередь стейджинга и рендер превью
+ */
+async function handleStatementFilesSelected(event) {
+  const fileList = Array.from(event.target.files || []);
+  if (fileList.length === 0) return;
+
+  const pdfFiles = fileList.filter(
     f => f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf')
   );
   if (pdfFiles.length === 0) {
-    showToast('Пожалуйста, выберите файлы в формате PDF', true);
+    if (typeof showToast === 'function') {
+      showToast('Пожалуйста, выберите файлы в формате PDF', true);
+    }
     event.target.value = '';
     return;
   }
+
+  // Очищаем значение, чтобы повторный выбор тех же файлов вызывал change
+  event.target.value = '';
+
+  for (const file of pdfFiles) {
+    if (_stagedPdfFiles.some(f => f.file.name === file.name && f.file.size === file.size)) {
+      continue;
+    }
+    const item = {
+      id: 'staged_' + Math.random().toString(36).substring(2, 9),
+      file,
+      name: file.name,
+      size: file.size,
+      thumbUrl: null,
+      bankName: 'Выписка',
+      bankIconKey: 'generic',
+      isValid: true,
+      errorMsg: '',
+      loading: true,
+    };
+    _stagedPdfFiles.push(item);
+  }
+
+  renderStagedFilesUI();
+
+  // Фоново генерируем миниатюры первой страницы и определяем банк
+  for (const item of _stagedPdfFiles) {
+    if (!item.loading) continue;
+    await processSingleStagedThumbnail(item);
+    renderStagedFilesUI();
+  }
+}
+
+/**
+ * Рендерит миниатюру первой страницы A4 через PDF.js и определяет валидность документа
+ */
+async function processSingleStagedThumbnail(item) {
+  try {
+    if (!window.pdfjsLib) {
+      item.loading = false;
+      return;
+    }
+    const arrayBuffer = await item.file.arrayBuffer();
+    const pdfDoc = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    if (!pdfDoc || pdfDoc.numPages < 1) {
+      item.isValid = false;
+      item.errorMsg = 'Пустой PDF';
+      item.bankName = 'Ошибка';
+      item.loading = false;
+      return;
+    }
+
+    const page = await pdfDoc.getPage(1);
+
+    // 1. Рендеринг миниатюры первой страницы в Canvas
+    const unscaledViewport = page.getViewport({ scale: 1.0 });
+    const targetWidth = 200;
+    const scale = targetWidth / unscaledViewport.width;
+    const viewport = page.getViewport({ scale });
+
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(viewport.width);
+    canvas.height = Math.round(viewport.height);
+    const ctx = canvas.getContext('2d', { alpha: false });
+    if (ctx) {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      await page.render({ canvasContext: ctx, viewport }).promise;
+      item.thumbUrl = canvas.toDataURL('image/jpeg', 0.8);
+    }
+
+    // 2. Быстрый анализ текста первой страницы
+    const textContent = await page.getTextContent();
+    const rawLines = [];
+    let currentLine = [];
+    let currentY = null;
+    const Y_TOLERANCE = 3.5;
+
+    for (const it of textContent.items) {
+      const str = (it.str || '').trim();
+      if (!str) continue;
+      const y = it.transform[5];
+      if (currentY === null || Math.abs(y - currentY) <= Y_TOLERANCE) {
+        currentLine.push(str);
+        if (currentY === null) currentY = y;
+      } else {
+        if (currentLine.length > 0) rawLines.push(currentLine.join(' '));
+        currentLine = [str];
+        currentY = y;
+      }
+    }
+    if (currentLine.length > 0) rawLines.push(currentLine.join(' '));
+
+    const text = rawLines.join(' ').toLowerCase();
+
+    // Определение банка через BANK_REGISTRY
+    let detectedBank = null;
+    if (window.BANK_REGISTRY && Array.isArray(window.BANK_REGISTRY)) {
+      for (const adapter of window.BANK_REGISTRY) {
+        if (typeof adapter.detect === 'function' && adapter.detect(text)) {
+          detectedBank = adapter;
+          break;
+        }
+      }
+    }
+    if (!detectedBank && typeof StatementDispatcher !== 'undefined') {
+      const generic = StatementDispatcher.detectGenericBank(text, rawLines);
+      if (generic && generic.name !== 'Банк (универсальный)') {
+        detectedBank = generic;
+      }
+    }
+
+    if (detectedBank) {
+      item.bankName = detectedBank.name;
+      item.bankIconKey = detectedBank.iconKey || detectedBank.slug || 'generic';
+    } else {
+      item.bankName = 'Выписка';
+      item.bankIconKey = 'generic';
+    }
+
+    // Проверка, является ли документ реальной финансовой выпиской
+    const hasDates = /\d{2}\.\d{2}\.\d{2,4}/.test(text);
+    const hasAmounts = /[\d\s\xa0]+[.,]\d{2}/.test(text);
+    const hasStatementKeywords =
+      text.includes('выписка') ||
+      text.includes('операци') ||
+      text.includes('движени') ||
+      text.includes('дебет') ||
+      text.includes('кредит') ||
+      text.includes('остаток') ||
+      text.includes('справка') ||
+      text.includes('платеж') ||
+      text.includes('покупк') ||
+      text.includes('счет') ||
+      text.includes('карт');
+
+    if (!hasDates || !hasAmounts || !hasStatementKeywords) {
+      item.isValid = false;
+      item.errorMsg = 'Не выписка';
+      item.bankName = 'Не выписка';
+    } else {
+      item.isValid = true;
+    }
+  } catch (err) {
+    console.warn('Ошибка генерации превью для ' + item.name, err);
+    item.isValid = false;
+    item.errorMsg = 'Ошибка PDF';
+    item.bankName = 'Ошибка';
+  } finally {
+    item.loading = false;
+  }
+}
+
+/**
+ * Отрисовка 3-колоночной сетки карточек документов в стейджинге
+ */
+function renderStagedFilesUI() {
+  const emptyBox = document.getElementById('statement-staging-empty');
+  const wrapBox = document.getElementById('statement-staging-wrap');
+  const grid = document.getElementById('statement-staging-grid');
+  const countEl = document.getElementById('statement-staging-count');
+  const parseBtn = document.getElementById('statement-start-parse-btn');
+  const parseBtnText = document.getElementById('statement-parse-btn-text');
+
+  if (!grid || !wrapBox || !emptyBox) return;
+
+  const total = _stagedPdfFiles.length;
+  if (countEl) countEl.textContent = String(total);
+
+  if (total === 0) {
+    emptyBox.classList.remove('hidden');
+    emptyBox.classList.add('flex');
+    wrapBox.classList.add('hidden');
+    wrapBox.classList.remove('flex');
+    if (parseBtn) {
+      parseBtn.disabled = true;
+      if (parseBtnText) parseBtnText.textContent = 'Распознать операции';
+    }
+    return;
+  }
+
+  emptyBox.classList.add('hidden');
+  emptyBox.classList.remove('flex');
+  wrapBox.classList.remove('hidden');
+  wrapBox.classList.add('flex');
+
+  const validCount = _stagedPdfFiles.filter(f => f.isValid).length;
+  if (parseBtn) {
+    parseBtn.disabled = validCount === 0;
+    if (parseBtnText) {
+      parseBtnText.textContent =
+        validCount > 0 ? `Распознать операции (${validCount})` : 'Нет валидных выписок';
+    }
+  }
+
+  let html = '';
+  _stagedPdfFiles.forEach((item, idx) => {
+    const isInvalid = !item.isValid;
+    const borderClass = isInvalid ? 'border-amber-500/40' : 'border-white/[0.08]';
+
+    html += `
+      <div class="bg-[#12151C] border ${borderClass} rounded-xl p-1.5 flex flex-col relative group transition-all">
+        <!-- 1. Имя файла сверху -->
+        <span class="text-[10px] sm:text-[11px] font-medium text-zinc-200 truncate w-full mb-1 leading-tight" title="${escapeHtml(item.name)}">
+          ${escapeHtml(item.name)}
+        </span>
+
+        <!-- 2. Миниатюра A4 (canvas/img) -->
+        <div class="aspect-[1/1.38] w-full rounded-lg overflow-hidden relative bg-[#090B0E] border border-white/[0.06] flex items-center justify-center">
+          ${
+            item.loading
+              ? `<div class="flex flex-col items-center justify-center gap-1 text-zinc-500">
+                   <i data-lucide="loader" class="w-4 h-4 animate-spin text-zinc-400"></i>
+                   <span class="text-[9px]">Превью...</span>
+                 </div>`
+              : item.thumbUrl
+                ? `<img src="${item.thumbUrl}" alt="Превью" class="w-full h-full object-cover select-none pointer-events-none" />`
+                : `<div class="text-zinc-600 flex items-center justify-center"><i data-lucide="file-text" class="w-6 h-6"></i></div>`
+          }
+
+          <!-- Крестик удаления в правом верхнем углу миниатюры -->
+          <button
+            type="button"
+            onclick="removeStagedFile(${idx})"
+            class="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/85 backdrop-blur-md border border-white/20 text-zinc-300 hover:text-white hover:bg-rose-500/90 hover:border-rose-500 flex items-center justify-center cursor-pointer transition-all active:scale-90 z-10"
+            title="Удалить файл"
+          >
+            <i data-lucide="x" class="w-3 h-3"></i>
+          </button>
+
+          <!-- Бейдж ошибки, если не выписка -->
+          ${
+            isInvalid
+              ? `<div class="absolute bottom-1 left-1 right-1 z-10">
+                   <span class="w-full bg-amber-500/95 text-black text-[9px] font-bold px-1 py-0.5 rounded flex items-center justify-center gap-0.5 shadow-sm leading-tight truncate">
+                     <i data-lucide="alert-triangle" class="w-2.5 h-2.5 flex-shrink-0"></i> Не выписка
+                   </span>
+                 </div>`
+              : ''
+          }
+        </div>
+
+        <!-- 3. Банк / статус снизу -->
+        <div class="flex items-center gap-1 mt-1.5 min-w-0">
+          <div data-bank-icon="${item.bankIconKey}" class="w-3.5 h-3.5 flex items-center justify-center flex-shrink-0"></div>
+          <span class="text-[10px] font-medium ${isInvalid ? 'text-amber-400/90' : 'text-zinc-300'} truncate">
+            ${escapeHtml(item.bankName)}
+          </span>
+        </div>
+      </div>
+    `;
+  });
+
+  // ВСЕГДА последней ячейкой рендерим кнопку «+ Добавить PDF»
+  html += `
+    <button
+      type="button"
+      onclick="triggerPdfFileInput()"
+      class="bg-[#12151C]/60 hover:bg-[#12151C] border border-dashed border-white/15 hover:border-white/30 rounded-xl p-1.5 flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95 min-h-[130px] text-zinc-400 hover:text-white"
+      title="Выбрать еще файлы"
+    >
+      <div class="w-7 h-7 rounded-lg bg-white/[0.05] border border-white/[0.08] flex items-center justify-center">
+        <i data-lucide="plus" class="w-4 h-4"></i>
+      </div>
+      <span class="text-[10px] font-medium text-center leading-tight">Добавить<br/>PDF</span>
+    </button>
+  `;
+
+  grid.innerHTML = html;
+
+  if (typeof renderBankIcons === 'function') {
+    renderBankIcons();
+  }
+  if (typeof lucide !== 'undefined') {
+    lucide.createIcons({ root: grid });
+  }
+}
+
+function removeStagedFile(index) {
+  if (index >= 0 && index < _stagedPdfFiles.length) {
+    _stagedPdfFiles.splice(index, 1);
+    renderStagedFilesUI();
+  }
+}
+
+function clearAllStagedFiles() {
+  _stagedPdfFiles = [];
+  renderStagedFilesUI();
+}
+
+/**
+ * Подтверждение стейджинга и запуск боевого парсинга
+ */
+async function startProcessingStagedFiles() {
+  const validItems = _stagedPdfFiles.filter(item => item.isValid);
+  if (validItems.length === 0) {
+    if (typeof showToast === 'function') {
+      showToast('Пожалуйста, выберите хотя бы одну банковскую выписку', true);
+    }
+    return;
+  }
+
+  const files = validItems.map(item => item.file);
+
+  if (typeof closePdfInfoModal === 'function') {
+    closePdfInfoModal();
+  }
+
+  _stagedPdfFiles = [];
+  renderStagedFilesUI();
+
+  await processExtractedPdfFiles(files);
+}
+
+/**
+ * Универсальный пайплайн разбора PDF-файлов
+ */
+async function processExtractedPdfFiles(pdfFiles) {
+  if (!Array.isArray(pdfFiles) || pdfFiles.length === 0) return;
 
   const totalFiles = pdfFiles.length;
   const parsedResults = [];
@@ -3082,7 +3364,6 @@ async function handleStatementUpload(event) {
 
   if (parsedResults.length === 0) {
     showToast('Не удалось обработать выписки:\n' + errors.join('; '), true);
-    event.target.value = '';
     return;
   }
 
@@ -3121,8 +3402,30 @@ async function handleStatementUpload(event) {
   });
 
   renderParsedTransactionsView(loadedStatements, combinedTransactions);
-  event.target.value = '';
 }
+
+async function handleStatementUpload(event) {
+  const files = Array.from(event.target.files || []);
+  if (files.length === 0) return;
+
+  const pdfFiles = files.filter(
+    f => f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf')
+  );
+  if (pdfFiles.length === 0) {
+    showToast('Пожалуйста, выберите файлы в формате PDF', true);
+    event.target.value = '';
+    return;
+  }
+  event.target.value = '';
+  await processExtractedPdfFiles(pdfFiles);
+}
+
+window.handleStatementFilesSelected = handleStatementFilesSelected;
+window.renderStagedFilesUI = renderStagedFilesUI;
+window.removeStagedFile = removeStagedFile;
+window.clearAllStagedFiles = clearAllStagedFiles;
+window.startProcessingStagedFiles = startProcessingStagedFiles;
+window.processExtractedPdfFiles = processExtractedPdfFiles;
 window.handleStatementUpload = handleStatementUpload;
 
 // -------------------------------------------------------------
