@@ -2192,15 +2192,47 @@ async function toggleStatementAiSetting(enable) {
   }
 }
 
+let _aiTooltipCloseHandler = null;
+
 function toggleStatementAiInfoTooltip(event) {
   if (event) {
     event.stopPropagation();
     event.preventDefault();
   }
   const box = document.getElementById('statement-ai-info-box');
-  if (box) {
-    box.classList.toggle('hidden');
+  if (!box) return;
+
+  const isHidden = box.classList.contains('hidden');
+
+  if (_aiTooltipCloseHandler) {
+    document.removeEventListener('click', _aiTooltipCloseHandler, true);
+    document.removeEventListener('touchstart', _aiTooltipCloseHandler, true);
+    _aiTooltipCloseHandler = null;
+  }
+
+  if (isHidden) {
+    box.classList.remove('hidden');
     if (typeof lucide !== 'undefined') lucide.createIcons({ root: box });
+
+    _aiTooltipCloseHandler = function (e) {
+      const btn =
+        event?.currentTarget || document.querySelector('[onclick*="toggleStatementAiInfoTooltip"]');
+      if (box && !box.contains(e.target) && (!btn || !btn.contains(e.target))) {
+        box.classList.add('hidden');
+        document.removeEventListener('click', _aiTooltipCloseHandler, true);
+        document.removeEventListener('touchstart', _aiTooltipCloseHandler, true);
+        _aiTooltipCloseHandler = null;
+      }
+    };
+
+    setTimeout(() => {
+      if (_aiTooltipCloseHandler) {
+        document.addEventListener('click', _aiTooltipCloseHandler, true);
+        document.addEventListener('touchstart', _aiTooltipCloseHandler, true);
+      }
+    }, 20);
+  } else {
+    box.classList.add('hidden');
   }
 }
 

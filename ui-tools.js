@@ -830,6 +830,8 @@ function openPdfInfoModal() {
 function closePdfInfoModal() {
   const dlg = document.getElementById('pdf-info-dialog');
   if (dlg) dlg.classList.add('hidden');
+  const infoBox = document.getElementById('statement-ai-info-box');
+  if (infoBox) infoBox.classList.add('hidden');
 }
 
 function triggerPdfFileInput() {
