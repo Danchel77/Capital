@@ -4020,15 +4020,15 @@ function renderAiDuplicateReviewCards(transactions) {
 
   container.classList.remove('hidden');
   let cardsHtml = `
-    <div class="p-3 rounded-2xl bg-gradient-to-r from-indigo-950/40 to-[#181B24] border border-indigo-500/30 shadow-lg space-y-2.5">
+    <div class="p-3.5 rounded-2xl bg-[#0E1016] border border-white/[0.08] shadow-lg space-y-2.5">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
-          <div class="w-6 h-6 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center">
-            <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+          <div class="w-6 h-6 rounded-lg bg-white/[0.06] text-zinc-300 flex items-center justify-center border border-white/[0.08]">
+            <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i>
           </div>
-          <span class="text-xs font-bold text-indigo-200">Нейросеть нашла похожие операции (${ambiguousTxs.length})</span>
+          <span class="text-xs font-semibold text-white">Похожие операции в базе (${ambiguousTxs.length})</span>
         </div>
-        <span class="text-[10px] text-gray-400">Проверьте, не дубликат ли это:</span>
+        <span class="text-[10px] text-zinc-400">Проверьте, не дубликат ли:</span>
       </div>
   `;
 
@@ -4036,27 +4036,27 @@ function renderAiDuplicateReviewCards(transactions) {
     const dbItem = tx.aiAmbiguousDuplicate.dbItem || {};
     const expl = tx.aiAmbiguousDuplicate.explanation || 'Совпадают дата и сумма покупки';
     cardsHtml += `
-      <div class="p-2.5 rounded-xl bg-[#12151C] border border-white/5 space-y-2" id="ai-review-card-${tx._id}">
+      <div class="p-2.5 rounded-xl bg-[#12151C] border border-white/[0.06] space-y-2" id="ai-review-card-${tx._id}">
         <div class="flex items-start justify-between gap-2 text-xs">
           <div class="min-w-0 flex-1 space-y-1">
-            <div class="flex items-center gap-1.5 text-gray-300">
-              <span class="text-[#848D99] text-[11px]">В выписке:</span>
+            <div class="flex items-center gap-1.5 text-zinc-300">
+              <span class="text-zinc-500 text-[11px]">В выписке:</span>
               <b class="text-white truncate">${escapeHtml(tx.merchant)}</b>
-              <span class="font-mono text-gray-400 text-[11px]">${formatMoney(tx.amount)}</span>
+              <span class="font-mono text-zinc-300 text-[11px]">${formatMoney(tx.amount)}</span>
             </div>
-            <div class="flex items-center gap-1.5 text-gray-300">
-              <span class="text-[#848D99] text-[11px]">В базе:</span>
-              <b class="text-indigo-300 truncate">${escapeHtml(dbItem.comment || dbItem.merchant || 'Запись в базе')}</b>
-              <span class="font-mono text-gray-400 text-[11px]">${formatMoney(dbItem.amount || tx.amount)}</span>
+            <div class="flex items-center gap-1.5 text-zinc-300">
+              <span class="text-zinc-500 text-[11px]">В базе:</span>
+              <b class="text-zinc-300 truncate">${escapeHtml(dbItem.comment || dbItem.merchant || 'Запись в базе')}</b>
+              <span class="font-mono text-zinc-400 text-[11px]">${formatMoney(dbItem.amount || tx.amount)}</span>
             </div>
-            <p class="text-[10px] text-gray-400 italic">${escapeHtml(expl)}</p>
+            <p class="text-[10px] text-zinc-400 italic">${escapeHtml(expl)}</p>
           </div>
         </div>
         <div class="flex items-center gap-2 pt-1 border-t border-white/[0.04]">
-          <button type="button" onclick="resolveAiDuplicate('${tx._id}', true)" class="flex-1 py-1 px-2 rounded-lg bg-sky-500/15 hover:bg-sky-500/25 active:scale-95 text-sky-300 text-[11px] font-semibold transition-all border border-sky-500/25 cursor-pointer">
-            ✓ Да, это дубликат (не вносить)
+          <button type="button" onclick="resolveAiDuplicate('${tx._id}', true)" class="flex-1 py-1.5 px-2 rounded-xl bg-white/[0.05] hover:bg-white/10 active:scale-95 text-zinc-300 hover:text-white text-[11px] font-semibold transition-all border border-white/[0.08] cursor-pointer">
+            ✓ Да, дубликат (пропустить)
           </button>
-          <button type="button" onclick="resolveAiDuplicate('${tx._id}', false)" class="flex-1 py-1 px-2 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 active:scale-95 text-emerald-300 text-[11px] font-semibold transition-all border border-emerald-500/25 cursor-pointer">
+          <button type="button" onclick="resolveAiDuplicate('${tx._id}', false)" class="flex-1 py-1.5 px-2 rounded-xl bg-white text-zinc-950 hover:bg-zinc-200 active:scale-95 text-[11px] font-semibold transition-all cursor-pointer">
             + Нет, отдельная покупка
           </button>
         </div>
@@ -4884,6 +4884,43 @@ function hideRawTxTooltip() {
   _isPointerDownOnCard = false;
 }
 window.hideRawTxTooltip = hideRawTxTooltip;
+
+function copyRawTooltipText() {
+  const textEl = document.getElementById('raw-tooltip-text');
+  const text = textEl ? textEl.innerText : '';
+  if (!text) return;
+  const showSuccess = () => {
+    if (typeof showToast === 'function') {
+      showToast('Текст выписки скопирован');
+    }
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard
+      .writeText(text)
+      .then(showSuccess)
+      .catch(() => {
+        fallbackCopyText(text, showSuccess);
+      });
+  } else {
+    fallbackCopyText(text, showSuccess);
+  }
+}
+function fallbackCopyText(text, cb) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  try {
+    document.execCommand('copy');
+    if (cb) cb();
+  } catch (_e) {
+    /* copy not supported */
+  }
+  document.body.removeChild(ta);
+}
+window.copyRawTooltipText = copyRawTooltipText;
 
 // Скрытие тултипа при скролле экрана/окна/списка операций
 window.addEventListener(
@@ -5988,10 +6025,10 @@ function renderRulesList() {
 
   if (rules.length === 0) {
     container.innerHTML = `
-      <div class="py-8 text-center bg-[#12151C] rounded-2xl border border-[rgba(255,255,255,0.04)]">
-        <i data-lucide="book-open" class="w-8 h-8 text-[#848D99] mx-auto mb-2 opacity-50"></i>
-        <p class="text-xs text-gray-400 font-medium">В словаре пока нет правил</p>
-        <p class="text-[10px] text-[#848D99] mt-0.5">Добавьте ключевые слова магазинов выше</p>
+      <div class="py-12 text-center bg-[#0E1016] rounded-2xl border border-white/[0.06] flex flex-col items-center justify-center gap-2">
+        <i data-lucide="book-open" class="w-8 h-8 text-zinc-500 opacity-50"></i>
+        <p class="text-xs text-zinc-400 font-medium">В словаре пока нет правил</p>
+        <p class="text-[10px] text-zinc-500">Добавьте ключевые слова магазинов выше</p>
       </div>
     `;
     if (typeof lucide !== 'undefined') lucide.createIcons({ root: container });
@@ -6011,15 +6048,15 @@ function renderRulesList() {
     .forEach(cat => {
       const catIcon = getDynamicCategoryIcon(cat);
       html += `
-      <div class="bg-[#12151C] border border-[rgba(255,255,255,0.04)] rounded-2xl p-3.5 space-y-2.5">
-        <div class="flex items-center justify-between border-b border-[rgba(255,255,255,0.04)] pb-2">
+      <div class="bg-[#0E1016] border border-white/[0.06] rounded-2xl p-3.5 space-y-2.5">
+        <div class="flex items-center justify-between border-b border-white/[0.06] pb-2">
           <div class="flex items-center gap-2">
-            <div class="w-6 h-6 rounded-lg bg-[#181B24] border border-[rgba(255,255,255,0.06)] text-[#848D99] flex items-center justify-center flex-shrink-0">
+            <div class="w-6 h-6 rounded-lg bg-white/[0.05] border border-white/[0.08] text-zinc-300 flex items-center justify-center flex-shrink-0">
               <i data-lucide="${catIcon}" class="w-3.5 h-3.5"></i>
             </div>
-            <span class="text-xs font-bold text-gray-200">${escapeHtml(cat)}</span>
+            <span class="text-xs font-semibold text-zinc-200">${escapeHtml(cat)}</span>
           </div>
-          <span class="text-[10px] font-mono text-[#848D99] px-2 py-0.5 rounded-md bg-[#181B24] border border-[rgba(255,255,255,0.04)]">${grouped[cat].length} шт</span>
+          <span class="text-[10px] font-mono text-zinc-400 px-2 py-0.5 rounded-lg bg-white/[0.04] border border-white/[0.06]">${grouped[cat].length} шт</span>
         </div>
         <div class="flex flex-wrap gap-1.5">
     `;
@@ -6027,9 +6064,9 @@ function renderRulesList() {
       grouped[cat].forEach(r => {
         const isCustom = !r.isSystem;
         html += `
-        <span class="inline-flex items-center gap-1.5 ${isCustom ? 'bg-[#6C5DD3]/15 text-white border border-[#6C5DD3]/30' : 'bg-[#181B24] text-gray-300 border border-[rgba(255,255,255,0.06)]'} text-[11px] px-2.5 py-1 rounded-xl transition-all">
-          <span class="font-medium">${escapeHtml(r.pattern)}</span>
-          <button type="button" onclick="deleteRuleFromEditor('${r.id}', ${r.isSystem ? 'true' : 'false'}, '${escapeHtml(r.pattern)}')" class="text-gray-500 hover:text-[#FF453A] cursor-pointer p-0.5 transition-colors" title="Удалить фразу">
+        <span class="inline-flex items-center gap-1.5 ${isCustom ? 'bg-white/[0.08] text-white border border-white/20 font-medium' : 'bg-white/[0.04] text-zinc-300 border border-white/[0.06]'} text-[11px] px-2.5 py-1 rounded-xl transition-all">
+          <span>${escapeHtml(r.pattern)}</span>
+          <button type="button" onclick="deleteRuleFromEditor('${r.id}', ${r.isSystem ? 'true' : 'false'}, '${escapeHtml(r.pattern)}')" class="text-zinc-500 hover:text-rose-400 cursor-pointer p-0.5 transition-colors" title="Удалить фразу">
             <i data-lucide="x" class="w-3 h-3"></i>
           </button>
         </span>
@@ -6212,8 +6249,8 @@ function populateModalCatMenu(type, categories, selectedCat) {
       return `
       <button type="button" 
               onclick="selectModalCat('${type}', '${escapeHtml(cat)}', '${icon}')" 
-              class="w-full text-left px-3 py-2 text-[13px] rounded-xl transition-colors flex items-center gap-2.5 cursor-pointer ${isSelected ? 'bg-[#6C5DD3]/15 text-[#6C5DD3] font-semibold' : 'text-gray-300 hover:bg-[#2A2D3C]'}">
-        <i data-lucide="${icon}" class="w-4 h-4 ${isSelected ? 'text-[#6C5DD3]' : 'text-[#848D99]'}"></i>
+              class="w-full text-left px-3 py-2 text-xs rounded-xl transition-colors flex items-center gap-2.5 cursor-pointer ${isSelected ? 'bg-white/[0.12] text-white font-semibold' : 'text-zinc-300 hover:bg-white/[0.06] hover:text-white'}">
+        <i data-lucide="${icon}" class="w-4 h-4 ${isSelected ? 'text-white' : 'text-zinc-400'}"></i>
         <span class="truncate">${escapeHtml(cat)}</span>
       </button>
     `;

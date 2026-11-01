@@ -3658,7 +3658,7 @@
     <!-- Всплывающий компактный тултип сырого описания операции (при удержании карточки) -->
     <div
       id="raw-tx-tooltip"
-      class="fixed z-[160] hidden max-w-[92vw] sm:max-w-md w-full p-2.5 bg-[#181B24] border border-[#6C5DD3]/50 rounded-2xl shadow-[0_12px_36px_rgba(0,0,0,0.75)] select-none"
+      class="fixed z-[160] hidden max-w-[92vw] sm:max-w-md w-full p-3 bg-[#161922] border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.85)] backdrop-blur-xl select-none"
       style="
         touch-action: pan-y;
         will-change: transform;
@@ -3667,34 +3667,44 @@
         transform: translate3d(0, 0, 0);
       "
     >
-      <!-- Шапка тултипа с датой, банком и крестиком закрытия -->
-      <div
-        class="flex items-center justify-between pb-1.5 border-b border-[rgba(255,255,255,0.08)] mb-1.5"
-      >
+      <!-- Шапка тултипа с датой, банком, кнопкой копирования и крестиком закрытия -->
+      <div class="flex items-center justify-between pb-2 border-b border-white/[0.08] mb-2">
         <div class="flex items-center gap-2 min-w-0">
           <span
-            class="w-5 h-5 rounded-lg bg-[#6C5DD3]/20 text-[#8C7DFF] flex items-center justify-center flex-shrink-0 border border-[#6C5DD3]/30"
+            class="w-6 h-6 rounded-lg bg-white/[0.06] text-zinc-300 flex items-center justify-center flex-shrink-0 border border-white/[0.08]"
           >
-            <i data-lucide="file-text" class="w-3 h-3"></i>
+            <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
           </span>
-          <span class="text-xs font-bold text-white truncate">Данные из выписки</span>
-          <span id="raw-tooltip-date" class="text-[11px] font-mono text-[#848D99] ml-1"></span>
+          <span class="text-xs font-semibold text-white truncate">Данные из выписки</span>
+          <span id="raw-tooltip-date" class="text-[11px] font-mono text-zinc-400 ml-1"></span>
         </div>
-        <div class="flex items-center gap-2 flex-shrink-0 ml-2">
+        <div class="flex items-center gap-1.5 flex-shrink-0 ml-2">
           <span
             id="raw-tooltip-bank"
-            class="text-[10px] text-[#8C7DFF] font-medium lowercase px-1.5 py-0.5 rounded-md bg-[#6C5DD3]/10 border border-[#6C5DD3]/20"
+            class="text-[10px] text-zinc-300 font-mono lowercase px-2 py-0.5 rounded-lg bg-white/[0.06] border border-white/[0.08]"
           ></span>
+          <button
+            type="button"
+            id="btn-copy-raw-tooltip"
+            onclick="
+              event.stopPropagation();
+              copyRawTooltipText();
+            "
+            class="w-7 h-7 rounded-xl bg-white/[0.05] hover:bg-white/[0.12] active:scale-95 text-zinc-400 hover:text-white border border-white/[0.08] flex items-center justify-center cursor-pointer transition-all shadow-sm"
+            title="Скопировать текст выписки"
+          >
+            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+          </button>
           <button
             type="button"
             onclick="
               event.stopPropagation();
               hideRawTxTooltip();
             "
-            class="w-5 h-5 rounded-lg bg-[#212430] hover:bg-[#2A2D3C] text-gray-400 hover:text-white flex items-center justify-center cursor-pointer text-xs active:scale-90 transition-colors"
+            class="w-7 h-7 rounded-xl bg-white/[0.05] hover:bg-white/[0.12] active:scale-95 text-zinc-400 hover:text-white border border-white/[0.08] flex items-center justify-center cursor-pointer transition-all shadow-sm"
             title="Закрыть"
           >
-            ✕
+            <i data-lucide="x" class="w-3.5 h-3.5"></i>
           </button>
         </div>
       </div>
@@ -3703,7 +3713,7 @@
       <div class="space-y-1 text-xs">
         <div
           id="raw-tooltip-text"
-          class="bg-[#0F1117] p-2 rounded-xl border border-[rgba(255,255,255,0.06)] font-mono text-[11px] sm:text-xs text-gray-200 leading-relaxed max-h-36 sm:max-h-44 overflow-y-auto whitespace-pre-wrap break-words custom-scrollbar select-text overscroll-contain"
+          class="bg-[#0A0C10] p-2.5 rounded-xl border border-white/[0.06] font-mono text-[11px] sm:text-xs text-zinc-300 leading-relaxed max-h-36 sm:max-h-44 overflow-y-auto whitespace-pre-wrap break-words custom-scrollbar select-text overscroll-contain"
           style="touch-action: pan-y"
         ></div>
       </div>
@@ -3712,31 +3722,31 @@
     <!-- МОДАЛЬНОЕ ОКНО: ЗАПОМНИТЬ В СЛОВАРЬ КАТЕГОРИЙ -->
     <div
       id="remember-rule-dialog"
-      class="fixed inset-0 bg-black/85 z-[170] hidden flex flex-col justify-center items-center p-4 backdrop-blur-md animate-fade-in"
+      class="fixed inset-0 bg-black/85 z-[170] hidden flex flex-col justify-end sm:justify-center items-center p-0 sm:p-4 backdrop-blur-md animate-fade-in"
       onclick="if (event.target === this) closeRememberRuleModal();"
     >
       <div
-        class="bg-[#181B24] border border-[rgba(255,255,255,0.08)] w-full max-w-md rounded-3xl p-5 sm:p-6 shadow-2xl flex flex-col relative max-h-[90vh] overflow-y-auto custom-scrollbar"
+        class="bg-[#0E1016] border border-white/[0.08] w-full max-w-md rounded-t-[28px] sm:rounded-3xl p-5 sm:p-6 shadow-2xl flex flex-col relative max-h-[90vh] overflow-y-auto custom-scrollbar"
       >
         <!-- Шапка модального окна -->
         <div
-          class="flex items-center justify-between pb-3.5 mb-3.5 border-b border-[rgba(255,255,255,0.06)] flex-shrink-0"
+          class="flex items-center justify-between pb-3.5 mb-3.5 border-b border-white/[0.06] flex-shrink-0"
         >
           <div class="flex items-center gap-3">
             <div
-              class="w-10 h-10 rounded-2xl bg-[#6C5DD3]/15 border border-[#6C5DD3]/25 flex items-center justify-center text-[#9E86FF] shadow-sm flex-shrink-0"
+              class="w-10 h-10 rounded-2xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center text-white shadow-sm flex-shrink-0"
             >
-              <i data-lucide="pin" class="w-5 h-5"></i>
+              <i data-lucide="pin" class="w-5 h-5 rotate-45"></i>
             </div>
             <div>
               <h3 class="font-bold text-white text-base leading-tight">Запомнить в словарь</h3>
-              <p class="text-[11px] text-[#848D99] mt-0.5">Автоматическое определение категории</p>
+              <p class="text-[11px] text-zinc-400 mt-0.5">Автоматическое определение категории</p>
             </div>
           </div>
           <button
             type="button"
             onclick="closeRememberRuleModal()"
-            class="w-8 h-8 rounded-full bg-[#212430] hover:bg-[#2A2D3C] text-gray-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors active:scale-95"
+            class="w-8 h-8 rounded-xl bg-white/[0.05] hover:bg-white/10 border border-white/[0.08] text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors active:scale-95"
             title="Закрыть"
           >
             <i data-lucide="x" class="w-4 h-4"></i>
@@ -3746,20 +3756,20 @@
         <div class="space-y-3.5">
           <!-- Поле ключевого слова / фразы -->
           <div>
-            <label class="block text-[10px] text-[#848D99] uppercase font-bold mb-1.5"
+            <label class="block text-[10px] text-zinc-400 uppercase font-bold tracking-wider mb-1.5"
               >Ключевое слово или фраза</label
             >
             <input
               type="text"
               id="rule-keyword-input"
-              class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white rounded-xl p-3 outline-none text-xs transition-colors"
+              class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/30 text-white rounded-xl p-3 outline-none text-xs transition-colors font-medium placeholder-zinc-500"
               placeholder="Например: pyaterochka или ВкусВилл"
             />
           </div>
 
           <!-- Выбор категории -->
           <div>
-            <label class="block text-[10px] text-[#848D99] uppercase font-bold mb-1.5"
+            <label class="block text-[10px] text-zinc-400 uppercase font-bold tracking-wider mb-1.5"
               >Назначаемая категория</label
             >
             <div class="relative custom-dropdown-wrap" id="wrap-rule-cat">
@@ -3768,60 +3778,66 @@
                 type="button"
                 id="rule-category-btn"
                 onclick="toggleModalCatMenu('rule')"
-                class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] hover:border-gray-500 focus:border-[#6C5DD3] text-white rounded-xl p-3 text-xs flex items-center justify-between outline-none cursor-pointer transition-colors"
+                class="w-full bg-[#12151C] border border-white/[0.08] hover:border-white/20 focus:border-white/30 text-white rounded-xl p-3 text-xs flex items-center justify-between outline-none cursor-pointer transition-colors"
               >
                 <span id="rule-category-label" class="truncate flex items-center gap-2 text-white">
-                  <i data-lucide="tag" class="w-4 h-4 text-[#848D99]"></i>
+                  <i data-lucide="tag" class="w-4 h-4 text-zinc-400"></i>
                   <span class="truncate">Выберите категорию...</span>
                 </span>
-                <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 flex-shrink-0 ml-1"></i>
+                <i data-lucide="chevron-down" class="w-4 h-4 text-zinc-400 flex-shrink-0 ml-1"></i>
               </button>
               <div
                 id="rule-category-menu"
-                class="custom-dropdown-menu hidden absolute left-0 top-full mt-1.5 w-full max-h-52 overflow-y-auto bg-[#181B24]/95 backdrop-blur-md border border-gray-700 rounded-2xl shadow-2xl z-50 p-1 space-y-0.5"
+                class="custom-dropdown-menu hidden absolute left-0 top-full mt-1.5 w-full max-h-52 overflow-y-auto bg-[#12151C] border border-white/10 rounded-2xl shadow-2xl z-50 p-1.5 space-y-0.5 backdrop-blur-xl"
               ></div>
             </div>
           </div>
 
           <!-- Подсказка: какие слова лучше добавлять -->
-          <div class="bg-[#6C5DD3]/10 border border-[#6C5DD3]/20 rounded-2xl p-3.5 space-y-2">
-            <div class="flex items-center gap-2 text-[#9E86FF] font-semibold text-xs">
-              <i data-lucide="lightbulb" class="w-4 h-4 flex-shrink-0"></i>
+          <div class="bg-[#12151C] border border-white/[0.06] rounded-2xl p-3.5 space-y-2">
+            <div class="flex items-center gap-2 text-zinc-200 font-semibold text-xs">
+              <i data-lucide="lightbulb" class="w-4 h-4 flex-shrink-0 text-zinc-400"></i>
               <span>Какие слова лучше добавлять?</span>
             </div>
-            <ul class="text-[11px] text-gray-300 space-y-1.5 leading-relaxed pl-1">
+            <ul class="text-[11px] text-zinc-300 space-y-1.5 leading-relaxed pl-1">
               <li class="flex items-start gap-1.5">
-                <span class="text-[#9E86FF] font-bold">•</span>
+                <span class="text-zinc-500 font-bold">•</span>
                 <span
-                  ><strong>Уникальная основа названия:</strong> корень бренда магазина (например:
-                  <code class="bg-[#12151C] px-1 py-0.5 rounded text-[#8C7DFF] font-mono"
+                  ><strong class="text-zinc-200">Уникальная основа названия:</strong> корень бренда
+                  магазина (например:
+                  <code
+                    class="bg-white/[0.06] border border-white/[0.06] px-1.5 py-0.5 rounded-lg text-zinc-200 font-mono text-[10px]"
                     >pyaterochka</code
                   >,
-                  <code class="bg-[#12151C] px-1 py-0.5 rounded text-[#8C7DFF] font-mono"
+                  <code
+                    class="bg-white/[0.06] border border-white/[0.06] px-1.5 py-0.5 rounded-lg text-zinc-200 font-mono text-[10px]"
                     >вкусвилл</code
                   >,
-                  <code class="bg-[#12151C] px-1 py-0.5 rounded text-[#8C7DFF] font-mono">ozon</code
+                  <code
+                    class="bg-white/[0.06] border border-white/[0.06] px-1.5 py-0.5 rounded-lg text-zinc-200 font-mono text-[10px]"
+                    >ozon</code
                   >,
-                  <code class="bg-[#12151C] px-1 py-0.5 rounded text-[#8C7DFF] font-mono"
+                  <code
+                    class="bg-white/[0.06] border border-white/[0.06] px-1.5 py-0.5 rounded-lg text-zinc-200 font-mono text-[10px]"
                     >yandex go</code
                   >).</span
                 >
               </li>
               <li class="flex items-start gap-1.5">
-                <span class="text-[#9E86FF] font-bold">•</span>
+                <span class="text-zinc-500 font-bold">•</span>
                 <span
-                  ><strong>Избегайте общих слов:</strong>
-                  <span class="text-rose-300">«оплата»</span>,
-                  <span class="text-rose-300">«перевод»</span>,
-                  <span class="text-rose-300">«card»</span>, чтобы не перебивать другие
+                  ><strong class="text-zinc-200">Избегайте общих слов:</strong>
+                  <span class="text-zinc-400">«оплата»</span>,
+                  <span class="text-zinc-400">«перевод»</span>,
+                  <span class="text-zinc-400">«card»</span>, чтобы не перебивать другие
                   категории.</span
                 >
               </li>
               <li class="flex items-start gap-1.5">
-                <span class="text-[#9E86FF] font-bold">•</span>
+                <span class="text-zinc-500 font-bold">•</span>
                 <span
-                  ><strong>Регистр не важен:</strong> поиск работает автоматически без учета
-                  регистра букв.</span
+                  ><strong class="text-zinc-200">Регистр не важен:</strong> поиск работает
+                  автоматически без учета регистра букв.</span
                 >
               </li>
             </ul>
@@ -3829,18 +3845,18 @@
         </div>
 
         <!-- Кнопки действий -->
-        <div class="flex gap-2.5 mt-5 pt-3 border-t border-[rgba(255,255,255,0.06)] flex-shrink-0">
+        <div class="flex gap-2.5 mt-5 pt-3 border-t border-white/[0.06] flex-shrink-0">
           <button
             type="button"
             onclick="closeRememberRuleModal()"
-            class="flex-1 bg-[#212430] hover:bg-[#2A2D3C] active:scale-95 text-gray-300 hover:text-white py-3 rounded-2xl font-semibold text-xs transition-all cursor-pointer"
+            class="flex-1 bg-white/[0.05] hover:bg-white/10 border border-white/[0.08] active:scale-95 text-zinc-300 hover:text-white py-3 rounded-2xl font-semibold text-xs transition-all cursor-pointer"
           >
             Отмена
           </button>
           <button
             type="button"
             onclick="saveCategoryRuleFromModal()"
-            class="flex-1 bg-[#6C5DD3] hover:bg-[#5b4ec2] active:scale-95 text-white py-3 rounded-2xl font-semibold text-xs shadow-lg shadow-[#6C5DD3]/25 transition-all cursor-pointer flex items-center justify-center"
+            class="flex-1 bg-white text-zinc-950 hover:bg-zinc-200 active:scale-95 py-3 rounded-2xl font-semibold text-xs shadow-md transition-all cursor-pointer flex items-center justify-center"
           >
             Сохранить в словарь
           </button>
@@ -3851,25 +3867,25 @@
     <!-- Модальное окно редактора словаря категорий -->
     <div
       id="rules-editor-dialog"
-      class="fixed inset-0 bg-[#0F1117]/95 sm:bg-black/85 z-[160] hidden flex flex-col justify-start items-center p-0 sm:py-6 sm:px-4 animate-fade-in overflow-y-auto custom-scrollbar"
+      class="fixed inset-0 bg-black/85 z-[160] hidden flex flex-col justify-end sm:justify-center items-center p-0 sm:p-4 backdrop-blur-sm animate-fade-in"
       onclick="if (event.target === this) closeRulesEditorModal();"
     >
       <div
-        class="bg-[#181B24] sm:border sm:border-[rgba(255,255,255,0.08)] w-full max-w-lg min-h-full sm:min-h-0 sm:rounded-3xl p-5 sm:p-6 shadow-2xl flex flex-col my-auto sm:my-0"
+        class="bg-[#0E1016] border border-white/[0.08] w-full max-w-lg rounded-t-[28px] sm:rounded-3xl shadow-2xl flex flex-col h-[92vh] max-h-[92vh] sm:h-[88vh] overflow-hidden"
       >
         <!-- Шапка модального окна -->
         <div
-          class="flex items-center justify-between pb-3.5 mb-3 border-b border-[rgba(255,255,255,0.06)] flex-shrink-0"
+          class="p-4 sm:p-5 border-b border-white/[0.06] bg-[#0E1016] z-20 flex-shrink-0 flex items-center justify-between"
         >
-          <div class="flex items-center gap-2.5">
+          <div class="flex items-center gap-3">
             <div
-              class="w-9 h-9 rounded-2xl bg-[#6C5DD3]/15 border border-[#6C5DD3]/25 flex items-center justify-center text-[#727cff] shadow-sm flex-shrink-0"
+              class="w-10 h-10 rounded-2xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center text-white shadow-sm flex-shrink-0"
             >
               <i data-lucide="book-open-check" class="w-5 h-5"></i>
             </div>
             <div>
               <h3 class="font-bold text-white text-base leading-tight">Словарь категорий</h3>
-              <p class="text-[11px] text-[#848D99]">
+              <p class="text-[11px] text-zinc-400 mt-0.5">
                 Автоматическое определение категорий по названию магазина
               </p>
             </div>
@@ -3877,82 +3893,86 @@
           <button
             type="button"
             onclick="closeRulesEditorModal()"
-            class="w-8 h-8 rounded-full bg-[#212430] hover:bg-[#2A2D3C] text-gray-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors"
+            class="w-8 h-8 rounded-xl bg-white/[0.05] hover:bg-white/10 border border-white/[0.08] text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors active:scale-95"
             title="Закрыть"
           >
             <i data-lucide="x" class="w-4 h-4"></i>
           </button>
         </div>
 
-        <!-- Добавление нового правила в словарь -->
-        <div
-          class="p-3.5 bg-[#12151C] border border-[rgba(255,255,255,0.04)] rounded-2xl mb-3 flex-shrink-0 space-y-2.5"
-        >
-          <span class="text-[10px] text-[#848D99] uppercase font-bold tracking-wider block"
-            >Добавить фразу в словарь</span
-          >
-          <div class="flex flex-col sm:flex-row gap-2 w-full">
-            <input
-              type="text"
-              id="editor-keyword-input"
-              placeholder="Название магазина или фраза"
-              class="w-full flex-1 bg-[#181B24] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white rounded-xl px-3 py-2.5 text-xs outline-none transition-colors min-w-0 font-medium"
-            />
-
-            <div
-              class="relative w-full sm:w-44 flex-shrink-0 custom-dropdown-wrap"
-              id="wrap-editor-cat"
+        <!-- Скроллируемая область формы и списка правил -->
+        <div class="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 bg-[#000000] custom-scrollbar">
+          <!-- Добавление нового правила в словарь -->
+          <div class="p-3.5 bg-[#0E1016] border border-white/[0.06] rounded-2xl space-y-2.5">
+            <span class="text-[10px] text-zinc-400 uppercase font-bold tracking-wider block"
+              >Добавить фразу в словарь</span
             >
-              <input type="hidden" id="editor-category-input" />
-              <button
-                type="button"
-                id="editor-category-btn"
-                onclick="toggleModalCatMenu('editor')"
-                class="w-full bg-[#181B24] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white rounded-xl px-3 py-2.5 text-xs flex items-center justify-between outline-none cursor-pointer hover:border-gray-500 transition-colors"
-              >
-                <span id="editor-category-label" class="truncate flex items-center gap-1.5"
-                  >Категория...</span
-                >
-                <span class="text-gray-400 text-[9px] ml-1">▼</span>
-              </button>
-              <div
-                id="editor-category-menu"
-                class="custom-dropdown-menu hidden absolute left-0 top-full mt-1.5 w-full max-h-48 overflow-y-auto bg-gray-800/95 backdrop-blur-md border border-gray-700 rounded-2xl shadow-2xl z-[170] p-1 space-y-0.5"
-              ></div>
-            </div>
-          </div>
-          <button
-            type="button"
-            onclick="addRuleFromEditor()"
-            class="w-full bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white py-2.5 rounded-xl text-xs font-semibold transition-all active:scale-95 shadow-md cursor-pointer flex items-center justify-center gap-1.5"
-          >
-            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-            <span>Добавить в словарь</span>
-          </button>
-        </div>
+            <div class="flex flex-col sm:flex-row gap-2 w-full">
+              <input
+                type="text"
+                id="editor-keyword-input"
+                placeholder="Название магазина или фраза"
+                class="w-full flex-1 bg-[#12151C] border border-white/[0.08] focus:border-white/30 text-white rounded-xl px-3 py-2.5 text-xs outline-none transition-colors min-w-0 font-medium placeholder-zinc-500"
+              />
 
-        <!-- Список слов с группировкой по категориям -->
-        <div id="editor-rules-list" class="space-y-3 pr-0.5">
-          <!-- Сюда динамически выводятся карточки -->
+              <div
+                class="relative w-full sm:w-44 flex-shrink-0 custom-dropdown-wrap"
+                id="wrap-editor-cat"
+              >
+                <input type="hidden" id="editor-category-input" />
+                <button
+                  type="button"
+                  id="editor-category-btn"
+                  onclick="toggleModalCatMenu('editor')"
+                  class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/30 text-white rounded-xl px-3 py-2.5 text-xs flex items-center justify-between outline-none cursor-pointer hover:border-white/20 transition-colors"
+                >
+                  <span id="editor-category-label" class="truncate flex items-center gap-1.5"
+                    >Категория...</span
+                  >
+                  <i
+                    data-lucide="chevron-down"
+                    class="w-3.5 h-3.5 text-zinc-400 flex-shrink-0 ml-1"
+                  ></i>
+                </button>
+                <div
+                  id="editor-category-menu"
+                  class="custom-dropdown-menu hidden absolute left-0 top-full mt-1.5 w-full max-h-48 overflow-y-auto bg-[#12151C] border border-white/10 rounded-2xl shadow-2xl z-[170] p-1.5 space-y-0.5 backdrop-blur-xl"
+                ></div>
+              </div>
+            </div>
+            <button
+              type="button"
+              onclick="addRuleFromEditor()"
+              class="w-full bg-white text-zinc-950 hover:bg-zinc-200 py-2.5 rounded-xl text-xs font-semibold transition-all active:scale-95 shadow-md cursor-pointer flex items-center justify-center gap-1.5"
+            >
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+              <span>Добавить в словарь</span>
+            </button>
+          </div>
+
+          <!-- Список слов с группировкой по категориям -->
+          <div id="editor-rules-list" class="space-y-3 pr-0.5">
+            <!-- Сюда динамически выводятся карточки -->
+          </div>
         </div>
 
         <!-- Подвал -->
         <div
-          class="pt-3.5 border-t border-[rgba(255,255,255,0.06)] mt-4 flex justify-between items-center gap-2 flex-shrink-0"
+          class="p-3.5 sm:p-4 border-t border-white/[0.06] bg-[#0E1016] flex justify-between items-center gap-2 flex-shrink-0"
         >
           <button
             type="button"
             onclick="restoreDefaultRules()"
-            class="text-xs text-[#848D99] hover:text-white px-2.5 py-1.5 rounded-xl hover:bg-[#212430] transition-colors cursor-pointer flex items-center gap-1.5"
+            class="text-xs text-zinc-400 hover:text-white px-3 py-2 rounded-xl bg-white/[0.05] hover:bg-white/10 border border-white/[0.08] transition-colors cursor-pointer flex items-center gap-1.5 active:scale-95"
             title="Вернуть исходные системные правила"
           >
             <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
-            <span>Сбросить к исходным</span>
+            <span>Сбросить</span>
           </button>
           <button
             type="button"
             onclick="closeRulesEditorModal()"
-            class="bg-[#212430] hover:bg-[#2A2D3C] text-gray-200 px-5 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition-colors"
+            class="bg-white text-zinc-950 font-semibold px-5 py-2.5 rounded-xl text-xs shadow-md transition-all active:scale-95 cursor-pointer"
           >
             Готово
           </button>
