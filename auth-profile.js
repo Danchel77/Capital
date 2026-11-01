@@ -322,6 +322,16 @@ async function loadUserSettings(user) {
     const enableNotifications =
       settings.enableNotifications !== undefined ? settings.enableNotifications : false;
     const notificationTime = settings.notificationTime || '10:00';
+    const geminiApiKey =
+      settings.geminiApiKey ||
+      (typeof localStorage !== 'undefined' ? localStorage.getItem('budget_gemini_api_key') : '') ||
+      '';
+    const useAiForStatements =
+      settings.useAiForStatements !== undefined
+        ? settings.useAiForStatements
+        : typeof localStorage !== 'undefined'
+          ? localStorage.getItem('budget_use_ai_statements') !== 'false'
+          : true;
 
     if (!Cache) Cache = {};
     if (!Cache.settings) Cache.settings = {};
@@ -329,6 +339,13 @@ async function loadUserSettings(user) {
     Cache.settings.showPdfInfo = showPdfInfo;
     Cache.settings.enableNotifications = enableNotifications;
     Cache.settings.notificationTime = notificationTime;
+    if (geminiApiKey) {
+      Cache.settings.geminiApiKey = geminiApiKey;
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('budget_gemini_api_key', geminiApiKey);
+      }
+    }
+    Cache.settings.useAiForStatements = useAiForStatements;
 
     // Загружаем профиль пользователя
     const rawName =
@@ -1974,74 +1991,225 @@ function openSubModalFromProfile(type) {
 }
 
 function renderGeminiSettingsUI() {
-  if (typeof window.GeminiService === 'undefined') return;
-
-  const status = window.GeminiService.getStatus();
   const badgeEl = document.getElementById('gemini-status-badge');
   const descEl = document.getElementById('gemini-status-desc');
   const keyInput = document.getElementById('gemini-api-key-input');
+  const resultBox = document.getElementById('gemini-test-result');
+
+  const savedKey =
+    window.Cache?.settings?.geminiApiKey ||
+    (typeof localStorage !== 'undefined' ? localStorage.getItem('budget_gemini_api_key') : '') ||
+    '';
+
+  if (keyInput) {
+    keyInput.value = savedKey;
+  }
+
+  if (resultBox) {
+    resultBox.classList.add('hidden');
+    resultBox.innerHTML = '';
+  }
 
   if (badgeEl) {
-    if (status.connected) {
-      badgeEl.textContent = status.label;
+    if (savedKey && savedKey.trim().length > 10) {
+      badgeEl.textContent = 'Ключ сохранен';
       badgeEl.className =
-        'text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full whitespace-nowrap';
+        'text-[10px] font-semibold text-zinc-300 bg-white/[0.06] border border-white/10 px-2 py-0.5 rounded-full whitespace-nowrap';
     } else {
       badgeEl.textContent = 'Не подключено';
       badgeEl.className =
-        'text-[10px] font-bold text-gray-400 bg-white/5 border border-white/10 px-2 py-0.5 rounded-full whitespace-nowrap';
+        'text-[10px] font-semibold text-zinc-500 bg-white/5 border border-white/10 px-2 py-0.5 rounded-full whitespace-nowrap';
     }
   }
 
   if (descEl) {
-    descEl.textContent = status.description;
-  }
-
-  if (keyInput) {
-    const savedKey =
-      window.Cache?.settings?.geminiApiKey || localStorage.getItem('budget_gemini_api_key') || '';
-    keyInput.value = savedKey;
-  }
-}
-
-function toggleGeminiManualKeyInput() {
-  const row = document.getElementById('gemini-manual-key-row');
-  if (row) {
-    row.classList.toggle('hidden');
-    if (!row.classList.contains('hidden')) {
-      const input = document.getElementById('gemini-api-key-input');
-      if (input) input.focus();
+    if (savedKey && savedKey.trim().length > 10) {
+      descEl.textContent = 'Персональный ключ Google AI Studio';
+    } else {
+      descEl.textContent = 'Укажите API-ключ для очистки выписок и дедупликации';
     }
   }
 }
 
-async function saveGeminiApiKey() {
+async function testAndSaveGeminiKey() {
   const input = document.getElementById('gemini-api-key-input');
+  const btn = document.getElementById('gemini-test-btn');
+  const btnText = document.getElementById('gemini-test-btn-text');
+  const badgeEl = document.getElementById('gemini-status-badge');
+  const descEl = document.getElementById('gemini-status-desc');
+  const resultBox = document.getElementById('gemini-test-result');
+
   const key = (input?.value || '').trim();
 
-  try {
-    if (key) {
-      localStorage.setItem('budget_gemini_api_key', key);
-      if (window.Cache?.settings) {
-        window.Cache.settings.geminiApiKey = key;
-      }
-      showToast('API-ключ Gemini сохранен');
-    } else {
-      localStorage.removeItem('budget_gemini_api_key');
-      if (window.Cache?.settings) {
-        delete window.Cache.settings.geminiApiKey;
-      }
-      showToast('API-ключ удален');
+  if (!key) {
+    if (typeof showToast === 'function') {
+      showToast('Введите API-ключ Google AI Studio', true);
     }
-    renderGeminiSettingsUI();
-  } catch (_err) {
-    showToast('Ошибка сохранения ключа', true);
+    if (input) input.focus();
+    return;
+  }
+
+  if (btn) btn.disabled = true;
+  if (btnText) btnText.textContent = 'Проверка...';
+
+  try {
+    const res = await window.GeminiService.testConnection(key);
+
+    if (res.ok) {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('budget_gemini_api_key', key);
+      }
+      if (!window.Cache) window.Cache = {};
+      if (!window.Cache.settings) window.Cache.settings = {};
+      window.Cache.settings.geminiApiKey = key;
+
+      const user = window.auth?.currentUser;
+      if (user && window.db) {
+        try {
+          await window.db
+            .collection('users')
+            .doc(user.uid)
+            .set({ settings: { geminiApiKey: key } }, { merge: true });
+        } catch (dbErr) {
+          console.warn('Could not save geminiApiKey to firestore:', dbErr);
+        }
+      }
+
+      if (badgeEl) {
+        badgeEl.textContent = '● Активен';
+        badgeEl.className =
+          'text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full whitespace-nowrap';
+      }
+      if (descEl) {
+        descEl.textContent = `Модель ${res.model || 'Gemini'} проверена и готова к работе`;
+      }
+
+      if (resultBox) {
+        resultBox.classList.remove('hidden');
+        resultBox.className =
+          'text-[11px] px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 leading-normal flex items-center gap-1.5';
+        resultBox.innerHTML = `
+          <i data-lucide="check" class="w-3.5 h-3.5 flex-shrink-0"></i>
+          <span>Ключ проверен и сохранен. Доступ к Gemini подтвержден.</span>
+        `;
+        if (typeof lucide !== 'undefined') lucide.createIcons({ root: resultBox });
+      }
+
+      if (typeof showToast === 'function') {
+        showToast('Ключ Gemini проверен и сохранен');
+      }
+    } else {
+      if (badgeEl) {
+        badgeEl.textContent = 'Ошибка ключа';
+        badgeEl.className =
+          'text-[10px] font-semibold text-rose-400 bg-rose-500/10 border border-rose-500/20 px-2 py-0.5 rounded-full whitespace-nowrap';
+      }
+      if (resultBox) {
+        resultBox.classList.remove('hidden');
+        resultBox.className =
+          'text-[11px] px-3 py-2 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 leading-normal flex items-start gap-1.5';
+        resultBox.innerHTML = `
+          <i data-lucide="alert-circle" class="w-3.5 h-3.5 flex-shrink-0 mt-0.5"></i>
+          <div>
+            <span class="font-semibold block">Ошибка проверки:</span>
+            <span>${escapeHtml(res.error || 'Не удалось связаться с Google AI Studio')}</span>
+          </div>
+        `;
+        if (typeof lucide !== 'undefined') lucide.createIcons({ root: resultBox });
+      }
+
+      if (typeof showToast === 'function') {
+        showToast('Ошибка проверки: ' + (res.error || 'неверный ключ'), true);
+      }
+    }
+  } catch (err) {
+    if (typeof showToast === 'function') {
+      showToast('Ошибка: ' + (err.message || 'сбой проверки'), true);
+    }
+  } finally {
+    if (btn) btn.disabled = false;
+    if (btnText) btnText.textContent = 'Проверить';
+  }
+}
+
+async function deleteGeminiApiKey() {
+  const input = document.getElementById('gemini-api-key-input');
+  if (input) input.value = '';
+
+  if (typeof localStorage !== 'undefined') {
+    localStorage.removeItem('budget_gemini_api_key');
+  }
+  if (window.Cache?.settings) {
+    delete window.Cache.settings.geminiApiKey;
+  }
+
+  const user = window.auth?.currentUser;
+  if (user && window.db && window.firebase?.firestore?.FieldValue) {
+    try {
+      await window.db
+        .collection('users')
+        .doc(user.uid)
+        .set(
+          { settings: { geminiApiKey: window.firebase.firestore.FieldValue.delete() } },
+          { merge: true }
+        );
+    } catch (e) {
+      console.warn('Could not remove geminiApiKey from firestore:', e);
+    }
+  }
+
+  renderGeminiSettingsUI();
+  if (typeof showToast === 'function') {
+    showToast('API-ключ Gemini удален');
+  }
+}
+
+async function toggleStatementAiSetting(enable) {
+  if (!window.Cache) window.Cache = {};
+  if (!window.Cache.settings) window.Cache.settings = {};
+  window.Cache.settings.useAiForStatements = !!enable;
+
+  if (typeof localStorage !== 'undefined') {
+    localStorage.setItem('budget_use_ai_statements', enable ? 'true' : 'false');
+  }
+
+  const user = window.auth?.currentUser;
+  if (user && window.db) {
+    try {
+      await window.db
+        .collection('users')
+        .doc(user.uid)
+        .set({ settings: { useAiForStatements: !!enable } }, { merge: true });
+    } catch (e) {
+      console.warn('Could not persist useAiForStatements:', e);
+    }
+  }
+
+  if (enable && (!window.GeminiService || !window.GeminiService.isAvailable())) {
+    if (typeof showToast === 'function') {
+      showToast('Для работы ИИ укажите API-ключ в Настройках (раздел Профиль)', true);
+    }
+  }
+}
+
+function toggleStatementAiInfoTooltip(event) {
+  if (event) {
+    event.stopPropagation();
+    event.preventDefault();
+  }
+  const box = document.getElementById('statement-ai-info-box');
+  if (box) {
+    box.classList.toggle('hidden');
+    if (typeof lucide !== 'undefined') lucide.createIcons({ root: box });
   }
 }
 
 window.renderGeminiSettingsUI = renderGeminiSettingsUI;
-window.toggleGeminiManualKeyInput = toggleGeminiManualKeyInput;
-window.saveGeminiApiKey = saveGeminiApiKey;
+window.testAndSaveGeminiKey = testAndSaveGeminiKey;
+window.saveGeminiApiKey = testAndSaveGeminiKey;
+window.deleteGeminiApiKey = deleteGeminiApiKey;
+window.toggleStatementAiSetting = toggleStatementAiSetting;
+window.toggleStatementAiInfoTooltip = toggleStatementAiInfoTooltip;
 
 // ==========================================
 // Global Scope Exports

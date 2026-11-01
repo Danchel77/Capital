@@ -800,11 +800,26 @@ function selectCustomDatePickerToday() {
 // ==========================================
 // 4. PDF Import (Модалка и загрузка)
 // ==========================================
+// Синхронизация состояния тумблера ИИ в модалке импорта
+function syncStatementAiToggleUI() {
+  const toggle = document.getElementById('statement-use-ai-toggle');
+  if (toggle) {
+    const isEnabled =
+      window.Cache?.settings?.useAiForStatements !== undefined
+        ? window.Cache.settings.useAiForStatements
+        : typeof localStorage !== 'undefined'
+          ? localStorage.getItem('budget_use_ai_statements') !== 'false'
+          : true;
+    toggle.checked = !!isEnabled;
+  }
+}
+
 // Управление окном импорта PDF и стейджинга
 function openPdfInfoModal() {
   const dlg = document.getElementById('pdf-info-dialog');
   if (dlg) {
     dlg.classList.remove('hidden');
+    syncStatementAiToggleUI();
     if (typeof renderStagedFilesUI === 'function') {
       renderStagedFilesUI();
     }
@@ -1139,6 +1154,7 @@ window.selectCustomDatePickerToday = selectCustomDatePickerToday;
 
 window.openPdfInfoModal = openPdfInfoModal;
 window.closePdfInfoModal = closePdfInfoModal;
+window.syncStatementAiToggleUI = syncStatementAiToggleUI;
 window.triggerPdfFileInput = triggerPdfFileInput;
 window.openStatementHelpModal = openStatementHelpModal;
 window.closeStatementHelpModal = closeStatementHelpModal;

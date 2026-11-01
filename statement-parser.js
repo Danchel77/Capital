@@ -4058,13 +4058,50 @@ function resolveAiDuplicate(txId, isDuplicate) {
 }
 
 async function triggerGeminiEnhancement(transactions) {
-  if (!window.GeminiService || !window.GeminiService.isAvailable()) return;
+  // Проверяем настройку пользователя: включен ли ИИ для выписок
+  const useAi =
+    window.Cache?.settings?.useAiForStatements !== undefined
+      ? window.Cache.settings.useAiForStatements
+      : typeof localStorage !== 'undefined'
+        ? localStorage.getItem('budget_use_ai_statements') !== 'false'
+        : true;
+
+  if (!useAi) {
+    return;
+  }
+
+  // Проверяем наличие ключа в сервисе
+  if (!window.GeminiService || !window.GeminiService.isAvailable()) {
+    if (typeof showToast === 'function') {
+      showToast('ИИ пропущен: укажите API-ключ в Настройках. Применены правила банка.', false);
+    }
+    return;
+  }
+
   if (!Array.isArray(transactions) || transactions.length === 0) return;
 
   const categories = window.Cache?.categories?.expense || [];
 
+  if (typeof showToast === 'function') {
+    showToast('Очистка названий операций через Gemini AI...', false, true);
+  }
+
   try {
     const aiResults = await window.GeminiService.batchCleanAndCategorize(transactions, categories);
+    const enhancedCount = Object.keys(aiResults || {}).length;
+
+    if (window.GeminiService?.lastError && enhancedCount === 0) {
+      if (typeof showToast === 'function') {
+        showToast(`Gemini AI: ${window.GeminiService.lastError}. Применены правила банка.`, true);
+      }
+    } else if (enhancedCount > 0) {
+      if (typeof showToast === 'function') {
+        showToast(`Gemini AI: распознано операций: ${enhancedCount}`, false);
+      }
+    } else {
+      document.getElementById('toast-container')?.classList.add('hidden');
+    }
+
     transactions.forEach(tx => {
       const ai = aiResults[tx._id];
       if (ai) {
@@ -4148,6 +4185,9 @@ async function triggerGeminiEnhancement(transactions) {
     }
   } catch (err) {
     console.warn('Gemini enhancement warning:', err);
+    if (typeof showToast === 'function') {
+      showToast('Ошибка Gemini AI. Применены стандартные правила банка.', true);
+    }
   }
 }
 

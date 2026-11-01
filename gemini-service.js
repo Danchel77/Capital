@@ -1,38 +1,28 @@
 /**
  * gemini-service.js
- * Intelligent assistant powered by Google Gemini (OAuth 2.0 / API Key).
+ * Intelligent assistant powered by Google Gemini API.
  * Provides smart merchant cleaning, categorization, and fuzzy duplicate detection.
  */
 
-// Default Gemini key encoded to prevent GitHub Push Protection scanner triggers
-const DEFAULT_GEMINI_API_KEY =
-  typeof atob === 'function'
-    ? atob('QVEuQWI4Uk42SW1VNjdCQndubG5RNjlGdXpFMnlYc09zRE52ZFk4RGtzNmZaX2NORF84QWc=')
-    : '';
-
 class GeminiService {
   constructor() {
-    this.primaryModel = 'gemini-3.5-flash-lite';
-    this.fallbackModel = 'gemini-3-flash-preview';
+    this.primaryModel = 'gemini-2.5-flash';
+    this.fallbackModels = ['gemini-2.0-flash', 'gemini-1.5-flash'];
     this.apiBaseUrl = 'https://generativelanguage.googleapis.com/v1beta/models';
+    this.lastError = null;
   }
 
   /**
-   * Retrieves active authentication token (User API Key or Embedded Master Key).
+   * Retrieves active authentication token (User API Key).
    */
   getAuthCredential() {
-    // 1. Personal Gemini API Key (manual entry in Settings takes precedence)
+    // Personal Gemini API Key (manual entry in Settings)
     const manualKey =
       window.Cache?.settings?.geminiApiKey ||
       (typeof localStorage !== 'undefined' ? localStorage.getItem('budget_gemini_api_key') : null);
 
     if (manualKey && typeof manualKey === 'string' && manualKey.trim().length > 10) {
       return { type: 'custom_key', value: manualKey.trim() };
-    }
-
-    // 2. Default Embedded Master Key (automatic for all users)
-    if (DEFAULT_GEMINI_API_KEY) {
-      return { type: 'default_key', value: DEFAULT_GEMINI_API_KEY };
     }
 
     return null;
@@ -55,23 +45,33 @@ class GeminiService {
         connected: false,
         method: 'none',
         label: 'Не подключено',
-        description: 'Укажите API-ключ в настройках',
-      };
-    }
-    if (cred.type === 'custom_key') {
-      return {
-        connected: true,
-        method: 'custom_key',
-        label: 'Подключено (свой ключ)',
-        description: 'Используется ваш персональный ключ Google AI Studio',
+        description: 'Укажите API-ключ Google AI Studio в настройках',
       };
     }
     return {
       connected: true,
-      method: 'default_key',
-      label: 'Подключено (AI активен)',
-      description: 'Используется системный ключ (выписки очищаются автоматически)',
+      method: 'custom_key',
+      label: 'Ключ сохранен',
+      description: 'Используется ваш персональный ключ Google AI Studio',
     };
+  }
+
+  /**
+   * Helper to format raw error text into human-friendly Russian messages.
+   */
+  formatErrorMessage(err) {
+    if (!err) return 'Неизвестная ошибка';
+    const msg = String(err.message || err);
+    if (msg.includes('API_KEY_INVALID') || msg.includes('400')) {
+      return 'Неверный API-ключ Google AI';
+    }
+    if (msg.includes('RESOURCE_EXHAUSTED') || msg.includes('429')) {
+      return 'Превышен лимит запросов к Gemini (квота)';
+    }
+    if (msg.includes('Failed to fetch') || msg.includes('NetworkError')) {
+      return 'Ошибка сети при обращении к Google AI';
+    }
+    return msg.replace(/^Error:\s*/, '');
   }
 
   /**
@@ -117,15 +117,97 @@ class GeminiService {
   }
 
   /**
-   * Executes request with automatic fallback to secondary model.
+   * Executes request with automatic fallback through configured models.
    */
   async callWithFallback(payload) {
-    try {
-      return await this.executeRequest(this.primaryModel, payload);
-    } catch (primaryErr) {
-      console.warn(`Gemini ${this.primaryModel} failed, trying fallback:`, primaryErr);
-      return await this.executeRequest(this.fallbackModel, payload);
+    this.lastError = null;
+    const modelsToTry = [this.primaryModel, ...this.fallbackModels];
+    let lastErr = null;
+
+    for (const model of modelsToTry) {
+      try {
+        const res = await this.executeRequest(model, payload);
+        this.primaryModel = model;
+        return res;
+      } catch (err) {
+        lastErr = err;
+        console.warn(`Gemini model ${model} failed, trying fallback:`, err);
+      }
     }
+
+    this.lastError = this.formatErrorMessage(lastErr);
+    throw lastErr;
+  }
+
+  /**
+   * Verifies an API key against Google Generative Language API.
+   */
+  async testConnection(apiKey) {
+    const keyToTest = (apiKey || this.getAuthCredential()?.value || '').trim();
+    if (!keyToTest) {
+      return { ok: false, error: 'API-ключ не указан' };
+    }
+
+    const modelsToTry = [this.primaryModel, ...this.fallbackModels];
+    let lastStatus = 0;
+    let lastErrorMsg = '';
+
+    for (const model of modelsToTry) {
+      const url = `${this.apiBaseUrl}/${model}:generateContent?key=${encodeURIComponent(keyToTest)}`;
+      const payload = {
+        contents: [{ parts: [{ text: 'Ping' }] }],
+        generationConfig: { maxOutputTokens: 5, temperature: 0.1 },
+      };
+
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data?.candidates?.[0]?.content?.parts?.[0]?.text) {
+            this.primaryModel = model;
+            return {
+              ok: true,
+              model: model,
+              message: 'Соединение установлено',
+            };
+          }
+        }
+
+        lastStatus = response.status;
+        let errText = `HTTP ${response.status}`;
+        try {
+          const errJson = await response.json();
+          if (errJson?.error?.message) {
+            errText = errJson.error.message;
+          }
+        } catch (_) {
+          const raw = await response.text().catch(() => '');
+          if (raw) errText = raw;
+        }
+
+        lastErrorMsg = errText;
+
+        if (lastStatus === 400 && errText.includes('API_KEY_INVALID')) {
+          return { ok: false, error: 'Неверный API-ключ (API_KEY_INVALID)', status: 400 };
+        }
+        if (lastStatus === 429) {
+          return { ok: false, error: 'Превышен лимит запросов к Google AI (429)', status: 429 };
+        }
+      } catch (netErr) {
+        return { ok: false, error: 'Сетевая ошибка: ' + (netErr.message || 'нет связи с Google') };
+      }
+    }
+
+    return {
+      ok: false,
+      error: this.formatErrorMessage(lastErrorMsg || `HTTP ${lastStatus}`),
+      status: lastStatus,
+    };
   }
 
   /**
@@ -193,6 +275,7 @@ class GeminiService {
           });
         }
       } catch (err) {
+        this.lastError = this.formatErrorMessage(err);
         console.warn('Gemini batch processing failed for chunk, falling back to local rules:', err);
       }
     }
