@@ -3731,6 +3731,24 @@ function isTransactionDuplicate(tx, optionsOrList) {
 let currentImportFilter = 'new'; // 'new' | 'transfers' | 'dupes' | 'all'
 let currentBankFilter = 'all'; // 'all' | bankName
 
+function getCurrentlyVisibleTransactions() {
+  const txs = window._lastParsedTransactions || [];
+  let bankTxs = txs;
+  if (currentBankFilter !== 'all') {
+    bankTxs = txs.filter(t => t && t.bank === currentBankFilter);
+  }
+  if (currentImportFilter === 'new') {
+    return bankTxs.filter(t => t && !t.isDuplicate && !t.isTransfer);
+  }
+  if (currentImportFilter === 'transfers') {
+    return bankTxs.filter(t => t && t.isTransfer);
+  }
+  if (currentImportFilter === 'dupes') {
+    return bankTxs.filter(t => t && t.isDuplicate && !t.isTransfer);
+  }
+  return bankTxs;
+}
+
 function setImportFilter(filter) {
   currentImportFilter = filter;
   ['new', 'transfers', 'dupes', 'all'].forEach(f => {
@@ -3738,13 +3756,14 @@ function setImportFilter(filter) {
     if (btn) {
       btn.className =
         f === filter
-          ? 'py-1 px-1.5 rounded-lg font-semibold bg-[#212430] text-white text-xs transition-all cursor-pointer flex flex-col items-center justify-center leading-tight text-center'
-          : 'py-1 px-1.5 rounded-lg font-medium text-[#848D99] hover:text-white text-xs transition-all cursor-pointer flex flex-col items-center justify-center leading-tight text-center';
+          ? 'py-1.5 px-1.5 rounded-xl font-semibold bg-white/[0.12] text-white text-xs transition-all cursor-pointer flex flex-col items-center justify-center leading-tight text-center shadow-sm'
+          : 'py-1.5 px-1.5 rounded-xl font-medium text-zinc-400 hover:text-white text-xs transition-all cursor-pointer flex flex-col items-center justify-center leading-tight text-center';
     }
   });
 
   const txs = window._lastParsedTransactions || [];
   renderFilteredRows(txs);
+  if (window._updateHeaderSummary) window._updateHeaderSummary();
 }
 window.setImportFilter = setImportFilter;
 
@@ -3760,10 +3779,10 @@ function setBankFilter(bankName) {
       const isMatch = (isAllBtn && bankName === 'all') || btn.id === `bank-filter-btn-${bankName}`;
       if (isMatch) {
         btn.className =
-          'flex-shrink-0 flex items-center gap-1.5 py-1 px-2.5 rounded-xl font-semibold bg-[#212430] text-white border border-[rgba(255,255,255,0.12)] text-[11px] shadow-sm transition-all cursor-pointer whitespace-nowrap';
+          'flex-shrink-0 flex items-center gap-1.5 py-1 px-2.5 rounded-xl font-semibold bg-white/[0.12] text-white border border-white/20 text-[11px] shadow-sm transition-all cursor-pointer whitespace-nowrap';
       } else {
         btn.className =
-          'flex-shrink-0 flex items-center gap-1.5 py-1 px-2.5 rounded-xl font-medium text-[#848D99] bg-[#12151C] hover:text-white hover:bg-[#1A1D27] border border-[rgba(255,255,255,0.04)] text-[11px] transition-all cursor-pointer whitespace-nowrap';
+          'flex-shrink-0 flex items-center gap-1.5 py-1 px-2.5 rounded-xl font-medium text-zinc-400 bg-[#12151C] hover:text-white hover:bg-white/[0.06] border border-white/[0.06] text-[11px] transition-all cursor-pointer whitespace-nowrap';
       }
     });
   }
@@ -3774,27 +3793,49 @@ function setBankFilter(bankName) {
 }
 window.setBankFilter = setBankFilter;
 
-// Массовый выбор: отметить все новые транзакции (с учетом активного фильтра по банку)
-function toggleSelectAllNew() {
-  const txs = window._lastParsedTransactions || [];
-  const targetTxs =
-    currentBankFilter === 'all'
-      ? txs
-      : Array.isArray(txs)
-        ? txs.filter(t => t && t.bank === currentBankFilter)
-        : [];
-  const anyUnselected = (Array.isArray(targetTxs) ? targetTxs : []).some(
-    t => t && !t.isDuplicate && !t.isTransfer && !t.selected
-  );
-  (Array.isArray(targetTxs) ? targetTxs : []).forEach(t => {
-    if (t && !t.isDuplicate && !t.isTransfer) {
-      t.selected = anyUnselected;
-    }
+// Контекстный массовый выбор: отметить / снять выделение для видимых транзакций в активной вкладке
+function toggleSelectCurrentFilter() {
+  const visibleTxs = getCurrentlyVisibleTransactions();
+  if (!visibleTxs || visibleTxs.length === 0) return;
+
+  const anyUnselected = visibleTxs.some(t => !t.selected);
+  visibleTxs.forEach(t => {
+    t.selected = anyUnselected;
   });
+
+  const txs = window._lastParsedTransactions || [];
   renderFilteredRows(txs);
   if (window._updateHeaderSummary) window._updateHeaderSummary();
 }
-window.toggleSelectAllNew = toggleSelectAllNew;
+window.toggleSelectCurrentFilter = toggleSelectCurrentFilter;
+window.toggleSelectAllNew = toggleSelectCurrentFilter;
+
+function toggleStatementSettingsMenu(event) {
+  if (event) event.stopPropagation();
+  const popup = document.getElementById('statement-settings-popup');
+  if (!popup) return;
+  const isHidden = popup.classList.contains('hidden');
+  if (isHidden) {
+    popup.classList.remove('hidden');
+    if (typeof lucide !== 'undefined') lucide.createIcons({ root: popup });
+    const closeHandler = e => {
+      if (popup && !popup.contains(e.target)) {
+        popup.classList.add('hidden');
+        document.removeEventListener('click', closeHandler, true);
+      }
+    };
+    setTimeout(() => document.addEventListener('click', closeHandler, true), 10);
+  } else {
+    popup.classList.add('hidden');
+  }
+}
+
+function closeStatementSettingsPopup() {
+  const popup = document.getElementById('statement-settings-popup');
+  if (popup) popup.classList.add('hidden');
+}
+window.toggleStatementSettingsMenu = toggleStatementSettingsMenu;
+window.closeStatementSettingsPopup = closeStatementSettingsPopup;
 
 function renderFilteredRows(transactions) {
   const output = document.getElementById('pdf-debug-output');
@@ -3831,27 +3872,26 @@ function renderFilteredRows(transactions) {
     const isExp = tx.type === 'Расход';
     const amountSign = isExp ? '-' : '+';
 
-    // Суммы всегда максимально контрастные, четкие и яркие (полная видимость)
-    const amountColor = isExp ? 'text-white font-bold' : 'text-[#30D158] font-bold';
+    // Цвет суммы: для дублей приглушенный, для расхода - rose (красный в тон сводке), для дохода - emerald (зеленый)
+    const amountColor = tx.isDuplicate
+      ? 'text-zinc-500 font-semibold'
+      : isExp
+        ? 'text-rose-400 font-bold'
+        : 'text-emerald-400 font-bold';
 
-    // Стилизация фона и рамки карточки:
-    // Карточки переводов и дублей НЕ затемняются (100% видимость, без opacity),
-    // но имеют аккуратный отличительный оттенок фона и рамки для моментального узнавания
-    let cardThemeClasses =
-      'bg-[#181B24] border-[rgba(255,255,255,0.06)] hover:border-[rgba(255,255,255,0.14)]';
-    if (tx.isTransfer) {
-      cardThemeClasses = 'bg-[#1C1F2B] border-amber-500/30 hover:border-amber-500/45';
-    } else if (tx.isDuplicate) {
-      cardThemeClasses = 'bg-[#1A1E29] border-blue-400/25 hover:border-blue-400/40';
-    }
+    // Стилизация фона и рамки карточки (без вредного opacity):
+    // Для дублей глубокий потухший цвет #0A0C10 с тончайшей рамкой
+    const cardThemeClasses = tx.isDuplicate
+      ? 'bg-[#0A0C10] border-white/[0.03]'
+      : 'bg-[#12151C] border-white/[0.06] hover:border-white/15';
 
     const cats = isExp ? expenseCategories : incomeCategories;
     const currentIcon = getDynamicCategoryIcon(tx.category);
     const bankIconKey = tx.bankIconKey || 'generic';
 
     html += `
-      <!-- Просторная 2-уровневая строка (мерчант на всю строку, дата, банк и чипс снизу) -->
-      <div class="card-parsed-row ${cardThemeClasses} border px-3.5 py-2.5 rounded-2xl flex flex-col gap-1.5 transition-all relative cursor-pointer select-none" 
+      <!-- Карточка операции в стиле Obsidian Minimalist (мерчант на всю ширину без лишних бейджей) -->
+      <div class="card-parsed-row ${cardThemeClasses} border px-3 sm:px-3.5 py-2.5 rounded-2xl flex flex-col gap-1.5 transition-all relative cursor-pointer select-none" 
            id="card-tx-${tx._id}" 
            data-is-inactive="${isInactive}"
            onpointerdown="handleCardPointerDown(event, '${tx._id}')"
@@ -3860,80 +3900,74 @@ function renderFilteredRows(transactions) {
            onpointercancel="handleCardPointerCancel(event)"
            onclick="handleCardRowClick(event, '${tx._id}')">
         
-        <!-- СТРОКА 1: Чекбокс, Название мерчанта, Бейджи и Сумма -->
+        <!-- СТРОКА 1: Чекбокс, Название мерчанта на всю ширину и Сумма -->
         <div class="flex items-center justify-between gap-2.5 min-w-0">
           <div class="flex items-center gap-2.5 min-w-0 flex-1">
             <input type="checkbox" 
-                   class="w-4 h-4 rounded accent-[#6C5DD3] bg-[#212430] border-gray-700 flex-shrink-0 cursor-pointer"
+                   class="w-4 h-4 rounded bg-white/[0.05] border-white/20 accent-white text-zinc-950 flex-shrink-0 cursor-pointer"
                    id="chk-tx-${tx._id}"
                    data-tx-id="${tx._id}"
                    ${tx.selected ? 'checked' : ''}
                    onclick="event.stopPropagation()"
                    onchange="toggleTxSelection('${tx._id}', this.checked)">
 
-            <div class="flex items-center gap-1.5 min-w-0 flex-1">
-              <span class="text-[13px] text-gray-100 font-semibold truncate leading-tight" title="${escapeHtml(tx.merchant)}">
-                ${escapeHtml(tx.merchant)}
-              </span>
-              ${tx.processedByAi ? '<span class="inline-flex items-center gap-1 text-[10px] font-semibold text-indigo-300 bg-indigo-500/15 px-1.5 py-0.5 rounded-lg border border-indigo-500/25 whitespace-nowrap ml-1 flex-shrink-0" title="Очищено и сопоставлено через Gemini AI"><i data-lucide="sparkles" class="w-3 h-3 text-indigo-400"></i> AI</span>' : ''}
-              ${tx.isTransfer ? '<span class="text-[10px] font-bold text-amber-300 bg-amber-500/15 px-2 py-0.5 rounded-lg border border-amber-500/30 whitespace-nowrap ml-auto">Перевод</span>' : ''}
-              ${tx.isDuplicate ? `<span class="text-[10px] font-bold text-sky-200 bg-sky-500/15 px-2 py-0.5 rounded-lg border border-sky-400/30 whitespace-nowrap ml-auto" title="${escapeHtml(tx.duplicateReason || 'В базе')}">${escapeHtml(tx.duplicateReason || 'В базе')}</span>` : ''}
-              ${tx.aiAmbiguousDuplicate && !tx._aiDuplicateResolved ? '<span class="text-[10px] font-bold text-amber-200 bg-amber-500/20 px-2 py-0.5 rounded-lg border border-amber-400/40 whitespace-nowrap ml-auto">Похож на дубль</span>' : ''}
-            </div>
+            <span class="text-xs sm:text-[13px] ${tx.isDuplicate ? 'text-zinc-400 font-medium' : 'text-zinc-100 font-semibold'} truncate leading-tight flex-1" title="${escapeHtml(tx.merchant)}">
+              ${escapeHtml(tx.merchant)}
+            </span>
           </div>
 
-          <span class="text-[14px] ${amountColor} font-mono flex-shrink-0 ml-2 whitespace-nowrap">
+          <span class="text-[13px] sm:text-[14px] ${amountColor} font-mono flex-shrink-0 ml-2 whitespace-nowrap">
             ${amountSign}${formatMoney(tx.amount)}
           </span>
         </div>
 
-        <!-- СТРОКА 2: Банк и Дата слева, Категория-чипс и Пин справа -->
-        <div class="flex items-center justify-between gap-2 pt-1 border-t border-[rgba(255,255,255,0.03)]">
-          <div class="flex items-center gap-1.5 text-[11px] text-[#848D99] min-w-0">
-            <!-- Иконка банка (без фона, 24x24 px, размером с флажок) -->
+        <!-- СТРОКА 2: Банк и Дата слева, Категория-чипс и Пин (повернут на 45°) справа -->
+        <div class="flex items-center justify-between gap-2 pt-1 border-t border-white/[0.04]">
+          <div class="flex items-center gap-1.5 text-[11px] text-zinc-500 min-w-0">
+            <!-- Иконка банка (24x24 px) -->
             <span class="inline-flex items-center justify-center flex-shrink-0 cursor-default" 
                   style="width: 24px; height: 24px; padding-left: 2px; padding-right: 2px; border-style: none; background: transparent;" 
                   title="${escapeHtml(tx.bank || 'Банк')}${tx.sourceFile ? ' • ' + escapeHtml(tx.sourceFile) : ''}">
-              <span data-bank-icon="${bankIconKey}" class="w-6 h-6 flex items-center justify-center flex-shrink-0" style="width: 24px; height: 24px; padding-left: 0px;"></span>
+              <span data-bank-icon="${bankIconKey}" class="w-6 h-6 flex items-center justify-center flex-shrink-0"></span>
             </span>
 
             <span class="font-mono flex-shrink-0">${tx.displayDate}</span>
           </div>
 
           <div class="flex items-center gap-2 flex-shrink-0">
-            <!-- Чипс категории с фиксированной шириной 130px -->
+            <!-- Чипс категории -->
             <div class="relative custom-dropdown-wrap flex-shrink-0" id="cat-wrap-${tx._id}" data-prevent-row-click="true">
               <button type="button" 
                       onclick="event.stopPropagation(); toggleImportCatMenu('${tx._id}')" 
                       id="cat-btn-${tx._id}"
                       data-prevent-row-click="true"
-                      class="w-[130px] bg-[#212430] border border-[rgba(255,255,255,0.06)] hover:border-[rgba(255,255,255,0.15)] text-[#F2F4F7] text-[11px] font-medium rounded-full px-2.5 py-1 flex items-center justify-between outline-none transition-colors cursor-pointer flex-shrink-0 min-w-0">
+                      class="w-[130px] bg-white/[0.04] border border-white/[0.08] hover:border-white/20 text-zinc-200 text-[11px] font-medium rounded-xl px-2.5 py-1 flex items-center justify-between outline-none transition-colors cursor-pointer flex-shrink-0 min-w-0">
                 <span id="cat-label-${tx._id}" class="flex items-center gap-1.5 min-w-0 flex-1 pr-1 overflow-hidden pointer-events-none">
-                  <i data-lucide="${currentIcon}" class="w-3.5 h-3.5 text-[#848D99] flex-shrink-0"></i> 
+                  <i data-lucide="${currentIcon}" class="w-3.5 h-3.5 text-zinc-400 flex-shrink-0"></i> 
                   <span class="truncate text-left block w-full">${escapeHtml(tx.category)}</span>
                 </span>
-                <i data-lucide="chevron-down" class="w-3 h-3 text-gray-500 flex-shrink-0 ml-auto pointer-events-none"></i>
+                <i data-lucide="chevron-down" class="w-3 h-3 text-zinc-500 flex-shrink-0 ml-auto pointer-events-none"></i>
               </button> 
               
               <div id="cat-menu-${tx._id}" 
-                   class="custom-dropdown-menu hidden absolute right-0 bottom-full mb-1.5 w-52 max-h-60 overflow-y-auto bg-[#181B24] border border-[rgba(255,255,255,0.08)] rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.85)] z-50 p-1.5 space-y-0.5"
+                   class="custom-dropdown-menu hidden absolute right-0 bottom-full mb-1.5 w-52 max-h-60 overflow-y-auto bg-[#12151C] border border-white/10 rounded-2xl shadow-2xl z-50 p-1.5 space-y-0.5"
                    data-prevent-row-click="true">
                 ${cats
                   .map(cat => {
                     const isCustom = !DEFAULT_SYSTEM_CATEGORIES.includes(cat);
                     const loopIcon = getDynamicCategoryIcon(cat);
                     return `
-                    <div class="flex items-center justify-between hover:bg-[#2A2D3C] rounded-xl px-2.5 py-1.5 transition-colors group">
+                    <div class="flex items-center justify-between hover:bg-white/[0.06] rounded-xl px-2.5 py-1.5 transition-colors group">
                       <button type="button" 
                               onclick="event.stopPropagation(); selectImportCat('${tx._id}', '${escapeHtml(cat)}', '${loopIcon}')" 
-                              class="flex-1 text-left text-[12px] font-medium text-gray-200 flex items-center gap-2 cursor-pointer truncate min-w-0">
-                        <i data-lucide="${loopIcon}" class="w-3.5 h-3.5 text-[#848D99] pointer-events-none"></i>
+                              class="flex-1 text-left text-[12px] font-medium text-zinc-200 flex items-center gap-2 cursor-pointer truncate min-w-0">
+                        <i data-lucide="${loopIcon}" class="w-3.5 h-3.5 text-zinc-400 pointer-events-none"></i>
                         <span class="truncate pointer-events-none">${escapeHtml(cat)}</span>
                       </button>
                       ${
                         isCustom
                           ? `
-                        <button type="button" onclick="event.stopPropagation(); deleteCategoryFromImport('${escapeHtml(cat)}', '${tx.type}')" class="text-gray-500 hover:text-[#FF453A] p-1 flex-shrink-0 cursor-pointer"><i data-lucide="trash-2" class="w-3.5 h-3.5 pointer-events-none"></i></button>
+                        <button type="button" onclick="event.stopPropagation(); deleteCategoryFromImport('${escapeHtml(cat)}', '${tx.type}')" class="text-zinc-500 hover:text-rose-400 p-1 flex-shrink-0 cursor-pointer"><i data-lucide="trash-2" class="w-3.5 h-3.5 pointer-events-none"></i></button>
                       `
                           : ''
                       }
@@ -3942,8 +3976,8 @@ function renderFilteredRows(transactions) {
                   })
                   .join('')}
 
-                <div class="border-t border-[rgba(255,255,255,0.06)] pt-1 mt-1">
-                  <button type="button" onclick="event.stopPropagation(); addCategoryFromImport('${tx.type}', '${tx._id}')" class="w-full text-left px-2 py-1.5 text-[12px] text-[#8C7DFF] hover:text-white hover:bg-[#6C5DD3]/15 rounded-lg flex items-center gap-1.5 font-semibold cursor-pointer transition-colors">
+                <div class="border-t border-white/[0.06] pt-1 mt-1">
+                  <button type="button" onclick="event.stopPropagation(); addCategoryFromImport('${tx.type}', '${tx._id}')" class="w-full text-left px-2 py-1.5 text-[12px] text-zinc-300 hover:text-white hover:bg-white/[0.06] rounded-xl flex items-center gap-1.5 font-semibold cursor-pointer transition-colors">
                     <i data-lucide="plus" class="w-3.5 h-3.5 pointer-events-none"></i>
                     <span>Добавить категорию</span>
                   </button>
@@ -3951,13 +3985,13 @@ function renderFilteredRows(transactions) {
               </div>
             </div>
 
-            <!-- Кнопка булавка закрепления правила с тактильным эффектом -->
+            <!-- Кнопка булавка закрепления правила: повернута на 45 градусов -->
             <button type="button" 
                     onclick="event.stopPropagation(); openRememberRuleModal('${tx._id}')" 
                     data-prevent-row-click="true"
-                    class="w-7 h-7 rounded-xl bg-[#6C5DD3]/15 hover:bg-[#6C5DD3]/25 active:scale-90 text-[#8C7DFF] hover:text-white border border-[#6C5DD3]/25 flex items-center justify-center flex-shrink-0 cursor-pointer transition-all shadow-sm group" 
+                    class="w-7 h-7 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] active:scale-90 text-zinc-400 hover:text-white border border-white/[0.06] flex items-center justify-center flex-shrink-0 cursor-pointer transition-all shadow-sm group" 
                     title="Запомнить в словарь категорий">
-              <i data-lucide="pin" class="w-3.5 h-3.5 transition-transform group-hover:scale-110 pointer-events-none"></i>
+              <i data-lucide="pin" class="w-3.5 h-3.5 rotate-45 transition-transform group-hover:scale-110 pointer-events-none"></i>
             </button>
           </div>
         </div>
@@ -4316,11 +4350,11 @@ function renderParsedTransactionsView(loadedStatementsOrFileName, transactions, 
           .map(s => `${s.fileName} (${s.bank?.name}): ${s.count} оп.`)
           .join('\n');
         info.innerHTML = `
-          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-semibold border bg-[#6C5DD3]/15 text-[#8C7DFF] border-[#6C5DD3]/25 cursor-help min-w-0 max-w-[170px] sm:max-w-[280px]" title="${escapeHtml(filesTooltip)}">
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-semibold border bg-white/[0.05] text-zinc-300 border-white/[0.08] cursor-help min-w-0 max-w-[170px] sm:max-w-[280px]" title="${escapeHtml(filesTooltip)}">
             <i data-lucide="layers" class="w-3 h-3 flex-shrink-0"></i>
             <span class="truncate">${loadedStatements.length} выписок (${escapeHtml(uniqueBankNames.join(', '))})</span>
           </span>
-          <span class="text-[11px] text-[#848D99] font-mono flex-shrink-0">
+          <span class="text-[11px] text-zinc-500 font-mono flex-shrink-0">
             ${transactions.length} оп.
           </span>
         `;
@@ -4329,13 +4363,12 @@ function renderParsedTransactionsView(loadedStatementsOrFileName, transactions, 
         const bConfig = single.bank || bankConfig || {};
         const bankName = bConfig.name || 'Банк';
         const iconKey = bConfig.iconKey || bConfig.slug || 'generic';
-        const badgeColor = bConfig.badgeColor || 'bg-blue-900/60 text-blue-300 border-blue-700/60';
         info.innerHTML = `
-          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-semibold border ${badgeColor} min-w-0 max-w-[120px] sm:max-w-[200px]">
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-semibold border bg-white/[0.05] text-zinc-300 border-white/[0.08] min-w-0 max-w-[120px] sm:max-w-[200px]">
             <span data-bank-icon="${iconKey}" class="w-3.5 h-3.5 flex items-center justify-center flex-shrink-0"></span>
             <span class="truncate">${escapeHtml(bankName)}</span>
           </span>
-          <span class="text-[11px] text-[#848D99] truncate font-normal min-w-0 flex-1" title="${escapeHtml(single.fileName)}">
+          <span class="text-[11px] text-zinc-400 truncate font-normal min-w-0 flex-1" title="${escapeHtml(single.fileName)}">
             ${escapeHtml(single.fileName)}
           </span>
         `;
@@ -4378,6 +4411,22 @@ function renderParsedTransactionsView(loadedStatementsOrFileName, transactions, 
     // Скрываем вкладки только если в них 0 операций
     if (tabTransfers) tabTransfers.style.display = transfersCount > 0 ? 'flex' : 'none';
     if (tabDupes) tabDupes.style.display = dupesCount > 0 ? 'flex' : 'none';
+
+    // Обновляем состояние кнопки контекстного массового выбора в текущей вкладке
+    const selectAllBtn = document.getElementById('btn-select-all-new');
+    if (selectAllBtn) {
+      const visibleTxs = getCurrentlyVisibleTransactions();
+      const allSelected = visibleTxs.length > 0 && visibleTxs.every(t => t.selected);
+      if (allSelected) {
+        selectAllBtn.className =
+          'w-11 self-stretch rounded-2xl bg-white/[0.12] text-white border border-white/20 flex items-center justify-center flex-shrink-0 transition-all cursor-pointer active:scale-95 shadow-sm group';
+        selectAllBtn.title = 'Снять выделение со всех в этой вкладке';
+      } else {
+        selectAllBtn.className =
+          'w-11 self-stretch rounded-2xl bg-[#12151C] hover:bg-white/[0.08] border border-white/[0.06] hover:border-white/20 text-zinc-400 hover:text-white flex items-center justify-center flex-shrink-0 transition-all cursor-pointer active:scale-95 shadow-sm group';
+        selectAllBtn.title = 'Выбрать все в этой вкладке';
+      }
+    }
 
     const importBtn = document.getElementById('btn-import-transactions');
     if (importBtn) {

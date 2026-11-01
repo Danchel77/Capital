@@ -247,7 +247,7 @@ class GeminiService {
       .map(c => (typeof c === 'string' ? c : c?.name))
       .filter(Boolean);
 
-    const CHUNK_SIZE = 35;
+    const CHUNK_SIZE = 80;
     const results = {};
 
     for (let i = 0; i < rawItems.length; i += CHUNK_SIZE) {
