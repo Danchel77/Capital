@@ -1183,8 +1183,9 @@ textarea {
 input:focus,
 select:focus,
 textarea:focus {
-  border-color: rgba(108, 93, 211, 0.6) !important;
-  box-shadow: 0 0 0 3px rgba(108, 93, 211, 0.12) !important;
+  border-color: rgba(255, 255, 255, 0.28) !important;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.08) !important;
+  outline: none !important;
 }
 
 /* Стилизация выпадающих списков select */
@@ -1824,9 +1825,9 @@ body.selection-mode .selection-panel {
 }
 
 .wiz-day-cell.is-selected {
-  border-color: #6c5dd3 !important;
-  background: rgba(108, 93, 211, 0.22) !important;
-  box-shadow: 0 0 0 1px #6c5dd3;
+  border-color: rgba(255, 255, 255, 0.4) !important;
+  background: rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2);
 }
 
 .wiz-day-cell.has-bills {
@@ -2094,10 +2095,10 @@ body.keyboard-visible #bottom-nav-bar {
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: #6c5dd3;
+  background: #ffffff;
   cursor: pointer;
-  box-shadow: 0 0 8px rgba(108, 93, 211, 0.5);
-  border: 2px solid #ffffff;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
+  border: 2px solid #000000;
   transition:
     transform 0.15s ease,
     background-color 0.15s ease;
@@ -2106,17 +2107,17 @@ body.keyboard-visible #bottom-nav-bar {
 .goal-share-slider::-webkit-slider-thumb:hover,
 .goal-share-slider::-webkit-slider-thumb:active {
   transform: scale(1.2);
-  background: #7d6fe0;
+  background: #f0f0f0;
 }
 
 .goal-share-slider::-moz-range-thumb {
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: #6c5dd3;
+  background: #ffffff;
   cursor: pointer;
-  box-shadow: 0 0 8px rgba(108, 93, 211, 0.5);
-  border: 2px solid #ffffff;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
+  border: 2px solid #000000;
   transition:
     transform 0.15s ease,
     background-color 0.15s ease;

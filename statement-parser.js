@@ -220,6 +220,11 @@ function cleanMerchantTitle(str) {
     )
     .replace(/окончание\s+таблицы/gi, ' ')
     .replace(/(?:страница|стр\.?|лист)\s*\d+(\s*из\s*\d+)?/gi, ' ')
+    .replace(/\b\d*\s*(?:выписка|справка|отчет)\s+по\s+(?:карте|счету|договору|вкладу)/gi, ' ')
+    .replace(/за\s+период\s+\d{2}\.\d{2}\.\d{4}\s*-\s*\d{2}\.\d{2}\.\d{4}/gi, ' ')
+    .replace(/(?:держатель|клиент|фио)\s*[:\s]+[а-яёА-ЯЁ\s.,]+/gi, ' ')
+    .replace(/совершения\s+операции\s+по\s+счету/gi, ' ')
+    .replace(/операции\s+карты\s*\(списания(?:\/зачисления)?\)?/gi, ' ')
     .replace(
       /(?:^|[^\wа-яёА-ЯЁ])\.?\s*операци[яиею](?:\s+(?:по\s+карте|по\s+счету|со\s+счетом|в\s+системе))?(?=[^\wа-яёА-ЯЁ]|$)/gi,
       ' '
@@ -1863,17 +1868,51 @@ class UniversalStatementParser {
    */
   static _isPageHeaderOrPagination(line, layout) {
     if (!line) return false;
-    const l = line.toLowerCase();
+    const l = line.toLowerCase().trim();
 
+    // 1. Номера страниц и пагинация
     if (/^\s*(?:страница|стр\.?|лист)\s*\d+(\s*из\s*\d+)?\s*$/i.test(line)) {
       return true;
     }
+    // 1.1. Одиночный номер страницы
+    if (/^\s*\d{1,3}\s*$/i.test(line)) {
+      return true;
+    }
+    // 1.2. Номер страницы перед заголовком выписки: "8 ВЫПИСКА ПО КАРТЕ..." или просто "ВЫПИСКА ПО КАРТЕ..."
+    if (/^\s*\d*\s*(?:выписка|справка|отчет)\s+по\s+(?:карте|счету|договору|вкладу)/i.test(line)) {
+      return true;
+    }
 
+    // 2. Служебные строки продолжения/окончания страниц
     if (
       l.includes('продолжение на') ||
       l.includes('продолжение следующ') ||
       l.includes('окончание таблицы') ||
-      l.includes('продолжение выписки')
+      l.includes('продолжение выписки') ||
+      l.includes('продолжение таблицы')
+    ) {
+      return true;
+    }
+
+    // 3. Сквозные колонтитулы периода и держателя карты на каждой новой странице
+    if (
+      /за\s+период\s+\d{2}\.\d{2}\.\d{4}\s*-\s*\d{2}\.\d{2}\.\d{4}/i.test(l) &&
+      /(?:выписка|держатель|счет|карта|договор)/i.test(l)
+    ) {
+      return true;
+    }
+    if (
+      /^\s*(?:держатель|клиент|владелец\s+счета|фио)\s*[:\s]+[а-яёА-ЯЁ\s]+/i.test(line) &&
+      !/\d{2}\.\d{2}\.\d{4}/.test(line)
+    ) {
+      return true;
+    }
+
+    // 4. Повторяющиеся шапки колонок таблицы операций на новых листах
+    if (
+      /(?:совершения\s+операции\s+по\s+счету|операции\s+карты\s*\(списания|дата\s+списания\s+дата\s+операции)/i.test(
+        l
+      )
     ) {
       return true;
     }
@@ -2720,9 +2759,9 @@ class UniversalStatementParser {
    */
   static _stripFooterFromLine(line) {
     if (!line) return '';
-    // Ищем маркеры начала подвала (служебные отметки формирования, должности, подписи, остатки)
+    // Ищем маркеры начала подвала (служебные отметки формирования, должности, подписи, остатки, шапки повторов)
     const footerMatch = line.match(
-      /(?:(?<!\p{L})(?:должность|подпись|расшифровка\s+подписи|дата\s+формирования(?:\s+выписки)?|выписка\s+сформирована|исходящий\s+остаток|итого\s+оборотов)(?!\p{L}))/iu
+      /(?:(?<!\p{L})(?:должность|подпись|расшифровка\s+подписи|дата\s+формирования(?:\s+выписки)?|выписка\s+сформирована|исходящий\s+остаток|итого\s+оборотов|выписка\s+по\s+карте\s+за\s+период)(?!\p{L}))/iu
     );
     if (footerMatch && footerMatch.index > 0) {
       return line.slice(0, footerMatch.index).trim();
@@ -3950,24 +3989,24 @@ function renderFilteredRows(transactions) {
               </button> 
               
               <div id="cat-menu-${tx._id}" 
-                   class="custom-dropdown-menu hidden absolute right-0 bottom-full mb-1.5 w-52 max-h-60 overflow-y-auto bg-[#12151C] border border-white/10 rounded-2xl shadow-2xl z-50 p-1.5 space-y-0.5"
+                   class="custom-dropdown-menu hidden absolute right-0 bottom-full mb-1.5 w-40 max-h-56 overflow-y-auto bg-[#12151C] border border-white/10 rounded-2xl shadow-2xl z-50 p-1 space-y-0.5"
                    data-prevent-row-click="true">
                 ${cats
                   .map(cat => {
                     const isCustom = !DEFAULT_SYSTEM_CATEGORIES.includes(cat);
                     const loopIcon = getDynamicCategoryIcon(cat);
                     return `
-                    <div class="flex items-center justify-between hover:bg-white/[0.06] rounded-xl px-2.5 py-1.5 transition-colors group">
+                    <div class="flex items-center justify-between hover:bg-white/[0.06] rounded-xl px-2 py-1 transition-colors group">
                       <button type="button" 
                               onclick="event.stopPropagation(); selectImportCat('${tx._id}', '${escapeHtml(cat)}', '${loopIcon}')" 
-                              class="flex-1 text-left text-[12px] font-medium text-zinc-200 flex items-center gap-2 cursor-pointer truncate min-w-0">
-                        <i data-lucide="${loopIcon}" class="w-3.5 h-3.5 text-zinc-400 pointer-events-none"></i>
+                              class="flex-1 text-left text-[11px] font-medium text-zinc-200 flex items-center gap-2 cursor-pointer truncate min-w-0">
+                        <i data-lucide="${loopIcon}" class="w-3.5 h-3.5 text-zinc-400 pointer-events-none flex-shrink-0"></i>
                         <span class="truncate pointer-events-none">${escapeHtml(cat)}</span>
                       </button>
                       ${
                         isCustom
                           ? `
-                        <button type="button" onclick="event.stopPropagation(); deleteCategoryFromImport('${escapeHtml(cat)}', '${tx.type}')" class="text-zinc-500 hover:text-rose-400 p-1 flex-shrink-0 cursor-pointer"><i data-lucide="trash-2" class="w-3.5 h-3.5 pointer-events-none"></i></button>
+                        <button type="button" onclick="event.stopPropagation(); deleteCategoryFromImport('${escapeHtml(cat)}', '${tx.type}')" class="text-zinc-500 hover:text-rose-400 p-0.5 flex-shrink-0 cursor-pointer"><i data-lucide="trash-2" class="w-3 h-3 pointer-events-none"></i></button>
                       `
                           : ''
                       }
@@ -4922,30 +4961,21 @@ function fallbackCopyText(text, cb) {
 }
 window.copyRawTooltipText = copyRawTooltipText;
 
-// Скрытие тултипа при скролле экрана/окна/списка операций
-window.addEventListener(
-  'scroll',
-  () => {
-    if (_isShowingRawTooltip) hideRawTxTooltip();
-  },
-  { passive: true, capture: true }
-);
+// Скрытие тултипа при скролле экрана/окна/списка операций (но НЕ при скролле содержимого самого тултипа!)
+function handleScrollForRawTooltip(e) {
+  if (!_isShowingRawTooltip) return;
+  const tooltip = document.getElementById('raw-tx-tooltip');
+  if (tooltip && e && e.target && (tooltip === e.target || tooltip.contains(e.target))) {
+    return;
+  }
+  hideRawTxTooltip();
+}
 
-document.addEventListener(
-  'scroll',
-  () => {
-    if (_isShowingRawTooltip) hideRawTxTooltip();
-  },
-  { passive: true, capture: true }
-);
-
-document.getElementById('pdf-debug-scroll-container')?.addEventListener(
-  'scroll',
-  () => {
-    if (_isShowingRawTooltip) hideRawTxTooltip();
-  },
-  { passive: true }
-);
+window.addEventListener('scroll', handleScrollForRawTooltip, { passive: true, capture: true });
+document.addEventListener('scroll', handleScrollForRawTooltip, { passive: true, capture: true });
+document
+  .getElementById('pdf-debug-scroll-container')
+  ?.addEventListener('scroll', handleScrollForRawTooltip, { passive: true });
 
 // Закрытие тултипа при тапе или клике мимо него (на пустую область, другую карточку или фон)
 function handleOutsideTooltipEvent(e) {

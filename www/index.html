@@ -621,7 +621,7 @@
               id="auth-username"
               placeholder="Например: alex"
               required
-              class="w-full bg-gray-700 border border-gray-600 text-white rounded-xl p-3 outline-none text-sm focus:border-[#6C5DD3] transition-colors"
+              class="w-full bg-gray-700 border border-gray-600 text-white rounded-xl p-3 outline-none text-sm focus:border-white/30 transition-colors"
             />
           </div>
 
@@ -633,7 +633,7 @@
               placeholder="От 6 символов"
               required
               minlength="6"
-              class="w-full bg-gray-700 border border-gray-600 text-white rounded-xl p-3 outline-none text-sm focus:border-[#6C5DD3] transition-colors"
+              class="w-full bg-gray-700 border border-gray-600 text-white rounded-xl p-3 outline-none text-sm focus:border-white/30 transition-colors"
             />
           </div>
 
@@ -680,7 +680,7 @@
           id="category-name-input"
           placeholder="Название категории"
           onkeydown="if (event.key === 'Enter') submitAddCategoryDialog();"
-          class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] text-white rounded-xl p-3 outline-none mb-4 text-sm focus:border-[#6C5DD3] transition-colors"
+          class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] text-white rounded-xl p-3 outline-none mb-4 text-sm focus:border-white/30 transition-colors"
         />
         <p class="text-xs text-gray-400 mb-2">Выберите иконку:</p>
         <div id="category-icon-grid" class="grid grid-cols-6 gap-2 mb-4"></div>
@@ -1087,25 +1087,25 @@
             </button>
           </div>
 
-          <!-- Нижний ряд: Компактная справочная сводка (сетка 50/50, как на Главной) -->
+          <!-- Нижний ряд: Компактная справочная сводка (сетка 50/50, как на Главной: Доходы слева, Расходы справа) -->
           <div class="grid grid-cols-2 gap-3 px-1 text-xs">
-            <div class="flex items-center gap-2 min-w-0">
-              <span class="w-2 h-2 rounded-full bg-[#F43F5E] shrink-0"></span>
-              <span id="month-expense-label" class="text-xs text-zinc-400 shrink-0">Расходы</span>
-              <span
-                id="month-expense"
-                class="font-mono font-bold text-white text-sm truncate [font-variant-numeric:tabular-nums]"
-              >
-                0 ₽
-              </span>
-            </div>
-
             <div class="flex items-center gap-2 min-w-0">
               <span class="w-2 h-2 rounded-full bg-[#10B981] shrink-0"></span>
               <span id="month-income-label" class="text-xs text-zinc-400 shrink-0">Доходы</span>
               <span
                 id="month-income"
                 class="font-mono font-bold text-[#10B981] text-sm truncate [font-variant-numeric:tabular-nums]"
+              >
+                0 ₽
+              </span>
+            </div>
+
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="w-2 h-2 rounded-full bg-[#F43F5E] shrink-0"></span>
+              <span id="month-expense-label" class="text-xs text-zinc-400 shrink-0">Расходы</span>
+              <span
+                id="month-expense"
+                class="font-mono font-bold text-white text-sm truncate [font-variant-numeric:tabular-nums]"
               >
                 0 ₽
               </span>
@@ -1906,7 +1906,7 @@
               handleInlineTxAmountChange(this);
             "
             required
-            class="tx-amount w-full text-lg font-bold bg-[#181B24] border border-[rgba(255,255,255,0.1)] focus:border-[#6C5DD3] text-white rounded-lg px-3 py-1.5 outline-none placeholder-gray-500 transition-colors"
+            class="tx-amount w-full text-lg font-bold bg-[#181B24] border border-[rgba(255,255,255,0.1)] focus:border-white/30 text-white rounded-lg px-3 py-1.5 outline-none placeholder-gray-500 transition-colors"
             placeholder="0 ₽"
           />
         </div>
@@ -1943,7 +1943,7 @@
             type="text"
             placeholder="Магазин или назначение платежа"
             oninput="handleTxRowCommentInput(this)"
-            class="tx-comment flex-1 min-w-0 bg-[#181B24] border border-[rgba(255,255,255,0.1)] text-white placeholder-gray-500 rounded-lg px-2.5 py-1.5 outline-none text-xs focus:border-[#6C5DD3] transition-colors"
+            class="tx-comment flex-1 min-w-0 bg-[#181B24] border border-[rgba(255,255,255,0.1)] text-white placeholder-gray-500 rounded-lg px-2.5 py-1.5 outline-none text-xs focus:border-white/30 transition-colors"
           />
           <!-- Кнопка булавка для добавления в словарь -->
           <button
@@ -2269,7 +2269,7 @@
                 placeholder="Отпуск, авто, подушка безопасности..."
                 required
                 oninput="handleGoalNameInput(this.value)"
-                class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] text-white text-xs font-semibold rounded-xl px-3 py-2.5 outline-none focus:border-[#6C5DD3] transition-colors"
+                class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] text-white text-xs font-semibold rounded-xl px-3 py-2.5 outline-none focus:border-white/30 transition-colors"
               />
             </div>
           </div>
@@ -2288,7 +2288,7 @@
                 id="goal-target-input"
                 placeholder="0 ₽"
                 required
-                class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] text-white font-bold rounded-xl p-2.5 outline-none text-xs focus:border-[#6C5DD3]"
+                class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] text-white font-bold rounded-xl p-2.5 outline-none text-xs focus:border-white/30"
               />
             </div>
             <div>
@@ -2301,7 +2301,7 @@
                 oninput="formatSumInput(this)"
                 id="goal-saved-input"
                 placeholder="0 ₽"
-                class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] text-white font-bold rounded-xl p-2.5 outline-none text-xs focus:border-[#6C5DD3]"
+                class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] text-white font-bold rounded-xl p-2.5 outline-none text-xs focus:border-white/30"
               />
             </div>
           </div>
@@ -2828,7 +2828,7 @@
                 "
                 id="category-limit-amount"
                 placeholder="0 ₽"
-                class="flex-1 bg-[#181B24] border border-[rgba(255,255,255,0.08)] text-white font-mono font-bold rounded-xl px-3 py-2 outline-none text-sm focus:border-[#6C5DD3]"
+                class="flex-1 bg-[#181B24] border border-[rgba(255,255,255,0.08)] text-white font-mono font-bold rounded-xl px-3 py-2 outline-none text-sm focus:border-white/30"
               />
               <button
                 type="button"
@@ -3547,11 +3547,11 @@
     >
       <!-- Шапка просмотрщика -->
       <div
-        class="w-full bg-[#181B24] border-b border-[rgba(255,255,255,0.08)] px-3.5 sm:px-5 py-2.5 flex items-center justify-between z-10 shadow-lg flex-shrink-0"
+        class="w-full bg-[#0E1016] border-b border-white/[0.06] px-3.5 sm:px-5 py-2.5 flex items-center justify-between z-10 shadow-lg flex-shrink-0"
       >
         <div class="flex items-center gap-2.5 min-w-0 pr-2">
           <div
-            class="w-8 h-8 rounded-xl bg-[#6C5DD3]/20 text-[#8C7DFF] flex items-center justify-center flex-shrink-0 border border-[#6C5DD3]/30"
+            class="w-8 h-8 rounded-xl bg-white/[0.05] text-white flex items-center justify-center flex-shrink-0 border border-white/[0.08]"
           >
             <i data-lucide="file-text" class="w-4 h-4"></i>
           </div>
@@ -3562,7 +3562,7 @@
             >
               Выписка.pdf
             </h4>
-            <p id="pdf-viewer-pages-label" class="text-[10px] text-[#848D99] font-mono">
+            <p id="pdf-viewer-pages-label" class="text-[10px] text-zinc-400 font-mono">
               Страница 1 из 1
             </p>
           </div>
@@ -3575,20 +3575,20 @@
             <button
               type="button"
               onclick="changePdfViewerZoom(-0.25)"
-              class="w-7 h-7 rounded-lg text-gray-300 hover:text-white flex items-center justify-center font-bold text-sm active:scale-90 cursor-pointer"
+              class="w-7 h-7 rounded-lg text-zinc-300 hover:text-white flex items-center justify-center font-bold text-sm active:scale-90 cursor-pointer"
               title="Уменьшить"
             >
               -
             </button>
             <span
               id="pdf-viewer-zoom-label"
-              class="text-[10px] font-mono font-bold text-[#8C7DFF] px-1.5 min-w-[38px] text-center"
+              class="text-[10px] font-mono font-semibold text-zinc-200 px-1.5 min-w-[38px] text-center"
               >100%</span
             >
             <button
               type="button"
               onclick="changePdfViewerZoom(0.25)"
-              class="w-7 h-7 rounded-lg text-gray-300 hover:text-white flex items-center justify-center font-bold text-sm active:scale-90 cursor-pointer"
+              class="w-7 h-7 rounded-lg text-zinc-300 hover:text-white flex items-center justify-center font-bold text-sm active:scale-90 cursor-pointer"
               title="Увеличить"
             >
               +
@@ -3600,7 +3600,7 @@
             type="button"
             id="pdf-viewer-external-btn"
             onclick="openCurrentPdfInExternalTab()"
-            class="hidden sm:flex h-8 px-2.5 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 hover:text-white rounded-xl text-xs font-medium items-center gap-1 active:scale-95 cursor-pointer"
+            class="hidden sm:flex h-8 px-2.5 bg-white/[0.05] hover:bg-white/10 border border-white/[0.08] text-zinc-300 hover:text-white rounded-xl text-xs font-medium items-center gap-1 active:scale-95 cursor-pointer"
             title="Открыть в новой вкладке браузера"
           >
             <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
@@ -3610,7 +3610,7 @@
           <button
             type="button"
             onclick="closeInAppPdfViewer()"
-            class="w-8 h-8 rounded-xl bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 hover:text-white flex items-center justify-center cursor-pointer active:scale-95 transition-all"
+            class="w-8 h-8 rounded-xl bg-white/[0.05] hover:bg-white/10 border border-white/[0.08] text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer active:scale-95 transition-all"
             title="Закрыть"
           >
             <i data-lucide="x" class="w-4 h-4"></i>
@@ -3621,7 +3621,7 @@
       <!-- Область холста PDF (скроллируемая) -->
       <div
         id="pdf-viewer-canvas-wrap"
-        class="flex-1 w-full overflow-auto flex items-start justify-center p-2 sm:p-4 bg-[#090B0F] custom-scrollbar"
+        class="flex-1 w-full overflow-auto flex items-start justify-center p-2 sm:p-4 bg-[#000000] custom-scrollbar"
       >
         <canvas
           id="pdf-viewer-canvas"
@@ -3631,23 +3631,25 @@
 
       <!-- Нижняя плавающая панель перелистывания страниц -->
       <div
-        class="w-full bg-[#181B24]/90 backdrop-blur-md border-t border-[rgba(255,255,255,0.08)] py-2 px-4 flex items-center justify-center gap-4 z-10 flex-shrink-0"
+        class="w-full bg-[#0E1016]/95 backdrop-blur-md border-t border-white/[0.06] py-2 px-4 flex items-center justify-center gap-4 z-10 flex-shrink-0"
       >
         <button
           type="button"
           id="pdf-prev-page-btn"
           onclick="changePdfViewerPage(-1)"
-          class="px-3.5 py-1.5 rounded-xl bg-[#212430] hover:bg-[#2A2D3C] text-white text-xs font-semibold flex items-center gap-1.5 disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 transition-all cursor-pointer"
+          class="px-3.5 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/10 border border-white/[0.08] text-zinc-300 text-xs font-semibold flex items-center gap-1.5 disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 transition-all cursor-pointer"
         >
           <i data-lucide="chevron-left" class="w-4 h-4"></i>
           <span>Назад</span>
         </button>
-        <span id="pdf-page-indicator" class="text-xs font-mono font-bold text-gray-200">1 / 1</span>
+        <span id="pdf-page-indicator" class="text-xs font-mono font-semibold text-zinc-300"
+          >1 / 1</span
+        >
         <button
           type="button"
           id="pdf-next-page-btn"
           onclick="changePdfViewerPage(1)"
-          class="px-3.5 py-1.5 rounded-xl bg-[#212430] hover:bg-[#2A2D3C] text-white text-xs font-semibold flex items-center gap-1.5 disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 transition-all cursor-pointer"
+          class="px-3.5 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/10 border border-white/[0.08] text-zinc-300 text-xs font-semibold flex items-center gap-1.5 disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 transition-all cursor-pointer"
         >
           <span>Вперед</span>
           <i data-lucide="chevron-right" class="w-4 h-4"></i>
@@ -3675,7 +3677,7 @@
           >
             <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
           </span>
-          <span class="text-xs font-semibold text-white truncate">Данные из выписки</span>
+          <span class="text-xs font-semibold text-white whitespace-nowrap">Данные из выписки</span>
           <span id="raw-tooltip-date" class="text-[11px] font-mono text-zinc-400 ml-1"></span>
         </div>
         <div class="flex items-center gap-1.5 flex-shrink-0 ml-2">
@@ -4051,7 +4053,7 @@
                   placeholder="SBER, LKOH, TMOS, LQDT..."
                   autocomplete="off"
                   oninput="handleMoexSearchInput(this.value)"
-                  class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white rounded-xl px-3 py-2.5 text-xs outline-none uppercase font-mono"
+                  class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-white/30 text-white rounded-xl px-3 py-2.5 text-xs outline-none uppercase font-mono"
                 />
                 <div id="moex-search-spinner" class="hidden absolute right-3 top-3">
                   <i data-lucide="loader-2" class="w-3.5 h-3.5 text-gray-400 animate-spin"></i>
@@ -4102,7 +4104,7 @@
                 min="0.0001"
                 placeholder="10"
                 oninput="updateMoexAssetCalculations()"
-                class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white rounded-xl px-3 py-2 text-xs font-mono font-bold outline-none"
+                class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-white/30 text-white rounded-xl px-3 py-2 text-xs font-mono font-bold outline-none"
               />
             </div>
 
@@ -4123,7 +4125,7 @@
                   formatSumInput(this);
                   updateMoexAssetCalculations();
                 "
-                class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white rounded-xl px-3 py-2 text-xs font-mono outline-none"
+                class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-white/30 text-white rounded-xl px-3 py-2 text-xs font-mono outline-none"
               />
             </div>
           </div>
@@ -4143,7 +4145,7 @@
                   formatSumInput(this);
                   updateMoexAssetCalculations();
                 "
-                class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white rounded-xl px-3 py-2.5 text-sm font-mono font-bold outline-none"
+                class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-white/30 text-white rounded-xl px-3 py-2.5 text-sm font-mono font-bold outline-none"
               />
             </div>
             <div>
@@ -4155,7 +4157,7 @@
                 id="moex-cash-name"
                 value="Свободные рубли"
                 placeholder="Например: Рубли (кэш), Остаток на счете"
-                class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white rounded-xl px-3 py-2 text-xs outline-none"
+                class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-white/30 text-white rounded-xl px-3 py-2 text-xs outline-none"
               />
             </div>
           </div>
@@ -4283,13 +4285,13 @@
                     placeholder="Ваше имя"
                     maxlength="30"
                     onkeydown="if (event.key === 'Enter') saveProfileInfo(true);"
-                    class="w-full bg-[#12151C] sm:bg-[#181B24] border border-[#6C5DD3]/50 focus:border-[#6C5DD3] text-white rounded-xl px-3 py-1.5 text-xs outline-none transition-colors"
+                    class="w-full bg-[#12151C] sm:bg-[#181B24] border border-white/10 focus:border-white/30 text-white rounded-xl px-3 py-1.5 text-xs outline-none transition-colors"
                   />
                 </div>
                 <button
                   type="button"
                   onclick="saveProfileInfo(true)"
-                  class="px-3 py-1.5 bg-[#6C5DD3] hover:bg-[#5E4FC9] text-white text-xs font-semibold rounded-xl cursor-pointer transition-all active:scale-95 shadow-sm shadow-[#6C5DD3]/25 flex items-center gap-1 flex-shrink-0"
+                  class="px-3 py-1.5 bg-white text-zinc-950 text-xs font-semibold rounded-xl cursor-pointer transition-all active:scale-95 shadow-sm flex items-center gap-1 flex-shrink-0"
                 >
                   <i data-lucide="check" class="w-3.5 h-3.5"></i>
                   <span>Готово</span>
@@ -4413,7 +4415,7 @@
                   id="notifications-time-input"
                   value="10:00"
                   onchange="changeNotificationTimeSetting(this.value)"
-                  class="bg-[#12151C] border border-[rgba(255,255,255,0.08)] hover:border-gray-500 focus:border-[#6C5DD3] text-white rounded-xl px-2.5 py-1 text-xs outline-none cursor-pointer transition-colors font-mono"
+                  class="bg-[#12151C] border border-[rgba(255,255,255,0.08)] hover:border-gray-500 focus:border-white/30 text-white rounded-xl px-2.5 py-1 text-xs outline-none cursor-pointer transition-colors font-mono"
                 />
               </div>
             </div>
@@ -5599,7 +5601,7 @@
               type="text"
               id="change-login-new"
               placeholder="Введите новый логин"
-              class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white rounded-xl p-3 outline-none text-sm transition-colors"
+              class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-white/30 text-white rounded-xl p-3 outline-none text-sm transition-colors"
             />
           </div>
           <div>
@@ -5610,7 +5612,7 @@
               type="password"
               id="change-login-password"
               placeholder="Ваш действующий пароль"
-              class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white rounded-xl p-3 outline-none text-sm transition-colors"
+              class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-white/30 text-white rounded-xl p-3 outline-none text-sm transition-colors"
             />
           </div>
 
@@ -5670,7 +5672,7 @@
               type="password"
               id="change-pass-current"
               placeholder="Действующий пароль"
-              class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white rounded-xl p-3 outline-none text-sm transition-colors"
+              class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-white/30 text-white rounded-xl p-3 outline-none text-sm transition-colors"
             />
           </div>
           <div>
@@ -5681,7 +5683,7 @@
               type="password"
               id="change-pass-new"
               placeholder="От 6 символов"
-              class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white rounded-xl p-3 outline-none text-sm transition-colors"
+              class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-white/30 text-white rounded-xl p-3 outline-none text-sm transition-colors"
             />
           </div>
           <div>
@@ -5692,7 +5694,7 @@
               type="password"
               id="change-pass-confirm"
               placeholder="Повторите пароль"
-              class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white rounded-xl p-3 outline-none text-sm transition-colors"
+              class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-white/30 text-white rounded-xl p-3 outline-none text-sm transition-colors"
             />
           </div>
 
@@ -5746,7 +5748,7 @@
               type="text"
               id="create-family-name"
               value="Семейный бюджет"
-              class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white rounded-xl p-3 outline-none text-sm transition-colors"
+              class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-white/30 text-white rounded-xl p-3 outline-none text-sm transition-colors"
             />
           </div>
 
@@ -5903,7 +5905,7 @@
               id="join-family-code"
               placeholder="XXXXXX"
               maxlength="12"
-              class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white rounded-xl p-3 outline-none text-sm uppercase tracking-wider font-mono transition-colors"
+              class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-white/30 text-white rounded-xl p-3 outline-none text-sm uppercase tracking-wider font-mono transition-colors"
             />
           </div>
 
@@ -6203,7 +6205,7 @@
               id="edit-tx-amount"
               placeholder="0 ₽"
               required
-              class="w-full h-12 bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white text-xl font-bold rounded-xl px-3.5 outline-none tracking-wide transition-colors placeholder-gray-500"
+              class="w-full h-12 bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-white/30 text-white text-xl font-bold rounded-xl px-3.5 outline-none tracking-wide transition-colors placeholder-gray-500"
             />
           </div>
 
@@ -6232,7 +6234,7 @@
                 type="button"
                 id="edit-tx-category-btn"
                 onclick="toggleEditTxCategoryMenu(event)"
-                class="w-full h-10 bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white rounded-xl px-2.5 text-xs flex items-center justify-between outline-none cursor-pointer hover:border-gray-500 transition-colors"
+                class="w-full h-10 bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-white/30 text-white rounded-xl px-2.5 text-xs flex items-center justify-between outline-none cursor-pointer hover:border-gray-500 transition-colors"
               >
                 <span
                   id="edit-tx-category-label"
@@ -6258,7 +6260,7 @@
                 id="edit-tx-comment"
                 oninput="handleEditTxCommentInput(this)"
                 placeholder="Магазин или назначение платежа"
-                class="flex-1 min-w-0 h-10 bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white placeholder-gray-500 rounded-xl px-3 outline-none text-xs transition-colors"
+                class="flex-1 min-w-0 h-10 bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-white/30 text-white placeholder-gray-500 rounded-xl px-3 outline-none text-xs transition-colors"
               />
               <button
                 type="button"
@@ -6553,7 +6555,7 @@
               id="edit-dep-name"
               placeholder="Название вклада"
               required
-              class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white rounded-xl p-3 outline-none text-xs"
+              class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-white/30 text-white rounded-xl p-3 outline-none text-xs"
             />
           </div>
 
@@ -6567,7 +6569,7 @@
               type="button"
               id="edit-dep-goal-btn"
               onclick="toggleEditDepositGoalMenu(event)"
-              class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white rounded-xl px-3.5 py-2.5 text-xs flex items-center justify-between outline-none cursor-pointer hover:border-gray-500 transition-colors"
+              class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-white/30 text-white rounded-xl px-3.5 py-2.5 text-xs flex items-center justify-between outline-none cursor-pointer hover:border-gray-500 transition-colors"
             >
               <span id="edit-dep-goal-label" class="flex items-center gap-2 truncate text-gray-300">
                 <i data-lucide="circle-dashed" class="w-4 h-4 text-[#848D99]"></i>
@@ -6594,7 +6596,7 @@
                 id="edit-dep-amount"
                 placeholder="0 ₽"
                 required
-                class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white rounded-xl p-3 outline-none text-xs font-bold"
+                class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-white/30 text-white rounded-xl p-3 outline-none text-xs font-bold"
               />
             </div>
             <div class="w-1/3">
@@ -6608,7 +6610,7 @@
                 id="edit-dep-rate"
                 placeholder="0%"
                 required
-                class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white rounded-xl p-3 outline-none text-xs font-bold"
+                class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-white/30 text-white rounded-xl p-3 outline-none text-xs font-bold"
               />
             </div>
           </div>
@@ -6626,7 +6628,7 @@
                 readonly
                 placeholder="Дата открытия"
                 required
-                class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white rounded-xl p-3 outline-none text-xs cursor-pointer"
+                class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-white/30 text-white rounded-xl p-3 outline-none text-xs cursor-pointer"
               />
             </div>
             <div>
@@ -6640,7 +6642,7 @@
                 readonly
                 placeholder="Дата закрытия"
                 required
-                class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white rounded-xl p-3 outline-none text-xs cursor-pointer"
+                class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-white/30 text-white rounded-xl p-3 outline-none text-xs cursor-pointer"
               />
             </div>
           </div>
@@ -6769,7 +6771,7 @@
                 type="button"
                 onclick="toggleDepCloseGoalMenu(event)"
                 id="dep-close-goal-btn"
-                class="h-9 w-full bg-[#181B24] border border-[rgba(255,255,255,0.08)] hover:border-gray-500 focus:border-[#6C5DD3] text-white rounded-xl px-2.5 text-xs flex items-center justify-between outline-none cursor-pointer transition-colors"
+                class="h-9 w-full bg-[#181B24] border border-[rgba(255,255,255,0.08)] hover:border-gray-500 focus:border-white/30 text-white rounded-xl px-2.5 text-xs flex items-center justify-between outline-none cursor-pointer transition-colors"
               >
                 <span
                   id="dep-close-goal-label"
@@ -6837,7 +6839,7 @@
             maxlength="10"
             oninput="formatManualDateInput(this)"
             onkeydown="handleManualDateKeydown(event)"
-            class="flex-1 bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-[#6C5DD3] text-white text-xs rounded-xl px-3 py-2 outline-none font-mono transition-colors"
+            class="flex-1 bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-white/30 text-white text-xs rounded-xl px-3 py-2 outline-none font-mono transition-colors"
           />
           <button
             type="button"
