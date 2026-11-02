@@ -277,9 +277,7 @@ nav button:active,
 }
 
 .card-context-menu button#context-btn-delete:active,
-.card-context-menu button#context-btn-delete.is-pressed,
-.card-context-menu button#broker-popup-btn-delete:active,
-.card-context-menu button#broker-popup-btn-delete.is-pressed {
+.card-context-menu button#context-btn-delete.is-pressed {
   background-color: rgba(255, 69, 58, 0.22) !important;
   color: #ff6961 !important;
 }

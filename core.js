@@ -818,6 +818,11 @@ async function applySnapshotsToUI(
     window.syncWidgetData();
   }
 
+  // Фоновая актуализация котировок портфеля и дневного среза
+  if (typeof window.autoUpdateBrokerQuotesAndSnapshot === 'function') {
+    window.autoUpdateBrokerQuotesAndSnapshot();
+  }
+
   // Фиксируем завершение первичной анимации счетчиков после их первого появления
   setTimeout(() => {
     window._initialAnimationDone = true;

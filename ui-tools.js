@@ -488,25 +488,20 @@ function hideAllChartTooltips(e) {
   const brokerChart = window.brokerChartObj;
   const monthlyChart = window.monthlyChartObj;
   const catChart = window.categoryChartObj;
-  const brokerPointPopup = document.getElementById('broker-point-popup');
 
-  const hasBrokerPopup = brokerPointPopup && !brokerPointPopup.classList.contains('hidden');
   const hasBrokerActive = brokerChart?.tooltip?.getActiveElements()?.length > 0;
   const hasMonthlyActive =
     monthlyChart?.getActiveElements()?.length > 0 || monthlyChart?._activeElementKey != null;
   const hasCatActive = catChart?.getActiveElements()?.length > 0 || catChart?._activeSliceIdx >= 0;
 
-  if (!hasBrokerPopup && !hasBrokerActive && !hasMonthlyActive && !hasCatActive) {
+  if (!hasBrokerActive && !hasMonthlyActive && !hasCatActive) {
     return;
   }
 
   const isTargetInside = selector =>
     e && e.target && e.target.closest && e.target.closest(selector);
 
-  // 1. График брокера и контекстный попап точки
-  if (!isTargetInside('#brokerChart') && !isTargetInside('#broker-point-popup')) {
-    if (typeof closeBrokerPointPopup === 'function') closeBrokerPointPopup();
-  }
+  // 1. График брокера
   if (
     brokerChart &&
     !isTargetInside('#brokerChart') &&
