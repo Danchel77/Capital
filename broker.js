@@ -6,7 +6,6 @@
 
 let brokerChartObj = null;
 let currentBrokerTimeframe = 'ALL';
-let currentBrokerChartPoints = [];
 let _lastMoexAutoUpdateTimestamp = 0;
 
 // ==========================================
@@ -122,7 +121,7 @@ function processBroker(ops) {
 }
 
 // ==========================================
-// 2. Broker Main View & Stats Rendering
+// 2. Broker Main View
 // ==========================================
 function renderBroker() {
   const assets = window.Cache?.brokerAssets || [];
@@ -168,7 +167,7 @@ function renderBroker() {
   cashSum = Math.round(cashSum);
   securitiesSum = Math.round(securitiesSum);
 
-  // Обновляем числовые показатели
+  // Скрытые поля для совместимости
   const balEl = document.getElementById('broker-balance');
   if (balEl) balEl.innerText = formatMoney(totalPortfolioValue);
 
@@ -178,9 +177,6 @@ function renderBroker() {
   const cashSumEl = document.getElementById('broker-cash-sum');
   if (cashSumEl) cashSumEl.innerText = formatMoney(cashSum);
 
-  // Расчет честной динамики за выбранный период (1M, 3M, 6M, 1Г, Всё)
-  updateBrokerTimeframeBadge(totalPortfolioValue);
-
   // Отрисовка графика
   drawBrokerChart();
 
@@ -188,79 +184,9 @@ function renderBroker() {
   autoUpdateBrokerQuotesAndSnapshot();
 }
 
-function updateBrokerTimeframeBadge(totalPortfolioValue) {
-  const yieldBadge = document.getElementById('broker-yield-badge');
-  if (!yieldBadge) return;
-
-  const rawData = window.Cache?.broker?.chartData || [];
-  if (rawData.length === 0) {
-    yieldBadge.innerText = '0.0% (0 ₽)';
-    yieldBadge.className =
-      'px-2 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-white/10 text-zinc-300';
-    return;
-  }
-
-  const now = new Date();
-  let filtered = rawData;
-
-  if (currentBrokerTimeframe === '1M') {
-    const cut = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate()).getTime();
-    filtered = rawData.filter(p => p.timestamp >= cut);
-  } else if (currentBrokerTimeframe === '3M') {
-    const cut = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate()).getTime();
-    filtered = rawData.filter(p => p.timestamp >= cut);
-  } else if (currentBrokerTimeframe === '6M') {
-    const cut = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate()).getTime();
-    filtered = rawData.filter(p => p.timestamp >= cut);
-  } else if (currentBrokerTimeframe === '1Y') {
-    const cut = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate()).getTime();
-    filtered = rawData.filter(p => p.timestamp >= cut);
-  }
-
-  if (filtered.length === 0) filtered = rawData;
-
-  const startVal = filtered[0].y;
-  const currentVal =
-    totalPortfolioValue > 0 ? totalPortfolioValue : filtered[filtered.length - 1].y;
-  const delta = currentVal - startVal;
-  const deltaPct = startVal > 0 ? (delta / startVal) * 100 : 0;
-
-  const labels = {
-    '1M': 'за 1 мес.',
-    '3M': 'за 3 мес.',
-    '6M': 'за 6 мес.',
-    '1Y': 'за 1 год',
-    ALL: 'за всё время',
-  };
-  const tfLabel = labels[currentBrokerTimeframe] || '';
-
-  if (Math.abs(delta) < 1) {
-    yieldBadge.innerText = `0.0% (0 ₽) ${tfLabel}`;
-    yieldBadge.className =
-      'px-2 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-white/10 text-zinc-300';
-  } else if (delta > 0) {
-    yieldBadge.innerText = `+${deltaPct.toFixed(1)}% (+${formatMoney(delta)}) ${tfLabel}`;
-    yieldBadge.className =
-      'px-2 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-emerald-500/15 text-emerald-400';
-  } else {
-    yieldBadge.innerText = `${deltaPct.toFixed(1)}% (${formatMoney(delta)}) ${tfLabel}`;
-    yieldBadge.className =
-      'px-2 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-rose-500/15 text-rose-400';
-  }
-}
-
 // ==========================================
-// 3. Smooth Spline Chart & Two-Finger Scrubber
+// 3. Smooth Spline Chart (Trade Markers Only)
 // ==========================================
-let _brokerRangeSelection = {
-  active: false,
-  startIdx: -1,
-  endIdx: -1,
-};
-
-let _isBrokerMouseDragging = false;
-let _brokerMouseDragStartIdx = -1;
-
 function drawBrokerChart() {
   const canvas = document.getElementById('brokerChart');
   if (!canvas) return;
@@ -285,8 +211,8 @@ function drawBrokerChart() {
         x: formatDateStr(todayStr, 'd MMM'),
         fullDate: formatDateStr(todayStr, 'd MMMM yyyy'),
         timestamp: Date.now(),
-        y: sum,
-        balance: sum,
+        y: Math.round(sum),
+        balance: Math.round(sum),
         type: 'Баланс',
         tradeType: null,
       },
@@ -321,12 +247,10 @@ function drawBrokerChart() {
 
   if (filteredData.length === 0) filteredData = rawData;
 
-  currentBrokerChartPoints = filteredData;
-
   const labels = filteredData.map(p => p.x);
   const data = filteredData.map(p => p.y);
 
-  // Определение динамики для цвета кривой
+  // Цвет кривой: спокойный благородный изумрудный при росте или нейтральный белый
   const startVal = data[0];
   const endVal = data[data.length - 1];
   const isPositive = endVal >= startVal;
@@ -334,14 +258,14 @@ function drawBrokerChart() {
   const lineColor = isPositive ? '#10B981' : '#F43F5E';
   const grad = ctx.createLinearGradient(0, 0, 0, 180);
   if (isPositive) {
-    grad.addColorStop(0, 'rgba(16, 185, 129, 0.24)');
+    grad.addColorStop(0, 'rgba(16, 185, 129, 0.22)');
     grad.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
   } else {
-    grad.addColorStop(0, 'rgba(244, 63, 94, 0.24)');
+    grad.addColorStop(0, 'rgba(244, 63, 94, 0.22)');
     grad.addColorStop(1, 'rgba(244, 63, 94, 0.0)');
   }
 
-  // Настройка точек: точки видны ТОЛЬКО при сделках (покупка/продажа)
+  // Настройка точек: видимые маркеры ТОЛЬКО на сделках (покупка / продажа)
   const pointRadii = [];
   const pointHoverRadii = [];
   const pointHitRadii = [];
@@ -351,13 +275,12 @@ function drawBrokerChart() {
 
   for (let i = 0; i < filteredData.length; i++) {
     const pt = filteredData[i];
-    const isLast = i === filteredData.length - 1;
 
     if (pt.tradeType === 'buy') {
       // Покупка (buy) / довнесение кэша
       pointRadii.push(4.5);
       pointHoverRadii.push(7.5);
-      pointHitRadii.push(18);
+      pointHitRadii.push(20);
       pointBgColors.push('#10B981');
       pointBorderColors.push('#000000');
       pointBorderWidths.push(2);
@@ -365,20 +288,12 @@ function drawBrokerChart() {
       // Продажа (sell) / вывод кэша
       pointRadii.push(4.5);
       pointHoverRadii.push(7.5);
-      pointHitRadii.push(18);
+      pointHitRadii.push(20);
       pointBgColors.push('#F43F5E');
       pointBorderColors.push('#000000');
       pointBorderWidths.push(2);
-    } else if (filteredData.length === 1 || isLast) {
-      // Тонкая аккуратная белая точка на вершине текущей оценки
-      pointRadii.push(3);
-      pointHoverRadii.push(6);
-      pointHitRadii.push(14);
-      pointBgColors.push('#FFFFFF');
-      pointBorderColors.push('#000000');
-      pointBorderWidths.push(1.5);
     } else {
-      // Обычный срез котировок — гладкая кривая без промежуточных точек
+      // Обычный срез — нулевой радиус, тултип не вызывается
       pointRadii.push(0);
       pointHoverRadii.push(0);
       pointHitRadii.push(0);
@@ -387,51 +302,6 @@ function drawBrokerChart() {
       pointBorderWidths.push(0);
     }
   }
-
-  // Кастомный плагин диапазонного выделения (двухпальцевый жест или драг)
-  const brokerRangePlugin = {
-    id: 'brokerRangeScrubber',
-    afterDatasetsDraw(chart) {
-      if (!_brokerRangeSelection.active) return;
-      const meta = chart.getDatasetMeta(0);
-      if (!meta || !meta.data) return;
-
-      const idx1 = _brokerRangeSelection.startIdx;
-      const idx2 = _brokerRangeSelection.endIdx;
-      if (idx1 < 0 || idx2 < 0 || !meta.data[idx1] || !meta.data[idx2]) return;
-
-      const pt1 = meta.data[idx1];
-      const pt2 = meta.data[idx2];
-      const leftX = Math.min(pt1.x, pt2.x);
-      const rightX = Math.max(pt1.x, pt2.x);
-      const topY = chart.chartArea.top;
-      const bottomY = chart.chartArea.bottom;
-
-      const c = chart.ctx;
-      c.save();
-
-      // Полупрозрачная подсветка диапазона
-      c.fillStyle = 'rgba(255, 255, 255, 0.08)';
-      c.fillRect(leftX, topY, rightX - leftX, bottomY - topY);
-
-      // Две вертикальные направляющие линии
-      c.strokeStyle = 'rgba(255, 255, 255, 0.45)';
-      c.lineWidth = 1;
-      c.setLineDash([3, 3]);
-
-      c.beginPath();
-      c.moveTo(leftX, topY);
-      c.lineTo(leftX, bottomY);
-      c.stroke();
-
-      c.beginPath();
-      c.moveTo(rightX, topY);
-      c.lineTo(rightX, bottomY);
-      c.stroke();
-
-      c.restore();
-    },
-  };
 
   brokerChartObj = new Chart(ctx, {
     type: 'line',
@@ -454,19 +324,23 @@ function drawBrokerChart() {
         },
       ],
     },
-    plugins: [brokerRangePlugin],
     options: {
       responsive: true,
       maintainAspectRatio: false,
       animation: false,
       interaction: {
-        mode: 'index',
-        intersect: false,
+        mode: 'nearest',
+        intersect: true,
       },
       plugins: {
         legend: { display: false },
         tooltip: {
           enabled: true,
+          // Тултип появляется ИСКЛЮЧИТЕЛЬНО на сделках
+          filter: function (tooltipItem) {
+            const pt = filteredData[tooltipItem.dataIndex];
+            return Boolean(pt && pt.tradeType);
+          },
           backgroundColor: '#0E1016',
           titleColor: '#A1A1AA',
           titleFont: { size: 11, weight: 'normal' },
@@ -487,11 +361,9 @@ function drawBrokerChart() {
             label: function (item) {
               const idx = item.dataIndex;
               const pt = filteredData[idx];
-              if (!pt) return `Портфель: ${formatMoney(item.raw)}`;
+              if (!pt || !pt.tradeType) return '';
 
-              const lines = [`Портфель: ${formatMoney(pt.y)}`];
-
-              // Если в этот день была сделка, выводим понятный бейдж
+              const lines = [];
               if (pt.tradeType === 'buy') {
                 if (pt.ticker === 'RUB' || pt.type === 'Пополнение') {
                   lines.push(`Пополнение: +${formatMoney(pt.amount || pt.quantity)}`);
@@ -505,7 +377,7 @@ function drawBrokerChart() {
                   lines.push(`Продажа ${pt.ticker}: -${pt.quantity} шт.`);
                 }
               }
-
+              lines.push(`Портфель: ${formatMoney(pt.y)}`);
               return lines;
             },
           },
@@ -531,7 +403,6 @@ function drawBrokerChart() {
   });
 
   window.brokerChartObj = brokerChartObj;
-  attachBrokerChartTouchInteractions();
 }
 
 function setBrokerTimeframe(tf) {
@@ -547,161 +418,7 @@ function setBrokerTimeframe(tf) {
     }
   });
 
-  // Пересчитываем бейдж и перерисовываем график
-  let sum = 0;
-  (window.Cache?.brokerAssets || []).forEach(a => {
-    const q = parseFloat(a.quantity) || 0;
-    const p = a.type === 'cash' ? 1 : parseFloat(a.currentPrice) || parseFloat(a.price) || 0;
-    sum += q * p;
-  });
-  updateBrokerTimeframeBadge(sum);
   drawBrokerChart();
-}
-
-// ----------------------------------------------------
-// Интерактив: двухпальцевый жест (Range Scrubbing) и драг
-// ----------------------------------------------------
-function getChartPointIndexFromClientX(clientX) {
-  if (!brokerChartObj || !currentBrokerChartPoints || currentBrokerChartPoints.length === 0) {
-    return -1;
-  }
-  const canvas = document.getElementById('brokerChart');
-  if (!canvas) return -1;
-  const rect = canvas.getBoundingClientRect();
-  const x = clientX - rect.left;
-
-  const meta = brokerChartObj.getDatasetMeta(0);
-  if (!meta || !meta.data || meta.data.length === 0) return -1;
-
-  let closestIdx = 0;
-  let minDiff = Infinity;
-  for (let i = 0; i < meta.data.length; i++) {
-    const pt = meta.data[i];
-    if (!pt) continue;
-    const diff = Math.abs(x - pt.x);
-    if (diff < minDiff) {
-      minDiff = diff;
-      closestIdx = i;
-    }
-  }
-  return closestIdx;
-}
-
-function updateScrubRange(idx1, idx2) {
-  if (idx1 < 0 || idx2 < 0) return;
-  const iMin = Math.min(idx1, idx2);
-  const iMax = Math.max(idx1, idx2);
-
-  _brokerRangeSelection = {
-    active: true,
-    startIdx: iMin,
-    endIdx: iMax,
-  };
-
-  const p1 = currentBrokerChartPoints[iMin];
-  const p2 = currentBrokerChartPoints[iMax];
-  if (!p1 || !p2) return;
-
-  const v1 = p1.y;
-  const v2 = p2.y;
-  const delta = v2 - v1;
-  const deltaPct = v1 > 0 ? (delta / v1) * 100 : 0;
-
-  const yieldBadge = document.getElementById('broker-yield-badge');
-  if (yieldBadge) {
-    const isPos = delta >= 0;
-    yieldBadge.innerText = `${p1.x} → ${p2.x}: ${isPos ? '+' : ''}${deltaPct.toFixed(1)}% (${isPos ? '+' : ''}${formatMoney(delta)})`;
-    yieldBadge.className = `px-2 py-0.5 rounded-full text-[11px] font-mono font-semibold ${isPos ? 'bg-emerald-500/15 text-emerald-400' : 'bg-rose-500/15 text-rose-400'}`;
-  }
-
-  if (brokerChartObj) {
-    brokerChartObj.update('none');
-  }
-}
-
-function clearScrubRange() {
-  if (!_brokerRangeSelection.active) return;
-  _brokerRangeSelection = { active: false, startIdx: -1, endIdx: -1 };
-
-  // Восстанавливаем обычный бейдж таймфрейма
-  let sum = 0;
-  (window.Cache?.brokerAssets || []).forEach(a => {
-    const q = parseFloat(a.quantity) || 0;
-    const p = a.type === 'cash' ? 1 : parseFloat(a.currentPrice) || parseFloat(a.price) || 0;
-    sum += q * p;
-  });
-  updateBrokerTimeframeBadge(sum);
-
-  if (brokerChartObj) {
-    brokerChartObj.update('none');
-  }
-}
-
-function attachBrokerChartTouchInteractions() {
-  const canvas = document.getElementById('brokerChart');
-  if (!canvas || canvas._brokerTouchAttached) return;
-  canvas._brokerTouchAttached = true;
-
-  // Touch события (1 палец = тултип/скраб, 2 пальца = расчет доходности диапазона)
-  canvas.addEventListener(
-    'touchstart',
-    e => {
-      if (e.touches.length === 2) {
-        const idx1 = getChartPointIndexFromClientX(e.touches[0].clientX);
-        const idx2 = getChartPointIndexFromClientX(e.touches[1].clientX);
-        updateScrubRange(idx1, idx2);
-        if (e.cancelable) e.preventDefault();
-      }
-    },
-    { passive: false }
-  );
-
-  canvas.addEventListener(
-    'touchmove',
-    e => {
-      if (e.touches.length === 2) {
-        const idx1 = getChartPointIndexFromClientX(e.touches[0].clientX);
-        const idx2 = getChartPointIndexFromClientX(e.touches[1].clientX);
-        updateScrubRange(idx1, idx2);
-        if (e.cancelable) e.preventDefault();
-      }
-    },
-    { passive: false }
-  );
-
-  canvas.addEventListener('touchend', e => {
-    if (e.touches.length < 2) {
-      clearScrubRange();
-    }
-  });
-
-  canvas.addEventListener('touchcancel', () => {
-    clearScrubRange();
-  });
-
-  // Мышь для десктопа: перетаскивание с зажатой кнопкой выделяет диапазон
-  canvas.addEventListener('mousedown', e => {
-    if (e.button !== 0) return;
-    _isBrokerMouseDragging = true;
-    _brokerMouseDragStartIdx = getChartPointIndexFromClientX(e.clientX);
-  });
-
-  canvas.addEventListener('mousemove', e => {
-    if (_isBrokerMouseDragging && _brokerMouseDragStartIdx >= 0) {
-      const curIdx = getChartPointIndexFromClientX(e.clientX);
-      if (curIdx !== _brokerMouseDragStartIdx) {
-        updateScrubRange(_brokerMouseDragStartIdx, curIdx);
-      }
-    }
-  });
-
-  window.addEventListener('mouseup', () => {
-    if (_isBrokerMouseDragging) {
-      _isBrokerMouseDragging = false;
-      _brokerMouseDragStartIdx = -1;
-      setTimeout(clearScrubRange, 1200);
-    }
-  });
 }
 
 // ==========================================
@@ -755,7 +472,7 @@ function renderMoexPortfolio() {
         <div class="space-y-2">
     `;
     cashAssets.forEach(asset => {
-      const amount = parseFloat(asset.quantity) || 0;
+      const amount = Math.round(parseFloat(asset.quantity) || 0);
       const sharePct = totalValue > 0 ? ((amount / totalValue) * 100).toFixed(1) : 0;
       html += `
         <div class="card bg-[#0E1016] hover:bg-[#12151C] border border-white/[0.06] hover:border-white/15 p-3.5 rounded-2xl flex items-center justify-between gap-3 transition-all cursor-pointer active:scale-[0.99]"
@@ -795,10 +512,8 @@ function renderMoexPortfolio() {
       const price = parseFloat(asset.currentPrice) || parseFloat(asset.price) || 0;
       const posValue = Math.round(qty * price);
       const sharePct = totalValue > 0 ? ((posValue / totalValue) * 100).toFixed(1) : 0;
-      const changePct = parseFloat(asset.changePct24h) || 0;
-      const isChangePos = changePct >= 0;
 
-      // Честное определение фонда: проверяем поле типа, флаг isFund или известные тикеры
+      // Честное определение фонда
       const tickerUpper = (asset.ticker || '').toUpperCase();
       const isFund = asset.type === 'fund' || !!asset.isFund || KNOWN_FUNDS.has(tickerUpper);
 
@@ -823,11 +538,7 @@ function renderMoexPortfolio() {
 
           <div class="text-right flex-shrink-0">
             <p class="text-[15px] font-bold text-white font-mono leading-tight">${formatMoney(posValue)}</p>
-            <div class="flex items-center justify-end gap-1.5 mt-0.5">
-              <span class="text-[10px] font-mono ${isChangePos ? 'text-emerald-400' : 'text-rose-400'}">
-                ${isChangePos ? '+' : ''}${changePct.toFixed(2)}%
-              </span>
-            </div>
+            <p class="text-[11px] text-zinc-500 font-mono mt-0.5">${formatMoney(price)}/шт.</p>
           </div>
         </div>
       `;
@@ -881,10 +592,9 @@ async function autoUpdateBrokerQuotesAndSnapshot(force = false) {
 
   const securities = assets.filter(a => a.type !== 'cash');
   if (securities.length === 0) {
-    // Только кэш — сразу пишем срез
     let cashSum = 0;
     assets.forEach(a => (cashSum += parseFloat(a.quantity) || 0));
-    await autoRecordBrokerDailySnapshot(cashSum);
+    await autoRecordBrokerDailySnapshot(Math.round(cashSum));
     return;
   }
 
@@ -923,12 +633,11 @@ async function autoUpdateBrokerQuotesAndSnapshot(force = false) {
     if (updatePromises.length > 0) {
       await Promise.all(updatePromises);
     }
-    await autoRecordBrokerDailySnapshot(newTotalValue);
+    const roundedTotal = Math.round(newTotalValue);
+    await autoRecordBrokerDailySnapshot(roundedTotal);
 
-    // Мягкое обновление UI без мерцания
     const balEl = document.getElementById('broker-balance');
-    if (balEl) balEl.innerText = formatMoney(newTotalValue);
-    updateBrokerTimeframeBadge(newTotalValue);
+    if (balEl) balEl.innerText = formatMoney(roundedTotal);
   } catch (err) {
     console.warn('Фоновое обновление котировок MOEX:', err);
   }
@@ -1210,12 +919,12 @@ function updateMoexAssetCalculations() {
     const rawCash = document.getElementById('moex-cash-amount')?.value;
     const cashVal =
       typeof parseAmount === 'function' ? parseAmount(rawCash) : parseFloat(rawCash) || 0;
-    totalEl.textContent = formatMoney(cashVal);
+    totalEl.textContent = formatMoney(Math.round(cashVal));
   } else {
     const qtyInput = document.getElementById('moex-asset-qty');
     const qty = parseFloat(qtyInput?.value) || 0;
     const price = _currentSelectedMoexSecurity?.currentPrice || 0;
-    totalEl.textContent = formatMoney(qty * price);
+    totalEl.textContent = formatMoney(Math.round(qty * price));
   }
 }
 
@@ -1310,6 +1019,7 @@ async function submitMoexAsset(e) {
       const p = a.type === 'cash' ? 1 : parseFloat(a.currentPrice) || parseFloat(a.price) || 0;
       newTotalValue += q * p;
     });
+    newTotalValue = Math.round(newTotalValue);
 
     // Фиксируем сделку (покупка или продажа) в истории Broker
     if (deltaQty !== 0) {
@@ -1317,7 +1027,7 @@ async function submitMoexAsset(e) {
       const tradeType = isBuy ? 'buy' : 'sell';
       const absQty = Math.abs(deltaQty);
       const price = isCash ? 1 : assetData.currentPrice || assetData.buyPrice || 1;
-      const tradeAmount = absQty * price;
+      const tradeAmount = Math.round(absQty * price);
 
       let opTitle = '';
       if (isCash) {
@@ -1382,6 +1092,7 @@ async function deleteCurrentMoexAsset() {
               a.type === 'cash' ? 1 : parseFloat(a.currentPrice) || parseFloat(a.price) || 0;
             remainingTotal += q * p;
           });
+        remainingTotal = Math.round(remainingTotal);
 
         await getUserCol('Broker').add({
           type: isCash ? 'Вывод' : 'Продажа',
@@ -1390,7 +1101,7 @@ async function deleteCurrentMoexAsset() {
           name: asset.name,
           quantity: qty,
           price: price,
-          amount: qty * price,
+          amount: Math.round(qty * price),
           date: todayStr,
           balance: remainingTotal,
           timestamp: Date.now(),

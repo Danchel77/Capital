@@ -847,6 +847,31 @@
       </div>
     </div>
 
+    <!-- ПОДХЕДЕР: Закрепленная полоса переключателя «Вклады / Инвестиции» (видна только на вкладке Капитала) -->
+    <div
+      id="capital-view-subbar"
+      class="hidden sticky top-[52px] z-[9] bg-[#0E1016] border-b border-[#1E222D] px-4 py-2"
+    >
+      <div class="max-w-[760px] mx-auto">
+        <div class="view-switcher m-0">
+          <button
+            id="cap-subtab-deposits"
+            onclick="switchCapitalSubtab('deposits')"
+            class="view-switcher__btn is-active"
+          >
+            Вклады
+          </button>
+          <button
+            id="cap-subtab-broker"
+            onclick="switchCapitalSubtab('broker')"
+            class="view-switcher__btn"
+          >
+            Инвестиции
+          </button>
+        </div>
+      </div>
+    </div>
+
     <main id="app-content" class="p-3.5 sm:p-4 pb-20 sm:pb-16">
       <!-- ЭКРАН БЮДЖЕТА (ГЛАВНЫЙ ЭКРАН УПРАВЛЕНИЯ ФИНАНСАМИ) -->
       <div id="budget-tab" class="tab-pane space-y-4">
@@ -1348,7 +1373,7 @@
         </div>
       </div>
 
-      <!-- ЭКРАН КАПИТАЛА (АКТИВЫ: ВКЛАДЫ И ИНВЕСТИЦИИ MOEX) -->
+      <!-- ЭКРАН КАПИТАЛА (АКТИВЫ: ВКЛАДЫ И ИНВЕСТИЦИИ) -->
       <div id="capital-tab" class="tab-pane hidden space-y-4">
         <!-- Сводная карточка общего капитала (Obsidian Minimalist) -->
         <div
@@ -1383,37 +1408,13 @@
             </div>
             <div>
               <span class="text-zinc-400 block text-[10px] uppercase font-semibold"
-                >Инвестиции MOEX</span
+                >Инвестиции</span
               >
               <span id="capital-summary-broker" class="font-mono font-bold text-white tabular-nums"
                 >0 ₽</span
               >
             </div>
           </div>
-        </div>
-
-        <!-- Переключатель секций (Вклады | Инвестиции MOEX) -->
-        <div
-          class="bg-[#12151C] p-1 rounded-xl border border-white/[0.06] flex items-center gap-1 shadow-inner"
-        >
-          <button
-            type="button"
-            id="cap-subtab-deposits"
-            onclick="switchCapitalSubtab('deposits')"
-            class="flex-1 py-2 px-3 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 bg-white text-zinc-950 shadow-sm active:scale-95"
-          >
-            <i data-lucide="vault" class="w-3.5 h-3.5"></i>
-            <span>Вклады</span>
-          </button>
-          <button
-            type="button"
-            id="cap-subtab-broker"
-            onclick="switchCapitalSubtab('broker')"
-            class="flex-1 py-2 px-3 rounded-xl text-xs font-medium transition-all cursor-pointer flex items-center justify-center gap-1.5 text-zinc-400 hover:text-white active:scale-95"
-          >
-            <i data-lucide="trending-up" class="w-3.5 h-3.5"></i>
-            <span>Инвестиции MOEX</span>
-          </button>
         </div>
 
         <!-- Подвкладка: Вклады -->
@@ -1568,9 +1569,15 @@
             id="broker-main-card"
             class="bg-[#0E1016] p-4 sm:p-5 rounded-2xl border border-white/10 shadow-sm relative select-none"
           >
-            <div class="flex items-center justify-between">
-              <span class="text-[11px] text-zinc-400 uppercase tracking-wider font-semibold"
-                >Брокерский портфель</span
+            <!-- Скрытые элементы для совместимости со старыми вызовами -->
+            <span id="broker-balance" class="hidden">0 ₽</span>
+            <span id="broker-assets-sum" class="hidden">0 ₽</span>
+            <span id="broker-cash-sum" class="hidden">0 ₽</span>
+            <span id="broker-yield-badge" class="hidden"></span>
+
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs uppercase tracking-wider font-semibold text-zinc-400"
+                >Динамика портфеля</span
               >
               <div class="flex items-center gap-1.5">
                 <button
@@ -1588,33 +1595,9 @@
                   class="py-1.5 px-3 rounded-xl bg-white text-zinc-950 hover:bg-zinc-200 active:scale-95 text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
                 >
                   <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-                  <span>Добавить</span>
+                  <span>Актив</span>
                 </button>
               </div>
-            </div>
-
-            <!-- Основной баланс портфеля -->
-            <p
-              id="broker-balance"
-              class="text-2xl sm:text-3xl font-bold font-mono text-white tracking-tight mt-1.5"
-            >
-              0 ₽
-            </p>
-
-            <!-- Финтех-бейдж доходности / динамики периода -->
-            <div class="flex items-center gap-2 mt-2 mb-3.5 flex-wrap">
-              <span
-                id="broker-yield-badge"
-                class="px-2 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-white/10 text-zinc-300"
-              >
-                0.0% (0 ₽)
-              </span>
-              <span id="broker-sub-stats" class="text-[11px] text-zinc-400">
-                Активы:
-                <span id="broker-assets-sum" class="text-white font-medium font-mono">0 ₽</span>
-                • Рубли:
-                <span id="broker-cash-sum" class="text-white font-medium font-mono">0 ₽</span>
-              </span>
             </div>
 
             <!-- Переключатель таймфреймов -->

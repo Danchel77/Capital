@@ -415,6 +415,16 @@ function switchTab(rawTab, options = false) {
       txSubbar.classList.add('hidden');
     }
   }
+
+  // Показ / скрытие подхедера «Вклады / Инвестиции» для вкладки Капитала
+  const capSubbar = document.getElementById('capital-view-subbar');
+  if (capSubbar) {
+    if (tab === 'deposits' || tab === 'capital' || tab === 'broker') {
+      capSubbar.classList.remove('hidden');
+    } else {
+      capSubbar.classList.add('hidden');
+    }
+  }
   if (activeNavBtn) {
     activeNavBtn.classList.remove('text-zinc-500', 'text-[#848D99]');
     activeNavBtn.classList.add('text-white');
@@ -483,6 +493,7 @@ function switchTab(rawTab, options = false) {
 }
 
 function switchCapitalSubtab(subtab) {
+  const isDeposits = subtab === 'deposits';
   const depBtn = document.getElementById('cap-subtab-deposits');
   const brBtn = document.getElementById('cap-subtab-broker');
   const depView = document.getElementById('capital-deposits-view');
@@ -494,31 +505,21 @@ function switchCapitalSubtab(subtab) {
     /* ignore */
   }
 
-  if (subtab === 'deposits') {
-    if (depBtn) {
-      depBtn.className =
-        'flex-1 py-2 px-3 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 bg-white text-zinc-950 shadow-sm active:scale-95';
-    }
-    if (brBtn) {
-      brBtn.className =
-        'flex-1 py-2 px-3 rounded-xl text-xs font-medium transition-all cursor-pointer flex items-center justify-center gap-1.5 text-zinc-400 hover:text-white active:scale-95';
-    }
-    if (depView) depView.classList.remove('hidden');
-    if (brView) brView.classList.add('hidden');
+  if (depBtn) {
+    depBtn.classList.toggle('is-active', isDeposits);
+    depBtn.setAttribute('aria-selected', String(isDeposits));
+  }
+  if (brBtn) {
+    brBtn.classList.toggle('is-active', !isDeposits);
+    brBtn.setAttribute('aria-selected', String(!isDeposits));
+  }
 
+  if (depView) depView.classList.toggle('hidden', !isDeposits);
+  if (brView) brView.classList.toggle('hidden', isDeposits);
+
+  if (isDeposits) {
     if (typeof renderDeposits === 'function') renderDeposits();
   } else {
-    if (brBtn) {
-      brBtn.className =
-        'flex-1 py-2 px-3 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 bg-white text-zinc-950 shadow-sm active:scale-95';
-    }
-    if (depBtn) {
-      depBtn.className =
-        'flex-1 py-2 px-3 rounded-xl text-xs font-medium transition-all cursor-pointer flex items-center justify-center gap-1.5 text-zinc-400 hover:text-white active:scale-95';
-    }
-    if (brView) brView.classList.remove('hidden');
-    if (depView) depView.classList.add('hidden');
-
     if (typeof renderBroker === 'function') renderBroker();
     if (typeof drawBrokerChart === 'function') setTimeout(drawBrokerChart, 80);
   }

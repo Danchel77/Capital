@@ -5,31 +5,44 @@ const path = require('path');
 const chromePath =
   '/home/deck/HarnessProjects/Budget/chrome-headless-shell/linux-156.0.8078.80/chrome-headless-shell-linux64/chrome-headless-shell';
 
-// Read index.html and extract capital header and broker view
+// Read index.html and extract app header, capital subbar, capital summary header, and broker view
 const indexHtml = fs.readFileSync('index.html', 'utf8');
 
-// 1. Capital summary header and segmented control
+// 1. App Header
+const headerStart = indexHtml.indexOf('<header\n      class="bg-gray-900');
+const headerEnd = indexHtml.indexOf('</header>', headerStart) + '</header>'.length;
+let appHeaderHtml = indexHtml.substring(headerStart, headerEnd).trim();
+
+// 2. Subbar switcher (pinned top bar like Analytics)
+const subbarStart = indexHtml.indexOf('<!-- ПОДХЕДЕР: Закрепленная полоса переключателя «Вклады / Инвестиции»');
+const subbarEnd = indexHtml.indexOf('<main id="app-content"', subbarStart);
+let subbarHtml = indexHtml.substring(subbarStart, subbarEnd).trim();
+// Unhide and activate "Инвестиции" tab
+subbarHtml = subbarHtml.replace('class="hidden sticky', 'class="sticky');
+subbarHtml = subbarHtml.replace(
+  'id="cap-subtab-deposits"\n            onclick="switchCapitalSubtab(\'deposits\')"\n            class="view-switcher__btn is-active"',
+  'id="cap-subtab-deposits"\n            onclick="switchCapitalSubtab(\'deposits\')"\n            class="view-switcher__btn"'
+);
+subbarHtml = subbarHtml.replace(
+  'id="cap-subtab-broker"\n            onclick="switchCapitalSubtab(\'broker\')"\n            class="view-switcher__btn"',
+  'id="cap-subtab-broker"\n            onclick="switchCapitalSubtab(\'broker\')"\n            class="view-switcher__btn is-active"'
+);
+
+// 3. Capital summary header
 const summaryStart = indexHtml.indexOf('<!-- Сводная карточка общего капитала');
 const summaryEnd = indexHtml.indexOf('<!-- Подвкладка: Вклады -->', summaryStart);
 let headerHtml = indexHtml.substring(summaryStart, summaryEnd).trim();
 
-// Make "Инвестиции MOEX" active and "Вклады" inactive in preview
-headerHtml = headerHtml.replace(
-  'id="cap-subtab-deposits"\n            onclick="switchCapitalSubtab(\'deposits\')"\n            class="flex-1 py-2 px-3 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 bg-white text-zinc-950 shadow-sm active:scale-95"',
-  'id="cap-subtab-deposits"\n            onclick="switchCapitalSubtab(\'deposits\')"\n            class="flex-1 py-2 px-3 rounded-xl text-xs font-medium transition-all cursor-pointer flex items-center justify-center gap-1.5 text-zinc-400 hover:text-white active:scale-95"'
-);
-headerHtml = headerHtml.replace(
-  'id="cap-subtab-broker"\n            onclick="switchCapitalSubtab(\'broker\')"\n            class="flex-1 py-2 px-3 rounded-xl text-xs font-medium transition-all cursor-pointer flex items-center justify-center gap-1.5 text-zinc-400 hover:text-white active:scale-95"',
-  'id="cap-subtab-broker"\n            onclick="switchCapitalSubtab(\'broker\')"\n            class="flex-1 py-2 px-3 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 bg-white text-zinc-950 shadow-sm active:scale-95"'
-);
-
-// 2. Broker View
+// 4. Broker View
 const brStart = indexHtml.indexOf('<!-- Подвкладка: Брокер -->');
 const brEnd = indexHtml.indexOf('</div>\n      </div>\n    </main>', brStart);
 let brHtml = indexHtml.substring(brStart, brEnd).trim();
 
 // Unhide broker view
-brHtml = brHtml.replace('id="capital-broker-view" class="hidden space-y-3.5"', 'id="capital-broker-view" class="space-y-3.5" style="display:block !important;"');
+brHtml = brHtml.replace(
+  'id="capital-broker-view" class="hidden space-y-3.5"',
+  'id="capital-broker-view" class="space-y-3.5" style="display:block !important;"'
+);
 
 const fullHtml = `<!DOCTYPE html>
 <html lang="ru" class="dark">
@@ -54,8 +67,10 @@ const fullHtml = `<!DOCTYPE html>
     }
   </style>
 </head>
-<body class="bg-black text-white p-3.5 min-h-screen">
-  <div class="w-full space-y-3.5">
+<body class="bg-black text-white min-h-screen">
+  ${appHeaderHtml}
+  ${subbarHtml}
+  <div class="w-full p-3.5 space-y-3.5">
     ${headerHtml}
     ${brHtml}
   </div>
@@ -125,9 +140,12 @@ const fullHtml = `<!DOCTYPE html>
     const totalAmountEl = document.getElementById('capital-total-amount');
     const depSummaryEl = document.getElementById('capital-summary-deposits');
     const brSummaryEl = document.getElementById('capital-summary-broker');
+    const monthlyInterestEl = document.getElementById('deposits-monthly-interest');
+
     if (totalAmountEl) totalAmountEl.innerText = formatMoney(2251162 + 697292);
     if (depSummaryEl) depSummaryEl.innerText = formatMoney(2251162);
     if (brSummaryEl) brSummaryEl.innerText = formatMoney(697292);
+    if (monthlyInterestEl) monthlyInterestEl.innerText = '+25 051 ₽/мес';
 
     if (typeof lucide !== 'undefined') lucide.createIcons();
   </script>
