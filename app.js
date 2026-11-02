@@ -366,19 +366,19 @@ function switchTab(rawTab, options = false) {
       el.style.transformOrigin = '';
     }
     if (navBtn) {
-      navBtn.classList.remove('text-[#727cff]');
-      navBtn.classList.add('text-[#848D99]');
+      navBtn.classList.remove('text-white', 'text-[#727cff]');
+      navBtn.classList.add('text-zinc-500');
       const iconWrap = navBtn.querySelector('.nav-icon-wrap');
       if (iconWrap) {
-        iconWrap.classList.remove('bg-[#6C5DD3]/15', 'text-[#727cff]');
+        iconWrap.classList.remove('bg-[#6C5DD3]/15', 'text-[#727cff]', 'text-white');
         iconWrap.classList.add('bg-transparent', 'text-inherit');
         const icon = iconWrap.querySelector('i, svg');
         if (icon) icon.classList.remove('scale-105', 'stroke-[2.2px]');
       }
       const label = navBtn.querySelector('.nav-label');
       if (label) {
-        label.classList.remove('text-white', 'font-bold');
-        label.classList.add('text-[#848D99]', 'font-medium');
+        label.classList.remove('text-white', 'font-bold', 'font-semibold');
+        label.classList.add('text-zinc-500', 'font-medium');
       }
       const ind = navBtn.querySelector('.nav-indicator');
       if (ind) {
@@ -416,19 +416,19 @@ function switchTab(rawTab, options = false) {
     }
   }
   if (activeNavBtn) {
-    activeNavBtn.classList.remove('text-[#848D99]');
-    activeNavBtn.classList.add('text-[#727cff]');
+    activeNavBtn.classList.remove('text-zinc-500', 'text-[#848D99]');
+    activeNavBtn.classList.add('text-white');
     const iconWrap = activeNavBtn.querySelector('.nav-icon-wrap');
     if (iconWrap) {
-      iconWrap.classList.remove('bg-transparent', 'text-inherit');
-      iconWrap.classList.add('bg-[#6C5DD3]/15', 'text-[#727cff]');
+      iconWrap.classList.remove('bg-[#6C5DD3]/15', 'text-[#727cff]');
+      iconWrap.classList.add('bg-transparent', 'text-white');
       const icon = iconWrap.querySelector('i, svg');
       if (icon) icon.classList.add('scale-105', 'stroke-[2.2px]');
     }
     const label = activeNavBtn.querySelector('.nav-label');
     if (label) {
-      label.classList.remove('text-[#848D99]', 'font-medium');
-      label.classList.add('text-white', 'font-bold');
+      label.classList.remove('text-zinc-500', 'text-[#848D99]', 'font-medium');
+      label.classList.add('text-white', 'font-semibold');
     }
     const ind = activeNavBtn.querySelector('.nav-indicator');
     if (ind) {

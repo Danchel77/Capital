@@ -3995,18 +3995,19 @@ function renderFilteredRows(transactions) {
                   .map(cat => {
                     const isCustom = !DEFAULT_SYSTEM_CATEGORIES.includes(cat);
                     const loopIcon = getDynamicCategoryIcon(cat);
+                    const isSelected = cat === tx.category;
                     return `
-                    <div class="flex items-center justify-between hover:bg-white/[0.06] rounded-xl px-2 py-1 transition-colors group">
+                    <div class="flex items-center justify-between ${isSelected ? 'bg-white/[0.08] text-white font-semibold' : 'hover:bg-white/[0.06] text-zinc-300'} rounded-xl px-2 py-1 transition-colors group">
                       <button type="button" 
                               onclick="event.stopPropagation(); selectImportCat('${tx._id}', '${escapeHtml(cat)}', '${loopIcon}')" 
-                              class="flex-1 text-left text-[11px] font-medium text-zinc-200 flex items-center gap-2 cursor-pointer truncate min-w-0">
-                        <i data-lucide="${loopIcon}" class="w-3.5 h-3.5 text-zinc-400 pointer-events-none flex-shrink-0"></i>
-                        <span class="truncate pointer-events-none">${escapeHtml(cat)}</span>
+                              class="flex-1 text-left text-[11px] flex items-center gap-2 cursor-pointer min-w-0">
+                        <i data-lucide="${loopIcon}" class="w-3.5 h-3.5 ${isSelected ? 'text-white' : 'text-zinc-400'} pointer-events-none flex-shrink-0"></i>
+                        <span class="pointer-events-none whitespace-normal break-words leading-tight text-left">${escapeHtml(cat)}</span>
                       </button>
                       ${
                         isCustom
                           ? `
-                        <button type="button" onclick="event.stopPropagation(); deleteCategoryFromImport('${escapeHtml(cat)}', '${tx.type}')" class="text-zinc-500 hover:text-rose-400 p-0.5 flex-shrink-0 cursor-pointer"><i data-lucide="trash-2" class="w-3 h-3 pointer-events-none"></i></button>
+                        <button type="button" onclick="event.stopPropagation(); deleteCategoryFromImport('${escapeHtml(cat)}', '${tx.type}')" class="text-zinc-500 hover:text-rose-400 p-0.5 flex-shrink-0 cursor-pointer ml-1" title="Удалить категорию"><i data-lucide="trash-2" class="w-3 h-3 pointer-events-none"></i></button>
                       `
                           : ''
                       }
@@ -4016,9 +4017,9 @@ function renderFilteredRows(transactions) {
                   .join('')}
 
                 <div class="border-t border-white/[0.06] pt-1 mt-1">
-                  <button type="button" onclick="event.stopPropagation(); addCategoryFromImport('${tx.type}', '${tx._id}')" class="w-full text-left px-2 py-1.5 text-[12px] text-zinc-300 hover:text-white hover:bg-white/[0.06] rounded-xl flex items-center gap-1.5 font-semibold cursor-pointer transition-colors">
-                    <i data-lucide="plus" class="w-3.5 h-3.5 pointer-events-none"></i>
-                    <span>Добавить категорию</span>
+                  <button type="button" onclick="event.stopPropagation(); addCategoryFromImport('${tx.type}', '${tx._id}')" class="w-full text-left px-2 py-1 text-[11px] text-zinc-300 hover:text-white hover:bg-white/[0.06] rounded-xl flex items-center gap-1.5 font-medium cursor-pointer transition-colors whitespace-nowrap">
+                    <i data-lucide="plus" class="w-3 h-3 pointer-events-none flex-shrink-0 text-zinc-400"></i>
+                    <span>+ Категория</span>
                   </button>
                 </div>
               </div>
