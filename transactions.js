@@ -199,6 +199,7 @@ function processCategories(cats) {
 function shiftDropdownYear(step, event) {
   if (event) event.stopPropagation();
   currentDropdownYear += step;
+  window.currentDropdownYear = currentDropdownYear;
 
   // Автоматически подгружаем архив, если года еще нет в базе
   if (typeof window.fetchTransactionsForYear === 'function') {
@@ -211,6 +212,12 @@ function shiftDropdownYear(step, event) {
 
   // Перерисовываем меню
   renderMonthDropdownMenu();
+  if (
+    typeof buildCharts === 'function' &&
+    !document.getElementById('transactions-chart')?.classList.contains('hidden')
+  ) {
+    buildCharts();
+  }
 }
 window.shiftDropdownYear = shiftDropdownYear;
 
@@ -264,8 +271,8 @@ function renderMonthDropdownMenu() {
       const active = currentFilterMonth === m.id;
       const monthOnlyName = m.label.split(' ')[0] || m.label;
       mHtml += `
-        <button type="button" onclick="selectFilterValue('month', '${m.id}', '${escapeHtml(m.label)}')" class="custom-month-grid-btn ${active ? 'is-active' : ''}">
-          <span>${escapeHtml(monthOnlyName)}</span>
+        <button type="button" onclick="selectFilterValue('month', '${m.id}', '${escapeHtml(m.label)}')" class="custom-month-grid-btn text-left justify-start ${active ? 'is-active' : ''}">
+          <span class="truncate">${escapeHtml(monthOnlyName)}</span>
         </button>
       `;
     });
@@ -274,7 +281,7 @@ function renderMonthDropdownMenu() {
     const isYearActive = currentFilterMonth === 'year-' + currentDropdownYear;
     mHtml += `
       <div class="col-span-2 pt-1 mt-0.5 border-t border-white/[0.06]">
-        <button type="button" onclick="selectFilterValue('month', 'year-${currentDropdownYear}', 'За весь год')" class="custom-month-grid-btn w-full ${isYearActive ? 'is-active' : ''}">
+        <button type="button" onclick="selectFilterValue('month', 'year-${currentDropdownYear}', 'За весь год')" class="custom-month-grid-btn w-full text-center justify-center ${isYearActive ? 'is-active' : ''}">
           <span>За весь год</span>
         </button>
       </div>
@@ -310,10 +317,12 @@ function toggleCustomFilterMenu(type) {
 function selectFilterValue(type, value, label) {
   if (type === 'month') {
     currentFilterMonth = value;
+    window.currentFilterMonth = value;
     document.getElementById('label-filter-month').textContent = label;
     document.getElementById('menu-filter-month').classList.add('hidden');
   } else {
     currentFilterCategory = value;
+    window.currentFilterCategory = value;
     document.getElementById('label-filter-cat').textContent = label;
     document.getElementById('menu-filter-cat').classList.add('hidden');
   }
@@ -936,6 +945,8 @@ function renderTransactions() {
       const y = parseInt((data[0].id || '').split('-')[0], 10);
       if (!isNaN(y)) currentDropdownYear = y;
     }
+    window.currentFilterMonth = currentFilterMonth;
+    window.currentDropdownYear = currentDropdownYear;
   }
 
   // Обновляем текст на кнопке выбора месяца
@@ -1130,6 +1141,13 @@ function renderTransactions() {
   listEl.innerHTML = '';
   appendTxChunk();
 
+  if (
+    typeof buildCharts === 'function' &&
+    !document.getElementById('transactions-chart')?.classList.contains('hidden')
+  ) {
+    buildCharts();
+  }
+
   if (window.lastAddedTxIds) {
     setTimeout(() => {
       document.querySelectorAll('.tx-row-new').forEach(el => el.classList.remove('tx-row-new'));
@@ -1181,3 +1199,5 @@ window.loadMoreTransactions = loadMoreTransactions;
 window.toggleTxSearchBar = toggleTxSearchBar;
 window.handleTxSearchInput = handleTxSearchInput;
 window.resetAllTxFilters = resetAllTxFilters;
+window.getCurrentFilterMonth = () => currentFilterMonth;
+window.getCurrentDropdownYear = () => currentDropdownYear;

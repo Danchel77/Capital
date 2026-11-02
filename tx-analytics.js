@@ -53,19 +53,18 @@ function buildCharts() {
   if (chartContentEl) chartContentEl.classList.remove('hidden');
   if (typeof lucide !== 'undefined') lucide.createIcons();
 
-  // 1. СТРУКТУРА (DONUT): отображаем данные за выбранный в верхнем фильтре месяц
-  let targetMonthId = window.currentFilterMonth;
-  if (!targetMonthId || targetMonthId === 'all' || targetMonthId.startsWith('year-')) {
-    const curYear = window.currentDropdownYear || new Date().getFullYear();
-    const curYearMonth = months.find(m => m.id && m.id.startsWith(String(curYear)));
-    targetMonthId = curYearMonth ? curYearMonth.id : months[0]?.id;
-  }
-  if (targetMonthId) {
-    updateAnalyticsForMonth(targetMonthId);
-  }
+  // 1. СТРУКТУРА (DONUT): отображаем данные за период, выбранный в верхнем селекторе
+  const targetMonthId =
+    (typeof window.getCurrentFilterMonth === 'function'
+      ? window.getCurrentFilterMonth()
+      : window.currentFilterMonth) || months[0]?.id;
+  updateAnalyticsForMonth(targetMonthId);
 
   // 2. ДИНАМИКА САЛЬДО (NET FLOW SPLINE CURVE): за весь текущий год (12 месяцев)
-  const targetYear = window.currentDropdownYear || new Date().getFullYear();
+  const targetYear =
+    (typeof window.getCurrentDropdownYear === 'function'
+      ? window.getCurrentDropdownYear()
+      : window.currentDropdownYear) || new Date().getFullYear();
   const yearEl = document.getElementById('trend-kpi-year');
   if (yearEl) yearEl.textContent = `${targetYear} год`;
 
@@ -82,6 +81,20 @@ function buildCharts() {
     'Окт',
     'Ноя',
     'Дек',
+  ];
+  const monthFullNames = [
+    'Январь',
+    'Февраль',
+    'Март',
+    'Апрель',
+    'Май',
+    'Июнь',
+    'Июль',
+    'Август',
+    'Сентябрь',
+    'Октябрь',
+    'Ноябрь',
+    'Декабрь',
   ];
   const netFlowData = [];
   const incomeData = [];
@@ -116,6 +129,10 @@ function buildCharts() {
   const ctx = canvas.getContext('2d');
   if (monthlyChartObj) monthlyChartObj.destroy();
 
+  // Удаляем старый HTML тултип, если остался от предыдущего инстанса
+  const oldTooltip = canvas.parentNode?.querySelector('#chart-spline-tooltip');
+  if (oldTooltip) oldTooltip.remove();
+
   monthlyChartObj = new Chart(ctx, {
     type: 'line',
     data: {
@@ -127,8 +144,9 @@ function buildCharts() {
           borderColor: '#10B981',
           borderWidth: 2,
           tension: 0.35,
-          pointRadius: 3,
-          pointHoverRadius: 6,
+          pointRadius: 4,
+          pointHoverRadius: 7,
+          pointHitRadius: 24, // Комфортный радиус клика на точку
           pointBackgroundColor: '#10B981',
           pointBorderColor: '#ffffff',
           pointBorderWidth: 1.5,
@@ -144,32 +162,76 @@ function buildCharts() {
       responsive: true,
       maintainAspectRatio: false,
       interaction: {
-        mode: 'index',
-        intersect: false,
+        mode: 'nearest',
+        intersect: true, // Клик в пустое место не активирует точку и закрывает тултип
       },
       plugins: {
         legend: { display: false },
         datalabels: { display: false },
         tooltip: {
-          backgroundColor: '#0E1016',
-          titleColor: '#FFFFFF',
-          bodyColor: '#A1A1AA',
-          borderColor: 'rgba(255, 255, 255, 0.12)',
-          borderWidth: 1,
-          padding: 10,
-          cornerRadius: 12,
-          callbacks: {
-            label(context) {
-              const idx = context.dataIndex;
-              const net = netFlowData[idx];
-              const inc = incomeData[idx];
-              const exp = expenseData[idx];
-              return [
-                `  Сальдо: ${net >= 0 ? '+' : ''}${formatMoney(net)}`,
-                `  Доходы: ${formatMoney(inc)}`,
-                `  Расходы: ${formatMoney(exp)}`,
-              ];
-            },
+          enabled: false, // Отключаем стандартный холстовый тултип, используем аккуратный HTML
+          external(context) {
+            const { chart, tooltip } = context;
+            let tooltipEl = chart.canvas.parentNode.querySelector('#chart-spline-tooltip');
+
+            if (!tooltipEl) {
+              tooltipEl = document.createElement('div');
+              tooltipEl.id = 'chart-spline-tooltip';
+              tooltipEl.className =
+                'pointer-events-none absolute z-30 bg-[#0E1016] border border-white/10 rounded-2xl p-2.5 shadow-[0_12px_36px_rgba(0,0,0,0.85)] transition-opacity duration-150 backdrop-blur-md min-w-[160px]';
+              chart.canvas.parentNode.appendChild(tooltipEl);
+            }
+
+            if (tooltip.opacity === 0 || !tooltip.dataPoints || !tooltip.dataPoints.length) {
+              tooltipEl.style.opacity = '0';
+              return;
+            }
+
+            const idx = tooltip.dataPoints[0].dataIndex;
+            const monthName = monthFullNames[idx];
+            const net = netFlowData[idx];
+            const inc = incomeData[idx];
+            const exp = expenseData[idx];
+
+            const netColor = net >= 0 ? 'text-emerald-400' : 'text-rose-400';
+            const netSign = net >= 0 ? '+' : '';
+
+            tooltipEl.innerHTML = `
+              <div class="text-[11px] font-bold text-white mb-2 pb-1.5 border-b border-white/[0.06] flex items-center justify-between">
+                <span>${escapeHtml(monthName)} ${targetYear}</span>
+              </div>
+              <div class="space-y-1.5 text-xs">
+                <div class="flex items-center justify-between gap-3">
+                  <span class="text-zinc-400 text-[11px]">Сальдо</span>
+                  <span class="font-mono font-bold ${netColor}">${netSign}${formatMoney(net)}</span>
+                </div>
+                <div class="flex items-center justify-between gap-3">
+                  <span class="text-zinc-400 text-[11px]">Доходы</span>
+                  <span class="font-mono font-semibold text-emerald-400">${formatMoney(inc)}</span>
+                </div>
+                <div class="flex items-center justify-between gap-3">
+                  <span class="text-zinc-400 text-[11px]">Расходы</span>
+                  <span class="font-mono font-semibold text-white">${formatMoney(exp)}</span>
+                </div>
+              </div>
+            `;
+
+            const { offsetLeft: positionX, offsetTop: positionY } = chart.canvas;
+            const canvasWidth = chart.canvas.offsetWidth;
+
+            const tooltipWidth = tooltipEl.offsetWidth || 170;
+            let left = positionX + tooltip.caretX - tooltipWidth / 2;
+            if (left < 6) left = 6;
+            if (left + tooltipWidth > canvasWidth - 6) left = canvasWidth - tooltipWidth - 6;
+
+            let top = positionY + tooltip.caretY - tooltipEl.offsetHeight - 12;
+            if (top < positionY) {
+              top = positionY + tooltip.caretY + 12;
+            }
+
+            tooltipEl.style.opacity = '1';
+            tooltipEl.style.left = `${left}px`;
+            tooltipEl.style.top = `${top}px`;
           },
         },
       },
@@ -242,18 +304,10 @@ function switchStructureType(type) {
     }
   }
 
-  const titleEl = document.getElementById('structure-title');
-  if (titleEl) {
-    titleEl.textContent = type === 'Расход' ? 'Структура расходов' : 'Структура доходов';
-  }
-
-  const months = Cache?.transactions || [];
-  let targetMonthId = window.currentFilterMonth;
-  if (!targetMonthId || targetMonthId === 'all' || targetMonthId.startsWith('year-')) {
-    const curYear = window.currentDropdownYear || new Date().getFullYear();
-    const curYearMonth = months.find(m => m.id && m.id.startsWith(String(curYear)));
-    targetMonthId = curYearMonth ? curYearMonth.id : months[0]?.id;
-  }
+  const targetMonthId =
+    (typeof window.getCurrentFilterMonth === 'function'
+      ? window.getCurrentFilterMonth()
+      : window.currentFilterMonth) || (Cache?.transactions || [])[0]?.id;
   if (targetMonthId) {
     updateAnalyticsForMonth(targetMonthId);
   }
@@ -330,28 +384,39 @@ function selectCategorySlice(idx) {
 window.selectCategorySlice = selectCategorySlice;
 
 function updateAnalyticsForMonth(monthId) {
-  const month = Cache.transactions?.find(m => m.id === monthId);
-  if (!month) return;
+  const allMonths = Cache.transactions || [];
+  let txItems = [];
+  let titlePeriod = '';
 
-  const income = Number(month.income) || 0;
-  const expense = Number(month.expense) || 0;
-  const balance = income - expense;
-  const rate = income > 0 ? Math.round((expense / income) * 100) : 0;
-
-  const incomeEl = document.getElementById('analytics-income');
-  const expenseEl = document.getElementById('analytics-expense');
-  const balanceEl = document.getElementById('analytics-month-balance');
-  const rateEl = document.getElementById('analytics-rate');
-  if (incomeEl) incomeEl.textContent = formatMoney(income);
-  if (expenseEl) expenseEl.textContent = formatMoney(expense);
-  if (balanceEl) {
-    balanceEl.textContent = `${balance >= 0 ? '+' : ''}${formatMoney(balance)}`;
-    balanceEl.classList.toggle('is-negative', balance < 0);
+  if (monthId && monthId.startsWith('year-')) {
+    const y = monthId.replace('year-', '');
+    titlePeriod = `за ${y} год`;
+    const yearMonths = allMonths.filter(m => m.id && m.id.startsWith(y));
+    yearMonths.forEach(m => {
+      txItems.push(...(m.items || []));
+    });
+  } else if (monthId === 'all') {
+    titlePeriod = 'за все время';
+    allMonths.forEach(m => {
+      txItems.push(...(m.items || []));
+    });
+  } else {
+    const month = allMonths.find(m => m.id === monthId) || allMonths[0];
+    if (month) {
+      titlePeriod = month.label ? `• ${month.label}` : '';
+      txItems = month.items || [];
+    }
   }
-  if (rateEl) rateEl.textContent = income > 0 ? `${rate}% дохода` : 'Нет дохода';
+
+  const titleEl = document.getElementById('structure-title');
+  if (titleEl) {
+    const baseTitle =
+      currentStructureType === 'Расход' ? 'Структура расходов' : 'Структура доходов';
+    titleEl.textContent = titlePeriod ? `${baseTitle} ${titlePeriod}` : baseTitle;
+  }
 
   const catMap = {};
-  (month.items || [])
+  txItems
     .filter(tx => tx.type === currentStructureType)
     .forEach(tx => {
       catMap[tx.category] = (catMap[tx.category] || 0) + (Number(tx.amount) || 0);

@@ -1103,11 +1103,11 @@ body.selection-mode .deposit-goal-tag {
 }
 .category-legend__item:hover,
 .category-legend__item.is-selected {
-  background: rgba(108, 93, 211, 0.16);
-  border-color: rgba(108, 93, 211, 0.45);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
 }
 .category-legend__item.is-selected {
-  box-shadow: 0 0 10px rgba(108, 93, 211, 0.22);
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.08);
   transform: scale(1.01);
 }
 .category-legend__dot {
@@ -1292,17 +1292,17 @@ select option {
 .custom-month-grid-btn {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   width: 100%;
-  padding: 5px 6px;
-  font-size: 11px;
+  padding: 6px 10px;
+  font-size: 12px;
   font-weight: 500;
   color: #d4d4d8;
-  border-radius: 8px;
+  border-radius: 9px;
   background: transparent;
   border: 1px solid transparent;
   cursor: pointer;
-  text-align: center;
+  text-align: left;
   transition: all 0.12s ease;
   user-select: none;
 }
