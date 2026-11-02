@@ -1040,7 +1040,7 @@
         </div>
 
         <!-- 2. Панель «Фильтры и Сводка» с разделительной линией снизу -->
-        <div class="space-y-2.5 pb-3 border-b border-[#1E222D]">
+        <div class="space-y-2.5 pb-3 border-b border-white/[0.06]">
           <!-- Верхний ряд: Меню фильтрации + кнопка поиска -->
           <div id="tx-filter-bar" class="flex gap-2 items-center">
             <!-- Меню выбора месяца -->
@@ -1048,14 +1048,14 @@
               <button
                 type="button"
                 onclick="toggleCustomFilterMenu('month')"
-                class="w-full bg-[#0E1016] border border-[#1E222D] text-xs text-zinc-200 rounded-xl px-3 py-2 flex items-center justify-between outline-none cursor-pointer hover:border-[#282E3E] transition-colors"
+                class="w-full bg-[#0E1016] border border-white/[0.08] hover:border-white/20 text-xs text-zinc-200 rounded-xl px-3 py-2 flex items-center justify-between outline-none cursor-pointer transition-colors"
               >
                 <span id="label-filter-month" class="truncate font-medium">Все месяцы</span>
                 <span class="text-zinc-500 text-[9px] ml-1 flex-shrink-0">▼</span>
               </button>
               <div
                 id="menu-filter-month"
-                class="hidden absolute left-0 top-full mt-1.5 w-full max-h-64 overflow-y-auto bg-[#0E1016] border border-[#1E222D] rounded-2xl shadow-2xl z-40 p-1.5 space-y-0.5"
+                class="hidden absolute left-0 top-full mt-1.5 w-[236px] sm:w-[256px] max-h-[85vh] overflow-y-auto bg-[#0E1016] border border-white/10 rounded-2xl shadow-[0_16px_40px_rgba(0,0,0,0.85)] z-40 p-1.5 space-y-0.5 backdrop-blur-xl"
               ></div>
             </div>
 
@@ -1064,14 +1064,14 @@
               <button
                 type="button"
                 onclick="toggleCustomFilterMenu('cat')"
-                class="w-full bg-[#0E1016] border border-[#1E222D] text-xs text-zinc-200 rounded-xl px-3 py-2 flex items-center justify-between outline-none cursor-pointer hover:border-[#282E3E] transition-colors"
+                class="w-full bg-[#0E1016] border border-white/[0.08] hover:border-white/20 text-xs text-zinc-200 rounded-xl px-3 py-2 flex items-center justify-between outline-none cursor-pointer transition-colors"
               >
                 <span id="label-filter-cat" class="truncate font-medium">Все категории</span>
                 <span class="text-zinc-500 text-[9px] ml-1 flex-shrink-0">▼</span>
               </button>
               <div
                 id="menu-filter-cat"
-                class="hidden absolute right-0 top-full mt-1.5 w-full max-h-64 overflow-y-auto bg-[#0E1016] border border-[#1E222D] rounded-2xl shadow-2xl z-40 p-1.5 space-y-0.5"
+                class="hidden absolute right-0 top-full mt-1.5 w-[220px] sm:w-[250px] max-h-72 overflow-y-auto bg-[#0E1016] border border-white/10 rounded-2xl shadow-[0_16px_40px_rgba(0,0,0,0.85)] z-40 p-1.5 space-y-0.5 backdrop-blur-xl"
               ></div>
             </div>
 
@@ -1080,7 +1080,7 @@
               type="button"
               id="tx-search-toggle-btn"
               onclick="toggleTxSearchBar()"
-              class="h-[34px] w-[34px] bg-[#0E1016] hover:bg-[#181C26] border border-[#1E222D] text-zinc-400 hover:text-white rounded-xl flex items-center justify-center transition-all cursor-pointer flex-shrink-0 active:scale-95"
+              class="h-[34px] w-[34px] bg-[#0E1016] hover:bg-white/[0.06] border border-white/[0.08] hover:border-white/20 text-zinc-400 hover:text-white rounded-xl flex items-center justify-center transition-all cursor-pointer flex-shrink-0 active:scale-95"
               title="Поиск по операциям"
             >
               <i data-lucide="search" class="w-3.5 h-3.5"></i>
@@ -1118,7 +1118,7 @@
           <!-- Форма добавления транзакций -->
           <div
             id="tx-form-container"
-            class="hidden relative z-30 bg-[#0E1016] p-3 rounded-2xl border border-[#1E222D] shadow-xl animate-fade-in"
+            class="hidden relative z-30 bg-[#0E1016] p-3 rounded-2xl border border-white/[0.08] shadow-xl animate-fade-in"
           >
             <form id="tx-form" onsubmit="submitTransactions(event)">
               <div id="tx-items-list" class="space-y-2 mb-2"></div>
@@ -1126,7 +1126,7 @@
                 type="button"
                 id="add-tx-row-btn"
                 onclick="addTxRow()"
-                class="w-full mb-2.5 py-1.5 border border-dashed border-[#282E3E] rounded-xl text-zinc-400 text-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 active:scale-[0.99] outline-none select-none"
+                class="w-full mb-2.5 py-2 border border-dashed border-white/10 hover:border-white/20 rounded-xl text-zinc-400 hover:text-zinc-200 text-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 active:scale-[0.99] outline-none select-none bg-transparent hover:bg-white/[0.02]"
               >
                 + Добавить еще транзакцию
               </button>
@@ -1864,15 +1864,15 @@
 
     <!-- ШАБЛОН СТРОКИ ТРАНЗАКЦИИ -->
     <template id="tx-row-template">
-      <div
-        class="tx-item bg-[#12151C] p-2.5 rounded-xl border border-[rgba(255,255,255,0.07)] relative"
-      >
+      <div class="tx-item bg-[#12151C] p-3 rounded-xl border border-white/[0.06] relative mb-2">
         <div class="flex items-center justify-between gap-2 mb-2">
-          <div class="flex bg-[#212430] p-0.5 rounded-lg w-full max-w-[170px]">
+          <div
+            class="flex bg-[#0E1016] p-0.5 rounded-lg w-full max-w-[170px] border border-white/[0.06]"
+          >
             <label class="flex-1 text-center cursor-pointer">
               <input type="radio" value="Расход" class="tx-type peer hidden" checked />
               <div
-                class="peer-checked:bg-gray-700 peer-checked:text-white py-1 rounded-md text-[11px] font-semibold text-gray-400 transition-all select-none"
+                class="peer-checked:bg-white/10 peer-checked:text-white py-1 rounded-md text-[11px] font-semibold text-zinc-400 transition-all select-none"
               >
                 Расход
               </div>
@@ -1880,7 +1880,7 @@
             <label class="flex-1 text-center cursor-pointer">
               <input type="radio" value="Доход" class="tx-type peer hidden" />
               <div
-                class="peer-checked:bg-gray-700 peer-checked:text-[#30D158] py-1 rounded-md text-[11px] font-semibold text-gray-400 transition-all select-none"
+                class="peer-checked:bg-emerald-500/15 peer-checked:text-emerald-400 peer-checked:border peer-checked:border-emerald-500/25 py-1 rounded-md text-[11px] font-semibold text-zinc-400 transition-all select-none"
               >
                 Доход
               </div>
@@ -1889,7 +1889,7 @@
 
           <button
             type="button"
-            class="tx-remove-row-btn hidden text-gray-400 hover:text-[#FF453A] p-1 rounded-lg transition-colors cursor-pointer"
+            class="tx-remove-row-btn hidden text-zinc-400 hover:text-rose-400 p-1 rounded-lg transition-colors cursor-pointer"
             onclick="removeTxRow(this)"
             title="Удалить операцию"
           >
@@ -1906,7 +1906,7 @@
               handleInlineTxAmountChange(this);
             "
             required
-            class="tx-amount w-full text-lg font-bold bg-[#181B24] border border-[rgba(255,255,255,0.1)] focus:border-white/30 text-white rounded-lg px-3 py-1.5 outline-none placeholder-gray-500 transition-colors"
+            class="tx-amount w-full text-lg font-bold bg-[#0E1016] border border-white/10 focus:border-white/30 text-white rounded-lg px-3 py-1.5 outline-none placeholder-zinc-500 transition-colors"
             placeholder="0 ₽"
           />
         </div>
@@ -1915,7 +1915,7 @@
           <input
             type="date"
             required
-            class="tx-date h-9 w-full min-w-0 bg-[#181B24] border border-[rgba(255,255,255,0.1)] text-white rounded-lg px-2 text-xs outline-none"
+            class="tx-date h-9 w-full min-w-0 bg-[#0E1016] border border-white/10 focus:border-white/30 text-white rounded-lg px-2 text-xs outline-none"
           />
 
           <!-- Кастомный селектор категории на всю ширину -->
@@ -1924,16 +1924,16 @@
 
             <button
               type="button"
-              class="tx-category-btn h-9 w-full bg-[#181B24] border border-[rgba(255,255,255,0.1)] text-white rounded-lg px-2.5 text-xs flex items-center justify-between outline-none cursor-pointer hover:border-gray-500 transition-colors"
+              class="tx-category-btn h-9 w-full bg-[#0E1016] border border-white/10 text-white rounded-lg px-2.5 text-xs flex items-center justify-between outline-none cursor-pointer hover:border-white/20 transition-colors"
             >
-              <span class="tx-category-label truncate text-gray-200 text-xs font-normal"
+              <span class="tx-category-label truncate text-zinc-300 text-xs font-normal"
                 >Категория...</span
               >
-              <span class="text-gray-400 text-[8px] ml-1 flex-shrink-0">▼</span>
+              <span class="text-zinc-500 text-[8px] ml-1 flex-shrink-0">▼</span>
             </button>
 
             <div
-              class="tx-category-menu custom-dropdown-menu hidden absolute left-0 w-full max-h-56 overflow-y-auto bg-[#181B24]/95 backdrop-blur-md border border-gray-700 rounded-xl shadow-2xl z-50 p-1 space-y-0.5"
+              class="tx-category-menu custom-dropdown-menu hidden absolute left-0 w-full max-h-56 overflow-y-auto bg-[#0E1016] border border-white/10 rounded-xl shadow-2xl z-50 p-1 space-y-0.5"
             ></div>
           </div>
         </div>
@@ -1943,16 +1943,19 @@
             type="text"
             placeholder="Магазин или назначение платежа"
             oninput="handleTxRowCommentInput(this)"
-            class="tx-comment flex-1 min-w-0 bg-[#181B24] border border-[rgba(255,255,255,0.1)] text-white placeholder-gray-500 rounded-lg px-2.5 py-1.5 outline-none text-xs focus:border-white/30 transition-colors"
+            class="tx-comment flex-1 min-w-0 bg-[#0E1016] border border-white/10 text-white placeholder-zinc-500 rounded-lg px-2.5 py-1.5 outline-none text-xs focus:border-white/30 transition-colors"
           />
           <!-- Кнопка булавка для добавления в словарь -->
           <button
             type="button"
             onclick="openRememberRuleForTxRow(this)"
-            class="w-8 h-8 rounded-lg bg-[#6C5DD3]/15 hover:bg-[#6C5DD3]/25 active:scale-90 text-[#9E86FF] hover:text-white border border-[#6C5DD3]/20 flex items-center justify-center flex-shrink-0 cursor-pointer transition-all shadow-sm group"
+            class="w-8 h-8 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] active:scale-90 text-zinc-400 hover:text-white border border-white/[0.06] flex items-center justify-center flex-shrink-0 cursor-pointer transition-all shadow-sm group"
             title="Запомнить в словарь категорий"
           >
-            <i data-lucide="pin" class="w-4 h-4 transition-transform group-hover:scale-110"></i>
+            <i
+              data-lucide="pin"
+              class="w-3.5 h-3.5 -rotate-45 transition-transform group-hover:scale-110 pointer-events-none"
+            ></i>
           </button>
         </div>
 
@@ -6010,14 +6013,20 @@
     <!-- ПЛАВАЮЩЕЕ КОНТЕКСТНОЕ МИНИ-МЕНЮ (ПОЯВЛЯЕТСЯ ПРЯМО У КАРТОЧКИ) -->
     <div
       id="card-context-menu"
-      class="card-context-menu hidden flex flex-col p-1.5 w-[160px] bg-[#161A24] border border-[#2A3245] shadow-[0_12px_40px_rgba(0,0,0,0.8)] rounded-2xl z-[150] select-none"
+      class="card-context-menu hidden flex flex-col p-1.5 w-[176px] bg-[#12151C] border border-white/10 shadow-[0_12px_40px_rgba(0,0,0,0.85)] rounded-2xl z-[150] select-none"
     >
-      <!-- Шапка с мета-информацией: однострочная или аккуратные 2 строки по единой вертикальной оси -->
-      <div id="context-menu-header" class="border-b border-[#283144] mb-1">
+      <!-- Шапка с мета-информацией: изолированная справочная карточка -->
+      <div
+        id="context-menu-header"
+        class="bg-white/[0.03] border border-white/[0.06] rounded-xl p-2 mb-1"
+      >
+        <div class="text-[9px] font-bold text-zinc-500 uppercase tracking-wider mb-1 select-none">
+          Операция
+        </div>
         <!-- Однострочный режим (когда помещается) -->
         <div
           id="context-meta-single"
-          class="hidden items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium min-w-0"
+          class="hidden items-center gap-1.5 text-xs font-medium min-w-0"
         >
           <div
             id="context-author-avatar-single"
@@ -6027,25 +6036,25 @@
           </div>
           <span
             id="context-author-label-single"
-            class="text-xs font-medium text-white truncate min-w-0"
+            class="text-xs font-medium text-zinc-300 truncate min-w-0"
           ></span>
-          <span class="text-zinc-500 font-bold select-none flex-shrink-0 leading-none">&bull;</span>
+          <span class="text-zinc-600 font-bold select-none flex-shrink-0 leading-none">&bull;</span>
           <div
             id="context-source-icon-single"
-            class="w-4 h-4 flex items-center justify-center flex-shrink-0 text-zinc-400 overflow-hidden"
+            class="w-4 h-4 flex items-center justify-center flex-shrink-0 text-zinc-500 overflow-hidden"
           >
             <i data-lucide="receipt" class="w-3.5 h-3.5"></i>
           </div>
           <span
             id="context-source-text-single"
-            class="text-xs font-medium text-zinc-300 truncate min-w-0"
+            class="text-[11px] text-zinc-400 truncate min-w-0"
           ></span>
         </div>
 
-        <!-- Двухстрочный режим (строго по единой оси с кнопками: px-2.5, слот w-4 h-4, gap-2.5, text-xs) -->
-        <div id="context-meta-multi" class="flex flex-col gap-1.5 px-2.5 py-1.5">
+        <!-- Двухстрочный режим -->
+        <div id="context-meta-multi" class="flex flex-col gap-1">
           <!-- Строка 1: Автор операции -->
-          <div class="flex items-center gap-2.5 text-xs font-medium min-w-0">
+          <div class="flex items-center gap-2 text-xs font-medium min-w-0">
             <div
               id="context-author-avatar"
               class="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 text-white overflow-hidden text-[9px]"
@@ -6054,21 +6063,21 @@
             </div>
             <span
               id="context-author-label"
-              class="text-xs font-medium text-white truncate min-w-0 flex-1"
+              class="text-xs font-medium text-zinc-200 truncate min-w-0 flex-1"
             ></span>
           </div>
 
           <!-- Строка 2: Источник операции -->
-          <div class="flex items-center gap-2.5 text-xs font-medium min-w-0 text-zinc-400">
+          <div class="flex items-center gap-2 text-[11px] font-normal min-w-0 text-zinc-400">
             <div
               id="context-source-icon"
-              class="w-4 h-4 flex items-center justify-center flex-shrink-0 text-zinc-400 overflow-hidden"
+              class="w-4 h-4 flex items-center justify-center flex-shrink-0 text-zinc-500 overflow-hidden"
             >
               <i data-lucide="receipt" class="w-3.5 h-3.5"></i>
             </div>
             <span
               id="context-source-text"
-              class="text-xs font-medium text-zinc-300 truncate min-w-0 flex-1"
+              class="text-[11px] text-zinc-400 truncate min-w-0 flex-1"
             ></span>
           </div>
         </div>
@@ -6076,7 +6085,7 @@
         <!-- Заголовок для карточек без metaInfo (например, Вклады / Цели) -->
         <div
           id="context-menu-title"
-          class="hidden text-xs font-medium text-zinc-400 truncate px-2.5 py-1.5"
+          class="hidden text-xs font-medium text-zinc-400 truncate py-0.5"
         >
           Действия
         </div>
@@ -6085,7 +6094,7 @@
       <button
         type="button"
         id="context-btn-edit"
-        class="context-menu-btn w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl hover:bg-[#202636] text-xs font-medium text-zinc-200 hover:text-white transition-colors cursor-pointer text-left"
+        class="context-menu-btn w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium text-zinc-200 hover:text-white hover:bg-white/[0.08] active:bg-white/[0.12] transition-colors cursor-pointer text-left"
       >
         <i data-lucide="pencil" class="w-4 h-4 text-zinc-400 flex-shrink-0"></i>
         <span class="truncate">Редактировать</span>
@@ -6093,7 +6102,7 @@
       <button
         type="button"
         id="context-btn-delete"
-        class="context-menu-btn w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl hover:bg-[#341820] text-xs font-medium text-rose-400 transition-colors cursor-pointer text-left"
+        class="context-menu-btn w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium text-rose-400 hover:bg-rose-500/10 active:bg-rose-500/15 transition-colors cursor-pointer text-left"
       >
         <i data-lucide="trash-2" class="w-4 h-4 text-rose-400 flex-shrink-0"></i>
         <span class="truncate">Удалить</span>
@@ -6103,12 +6112,10 @@
     <!-- АККУРАТНЫЙ ПОПАП ДЛЯ ТОЧКИ ГРАФИКА БРОКЕРА (ДОЛГОЕ НАЖАТИЕ) -->
     <div
       id="broker-point-popup"
-      class="card-context-menu hidden flex flex-col p-1.5 min-w-[200px] select-none z-[130]"
+      class="card-context-menu hidden flex flex-col p-1.5 min-w-[200px] bg-[#12151C] border border-white/10 shadow-[0_12px_40px_rgba(0,0,0,0.85)] rounded-2xl select-none z-[130]"
     >
-      <div class="px-3 py-2 border-b border-[rgba(255,255,255,0.06)] mb-1">
-        <div id="broker-popup-date" class="text-[11px] font-semibold text-[#848D99]">
-          09.09.2026
-        </div>
+      <div class="bg-white/[0.03] border border-white/[0.06] rounded-xl px-2.5 py-2 mb-1">
+        <div id="broker-popup-date" class="text-[11px] font-semibold text-zinc-400">09.09.2026</div>
         <div id="broker-popup-info" class="text-xs font-bold text-white truncate mt-0.5">
           Баланс: 0 ₽
         </div>
@@ -6116,16 +6123,16 @@
       <button
         type="button"
         id="broker-popup-btn-edit"
-        class="context-menu-btn w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-[#212430] text-[13px] font-medium text-gray-200 transition-colors cursor-pointer text-left"
+        class="context-menu-btn w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium text-zinc-200 hover:text-white hover:bg-white/[0.08] active:bg-white/[0.12] transition-colors cursor-pointer text-left"
       >
-        <i data-lucide="pencil" class="w-4 h-4 text-[#848D99]"></i> Редактировать
+        <i data-lucide="pencil" class="w-4 h-4 text-zinc-400"></i> Редактировать
       </button>
       <button
         type="button"
         id="broker-popup-btn-delete"
-        class="context-menu-btn w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-[#FF453A]/10 text-[13px] font-medium text-[#FF453A] transition-colors cursor-pointer text-left"
+        class="context-menu-btn w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium text-rose-400 hover:bg-rose-500/10 active:bg-rose-500/15 transition-colors cursor-pointer text-left"
       >
-        <i data-lucide="trash-2" class="w-4 h-4"></i> Удалить
+        <i data-lucide="trash-2" class="w-4 h-4 text-rose-400"></i> Удалить
       </button>
     </div>
 
@@ -6134,26 +6141,26 @@
     <div
       id="tx-edit-modal"
       onclick="if (event.target === this) closeEditTxModal();"
-      class="fixed inset-0 bg-black/80 z-[150] hidden flex flex-col justify-center items-center p-4 backdrop-blur-sm animate-fade-in"
+      class="fixed inset-0 bg-black/85 z-[150] hidden flex flex-col justify-center items-center p-3.5 sm:p-4 backdrop-blur-sm animate-fade-in"
     >
       <div
-        class="bg-[#181B24] border border-[rgba(255,255,255,0.08)] w-full max-w-sm rounded-3xl p-5 shadow-2xl max-h-[92dvh] flex flex-col"
+        class="bg-[#0E1016] border border-white/10 w-full max-w-sm rounded-3xl p-5 shadow-2xl max-h-[92dvh] flex flex-col"
       >
         <!-- Шапка модального окна -->
         <div
-          class="flex items-center justify-between mb-3.5 pb-2.5 border-b border-[rgba(255,255,255,0.06)] flex-shrink-0"
+          class="flex items-center justify-between mb-3.5 pb-2.5 border-b border-white/[0.06] flex-shrink-0"
         >
           <div>
             <h3 id="tx-edit-modal-title" class="font-bold text-white text-base">
               Редактирование операции
             </h3>
-            <p id="tx-edit-modal-subtitle" class="text-xs text-[#848D99] mt-0.5 hidden"></p>
+            <p id="tx-edit-modal-subtitle" class="text-xs text-zinc-400 mt-0.5 hidden"></p>
           </div>
           <button
             type="button"
             id="tx-edit-modal-close-btn"
             onclick="closeEditTxModal()"
-            class="w-8 h-8 rounded-xl bg-[#212430] hover:bg-[#2A2D3C] text-gray-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors active:scale-95"
+            class="w-8 h-8 rounded-xl bg-white/[0.05] hover:bg-white/10 text-zinc-400 hover:text-white border border-white/[0.08] flex items-center justify-center cursor-pointer transition-colors active:scale-95"
           >
             <i data-lucide="x" class="w-4 h-4"></i>
           </button>
@@ -6172,13 +6179,13 @@
 
           <!-- Переключатель типа: Расход / Доход -->
           <div
-            class="flex bg-[#12151C] p-1 rounded-xl mb-3 border border-[rgba(255,255,255,0.06)] flex-shrink-0"
+            class="flex bg-[#12151C] p-1 rounded-xl mb-3 border border-white/[0.06] flex-shrink-0"
           >
             <button
               type="button"
               id="edit-tx-type-expense"
               onclick="setEditTxType('Расход')"
-              class="flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all text-white bg-[#FF453A]/20 border border-[#FF453A]/30 cursor-pointer shadow-sm"
+              class="flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all text-white bg-white/10 border border-white/10 cursor-pointer shadow-sm"
             >
               Расход
             </button>
@@ -6186,7 +6193,7 @@
               type="button"
               id="edit-tx-type-income"
               onclick="setEditTxType('Доход')"
-              class="flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all text-gray-400 hover:text-white border border-transparent cursor-pointer"
+              class="flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all text-zinc-400 hover:text-white border border-transparent cursor-pointer"
             >
               Доход
             </button>
@@ -6204,7 +6211,7 @@
               id="edit-tx-amount"
               placeholder="0 ₽"
               required
-              class="w-full h-12 bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-white/30 text-white text-xl font-bold rounded-xl px-3.5 outline-none tracking-wide transition-colors placeholder-gray-500"
+              class="w-full h-12 bg-[#12151C] border border-white/10 focus:border-white/30 text-white text-xl font-bold rounded-xl px-3.5 outline-none tracking-wide transition-colors placeholder-zinc-500"
             />
           </div>
 
@@ -6216,9 +6223,9 @@
                 type="button"
                 id="edit-tx-date-btn"
                 onclick="openCustomDatePicker(document.getElementById('edit-tx-date'))"
-                class="w-full h-10 bg-[#12151C] border border-[rgba(255,255,255,0.08)] hover:border-gray-500 text-white rounded-xl px-2.5 text-xs flex items-center gap-2 outline-none cursor-pointer transition-colors select-none"
+                class="w-full h-10 bg-[#12151C] border border-white/10 hover:border-white/20 text-white rounded-xl px-2.5 text-xs flex items-center gap-2 outline-none cursor-pointer transition-colors select-none"
               >
-                <i data-lucide="calendar" class="w-4 h-4 text-[#848D99] flex-shrink-0"></i>
+                <i data-lucide="calendar" class="w-4 h-4 text-zinc-400 flex-shrink-0"></i>
                 <span id="edit-tx-date-label" class="text-xs text-white truncate font-normal"
                   >...</span
                 >
@@ -6233,20 +6240,20 @@
                 type="button"
                 id="edit-tx-category-btn"
                 onclick="toggleEditTxCategoryMenu(event)"
-                class="w-full h-10 bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-white/30 text-white rounded-xl px-2.5 text-xs flex items-center justify-between outline-none cursor-pointer hover:border-gray-500 transition-colors"
+                class="w-full h-10 bg-[#12151C] border border-white/10 focus:border-white/30 text-white rounded-xl px-2.5 text-xs flex items-center justify-between outline-none cursor-pointer hover:border-white/20 transition-colors"
               >
                 <span
                   id="edit-tx-category-label"
                   class="flex items-center gap-1.5 truncate text-white min-w-0"
                 >
-                  <i data-lucide="tag" class="w-4 h-4 text-[#848D99] flex-shrink-0"></i>
-                  <span class="truncate text-gray-200">Категория</span>
+                  <i data-lucide="tag" class="w-4 h-4 text-zinc-400 flex-shrink-0"></i>
+                  <span class="truncate text-zinc-200">Категория</span>
                 </span>
-                <span class="text-gray-400 text-[8px] ml-1 flex-shrink-0">▼</span>
+                <span class="text-zinc-500 text-[8px] ml-1 flex-shrink-0">▼</span>
               </button>
               <div
                 id="edit-tx-category-menu"
-                class="custom-dropdown-menu hidden absolute right-0 top-full mt-1.5 w-full min-w-[210px] max-h-56 overflow-y-auto bg-[#181B24]/95 backdrop-blur-md border border-gray-700 rounded-2xl shadow-2xl z-[160] p-1 space-y-0.5"
+                class="custom-dropdown-menu hidden absolute right-0 top-full mt-1.5 w-full min-w-[210px] max-h-56 overflow-y-auto bg-[#0E1016] border border-white/10 rounded-2xl shadow-2xl z-[160] p-1.5 space-y-0.5 backdrop-blur-xl"
               ></div>
             </div>
           </div>
@@ -6259,23 +6266,20 @@
                 id="edit-tx-comment"
                 oninput="handleEditTxCommentInput(this)"
                 placeholder="Магазин или назначение платежа"
-                class="flex-1 min-w-0 h-10 bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-white/30 text-white placeholder-gray-500 rounded-xl px-3 outline-none text-xs transition-colors"
+                class="flex-1 min-w-0 h-10 bg-[#12151C] border border-white/10 focus:border-white/30 text-white placeholder-zinc-500 rounded-xl px-3 outline-none text-xs transition-colors"
               />
               <button
                 type="button"
                 onclick="openRememberRuleForEditTx()"
-                class="w-10 h-10 rounded-xl bg-[#6C5DD3]/15 hover:bg-[#6C5DD3]/25 active:scale-90 text-[#9E86FF] hover:text-white border border-[#6C5DD3]/20 flex items-center justify-center flex-shrink-0 cursor-pointer transition-all shadow-sm group"
+                class="w-10 h-10 rounded-xl bg-white/[0.05] hover:bg-white/10 active:scale-90 text-zinc-400 hover:text-white border border-white/[0.08] flex items-center justify-center flex-shrink-0 cursor-pointer transition-all shadow-sm group"
                 title="Запомнить в словарь категорий"
               >
-                <i data-lucide="pin" class="w-4 h-4 transition-transform group-hover:scale-110"></i>
+                <i
+                  data-lucide="pin"
+                  class="w-4 h-4 -rotate-45 transition-transform group-hover:scale-110 pointer-events-none"
+                ></i>
               </button>
             </div>
-          </div>
-
-          <!-- Скрытый блок разовых трат (устаревший, скрыт для совместимости) -->
-          <div id="wrap-edit-tx-amortize" class="hidden" style="display: none !important">
-            <input type="checkbox" id="edit-tx-exclude-budget" />
-            <input type="hidden" id="edit-tx-goal-id" value="" />
           </div>
 
           <!-- Кнопки действий: Удалить | Отмена | Сохранить -->
@@ -6284,7 +6288,7 @@
               type="button"
               id="edit-tx-delete-btn"
               onclick="deleteTxFromModal()"
-              class="px-3.5 h-10 bg-[#FF453A]/15 hover:bg-[#FF453A]/25 text-[#FF453A] border border-[#FF453A]/20 rounded-xl text-xs font-semibold transition-colors cursor-pointer flex items-center justify-center gap-1.5 active:scale-95"
+              class="px-3.5 h-10 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-xl text-xs font-semibold transition-colors cursor-pointer flex items-center justify-center gap-1.5 active:scale-95"
               title="Удалить операцию"
             >
               <i data-lucide="trash-2" class="w-4 h-4"></i>
@@ -6294,224 +6298,19 @@
               type="button"
               id="edit-tx-cancel-btn"
               onclick="closeEditTxModal()"
-              class="flex-1 h-10 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 rounded-xl text-xs font-semibold transition-colors cursor-pointer active:scale-95"
+              class="flex-1 h-10 bg-white/[0.05] hover:bg-white/10 text-zinc-300 border border-white/[0.08] rounded-xl text-xs font-semibold transition-colors cursor-pointer active:scale-95"
             >
               Отмена
             </button>
             <button
               type="submit"
               id="edit-tx-save-btn"
-              class="flex-1 h-10 bg-[#6C5DD3] hover:bg-[#5E4FC9] text-white rounded-xl text-xs font-semibold shadow-md shadow-[#6C5DD3]/25 transition-all active:scale-95 cursor-pointer"
+              class="flex-1 h-10 bg-white hover:bg-zinc-200 text-zinc-950 rounded-xl text-xs font-semibold shadow-sm transition-all active:scale-95 cursor-pointer"
             >
               Сохранить
             </button>
           </div>
         </form>
-      </div>
-    </div>
-
-    <!-- БЫСТРАЯ МОДАЛКА РАСПРЕДЕЛЕНИЯ РАЗОВОЙ ТРАТЫ В ЦЕЛЬ -->
-    <div
-      id="quick-amortize-modal"
-      onclick="if (event.target === this) closeQuickAmortizeModal();"
-      class="fixed inset-0 bg-black/80 z-[150] hidden flex flex-col justify-center items-center p-4 animate-fade-in"
-    >
-      <div
-        class="bg-[#181B24] border border-[rgba(255,255,255,0.08)] w-full max-w-sm rounded-3xl p-5 shadow-2xl"
-      >
-        <div
-          class="flex items-center justify-between mb-3.5 pb-2.5 border-b border-[rgba(255,255,255,0.06)]"
-        >
-          <div>
-            <h3 class="font-bold text-white text-base">Сделать разовой тратой</h3>
-            <p class="text-xs text-[#848D99] mt-0.5">Покрытие расхода из накоплений цели</p>
-          </div>
-          <button
-            type="button"
-            onclick="closeQuickAmortizeModal()"
-            class="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-[#212430] cursor-pointer"
-          >
-            <i data-lucide="x" class="w-4 h-4"></i>
-          </button>
-        </div>
-
-        <input type="hidden" id="quick-amortize-tx-id" value="" />
-        <input type="hidden" id="quick-amortize-amount" value="0" />
-
-        <div class="space-y-3 mb-4">
-          <div
-            class="bg-[#12151C] p-3 rounded-2xl border border-[rgba(255,255,255,0.06)] flex items-center justify-between"
-          >
-            <div class="min-w-0 pr-2">
-              <span class="text-[10px] text-[#848D99] uppercase font-bold block"
-                >Сумма операции</span
-              >
-              <span
-                id="quick-amortize-cat-name"
-                class="text-xs text-gray-300 truncate block mt-0.5 font-medium"
-                >Покупка</span
-              >
-            </div>
-            <span
-              id="quick-amortize-total-display"
-              class="text-base font-bold font-mono text-white flex-shrink-0"
-              >0 ₽</span
-            >
-          </div>
-
-          <div
-            class="bg-[#12151C] p-3 rounded-2xl border border-[rgba(255,255,255,0.06)] space-y-2.5"
-          >
-            <span class="text-xs font-semibold text-gray-200 block"
-              >Списать из накоплений цели:</span
-            >
-
-            <div class="relative custom-dropdown-wrap" id="wrap-quick-goal">
-              <input type="hidden" id="quick-amortize-goal-id" value="" />
-              <button
-                type="button"
-                id="quick-amortize-goal-btn"
-                onclick="toggleQuickGoalMenu(event)"
-                class="w-full h-10 bg-[#181B24] border border-[rgba(255,255,255,0.08)] hover:border-gray-500 text-white rounded-xl px-3 text-xs flex items-center justify-between outline-none cursor-pointer transition-colors"
-              >
-                <span
-                  id="quick-amortize-goal-label"
-                  class="flex items-center gap-2 truncate text-white min-w-0"
-                >
-                  <i data-lucide="target" class="w-4 h-4 text-amber-400 flex-shrink-0"></i>
-                  <span class="truncate text-gray-200">Выберите цель...</span>
-                </span>
-                <span class="text-gray-400 text-[8px] ml-1 flex-shrink-0">▼</span>
-              </button>
-              <div
-                id="quick-amortize-goal-menu"
-                class="custom-dropdown-menu hidden absolute left-0 top-full mt-1.5 w-full max-h-56 overflow-y-auto bg-[#181B24]/95 backdrop-blur-md border border-gray-700 rounded-2xl shadow-2xl z-[160] p-1 space-y-0.5"
-              ></div>
-            </div>
-
-            <div
-              id="quick-amortize-goal-calc"
-              class="hidden flex items-center justify-between text-xs bg-[#181B24] p-2.5 rounded-xl border border-[rgba(255,255,255,0.04)]"
-            >
-              <span class="text-[11px] text-[#848D99]">Останется в цели:</span>
-              <span id="quick-amortize-goal-remaining" class="font-mono font-bold text-emerald-400"
-                >0 ₽</span
-              >
-            </div>
-
-            <div
-              class="flex items-start gap-2 bg-[#181B24] p-2.5 rounded-xl border border-[rgba(255,255,255,0.04)] text-[11px] text-[#848D99] leading-relaxed"
-            >
-              <i data-lucide="info" class="w-3.5 h-3.5 text-amber-400 flex-shrink-0 mt-0.5"></i>
-              <span
-                >Трата не уменьшит недельный лимит на жизнь и спишется напрямую из накоплений
-                выбранной цели.</span
-              >
-            </div>
-          </div>
-        </div>
-
-        <div class="flex items-center gap-2">
-          <button
-            type="button"
-            onclick="closeQuickAmortizeModal()"
-            class="flex-1 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 py-2.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
-          >
-            Отмена
-          </button>
-          <button
-            type="button"
-            id="quick-amortize-submit-btn"
-            onclick="submitQuickAmortize()"
-            class="flex-1 bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white py-2.5 rounded-xl text-xs font-semibold shadow-md transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
-          >
-            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-300"></i>
-            <span>Сделать разовой</span>
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- МОДАЛЬНОЕ ОКНО ПРЕДЛОЖЕНИЯ РАСПРЕДЕЛЕНИЯ КРУПНЫХ ТРАТ ИЗ ВЫПИСКИ -->
-    <div
-      id="statement-large-expenses-modal"
-      onclick="if (event.target === this) closeStatementLargeExpensesModal();"
-      class="fixed inset-0 bg-black/80 z-[155] hidden flex flex-col justify-center items-center p-4 animate-fade-in select-none"
-    >
-      <div
-        class="bg-[#181B24] border border-[rgba(255,255,255,0.08)] w-full max-w-md rounded-3xl p-5 shadow-2xl flex flex-col max-h-[90vh]"
-      >
-        <!-- Шапка -->
-        <div
-          class="flex items-center justify-between mb-3 pb-3 border-b border-[rgba(255,255,255,0.06)] flex-shrink-0"
-        >
-          <div class="flex items-center gap-3">
-            <div
-              class="w-10 h-10 rounded-2xl bg-violet-500/15 text-violet-300 border border-violet-500/25 flex items-center justify-center flex-shrink-0 shadow-sm"
-            >
-              <i data-lucide="gem" class="w-5 h-5 stroke-[2]"></i>
-            </div>
-            <div class="min-w-0">
-              <h3 class="font-bold text-white text-base leading-snug">Сделать траты разовыми</h3>
-              <p id="statement-large-subtitle" class="text-xs text-[#848D99] mt-0.5">
-                Исключение из бюджета или списание из целей
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onclick="closeStatementLargeExpensesModal()"
-            class="text-gray-400 hover:text-white p-1.5 rounded-xl hover:bg-[#212430] cursor-pointer transition-colors active:scale-90"
-          >
-            <i data-lucide="x" class="w-4 h-4"></i>
-          </button>
-        </div>
-
-        <!-- Скроллируемый контент (пояснение скроллится вместе со списком операций) -->
-        <div class="overflow-y-auto space-y-3 flex-1 pr-1 custom-scrollbar min-h-0 mb-3.5">
-          <!-- Дружелюбное пояснение -->
-          <div
-            class="bg-gradient-to-br from-violet-950/30 via-[#181B24] to-[#12151C] border border-violet-500/20 rounded-2xl p-3 text-xs text-gray-300 leading-relaxed space-y-1"
-          >
-            <div class="flex items-center gap-1.5 font-semibold text-violet-300 text-xs">
-              <i data-lucide="info" class="w-3.5 h-3.5 flex-shrink-0 text-violet-400"></i>
-              <span>Исключение крупных покупок</span>
-            </div>
-            <p class="text-[11px] text-[#A1AAB7] leading-normal">
-              Разовые траты не будут уменьшать недельный лимит бюджета на жизнь и спишутся из
-              выбранных накоплений.
-            </p>
-          </div>
-
-          <!-- Список крупных трат с выбором цели -->
-          <div id="statement-large-list" class="space-y-2.5">
-            <!-- Генерируется динамически -->
-          </div>
-        </div>
-
-        <!-- Подвал: Сводка и кнопки действий -->
-        <div class="pt-3 border-t border-[rgba(255,255,255,0.06)] flex-shrink-0 space-y-2.5">
-          <div class="flex items-center justify-between text-xs text-[#848D99]">
-            <span id="statement-large-summary">Выбрано: 0</span>
-          </div>
-          <div class="flex items-center gap-2">
-            <button
-              type="button"
-              onclick="closeStatementLargeExpensesModal()"
-              class="flex-1 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 py-2.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer active:scale-95"
-            >
-              Оставить в бюджете
-            </button>
-            <button
-              type="button"
-              id="stmt-large-submit-btn"
-              onclick="submitStatementLargeExpenses()"
-              class="flex-1 bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white py-2.5 rounded-xl text-xs font-semibold shadow-md shadow-[#6C5DD3]/25 transition-all active:scale-95 cursor-pointer flex items-center justify-center"
-            >
-              <span>Сделать разовыми</span>
-            </button>
-          </div>
-        </div>
       </div>
     </div>
 

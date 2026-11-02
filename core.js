@@ -1262,28 +1262,6 @@ function togglePrivacyMode() {
     }
   }
 
-  // 3. Обновляем открытую модалку быстрого распределения разовой траты
-  const quickAmortizeModal = document.getElementById('quick-amortize-modal');
-  if (quickAmortizeModal && !quickAmortizeModal.classList.contains('hidden')) {
-    const amountVal = parseFloat(document.getElementById('quick-amortize-amount')?.value) || 0;
-    const totalEl = document.getElementById('quick-amortize-total-display');
-    if (totalEl) totalEl.innerText = formatMoney(amountVal);
-    if (typeof updateQuickSpreadPreview === 'function') {
-      updateQuickSpreadPreview();
-    }
-  }
-
-  // 4. Обновляем модалку крупных трат из выписки
-  const stmtLargeModal = document.getElementById('statement-large-expenses-modal');
-  if (stmtLargeModal && !stmtLargeModal.classList.contains('hidden')) {
-    if (typeof renderStatementLargeList === 'function' && window._statementLargeTxs) {
-      renderStatementLargeList(window._statementLargeTxs);
-    }
-    if (typeof updateStmtLargeSummary === 'function') {
-      updateStmtLargeSummary();
-    }
-  }
-
   // 5. Обновляем открытый диалог календаря платежей
   const billDialog = document.getElementById('calendar-bill-dialog');
   if (billDialog && !billDialog.classList.contains('hidden')) {

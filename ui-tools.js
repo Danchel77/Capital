@@ -341,7 +341,7 @@ function openCardContextMenu(e, title, onEdit, onDelete, metaInfo = null) {
         'w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 text-white overflow-hidden text-[9px]';
       targetEl.innerHTML = meta.avatarHtml;
     } else {
-      const bg = meta.authorBg || 'bg-[#3B82F6]';
+      const bg = meta.authorBg || 'bg-white/15';
       const icon = meta.authorIcon || 'user';
       targetEl.className = `w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 text-white overflow-hidden text-[9px] ${bg}`;
       targetEl.innerHTML = `<i data-lucide="${icon}" class="w-2.5 h-2.5"></i>`;
@@ -351,7 +351,7 @@ function openCardContextMenu(e, title, onEdit, onDelete, metaInfo = null) {
   const renderSourceSlot = (targetEl, meta) => {
     if (!targetEl) return;
     targetEl.className =
-      'w-4 h-4 flex items-center justify-center flex-shrink-0 text-zinc-400 overflow-hidden';
+      'w-4 h-4 flex items-center justify-center flex-shrink-0 text-zinc-500 overflow-hidden';
     const bankSvg =
       meta.bankIconKey && window.BANK_ICONS ? window.BANK_ICONS[meta.bankIconKey] : null;
     if (bankSvg) {
@@ -365,12 +365,12 @@ function openCardContextMenu(e, title, onEdit, onDelete, metaInfo = null) {
         svg.style.display = 'block';
       }
     } else if (meta.sourceLabel && meta.sourceLabel.includes('Пуш')) {
-      targetEl.innerHTML = `<i data-lucide="zap" class="w-3.5 h-3.5 text-sky-400"></i>`;
+      targetEl.innerHTML = `<i data-lucide="zap" class="w-3.5 h-3.5 text-zinc-400"></i>`;
     } else if (meta.sourceLabel && meta.sourceLabel.includes('Выписка')) {
       targetEl.innerHTML = `<i data-lucide="file-text" class="w-3.5 h-3.5 text-zinc-400"></i>`;
     } else {
       // Ручной ввод: зеркально отраженное перо (-scale-x-100), сонаправленное с карандашом
-      targetEl.innerHTML = `<i data-lucide="pen-tool" class="w-3.5 h-3.5 text-zinc-400 -scale-x-100" style="transform: scaleX(-1);"></i>`;
+      targetEl.innerHTML = `<i data-lucide="pen-tool" class="w-3.5 h-3.5 text-zinc-500 -scale-x-100" style="transform: scaleX(-1);"></i>`;
     }
   };
 
@@ -394,14 +394,13 @@ function openCardContextMenu(e, title, onEdit, onDelete, metaInfo = null) {
     renderAvatarSlot(authorAvatarSingle, metaInfo);
     renderSourceSlot(sourceIconSingle, metaInfo);
 
-    // Оценка полезной ширины в попапе ~160px:
-    // Ширина попапа (160) - padding (12) - header padding px-2.5 (20) = 128px
+    // Оценка полезной ширины в попапе ~176px:
+    // Ширина попапа (176) - padding (12) - header padding p-2 (16) = 148px
     // Иконка 16 + gap 6 + имя + gap 6 + точка 6 + gap 6 + иконка 16 + gap 6 + источник
-    // Приблизительная длина шрифтом IBM Plex Sans 12px (text-xs) font-medium: ~6.8px на символ
     const singleLineWidth =
       16 + 6 + authorName.length * 6.8 + 6 + 6 + 6 + 16 + 6 + sourceLabel.length * 6.8;
 
-    if (singleLineWidth <= 128 && singleLineEl && multiLineEl) {
+    if (singleLineWidth <= 140 && singleLineEl && multiLineEl) {
       singleLineEl.classList.remove('hidden');
       singleLineEl.classList.add('flex');
       multiLineEl.classList.add('hidden');

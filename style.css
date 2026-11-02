@@ -195,6 +195,7 @@ nav button,
 .icon-option,
 .custom-dropdown-btn,
 .custom-dropdown-item,
+.custom-month-grid-btn,
 .view-switcher__btn,
 .manage-categories-btn,
 .add-category-btn,
@@ -218,6 +219,7 @@ nav button:active,
 .icon-option:active,
 .custom-dropdown-btn:active,
 .custom-dropdown-item:active,
+.custom-month-grid-btn:active,
 .view-switcher__btn:active,
 .context-menu-btn:active,
 .context-menu-btn.is-pressed,
@@ -1263,11 +1265,11 @@ select option {
   align-items: center;
   gap: 8px;
   width: 100%;
-  padding: 8px 10px;
+  padding: 7px 10px;
   font-size: 12px;
   font-weight: 500;
-  color: #c3c9d2;
-  border-radius: 9px;
+  color: #d4d4d8;
+  border-radius: 10px;
   background: transparent;
   border: 1px solid transparent;
   cursor: pointer;
@@ -1276,15 +1278,46 @@ select option {
 }
 
 .custom-dropdown-item:hover {
-  background: #181c26;
+  background: rgba(255, 255, 255, 0.06);
   color: #ffffff;
 }
 
 .custom-dropdown-item.is-active {
-  background: #181c26;
-  border-color: #282e3e;
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.12);
   color: #ffffff;
   font-weight: 600;
+}
+
+.custom-month-grid-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 6px 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #d4d4d8;
+  border-radius: 9px;
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.12s ease;
+  user-select: none;
+}
+
+.custom-month-grid-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+}
+
+.custom-month-grid-btn.is-active {
+  background: #ffffff;
+  color: #09090b;
+  border-color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 /* ---------- nav ---------- */

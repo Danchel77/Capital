@@ -130,9 +130,9 @@ function addTxRow() {
       const icon = foundCat && foundCat.icon && foundCat.icon !== 'package' ? foundCat.icon : 'tag';
       const rowLabel = row.querySelector('.tx-category-label');
       if (rowLabel) {
-        rowLabel.innerHTML = `<span class="inline-flex items-center gap-1.5 text-xs text-gray-200 font-normal truncate min-w-0"><i data-lucide="${icon}" class="w-3.5 h-3.5 text-[#848D99] flex-shrink-0"></i><span class="truncate">${escapeHtml(prevCat)}</span></span>`;
-        rowLabel.classList.remove('text-gray-400', 'text-white');
-        rowLabel.classList.add('text-gray-200');
+        rowLabel.innerHTML = `<span class="inline-flex items-center gap-1.5 text-xs text-zinc-200 font-normal truncate min-w-0"><i data-lucide="${icon}" class="w-3.5 h-3.5 text-zinc-400 flex-shrink-0"></i><span class="truncate">${escapeHtml(prevCat)}</span></span>`;
+        rowLabel.classList.remove('text-zinc-500', 'text-white');
+        rowLabel.classList.add('text-zinc-200');
       }
     }
   }
@@ -819,15 +819,15 @@ function setEditTxType(type) {
   typeInput.value = type;
   if (type === 'Расход') {
     btnExp.className =
-      'flex-1 py-2 text-xs font-semibold rounded-xl transition-all text-white bg-[#FF453A]/20 border border-[#FF453A]/30 cursor-pointer shadow-sm';
+      'flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all text-white bg-white/10 border border-white/10 cursor-pointer shadow-sm';
     btnInc.className =
-      'flex-1 py-2 text-xs font-semibold rounded-xl transition-all text-gray-400 hover:text-white border border-transparent cursor-pointer';
+      'flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all text-zinc-400 hover:text-white border border-transparent cursor-pointer';
     handleEditTxAmountChange();
   } else {
     btnExp.className =
-      'flex-1 py-2 text-xs font-semibold rounded-xl transition-all text-gray-400 hover:text-white border border-transparent cursor-pointer';
+      'flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all text-zinc-400 hover:text-white border border-transparent cursor-pointer';
     btnInc.className =
-      'flex-1 py-2 text-xs font-semibold rounded-xl transition-all text-white bg-[#30D158]/20 border border-[#30D158]/30 cursor-pointer shadow-sm';
+      'flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all text-emerald-400 bg-emerald-500/15 border border-emerald-500/25 cursor-pointer shadow-sm';
     document.getElementById('wrap-edit-tx-amortize')?.classList.add('hidden');
     const amortizeCb = document.getElementById('edit-tx-exclude-budget');
     if (amortizeCb) amortizeCb.checked = false;
@@ -860,15 +860,15 @@ function renderEditTxCategories() {
       const isCustom = !DEFAULT_SYSTEM_CATEGORIES.includes(c.name);
       const icon = c.icon && c.icon !== 'package' ? c.icon : 'tag';
       return `
-      <div class="flex items-center justify-between hover:bg-[#212430] rounded-xl px-2.5 py-1.5 transition-colors group">
-        <button type="button" class="flex-1 text-left text-[13px] font-medium text-gray-200 flex items-center gap-2.5 cursor-pointer truncate min-w-0" data-cat="${escapeHtml(c.name)}" data-icon="${icon}">
-          <i data-lucide="${icon}" class="w-[18px] h-[18px] text-[#848D99]"></i>
+      <div class="flex items-center justify-between hover:bg-white/[0.06] rounded-xl px-2.5 py-1.5 transition-colors group">
+        <button type="button" class="flex-1 text-left text-xs font-medium text-zinc-200 hover:text-white flex items-center gap-2 cursor-pointer truncate min-w-0" data-cat="${escapeHtml(c.name)}" data-icon="${icon}">
+          <i data-lucide="${icon}" class="w-4 h-4 text-zinc-400 flex-shrink-0"></i>
           <span class="truncate">${escapeHtml(c.name)}</span>
         </button>
         ${
           isCustom
             ? `
-          <button type="button" onclick="event.stopPropagation(); deleteCategory('${escapeHtml(c.name)}', '${type}')" class="text-gray-500 hover:text-[#FF453A] p-1.5 flex-shrink-0 cursor-pointer" title="Удалить категорию"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+          <button type="button" onclick="event.stopPropagation(); deleteCategory('${escapeHtml(c.name)}', '${type}')" class="text-zinc-500 hover:text-rose-400 p-1 flex-shrink-0 cursor-pointer transition-colors" title="Удалить категорию"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
         `
             : ''
         }
@@ -878,9 +878,9 @@ function renderEditTxCategories() {
     .join('');
 
   itemsHtml += `
-    <div class="border-t border-[rgba(255,255,255,0.06)] pt-1 mt-1">
-      <button type="button" class="btn-add-cat-in-edit-modal w-full text-left px-2.5 py-1.5 text-xs text-[#8C7DFF] hover:text-white hover:bg-[#6C5DD3]/15 rounded-lg flex items-center gap-1.5 font-semibold cursor-pointer transition-colors">
-        <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+    <div class="border-t border-white/[0.06] pt-1 mt-1">
+      <button type="button" class="btn-add-cat-in-edit-modal w-full text-left px-2.5 py-1.5 text-xs text-zinc-300 hover:text-white hover:bg-white/[0.06] rounded-xl flex items-center gap-1.5 font-medium cursor-pointer transition-colors">
+        <i data-lucide="plus" class="w-3.5 h-3.5 text-zinc-400"></i>
         <span>Добавить категорию</span>
       </button>
     </div>
@@ -914,9 +914,9 @@ function selectEditTxCategory(catName, iconName) {
   if (label) {
     const icon = iconName && iconName !== 'package' ? iconName : 'tag';
     if (catName) {
-      label.innerHTML = `<i data-lucide="${icon}" class="w-4 h-4 text-[#848D99]"></i> <span class="truncate text-white font-medium">${escapeHtml(catName)}</span>`;
+      label.innerHTML = `<i data-lucide="${icon}" class="w-4 h-4 text-zinc-400"></i> <span class="truncate text-white font-medium">${escapeHtml(catName)}</span>`;
     } else {
-      label.innerHTML = `<i data-lucide="tag" class="w-4 h-4 text-[#848D99]"></i> <span class="truncate text-gray-400">Выберите категорию</span>`;
+      label.innerHTML = `<i data-lucide="tag" class="w-4 h-4 text-zinc-400"></i> <span class="truncate text-zinc-500">Выберите категорию</span>`;
     }
     if (typeof lucide !== 'undefined') lucide.createIcons();
   }
@@ -1529,256 +1529,10 @@ function openTxContextMenu(e, txId) {
   );
 }
 
-// Быстрое списание разовой траты из цели
-function openQuickAmortizeModal(id) {
-  let tx = null;
-  if (Array.isArray(Cache?.transactions)) {
-    for (const month of Cache.transactions) {
-      if (Array.isArray(month.items)) {
-        tx = month.items.find(t => t.id === id);
-        if (tx) break;
-      }
-    }
-  }
-  if (!tx) return;
-
-  const activeGoals = (Cache?.goals || []).filter(
-    g => g.status !== 'Выполнена' || (parseFloat(g.saved) || 0) > 0
-  );
-  if (activeGoals.length === 0) {
-    showToast('Для разовой траты нужна финансовая цель. Создайте цель во вкладке «Цели»', true);
-    return;
-  }
-
-  const dlg = document.getElementById('quick-amortize-modal');
-  if (!dlg) return;
-
-  document.getElementById('quick-amortize-tx-id').value = tx.id;
-  document.getElementById('quick-amortize-amount').value = tx.amount;
-  document.getElementById('quick-amortize-cat-name').innerText = tx.comment
-    ? `${tx.category} • ${tx.comment}`
-    : tx.category;
-  document.getElementById('quick-amortize-total-display').innerText = formatMoney(tx.amount);
-
-  const targetGoalId =
-    tx.fundingGoalId && activeGoals.some(g => g.id === tx.fundingGoalId)
-      ? tx.fundingGoalId
-      : activeGoals[0].id;
-
-  renderQuickGoalMenu();
-  selectQuickGoal(targetGoalId);
-
-  if (typeof lockBodyScroll === 'function') lockBodyScroll();
-  dlg.classList.remove('hidden');
-  if (typeof lucide !== 'undefined') lucide.createIcons({ root: dlg });
-}
-
-function closeQuickAmortizeModal() {
-  const dlg = document.getElementById('quick-amortize-modal');
-  if (dlg && !dlg.classList.contains('hidden')) {
-    dlg.classList.add('hidden');
-    if (typeof unlockBodyScroll === 'function') unlockBodyScroll();
-  }
-}
-
-function renderQuickGoalMenu() {
-  const menu = document.getElementById('quick-amortize-goal-menu');
-  if (!menu) return;
-
-  const goals = (Cache?.goals || []).filter(
-    g => g.status !== 'Выполнена' || (parseFloat(g.saved) || 0) > 0
-  );
-  const selectedGoalId = document.getElementById('quick-amortize-goal-id')?.value;
-
-  if (goals.length === 0) {
-    menu.innerHTML = `
-      <div class="p-3 text-center text-xs text-gray-400 space-y-1">
-        <div>Нет активных финансовых целей</div>
-        <button type="button" onclick="closeQuickAmortizeModal(); switchTab('deposits');" class="text-[#8C7DFF] hover:underline text-[11px] font-semibold cursor-pointer">
-          + Создать цель во вкладке «Цели»
-        </button>
-      </div>
-    `;
-    return;
-  }
-
-  const html = goals
-    .map(g => {
-      const saved = parseFloat(g.saved) || 0;
-      const isSelected = g.id === selectedGoalId;
-      return `
-      <button type="button" 
-              onclick="selectQuickGoal('${g.id}')" 
-              class="w-full text-left px-3 py-2 text-xs rounded-xl hover:bg-[#212430] transition-colors flex items-center justify-between cursor-pointer group ${isSelected ? 'bg-[#6C5DD3]/15' : ''}">
-        <div class="min-w-0 pr-2">
-          <div class="font-semibold text-gray-200 truncate group-hover:text-white">${escapeHtml(g.name || g.title || 'Цель')}</div>
-          <div class="text-[10px] text-[#848D99]">Накоплено: <span class="text-amber-300 font-mono font-medium">${formatMoney(saved)}</span></div>
-        </div>
-        <i data-lucide="target" class="w-4 h-4 text-amber-400 flex-shrink-0"></i>
-      </button>
-    `;
-    })
-    .join('');
-
-  menu.innerHTML = html;
-  if (typeof lucide !== 'undefined') lucide.createIcons({ root: menu });
-}
-
-function toggleQuickGoalMenu(e) {
-  if (e) e.stopPropagation();
-  const menu = document.getElementById('quick-amortize-goal-menu');
-  if (!menu) return;
-  const isClosed = menu.classList.contains('hidden');
-  document.querySelectorAll('.custom-dropdown-menu').forEach(m => m.classList.add('hidden'));
-  if (isClosed) {
-    renderQuickGoalMenu();
-    menu.classList.remove('hidden');
-  }
-}
-
-function selectQuickGoal(goalId) {
-  const input = document.getElementById('quick-amortize-goal-id');
-  const label = document.getElementById('quick-amortize-goal-label');
-  const menu = document.getElementById('quick-amortize-goal-menu');
-  if (menu) menu.classList.add('hidden');
-
-  const goals = Cache?.goals || [];
-  const activeGoals = goals.filter(g => g.status !== 'Выполнена' || (parseFloat(g.saved) || 0) > 0);
-  const goal = goalId ? goals.find(g => g.id === goalId) : activeGoals[0] || null;
-
-  if (goal) {
-    const goalTitle = goal.name || goal.title || 'Цель';
-    if (input) input.value = goal.id;
-    if (label) {
-      label.innerHTML = `
-        <i data-lucide="target" class="w-4 h-4 text-amber-400 flex-shrink-0"></i>
-        <span class="truncate text-white font-medium">${escapeHtml(goalTitle)}</span>
-        <span class="text-[10px] font-mono text-amber-300 ml-1">(${formatMoney(goal.saved || 0)})</span>
-      `;
-    }
-  } else {
-    if (input) input.value = '';
-    if (label) {
-      label.innerHTML = `
-        <i data-lucide="target" class="w-4 h-4 text-gray-400 flex-shrink-0"></i>
-        <span class="truncate text-gray-400">Выберите цель</span>
-      `;
-    }
-  }
-  if (typeof lucide !== 'undefined') lucide.createIcons();
-  updateQuickGoalPreview();
-}
-
-function updateQuickGoalPreview() {
-  const goalId = document.getElementById('quick-amortize-goal-id')?.value;
-  const amount = parseFloat(document.getElementById('quick-amortize-amount')?.value) || 0;
-  const calcBox = document.getElementById('quick-amortize-goal-calc');
-  const remainingEl = document.getElementById('quick-amortize-goal-remaining');
-
-  if (!calcBox || !remainingEl) return;
-
-  const goal = (Cache?.goals || []).find(g => g.id === goalId);
-  if (goal && amount > 0) {
-    const curSaved = parseFloat(goal.saved) || 0;
-    const remaining = Math.max(0, curSaved - amount);
-    calcBox.classList.remove('hidden');
-    calcBox.classList.add('flex');
-    remainingEl.innerText = formatMoney(remaining);
-    if (curSaved < amount) {
-      remainingEl.className = 'font-mono font-bold text-amber-400';
-    } else {
-      remainingEl.className = 'font-mono font-bold text-emerald-400';
-    }
-  } else {
-    calcBox.classList.add('hidden');
-    calcBox.classList.remove('flex');
-  }
-}
-
-async function submitQuickAmortize() {
-  const id = document.getElementById('quick-amortize-tx-id')?.value;
-  if (!id) return;
-
-  const goalId = document.getElementById('quick-amortize-goal-id')?.value || null;
-  const goals = Cache?.goals || [];
-  const targetGoal = goalId ? goals.find(g => g.id === goalId) : null;
-
-  if (!targetGoal) {
-    showDialog(
-      'Выберите цель',
-      'Для разовой траты необходимо выбрать цель, из которой будет списана сумма',
-      false
-    );
-    return;
-  }
-
-  const goalName = targetGoal.name || targetGoal.title || 'Цель';
-
-  let tx = null;
-  if (Array.isArray(Cache?.transactions)) {
-    for (const month of Cache.transactions) {
-      if (Array.isArray(month.items)) {
-        tx = month.items.find(t => t.id === id);
-        if (tx) break;
-      }
-    }
-  }
-  if (!tx) return;
-
-  const amount = parseFloat(tx.amount) || 0;
-
-  // 1. Мгновенное оптимистичное обновление состояния в памяти
-  tx.excludeFromBudget = true;
-  tx.spreadMonths = 1;
-  tx.billType = 'onetime';
-  tx.fundingGoalId = targetGoal.id;
-  tx.fundingGoalName = goalName;
-  tx.fundingGoalAmount = amount;
-
-  if (amount > 0) {
-    targetGoal.saved = Math.max(0, (parseFloat(targetGoal.saved) || 0) - amount);
-  }
-
-  closeQuickAmortizeModal();
-  if (typeof triggerBudgetExpenseAnimation === 'function') triggerBudgetExpenseAnimation();
-  if (typeof markTabsDirty === 'function') markTabsDirty();
-  if (typeof renderBudgetTab === 'function') renderBudgetTab();
-  if (typeof renderTransactions === 'function') renderTransactions();
-  if (typeof renderGoals === 'function') renderGoals();
-
-  showToast(`Разовая трата списана из цели «${goalName}»`);
-
-  // 2. Асинхронная фоновая запись в Firestore
-  (async () => {
-    try {
-      const promises = [];
-      if (amount > 0 && typeof adjustGoalSaved === 'function') {
-        promises.push(adjustGoalSaved(targetGoal.id, -amount));
-      }
-      promises.push(
-        getUserCol('Transactions').doc(id).update({
-          excludeFromBudget: true,
-          spreadMonths: 1,
-          billType: 'onetime',
-          fundingGoalId: targetGoal.id,
-          fundingGoalName: goalName,
-          fundingGoalAmount: amount,
-          updatedAt: Date.now(),
-        })
-      );
-
-      const existingBill = (Cache.calendarBills || []).find(b => b.linkedTxId === id);
-      if (existingBill) {
-        Cache.calendarBills = (Cache.calendarBills || []).filter(b => b.id !== existingBill.id);
-        promises.push(getUserCol('CalendarBills').doc(existingBill.id).delete());
-      }
-
-      await Promise.all(promises);
-    } catch (err) {
-      console.error('Background submitQuickAmortize error:', err);
-    }
-  })();
-}
+// Модуль разовых трат (деактивирован)
+function openQuickAmortizeModal() {}
+function toggleQuickGoalMenu() {}
+function submitQuickAmortize() {}
 
 async function returnTxToBudget(id) {
   let tx = null;

@@ -233,12 +233,13 @@ function renderMonthDropdownMenu() {
 
   let mHtml = `
     <!-- Переключатель года: < 2026 > -->
-    <div class="flex items-center justify-between px-2 py-1.5 mb-1 border-b border-[#1E222D]" onclick="event.stopPropagation()">
+    <div class="flex items-center justify-between px-2 py-1.5 mb-1 border-b border-white/[0.06]" onclick="event.stopPropagation()">
       ${
         canGoPrev
           ? `<button type="button" 
                      onclick="shiftDropdownYear(-1, event)" 
-                     class="w-6 h-6 rounded-lg bg-[#181C26] hover:bg-[#202634] text-zinc-300 hover:text-white flex items-center justify-center transition-colors">
+                     class="w-6 h-6 rounded-lg bg-white/[0.05] hover:bg-white/10 text-zinc-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer text-sm font-bold"
+                     title="Предыдущий год">
                ‹
              </button>`
           : `<span class="w-6 h-6"></span>`
@@ -248,7 +249,8 @@ function renderMonthDropdownMenu() {
         canGoNext
           ? `<button type="button" 
                      onclick="shiftDropdownYear(1, event)" 
-                     class="w-6 h-6 rounded-lg bg-[#181C26] hover:bg-[#202634] text-zinc-300 hover:text-white flex items-center justify-center transition-colors">
+                     class="w-6 h-6 rounded-lg bg-white/[0.05] hover:bg-white/10 text-zinc-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer text-sm font-bold"
+                     title="Следующий год">
                ›
              </button>`
           : `<span class="w-6 h-6"></span>`
@@ -257,31 +259,50 @@ function renderMonthDropdownMenu() {
   `;
 
   if (yearMonths.length > 0) {
+    mHtml += `<div class="grid grid-cols-2 gap-1 p-0.5">`;
     yearMonths.forEach(m => {
       const active = currentFilterMonth === m.id;
       const monthOnlyName = m.label.split(' ')[0] || m.label;
       mHtml += `
-        <button type="button" onclick="selectFilterValue('month', '${m.id}', '${escapeHtml(m.label)}')" class="custom-dropdown-item ${active ? 'is-active' : ''}">
+        <button type="button" onclick="selectFilterValue('month', '${m.id}', '${escapeHtml(m.label)}')" class="custom-month-grid-btn ${active ? 'is-active' : ''}">
           <span>${escapeHtml(monthOnlyName)}</span>
         </button>
       `;
     });
+
+    // Пункт «Весь <год> год» на всю ширину (в 2 колонки)
+    const isYearActive = currentFilterMonth === 'year-' + currentDropdownYear;
+    mHtml += `
+      <div class="col-span-2 pt-1 mt-0.5 border-t border-white/[0.06]">
+        <button type="button" onclick="selectFilterValue('month', 'year-${currentDropdownYear}', 'Весь ${currentDropdownYear} год')" class="custom-month-grid-btn w-full ${isYearActive ? 'is-active' : ''}">
+          <span>Весь ${currentDropdownYear} год</span>
+        </button>
+      </div>
+    `;
+
+    // Пункт «Все время» на всю ширину
+    const isAllActive = currentFilterMonth === 'all';
+    mHtml += `
+      <div class="col-span-2 pt-0.5">
+        <button type="button" onclick="selectFilterValue('month', 'all', 'Все время')" class="custom-month-grid-btn w-full text-zinc-400 hover:text-white ${isAllActive ? 'is-active' : ''}">
+          <span>Все время</span>
+        </button>
+      </div>
+    `;
+
+    mHtml += `</div>`;
   } else {
     mHtml += `
-      <div class="px-3 py-2 text-center text-xs text-zinc-500">
+      <div class="px-3 py-3 text-center text-xs text-zinc-500">
         Нет операций за ${currentDropdownYear} год
+      </div>
+      <div class="p-1 border-t border-white/[0.06]">
+        <button type="button" onclick="selectFilterValue('month', 'all', 'Все время')" class="custom-month-grid-btn w-full ${currentFilterMonth === 'all' ? 'is-active' : ''}">
+          <span>Все время</span>
+        </button>
       </div>
     `;
   }
-
-  // Кнопка «Все время» (все операции)
-  mHtml += `
-    <div class="pt-1 mt-1 border-t border-[#1E222D]">
-      <button type="button" onclick="selectFilterValue('month', 'all', 'Все время')" class="custom-dropdown-item ${currentFilterMonth === 'all' ? 'is-active' : ''}">
-        <span>Все время</span>
-      </button>
-    </div>
-  `;
 
   monthMenu.innerHTML = mHtml;
 }
