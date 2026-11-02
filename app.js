@@ -497,11 +497,11 @@ function switchCapitalSubtab(subtab) {
   if (subtab === 'deposits') {
     if (depBtn) {
       depBtn.className =
-        'flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 bg-[#6C5DD3] text-white shadow-sm active:scale-95';
+        'flex-1 py-2 px-3 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 bg-white text-zinc-950 shadow-sm active:scale-95';
     }
     if (brBtn) {
       brBtn.className =
-        'flex-1 py-2 px-3 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 text-[#848D99] hover:text-white active:scale-95';
+        'flex-1 py-2 px-3 rounded-xl text-xs font-medium transition-all cursor-pointer flex items-center justify-center gap-1.5 text-zinc-400 hover:text-white active:scale-95';
     }
     if (depView) depView.classList.remove('hidden');
     if (brView) brView.classList.add('hidden');
@@ -510,11 +510,11 @@ function switchCapitalSubtab(subtab) {
   } else {
     if (brBtn) {
       brBtn.className =
-        'flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 bg-[#6C5DD3] text-white shadow-sm active:scale-95';
+        'flex-1 py-2 px-3 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 bg-white text-zinc-950 shadow-sm active:scale-95';
     }
     if (depBtn) {
       depBtn.className =
-        'flex-1 py-2 px-3 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 text-[#848D99] hover:text-white active:scale-95';
+        'flex-1 py-2 px-3 rounded-xl text-xs font-medium transition-all cursor-pointer flex items-center justify-center gap-1.5 text-zinc-400 hover:text-white active:scale-95';
     }
     if (brView) brView.classList.remove('hidden');
     if (depView) depView.classList.add('hidden');

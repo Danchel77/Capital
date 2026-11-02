@@ -1290,34 +1290,34 @@ select option {
 }
 
 .custom-month-grid-btn {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  width: 100%;
-  padding: 6px 10px;
-  font-size: 12px;
-  font-weight: 500;
-  color: #d4d4d8;
-  border-radius: 9px;
-  background: transparent;
-  border: 1px solid transparent;
-  cursor: pointer;
-  text-align: left;
-  transition: all 0.12s ease;
-  user-select: none;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  width: 100% !important;
+  padding: 6px 8px !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  color: #d4d4d8 !important;
+  border-radius: 8px !important;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  cursor: pointer !important;
+  text-align: left !important;
+  transition: all 0.12s ease !important;
+  user-select: none !important;
 }
 
 .custom-month-grid-btn:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: #ffffff;
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: #ffffff !important;
 }
 
 .custom-month-grid-btn.is-active {
-  background: #ffffff;
-  color: #09090b;
-  border-color: #ffffff;
-  font-weight: 600;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  background: #ffffff !important;
+  color: #09090b !important;
+  border-color: #ffffff !important;
+  font-weight: 600 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
 }
 
 /* ---------- nav ---------- */

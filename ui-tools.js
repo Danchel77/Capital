@@ -518,14 +518,20 @@ function hideAllChartTooltips(e) {
     brokerChart.update('none');
   }
 
-  // 2. Столбчатый график динамики трат
-  if (monthlyChart && !isTargetInside('#monthlyExpensesChart')) {
-    if (monthlyChart.getActiveElements().length > 0 || monthlyChart._activeElementKey) {
-      monthlyChart._activeElementKey = null;
-      monthlyChart._activeMonthIndex = -1;
-      monthlyChart.setActiveElements([]);
-      monthlyChart.tooltip.setActiveElements([], { x: 0, y: 0 });
-      monthlyChart.update();
+  // 2. График динамики сальдо
+  if (!isTargetInside('#monthlyExpensesChart')) {
+    const splineTooltip = document.getElementById('chart-spline-tooltip');
+    if (splineTooltip) splineTooltip.style.opacity = '0';
+    if (monthlyChart) {
+      if (monthlyChart.getActiveElements().length > 0 || monthlyChart._activeElementKey) {
+        monthlyChart._activeElementKey = null;
+        monthlyChart._activeMonthIndex = -1;
+        monthlyChart.setActiveElements([]);
+        if (monthlyChart.tooltip) {
+          monthlyChart.tooltip.setActiveElements([], { x: 0, y: 0 });
+        }
+        monthlyChart.update('none');
+      }
     }
   }
 

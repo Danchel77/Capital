@@ -37,6 +37,23 @@ function switchTransactionView(view) {
 }
 window.switchTransactionView = switchTransactionView;
 
+function getActiveFilterMonth() {
+  if (typeof window.getCurrentFilterMonth === 'function') {
+    const m = window.getCurrentFilterMonth();
+    if (m) return m;
+  }
+  if (window.currentFilterMonth) return window.currentFilterMonth;
+  const data = window.Cache?.transactions || [];
+  if (data.length > 0) {
+    const today = new Date();
+    const curKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+    const found = data.find(item => item.id === curKey);
+    return found ? curKey : data[0].id;
+  }
+  return null;
+}
+window.getActiveFilterMonth = getActiveFilterMonth;
+
 function buildCharts() {
   const chartEmptyEl = document.getElementById('transactions-chart-empty');
   const chartContentEl = document.getElementById('transactions-chart-content');
@@ -54,10 +71,7 @@ function buildCharts() {
   if (typeof lucide !== 'undefined') lucide.createIcons();
 
   // 1. СТРУКТУРА (DONUT): отображаем данные за период, выбранный в верхнем селекторе
-  const targetMonthId =
-    (typeof window.getCurrentFilterMonth === 'function'
-      ? window.getCurrentFilterMonth()
-      : window.currentFilterMonth) || months[0]?.id;
+  const targetMonthId = getActiveFilterMonth() || months[0]?.id;
   updateAnalyticsForMonth(targetMonthId);
 
   // 2. ДИНАМИКА САЛЬДО (NET FLOW SPLINE CURVE): за весь текущий год (12 месяцев)
@@ -99,6 +113,12 @@ function buildCharts() {
   const netFlowData = [];
   const incomeData = [];
   const expenseData = [];
+  const pointRadii = [];
+  const pointHoverRadii = [];
+  const pointHitRadii = [];
+  const pointBgColors = [];
+  const pointBorderColors = [];
+  const hasTxArray = [];
   let totalNet = 0;
   let activeMonthCount = 0;
 
@@ -108,12 +128,28 @@ function buildCharts() {
     const inc = found ? Number(found.income) || 0 : 0;
     const exp = found ? Number(found.expense) || 0 : 0;
     const net = inc - exp;
+    const hasTx = !!(found && (found.items?.length > 0 || inc > 0 || exp > 0));
+
     incomeData.push(inc);
     expenseData.push(exp);
     netFlowData.push(net);
-    if (found && (inc > 0 || exp > 0)) {
+    hasTxArray.push(hasTx);
+
+    if (hasTx) {
       totalNet += net;
       activeMonthCount++;
+      pointRadii.push(4);
+      pointHoverRadii.push(7);
+      pointHitRadii.push(16); // Комфортный радиус клика на точку
+      pointBgColors.push(net >= 0 ? '#10B981' : '#F43F5E');
+      pointBorderColors.push('#ffffff');
+    } else {
+      // Месяц без операций: точка полностью скрывается и не триггерит тултип
+      pointRadii.push(0);
+      pointHoverRadii.push(0);
+      pointHitRadii.push(0);
+      pointBgColors.push('transparent');
+      pointBorderColors.push('transparent');
     }
   }
 
@@ -144,11 +180,11 @@ function buildCharts() {
           borderColor: '#10B981',
           borderWidth: 2,
           tension: 0.35,
-          pointRadius: 4,
-          pointHoverRadius: 7,
-          pointHitRadius: 24, // Комфортный радиус клика на точку
-          pointBackgroundColor: '#10B981',
-          pointBorderColor: '#ffffff',
+          pointRadius: pointRadii,
+          pointHoverRadius: pointHoverRadii,
+          pointHitRadius: pointHitRadii,
+          pointBackgroundColor: pointBgColors,
+          pointBorderColor: pointBorderColors,
           pointBorderWidth: 1.5,
           fill: {
             target: 'origin',
@@ -163,7 +199,7 @@ function buildCharts() {
       maintainAspectRatio: false,
       interaction: {
         mode: 'nearest',
-        intersect: true, // Клик в пустое место не активирует точку и закрывает тултип
+        intersect: true, // Клик вне радиуса точки не активирует точку и скрывает тултип
       },
       plugins: {
         legend: { display: false },
@@ -188,6 +224,11 @@ function buildCharts() {
             }
 
             const idx = tooltip.dataPoints[0].dataIndex;
+            if (!hasTxArray[idx]) {
+              tooltipEl.style.opacity = '0';
+              return;
+            }
+
             const monthName = monthFullNames[idx];
             const net = netFlowData[idx];
             const inc = incomeData[idx];
@@ -197,7 +238,7 @@ function buildCharts() {
             const netSign = net >= 0 ? '+' : '';
 
             tooltipEl.innerHTML = `
-              <div class="text-[11px] font-bold text-white mb-2 pb-1.5 border-b border-white/[0.06] flex items-center justify-between">
+              <div class="text-[11px] font-bold text-white mb-2 pb-1.5 border-b border-white/[0.08] flex items-center justify-between">
                 <span>${escapeHtml(monthName)} ${targetYear}</span>
               </div>
               <div class="space-y-1.5 text-xs">
@@ -207,11 +248,11 @@ function buildCharts() {
                 </div>
                 <div class="flex items-center justify-between gap-3">
                   <span class="text-zinc-400 text-[11px]">Доходы</span>
-                  <span class="font-mono font-semibold text-emerald-400">${formatMoney(inc)}</span>
+                  <span class="font-mono font-semibold text-emerald-400">+${formatMoney(inc)}</span>
                 </div>
                 <div class="flex items-center justify-between gap-3">
                   <span class="text-zinc-400 text-[11px]">Расходы</span>
-                  <span class="font-mono font-semibold text-white">${formatMoney(exp)}</span>
+                  <span class="font-mono font-semibold text-white">-${formatMoney(exp)}</span>
                 </div>
               </div>
             `;
@@ -388,24 +429,55 @@ function updateAnalyticsForMonth(monthId) {
   let txItems = [];
   let titlePeriod = '';
 
-  if (monthId && monthId.startsWith('year-')) {
-    const y = monthId.replace('year-', '');
+  const activeId =
+    monthId ||
+    (typeof getActiveFilterMonth === 'function' ? getActiveFilterMonth() : null) ||
+    allMonths[0]?.id;
+
+  if (activeId && activeId.startsWith('year-')) {
+    const y = activeId.replace('year-', '');
     titlePeriod = `за ${y} год`;
     const yearMonths = allMonths.filter(m => m.id && m.id.startsWith(y));
     yearMonths.forEach(m => {
       txItems.push(...(m.items || []));
     });
-  } else if (monthId === 'all') {
+  } else if (activeId === 'all') {
     titlePeriod = 'за все время';
     allMonths.forEach(m => {
       txItems.push(...(m.items || []));
     });
-  } else {
-    const month = allMonths.find(m => m.id === monthId) || allMonths[0];
+  } else if (activeId) {
+    const month = allMonths.find(m => m.id === activeId);
     if (month) {
       titlePeriod = month.label ? `• ${month.label}` : '';
       txItems = month.items || [];
+    } else {
+      const parts = activeId.split('-');
+      if (parts.length === 2) {
+        const y = parts[0];
+        const m = parseInt(parts[1], 10) - 1;
+        const monthNames = [
+          'Январь',
+          'Февраль',
+          'Март',
+          'Апрель',
+          'Май',
+          'Июнь',
+          'Июль',
+          'Август',
+          'Сентябрь',
+          'Октябрь',
+          'Ноябрь',
+          'Декабрь',
+        ];
+        titlePeriod = monthNames[m] ? `• ${monthNames[m]} ${y}` : `• ${activeId}`;
+      } else {
+        titlePeriod = `• ${activeId}`;
+      }
+      txItems = [];
     }
+  } else {
+    txItems = [];
   }
 
   const titleEl = document.getElementById('structure-title');
@@ -488,16 +560,7 @@ function updateAnalyticsForMonth(monthId) {
       ? colors.slice(0, data.length)
       : ['#1C202A'];
     categoryChartObj.options.cutout = '74%';
-
-    categoryChartObj.options.circumference = 0;
-    categoryChartObj.update('none');
-
-    requestAnimationFrame(() => {
-      if (categoryChartObj) {
-        categoryChartObj.options.circumference = 360;
-        categoryChartObj.update();
-      }
-    });
+    categoryChartObj.update();
   } else {
     if (categoryChartObj) categoryChartObj.destroy();
 
@@ -522,11 +585,9 @@ function updateAnalyticsForMonth(monthId) {
         maintainAspectRatio: false,
         layout: { padding: 10 },
         cutout: '74%',
-        rotation: -90,
-        circumference: 0,
         animation: {
-          duration: 750,
-          easing: 'easeOutQuart',
+          duration: 600,
+          animateRotate: true,
         },
         interaction: {
           mode: 'nearest',
@@ -555,13 +616,6 @@ function updateAnalyticsForMonth(monthId) {
           tooltip: { enabled: false },
         },
       },
-    });
-
-    requestAnimationFrame(() => {
-      if (categoryChartObj) {
-        categoryChartObj.options.circumference = 360;
-        categoryChartObj.update();
-      }
     });
   }
 

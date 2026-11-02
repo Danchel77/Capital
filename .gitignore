@@ -7,3 +7,7 @@ coverage/
 !.env.example
 .dsh/
 .dsh-vision-router/
+chrome-headless-shell/
+preview-*.html
+preview-*.png
+temp-preview.*

@@ -277,12 +277,12 @@ function renderMonthDropdownMenu() {
       `;
     });
 
-    // Пункт «За весь год» на всю ширину (в 2 колонки)
+    // Пункт «За весь год» на всю ширину (в 2 колонки) с единым левым выравниванием
     const isYearActive = currentFilterMonth === 'year-' + currentDropdownYear;
     mHtml += `
       <div class="col-span-2 pt-1 mt-0.5 border-t border-white/[0.06]">
-        <button type="button" onclick="selectFilterValue('month', 'year-${currentDropdownYear}', 'За весь год')" class="custom-month-grid-btn w-full text-center justify-center ${isYearActive ? 'is-active' : ''}">
-          <span>За весь год</span>
+        <button type="button" onclick="selectFilterValue('month', 'year-${currentDropdownYear}', 'За весь год')" class="custom-month-grid-btn w-full text-left justify-start ${isYearActive ? 'is-active' : ''}">
+          <span class="truncate">За весь год</span>
         </button>
       </div>
     `;
@@ -327,6 +327,9 @@ function selectFilterValue(type, value, label) {
     document.getElementById('menu-filter-cat').classList.add('hidden');
   }
   renderTransactions();
+  if (typeof updateAnalyticsForMonth === 'function') {
+    updateAnalyticsForMonth(currentFilterMonth);
+  }
   if (
     typeof buildCharts === 'function' &&
     !document.getElementById('transactions-chart')?.classList.contains('hidden')

@@ -1055,7 +1055,7 @@
               </button>
               <div
                 id="menu-filter-month"
-                class="hidden absolute left-0 top-full mt-1.5 w-[220px] sm:w-[230px] bg-[#0E1016] border border-white/10 rounded-2xl shadow-[0_16px_40px_rgba(0,0,0,0.85)] z-40 p-1.5 backdrop-blur-xl"
+                class="hidden absolute left-0 top-full mt-1.5 w-[176px] bg-[#0E1016] border border-white/10 rounded-2xl shadow-[0_16px_40px_rgba(0,0,0,0.85)] z-40 p-1.5 backdrop-blur-xl"
               ></div>
             </div>
 
@@ -1350,64 +1350,66 @@
 
       <!-- ЭКРАН КАПИТАЛА (АКТИВЫ: ВКЛАДЫ И ИНВЕСТИЦИИ MOEX) -->
       <div id="capital-tab" class="tab-pane hidden space-y-4">
-        <!-- Сводная карточка общего капитала -->
+        <!-- Сводная карточка общего капитала (Obsidian Minimalist) -->
         <div
-          class="bg-gradient-to-br from-[#181B24] to-[#141620] p-5 rounded-3xl border border-[rgba(255,255,255,0.06)] shadow-sm relative overflow-hidden"
+          class="bg-[#0E1016] p-4 sm:p-5 rounded-2xl border border-white/[0.08] shadow-sm relative overflow-hidden"
         >
           <div class="flex items-center justify-between mb-2">
-            <span class="text-[11px] text-[#848D99] uppercase tracking-wider font-bold"
+            <span class="text-[11px] text-zinc-400 uppercase tracking-wider font-bold"
               >Общий капитал семьи</span
             >
-            <span
-              id="capital-trend-badge"
-              class="text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full flex items-center gap-1"
-            >
-              <i data-lucide="trending-up" class="w-3 h-3"></i>
-              <span id="capital-trend-text">Активы</span>
-            </span>
           </div>
           <p
             id="capital-total-amount"
-            class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight"
+            class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight font-mono tabular-nums"
           >
             0 ₽
           </p>
-          <div
-            class="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-[rgba(255,255,255,0.06)] text-xs"
-          >
+          <div class="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-white/[0.06] text-xs">
             <div>
-              <span class="text-[#848D99] block text-[10px] uppercase font-semibold">Вклады</span>
-              <span id="capital-summary-deposits" class="font-mono font-bold text-gray-200"
-                >0 ₽</span
-              >
+              <span class="text-zinc-400 block text-[10px] uppercase font-semibold">Вклады</span>
+              <div class="flex items-baseline gap-1.5 flex-wrap">
+                <span
+                  id="capital-summary-deposits"
+                  class="font-mono font-bold text-white tabular-nums"
+                  >0 ₽</span
+                >
+                <span
+                  id="deposits-monthly-interest"
+                  class="font-mono text-[11px] font-semibold text-emerald-400 tabular-nums"
+                  >+0 ₽/мес</span
+                >
+              </div>
             </div>
             <div>
-              <span class="text-[#848D99] block text-[10px] uppercase font-semibold"
+              <span class="text-zinc-400 block text-[10px] uppercase font-semibold"
                 >Инвестиции MOEX</span
               >
-              <span id="capital-summary-broker" class="font-mono font-bold text-gray-200">0 ₽</span>
+              <span id="capital-summary-broker" class="font-mono font-bold text-white tabular-nums"
+                >0 ₽</span
+              >
             </div>
           </div>
         </div>
 
         <!-- Переключатель секций (Вклады | Инвестиции MOEX) -->
         <div
-          class="bg-[#161822] p-1 rounded-2xl border border-[rgba(255,255,255,0.06)] flex items-center gap-1 shadow-inner"
+          class="bg-[#12151C] p-1 rounded-xl border border-white/[0.06] flex items-center gap-1 shadow-inner"
         >
           <button
             type="button"
             id="cap-subtab-deposits"
             onclick="switchCapitalSubtab('deposits')"
-            class="flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 bg-[#6C5DD3] text-white shadow-sm active:scale-95"
+            class="flex-1 py-2 px-3 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 bg-white text-zinc-950 shadow-sm active:scale-95"
           >
-            <i data-lucide="piggy-bank" class="w-3.5 h-3.5"></i>
+            <i data-lucide="vault" class="w-3.5 h-3.5"></i>
             <span>Вклады</span>
           </button>
           <button
             type="button"
             id="cap-subtab-broker"
             onclick="switchCapitalSubtab('broker')"
-            class="flex-1 py-2 px-3 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 text-[#848D99] hover:text-white active:scale-95"
+            class="flex-1 py-2 px-3 rounded-xl text-xs font-medium transition-all cursor-pointer flex items-center justify-center gap-1.5 text-zinc-400 hover:text-white active:scale-95"
           >
             <i data-lucide="trending-up" class="w-3.5 h-3.5"></i>
             <span>Инвестиции MOEX</span>
@@ -1415,95 +1417,44 @@
         </div>
 
         <!-- Подвкладка: Вклады -->
-        <div id="capital-deposits-view" class="space-y-4">
-          <!-- Сводная панель вкладов: общая сумма и начисленные проценты в месяц -->
-          <div id="deposits-summary-panel" class="grid grid-cols-2 gap-3 mb-1">
-            <div
-              class="bg-[#181B24] p-4 rounded-2xl border border-[rgba(255,255,255,0.06)] shadow-sm"
-            >
-              <p
-                class="text-[10px] text-[#848D99] uppercase font-bold tracking-wider mb-1 truncate"
-              >
-                Сумма на вкладах
-              </p>
-              <p id="deposits-total-amount" class="font-bold text-white text-lg truncate">0 ₽</p>
-            </div>
-            <div
-              class="bg-[#181B24] p-4 rounded-2xl border border-[rgba(255,255,255,0.06)] shadow-sm"
-            >
-              <p
-                class="text-[10px] text-[#848D99] uppercase font-bold tracking-wider mb-1 truncate"
-              >
-                Доход в месяц
-              </p>
-              <p id="deposits-monthly-interest" class="font-bold text-[#30D158] text-lg truncate">
-                +0 ₽
-              </p>
-            </div>
-          </div>
+        <div id="capital-deposits-view" class="space-y-3">
+          <!-- Скрытый элемент для совместимости со старыми скриптами -->
+          <span id="deposits-total-amount" class="hidden">0 ₽</span>
 
-          <button
-            id="dep-open-top-btn"
-            onclick="
-              toggleForm(
-                'deposit-form-container',
-                'dep-submit-btn',
-                'Сохранить вклад',
-                'deposit-form',
-                'dep'
-              )
-            "
-            class="w-full bg-[#6C5DD3]/15 text-[#8C7DFF] border border-[#6C5DD3]/30 font-semibold rounded-xl text-sm px-5 py-3 hover:bg-[#6C5DD3]/25 active:scale-[0.98] transition-all cursor-pointer shadow-sm"
-          >
-            + Открыть вклад
-          </button>
+          <!-- Инлайн-форма добавления нового вклада (Obsidian Minimalist) -->
           <div
             id="deposit-form-container"
-            class="hidden bg-[#181B24] p-5 rounded-2xl border border-[rgba(255,255,255,0.08)] shadow-xl animate-fade-in"
+            class="hidden bg-[#0E1016] p-4 rounded-2xl border border-white/[0.08] shadow-xl animate-fade-in"
           >
             <form id="deposit-form" onsubmit="submitDeposit(event)">
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-xs font-bold text-white uppercase tracking-wider"
+                  >Новый вклад</span
+                >
+                <button
+                  type="button"
+                  onclick="
+                    closeForm(
+                      'deposit-form-container',
+                      'dep-submit-btn',
+                      'Сохранить',
+                      'deposit-form'
+                    )
+                  "
+                  class="w-6 h-6 rounded-lg bg-white/[0.05] hover:bg-white/10 text-zinc-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+                >
+                  <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+
               <input
                 type="text"
                 id="dep-name"
-                placeholder="Название вклада (например: Вклад 1)"
-                class="w-full bg-gray-700 border border-gray-600 text-white rounded-xl p-3 outline-none mb-3.5 text-xs"
+                placeholder="Название вклада (например: Сбер Накопительный)"
+                class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white rounded-xl p-3 outline-none mb-3 text-xs"
               />
 
-              <!-- Кастомный стильный выпадающий список цели вклада с подсказкой -->
-              <div class="mb-3.5">
-                <div class="flex items-center justify-between mb-1 px-0.5">
-                  <label class="text-[10px] text-[#848D99] uppercase font-bold tracking-wider"
-                    >Привязка к финансовой цели</label
-                  >
-                </div>
-                <p class="text-[11px] text-gray-400 mb-1.5 leading-tight">
-                  Вклад и проценты по нему будут учитываться в прогрессе накопления цели.
-                </p>
-                <div class="relative custom-dropdown-wrap" id="wrap-dep-goal">
-                  <input type="hidden" id="dep-goal" value="" />
-                  <button
-                    type="button"
-                    id="dep-goal-btn"
-                    onclick="toggleDepositGoalMenu(event)"
-                    class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] text-white rounded-xl px-3.5 py-3 text-xs flex items-center justify-between outline-none cursor-pointer hover:border-gray-500 transition-colors"
-                  >
-                    <span
-                      id="dep-goal-label"
-                      class="flex items-center gap-2 truncate text-gray-300"
-                    >
-                      <i data-lucide="circle-dashed" class="w-4 h-4 text-[#848D99]"></i>
-                      <span class="truncate text-gray-400">Без привязки к цели</span>
-                    </span>
-                    <span class="text-gray-400 text-[9px] ml-1">▼</span>
-                  </button>
-                  <div
-                    id="dep-goal-menu"
-                    class="custom-dropdown-menu hidden absolute left-0 top-full mt-1.5 w-full max-h-56 overflow-y-auto bg-[#181B24] backdrop-blur-md border border-[rgba(255,255,255,0.08)] rounded-2xl shadow-2xl z-50 p-1 space-y-0.5"
-                  ></div>
-                </div>
-              </div>
-
-              <div class="flex space-x-3 mb-3.5">
+              <div class="flex space-x-2.5 mb-3">
                 <input
                   type="text"
                   inputmode="decimal"
@@ -1511,7 +1462,7 @@
                   id="dep-amount"
                   placeholder="Сумма (₽)"
                   required
-                  class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] text-white rounded-xl p-3 outline-none flex-1 text-xs"
+                  class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white rounded-xl p-3 outline-none flex-1 text-xs font-mono font-bold"
                 />
                 <input
                   type="text"
@@ -1520,14 +1471,14 @@
                   id="dep-rate"
                   placeholder="Ставка %"
                   required
-                  class="w-1/3 bg-[#12151C] border border-[rgba(255,255,255,0.08)] text-white rounded-xl p-3 outline-none text-xs"
+                  class="w-1/3 bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white rounded-xl p-3 outline-none text-xs font-mono font-bold"
                 />
               </div>
 
-              <!-- Даты открытия и закрытия с явными подсказками и иконками -->
-              <div class="grid grid-cols-2 gap-3 mb-5">
+              <!-- Даты открытия и закрытия -->
+              <div class="grid grid-cols-2 gap-2.5 mb-4">
                 <div>
-                  <label class="block text-[10px] text-[#848D99] uppercase font-bold mb-1"
+                  <label class="block text-[10px] text-zinc-400 uppercase font-bold mb-1"
                     >Дата открытия</label
                   >
                   <input
@@ -1537,11 +1488,11 @@
                     readonly
                     placeholder="ДД.ММ.ГГГГ"
                     required
-                    class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] text-white placeholder-gray-500 rounded-xl p-3 outline-none text-xs cursor-pointer"
+                    class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white placeholder-zinc-500 rounded-xl p-3 outline-none text-xs cursor-pointer"
                   />
                 </div>
                 <div>
-                  <label class="block text-[10px] text-[#848D99] uppercase font-bold mb-1"
+                  <label class="block text-[10px] text-zinc-400 uppercase font-bold mb-1"
                     >Дата закрытия</label
                   >
                   <input
@@ -1551,12 +1502,12 @@
                     readonly
                     placeholder="ДД.ММ.ГГГГ"
                     required
-                    class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] text-white placeholder-gray-500 rounded-xl p-3 outline-none text-xs cursor-pointer"
+                    class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white placeholder-zinc-500 rounded-xl p-3 outline-none text-xs cursor-pointer"
                   />
                 </div>
               </div>
 
-              <!-- Кнопки действий: 42px с идеальным вертикальным центрированием надписей -->
+              <!-- Кнопки действий -->
               <div class="flex gap-2 h-[42px]">
                 <button
                   type="button"
@@ -1564,25 +1515,26 @@
                     closeForm(
                       'deposit-form-container',
                       'dep-submit-btn',
-                      'Сохранить вклад',
+                      'Сохранить',
                       'deposit-form'
                     )
                   "
-                  class="w-1/3 h-full bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 font-semibold rounded-xl text-xs flex items-center justify-center cursor-pointer transition-colors active:scale-95 leading-none"
+                  class="w-1/3 h-full bg-white/[0.05] hover:bg-white/10 text-zinc-300 font-medium rounded-xl text-xs flex items-center justify-center cursor-pointer transition-colors active:scale-95 leading-none border border-white/[0.08]"
                 >
                   Отмена
                 </button>
                 <button
                   type="submit"
                   id="dep-submit-btn"
-                  class="w-2/3 h-full bg-[#6C5DD3] hover:bg-[#5E4FC9] text-white font-semibold rounded-xl text-xs flex items-center justify-center cursor-pointer shadow-md shadow-[#6C5DD3]/25 transition-all active:scale-95 leading-none"
+                  class="w-2/3 h-full bg-white hover:bg-zinc-100 text-zinc-950 font-semibold rounded-xl text-xs flex items-center justify-center cursor-pointer shadow-sm transition-all active:scale-95 leading-none"
                 >
                   Сохранить
                 </button>
               </div>
             </form>
           </div>
-          <div id="deposits-list" class="space-y-4 pb-6"></div>
+
+          <div id="deposits-list" class="space-y-3 pb-6"></div>
         </div>
 
         <!-- Подвкладка: Брокер -->
@@ -6257,37 +6209,38 @@
     </div>
 
     <!-- МОДАЛЬНОЕ ОКНО РЕДАКТИРОВАНИЯ ВКЛАДА -->
+    <!-- МОДАЛЬНОЕ ОКНО РЕДАКТИРОВАНИЯ ВКЛАДА (Obsidian Minimalist) -->
     <div
       id="dep-edit-modal"
       onclick="if (event.target === this) closeEditDepModal();"
-      class="fixed inset-0 bg-black/80 z-[150] hidden flex flex-col justify-center items-center p-4 animate-fade-in"
+      class="fixed inset-0 bg-black/85 z-[150] hidden flex flex-col justify-center items-center p-3.5 sm:p-4 backdrop-blur-sm animate-fade-in"
     >
       <div
-        class="bg-[#181B24] border border-[rgba(255,255,255,0.08)] w-full max-w-sm rounded-3xl p-5 shadow-2xl"
+        class="bg-[#0E1016] border border-white/10 w-full max-w-sm rounded-3xl p-5 shadow-2xl flex flex-col"
       >
         <div
-          class="flex items-center justify-between mb-3.5 pb-2.5 border-b border-[rgba(255,255,255,0.06)]"
+          class="flex items-center justify-between mb-3.5 pb-2.5 border-b border-white/[0.06] flex-shrink-0"
         >
           <div>
             <h3 class="font-bold text-white text-base">Редактирование вклада</h3>
-            <p class="text-xs text-[#848D99] mt-0.5">Изменение параметров депозита</p>
+            <p class="text-xs text-zinc-400 mt-0.5">Изменение параметров депозита</p>
           </div>
           <button
             type="button"
             id="dep-edit-modal-close-btn"
             onclick="closeEditDepModal()"
-            class="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-[#212430] cursor-pointer"
+            class="w-8 h-8 rounded-xl bg-white/[0.05] hover:bg-white/10 text-zinc-400 hover:text-white border border-white/[0.08] flex items-center justify-center cursor-pointer transition-colors active:scale-95"
           >
             <i data-lucide="x" class="w-4 h-4"></i>
           </button>
         </div>
 
-        <form id="edit-dep-form" onsubmit="submitEditDepModal(event)">
+        <form id="edit-dep-form" onsubmit="submitEditDepModal(event)" class="space-y-3">
           <input type="hidden" id="edit-dep-id" value="" />
 
           <!-- Название вклада -->
-          <div class="mb-3.5">
-            <label class="block text-[10px] text-[#848D99] uppercase font-bold mb-1"
+          <div>
+            <label class="block text-[10px] text-zinc-400 uppercase font-bold mb-1"
               >Название вклада</label
             >
             <input
@@ -6295,38 +6248,14 @@
               id="edit-dep-name"
               placeholder="Название вклада"
               required
-              class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-white/30 text-white rounded-xl p-3 outline-none text-xs"
+              class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white rounded-xl p-3 outline-none text-xs"
             />
           </div>
 
-          <!-- Привязка к цели -->
-          <div class="relative mb-3.5 custom-dropdown-wrap" id="wrap-edit-dep-goal">
-            <label class="block text-[10px] text-[#848D99] uppercase font-bold mb-1"
-              >Привязка к цели</label
-            >
-            <input type="hidden" id="edit-dep-goal" value="" />
-            <button
-              type="button"
-              id="edit-dep-goal-btn"
-              onclick="toggleEditDepositGoalMenu(event)"
-              class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-white/30 text-white rounded-xl px-3.5 py-2.5 text-xs flex items-center justify-between outline-none cursor-pointer hover:border-gray-500 transition-colors"
-            >
-              <span id="edit-dep-goal-label" class="flex items-center gap-2 truncate text-gray-300">
-                <i data-lucide="circle-dashed" class="w-4 h-4 text-[#848D99]"></i>
-                <span class="truncate text-gray-400">Без привязки к цели</span>
-              </span>
-              <span class="text-gray-400 text-[9px] ml-1">▼</span>
-            </button>
-            <div
-              id="edit-dep-goal-menu"
-              class="custom-dropdown-menu hidden absolute left-0 top-full mt-1.5 w-full max-h-56 overflow-y-auto bg-gray-800/95 backdrop-blur-md border border-gray-700 rounded-2xl shadow-2xl z-[160] p-1 space-y-0.5"
-            ></div>
-          </div>
-
           <!-- Сумма и Ставка -->
-          <div class="flex space-x-3 mb-3.5">
+          <div class="flex space-x-2.5">
             <div class="flex-1">
-              <label class="block text-[10px] text-[#848D99] uppercase font-bold mb-1"
+              <label class="block text-[10px] text-zinc-400 uppercase font-bold mb-1"
                 >Сумма (₽)</label
               >
               <input
@@ -6336,11 +6265,11 @@
                 id="edit-dep-amount"
                 placeholder="0 ₽"
                 required
-                class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-white/30 text-white rounded-xl p-3 outline-none text-xs font-bold"
+                class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white rounded-xl p-3 outline-none text-xs font-mono font-bold"
               />
             </div>
             <div class="w-1/3">
-              <label class="block text-[10px] text-[#848D99] uppercase font-bold mb-1"
+              <label class="block text-[10px] text-zinc-400 uppercase font-bold mb-1"
                 >Ставка %</label
               >
               <input
@@ -6350,15 +6279,15 @@
                 id="edit-dep-rate"
                 placeholder="0%"
                 required
-                class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-white/30 text-white rounded-xl p-3 outline-none text-xs font-bold"
+                class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white rounded-xl p-3 outline-none text-xs font-mono font-bold"
               />
             </div>
           </div>
 
           <!-- Даты открытия и закрытия -->
-          <div class="grid grid-cols-2 gap-3 mb-5">
+          <div class="grid grid-cols-2 gap-2.5">
             <div>
-              <label class="block text-[10px] text-[#848D99] uppercase font-bold mb-1"
+              <label class="block text-[10px] text-zinc-400 uppercase font-bold mb-1"
                 >Дата открытия</label
               >
               <input
@@ -6368,11 +6297,11 @@
                 readonly
                 placeholder="Дата открытия"
                 required
-                class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-white/30 text-white rounded-xl p-3 outline-none text-xs cursor-pointer"
+                class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white rounded-xl p-3 outline-none text-xs cursor-pointer"
               />
             </div>
             <div>
-              <label class="block text-[10px] text-[#848D99] uppercase font-bold mb-1"
+              <label class="block text-[10px] text-zinc-400 uppercase font-bold mb-1"
                 >Дата закрытия</label
               >
               <input
@@ -6382,64 +6311,64 @@
                 readonly
                 placeholder="Дата закрытия"
                 required
-                class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-white/30 text-white rounded-xl p-3 outline-none text-xs cursor-pointer"
+                class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white rounded-xl p-3 outline-none text-xs cursor-pointer"
               />
             </div>
           </div>
 
-          <!-- Кнопки действий: Удалить | Отмена | Сохранить -->
-          <div class="flex items-center gap-2">
+          <!-- Кнопки действий: Отмена | Сохранить + ссылка Удалить -->
+          <div class="pt-2">
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                id="edit-dep-cancel-btn"
+                onclick="closeEditDepModal()"
+                class="flex-1 bg-white/[0.05] hover:bg-white/10 text-zinc-300 py-2.5 rounded-xl text-xs font-medium border border-white/[0.08] transition-colors cursor-pointer"
+              >
+                Отмена
+              </button>
+              <button
+                type="submit"
+                id="edit-dep-save-btn"
+                class="flex-1 bg-white hover:bg-zinc-100 active:scale-95 text-zinc-950 py-2.5 rounded-xl text-xs font-semibold shadow-sm transition-all cursor-pointer"
+              >
+                Сохранить
+              </button>
+            </div>
             <button
               type="button"
               id="edit-dep-delete-btn"
               onclick="deleteDepFromModal()"
-              class="px-3.5 py-2.5 bg-[#FF453A]/15 hover:bg-[#FF453A]/25 text-[#FF453A] border border-[#FF453A]/20 rounded-xl text-xs font-semibold transition-colors cursor-pointer flex items-center justify-center gap-1 active:scale-95"
+              class="w-full text-center py-2 text-xs font-medium text-rose-400 hover:text-rose-300 active:scale-95 flex items-center justify-center gap-1.5 transition-colors cursor-pointer mt-2"
               title="Удалить вклад"
             >
-              <i data-lucide="trash-2" class="w-4 h-4"></i>
-              <span>Удалить</span>
-            </button>
-            <button
-              type="button"
-              id="edit-dep-cancel-btn"
-              onclick="closeEditDepModal()"
-              class="flex-1 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 py-2.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
-            >
-              Отмена
-            </button>
-            <button
-              type="submit"
-              id="edit-dep-save-btn"
-              class="flex-1 bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white py-2.5 rounded-xl text-xs font-semibold shadow-md transition-all active:scale-95 cursor-pointer"
-            >
-              Сохранить
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              <span>Удалить вклад</span>
             </button>
           </div>
         </form>
       </div>
     </div>
 
-    <!-- МОДАЛЬНОЕ ОКНО ЗАКРЫТИЯ ВКЛАДА (С ВЫБОРОМ ЗАЧИСЛЕНИЯ ПРОЦЕНТОВ) -->
+    <!-- МОДАЛЬНОЕ ОКНО ЗАКРЫТИЯ ВКЛАДА (Obsidian Minimalist) -->
     <div
       id="deposit-close-dialog"
       onclick="if (event.target === this) closeDepositCloseModal();"
-      class="fixed inset-0 bg-black/80 z-[150] hidden flex flex-col justify-center items-center p-4 animate-fade-in backdrop-blur-sm"
+      class="fixed inset-0 bg-black/85 z-[150] hidden flex flex-col justify-center items-center p-3.5 sm:p-4 animate-fade-in backdrop-blur-sm"
     >
       <div
-        class="bg-[#181B24] border border-[rgba(255,255,255,0.08)] w-full max-w-sm rounded-3xl p-5 shadow-2xl relative"
+        class="bg-[#0E1016] border border-white/10 w-full max-w-sm rounded-3xl p-5 shadow-2xl relative"
       >
-        <div
-          class="flex items-center justify-between mb-3.5 pb-2.5 border-b border-[rgba(255,255,255,0.06)]"
-        >
+        <div class="flex items-center justify-between mb-3.5 pb-2.5 border-b border-white/[0.06]">
           <div class="flex items-center gap-2.5">
             <div
-              class="w-9 h-9 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center flex-shrink-0 border border-amber-500/25"
+              class="w-8 h-8 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center flex-shrink-0 border border-amber-500/25"
             >
-              <i data-lucide="piggy-bank" class="w-5 h-5"></i>
+              <i data-lucide="vault" class="w-4 h-4"></i>
             </div>
             <div>
               <h3 class="font-bold text-white text-base leading-tight">Закрытие вклада</h3>
-              <p id="dep-close-name" class="text-xs text-[#848D99] mt-0.5 truncate max-w-[200px]">
+              <p id="dep-close-name" class="text-xs text-zinc-400 mt-0.5 truncate max-w-[200px]">
                 Вклад
               </p>
             </div>
@@ -6447,7 +6376,7 @@
           <button
             type="button"
             onclick="closeDepositCloseModal()"
-            class="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-[#212430] cursor-pointer"
+            class="w-8 h-8 rounded-xl bg-white/[0.05] hover:bg-white/10 text-zinc-400 hover:text-white border border-white/[0.08] flex items-center justify-center cursor-pointer transition-colors active:scale-95"
           >
             <i data-lucide="x" class="w-4 h-4"></i>
           </button>
@@ -6456,84 +6385,25 @@
         <input type="hidden" id="dep-close-id" value="" />
 
         <!-- Сводка по суммам вклада -->
-        <div
-          class="p-3.5 rounded-2xl bg-[#12151C] border border-[rgba(255,255,255,0.06)] space-y-2 mb-3.5"
-        >
+        <div class="p-3.5 rounded-2xl bg-[#12151C] border border-white/[0.06] space-y-2 mb-4">
           <div class="flex justify-between items-center text-xs">
-            <span class="text-[#848D99]">Сумма вклада:</span>
-            <span id="dep-close-amount" class="font-mono font-bold text-white">0 ₽</span>
-          </div>
-          <div class="flex justify-between items-center text-xs">
-            <span class="text-[#848D99]">Начисленные проценты:</span>
-            <span id="dep-close-interest" class="font-mono font-bold text-[#30D158]">+0 ₽</span>
-          </div>
-          <div
-            class="pt-2 border-t border-[rgba(255,255,255,0.06)] flex justify-between items-center text-xs"
-          >
-            <span class="text-gray-200 font-semibold">Итого к получению:</span>
-            <span id="dep-close-total" class="font-mono font-extrabold text-white text-sm"
+            <span class="text-zinc-400">Сумма вклада:</span>
+            <span id="dep-close-amount" class="font-mono font-bold text-white tabular-nums"
               >0 ₽</span
             >
           </div>
-        </div>
-
-        <!-- Переключатель зачисления процентов в цель -->
-        <div
-          class="p-3.5 rounded-2xl bg-[#12151C] border border-[rgba(255,255,255,0.06)] space-y-3 mb-4"
-        >
-          <label class="flex items-center justify-between cursor-pointer select-none">
-            <div class="min-w-0 pr-2">
-              <span class="text-xs font-semibold text-white block">Начислить проценты в цель</span>
-              <span class="text-[10px] text-[#848D99] block mt-0.5 leading-tight"
-                >Пополнить накопления выбранной цели</span
-              >
-            </div>
-            <input
-              type="checkbox"
-              id="dep-close-credit-toggle"
-              onchange="toggleDepCloseGoalSection(this.checked)"
-              class="w-4 h-4 rounded bg-[#181B24] border-gray-600 text-[#6C5DD3] focus:ring-0 cursor-pointer accent-[#6C5DD3] flex-shrink-0"
-              checked
-            />
-          </label>
-
-          <!-- Блок выбора цели -->
-          <div
-            id="dep-close-goal-wrap"
-            class="space-y-1.5 pt-2 border-t border-[rgba(255,255,255,0.06)]"
-          >
-            <div class="flex items-center justify-between text-[10px]">
-              <span class="text-gray-300 font-medium">Финансовая цель для зачисления:</span>
-            </div>
-            <div class="relative w-full custom-dropdown-wrap">
-              <input type="hidden" id="dep-close-goal-id" value="" />
-              <button
-                type="button"
-                onclick="toggleDepCloseGoalMenu(event)"
-                id="dep-close-goal-btn"
-                class="h-9 w-full bg-[#181B24] border border-[rgba(255,255,255,0.08)] hover:border-gray-500 focus:border-white/30 text-white rounded-xl px-2.5 text-xs flex items-center justify-between outline-none cursor-pointer transition-colors"
-              >
-                <span
-                  id="dep-close-goal-label"
-                  class="flex items-center gap-1.5 truncate text-white min-w-0 text-xs"
-                >
-                  <i data-lucide="target" class="w-3.5 h-3.5 text-amber-400 flex-shrink-0"></i>
-                  <span class="truncate font-medium text-gray-200">Выберите цель</span>
-                </span>
-                <span class="text-gray-400 text-[8px] ml-1 flex-shrink-0">▼</span>
-              </button>
-              <div
-                id="dep-close-goal-menu"
-                class="custom-dropdown-menu hidden absolute left-0 top-full mt-1 w-full max-h-48 overflow-y-auto bg-[#181B24]/95 backdrop-blur-md border border-gray-700 rounded-xl shadow-2xl z-[160] p-1 space-y-0.5 custom-scrollbar"
-              ></div>
-            </div>
+          <div class="flex justify-between items-center text-xs">
+            <span class="text-zinc-400">Начисленные проценты:</span>
+            <span id="dep-close-interest" class="font-mono font-bold text-emerald-400 tabular-nums"
+              >+0 ₽</span
+            >
           </div>
-
-          <div class="flex items-start gap-1.5 pt-1 text-[10px] text-[#848D99] leading-relaxed">
-            <i data-lucide="info" class="w-3.5 h-3.5 text-amber-400 flex-shrink-0 mt-0.5"></i>
+          <div class="pt-2 border-t border-white/[0.06] flex justify-between items-center text-xs">
+            <span class="text-zinc-200 font-semibold">Итого к получению:</span>
             <span
-              >Если банк уже выплатил проценты на карту отдельным доходом (или они реинвестированы),
-              снимите галочку, чтобы сумма не удвоилась в бюджете.</span
+              id="dep-close-total"
+              class="font-mono font-extrabold text-white text-sm tabular-nums"
+              >0 ₽</span
             >
           </div>
         </div>
@@ -6543,7 +6413,7 @@
           <button
             type="button"
             onclick="closeDepositCloseModal()"
-            class="flex-1 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 py-2.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+            class="flex-1 bg-white/[0.05] hover:bg-white/10 text-zinc-300 py-2.5 rounded-xl text-xs font-medium border border-white/[0.08] transition-colors cursor-pointer"
           >
             Отмена
           </button>
@@ -6551,7 +6421,7 @@
             type="button"
             id="dep-close-submit-btn"
             onclick="submitCloseDepositModal()"
-            class="flex-1 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white py-2.5 rounded-xl text-xs font-bold shadow-md shadow-emerald-600/20 transition-all active:scale-95 cursor-pointer"
+            class="flex-1 bg-white hover:bg-zinc-100 active:scale-95 text-zinc-950 py-2.5 rounded-xl text-xs font-semibold shadow-sm transition-all cursor-pointer"
           >
             Закрыть вклад
           </button>
