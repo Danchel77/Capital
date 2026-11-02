@@ -1374,53 +1374,37 @@
       </div>
 
       <!-- ЭКРАН КАПИТАЛА (АКТИВЫ: ВКЛАДЫ И ИНВЕСТИЦИИ) -->
-      <div id="capital-tab" class="tab-pane hidden space-y-4">
-        <!-- Сводная карточка общего капитала (Obsidian Minimalist) -->
-        <div
-          class="bg-[#0E1016] p-4 sm:p-5 rounded-2xl border border-white/[0.08] shadow-sm relative overflow-hidden"
-        >
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-[11px] text-zinc-400 uppercase tracking-wider font-bold"
-              >Общий капитал семьи</span
-            >
-          </div>
-          <p
-            id="capital-total-amount"
-            class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight font-mono tabular-nums"
-          >
-            0 ₽
-          </p>
-          <div class="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-white/[0.06] text-xs">
-            <div>
-              <span class="text-zinc-400 block text-[10px] uppercase font-semibold">Вклады</span>
-              <div class="flex items-baseline gap-1.5 flex-wrap">
-                <span
-                  id="capital-summary-deposits"
-                  class="font-mono font-bold text-white tabular-nums"
-                  >0 ₽</span
-                >
-                <span
-                  id="deposits-monthly-interest"
-                  class="font-mono text-[11px] font-semibold text-emerald-400 tabular-nums"
-                  >+0 ₽/мес</span
-                >
-              </div>
-            </div>
-            <div>
-              <span class="text-zinc-400 block text-[10px] uppercase font-semibold"
-                >Инвестиции</span
-              >
-              <span id="capital-summary-broker" class="font-mono font-bold text-white tabular-nums"
-                >0 ₽</span
-              >
-            </div>
-          </div>
-        </div>
+      <div id="capital-tab" class="tab-pane hidden space-y-3.5">
+        <!-- Скрытые элементы для совместимости со старыми скриптами -->
+        <span id="capital-total-amount" class="hidden">0 ₽</span>
+        <span id="capital-summary-deposits" class="hidden">0 ₽</span>
+        <span id="capital-summary-broker" class="hidden">0 ₽</span>
 
         <!-- Подвкладка: Вклады -->
         <div id="capital-deposits-view" class="space-y-3">
-          <!-- Скрытый элемент для совместимости со старыми скриптами -->
-          <span id="deposits-total-amount" class="hidden">0 ₽</span>
+          <!-- Сводная карточка вкладов (Obsidian Minimalist) -->
+          <div
+            class="bg-[#0E1016] p-4 sm:p-5 rounded-2xl border border-white/10 shadow-sm relative overflow-hidden"
+          >
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[11px] text-zinc-400 uppercase tracking-wider font-semibold"
+                >Вклады семьи</span
+              >
+            </div>
+            <div class="flex items-baseline justify-between gap-2 flex-wrap">
+              <p
+                id="deposits-total-amount"
+                class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight font-mono tabular-nums"
+              >
+                0 ₽
+              </p>
+              <span
+                id="deposits-monthly-interest"
+                class="font-mono text-xs sm:text-sm font-semibold text-emerald-400 tabular-nums px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20"
+                >+0 ₽/мес</span
+              >
+            </div>
+          </div>
 
           <!-- Инлайн-форма добавления нового вклада (Obsidian Minimalist) -->
           <div
@@ -1564,45 +1548,42 @@
             </button>
           </div>
 
-          <!-- Главная карточка портфеля -->
+          <!-- Главная карточка портфеля (Obsidian Minimalist) -->
           <div
             id="broker-main-card"
             class="bg-[#0E1016] p-4 sm:p-5 rounded-2xl border border-white/10 shadow-sm relative select-none"
           >
             <!-- Скрытые элементы для совместимости со старыми вызовами -->
-            <span id="broker-balance" class="hidden">0 ₽</span>
             <span id="broker-assets-sum" class="hidden">0 ₽</span>
             <span id="broker-cash-sum" class="hidden">0 ₽</span>
             <span id="broker-yield-badge" class="hidden"></span>
 
-            <div class="flex items-center justify-between mb-3">
-              <span class="text-xs uppercase tracking-wider font-semibold text-zinc-400"
-                >Динамика портфеля</span
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] text-zinc-400 uppercase tracking-wider font-semibold"
+                >Инвестиционный портфель</span
               >
-              <div class="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  id="btn-refresh-moex-quotes"
-                  onclick="refreshMoexQuotes()"
-                  class="p-2 rounded-xl bg-white/[0.05] hover:bg-white/10 text-zinc-400 hover:text-white transition-all cursor-pointer active:scale-95 border border-white/10"
-                  title="Обновить котировки Мосбиржи"
-                >
-                  <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
-                </button>
-                <button
-                  type="button"
-                  onclick="openAddMoexAssetModal()"
-                  class="py-1.5 px-3 rounded-xl bg-white text-zinc-950 hover:bg-zinc-200 active:scale-95 text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
-                >
-                  <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-                  <span>Актив</span>
-                </button>
-              </div>
+              <button
+                type="button"
+                id="btn-refresh-moex-quotes"
+                onclick="refreshMoexQuotes()"
+                class="p-2 rounded-xl bg-white/[0.05] hover:bg-white/10 text-zinc-400 hover:text-white transition-all cursor-pointer active:scale-95 border border-white/10"
+                title="Обновить котировки Мосбиржи"
+              >
+                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+              </button>
             </div>
+
+            <!-- Основной баланс портфеля -->
+            <p
+              id="broker-balance"
+              class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight font-mono tabular-nums mt-1"
+            >
+              0 ₽
+            </p>
 
             <!-- Переключатель таймфреймов -->
             <div
-              class="flex items-center justify-between bg-[#12151C] p-0.5 rounded-xl border border-white/[0.06] mb-3 text-xs font-medium text-zinc-400"
+              class="flex items-center justify-between bg-[#12151C] p-0.5 rounded-xl border border-white/[0.06] mt-3 mb-2 text-xs font-medium text-zinc-400"
             >
               <button
                 type="button"

@@ -460,15 +460,36 @@ function renderMoexPortfolio() {
     'GOLD',
   ]);
 
-  let html = '';
+  const totalCount = cashAssets.length + securities.length;
+  let html = `
+    <div class="flex items-center justify-between px-1 mb-1.5">
+      <span class="text-xs uppercase tracking-wider font-bold text-zinc-400">
+        Активы в портфеле (${totalCount})
+      </span>
+      <button
+        type="button"
+        id="moex-open-top-btn"
+        onclick="openAddMoexAssetModal()"
+        class="bg-white/[0.06] hover:bg-white/10 active:scale-95 text-white text-xs font-medium px-3 py-1.5 rounded-xl border border-white/[0.08] flex items-center gap-1.5 cursor-pointer transition-all"
+      >
+        <i data-lucide="plus" class="w-3.5 h-3.5 text-zinc-400"></i>
+        <span>Актив</span>
+      </button>
+    </div>
+  `;
 
   // СЕКЦИЯ: СВОБОДНЫЕ ДЕНЬГИ (КЭШ)
   if (cashAssets.length > 0) {
     html += `
-      <div class="space-y-2">
+      <div class="space-y-2 mb-3">
+        ${
+          securities.length > 0
+            ? `
         <div class="flex items-center justify-between px-1">
-          <span class="text-[11px] uppercase font-semibold tracking-wider text-zinc-400">Свободные деньги (RUB)</span>
-        </div>
+          <span class="text-[11px] uppercase font-semibold tracking-wider text-zinc-500">Свободные деньги (RUB)</span>
+        </div>`
+            : ''
+        }
         <div class="space-y-2">
     `;
     cashAssets.forEach(asset => {
@@ -501,10 +522,15 @@ function renderMoexPortfolio() {
   // СЕКЦИЯ: ЦЕННЫЕ БУМАГИ
   if (securities.length > 0) {
     html += `
-      <div class="space-y-2 ${cashAssets.length > 0 ? 'mt-3.5' : ''}">
+      <div class="space-y-2">
+        ${
+          cashAssets.length > 0
+            ? `
         <div class="flex items-center justify-between px-1">
-          <span class="text-[11px] uppercase font-semibold tracking-wider text-zinc-400">Ценные бумаги (${securities.length})</span>
-        </div>
+          <span class="text-[11px] uppercase font-semibold tracking-wider text-zinc-500">Ценные бумаги (${securities.length})</span>
+        </div>`
+            : ''
+        }
         <div class="space-y-2">
     `;
     securities.forEach(asset => {

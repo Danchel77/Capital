@@ -28,12 +28,7 @@ subbarHtml = subbarHtml.replace(
   'id="cap-subtab-broker"\n            onclick="switchCapitalSubtab(\'broker\')"\n            class="view-switcher__btn is-active"'
 );
 
-// 3. Capital summary header
-const summaryStart = indexHtml.indexOf('<!-- Сводная карточка общего капитала');
-const summaryEnd = indexHtml.indexOf('<!-- Подвкладка: Вклады -->', summaryStart);
-let headerHtml = indexHtml.substring(summaryStart, summaryEnd).trim();
-
-// 4. Broker View
+// 3. Broker View
 const brStart = indexHtml.indexOf('<!-- Подвкладка: Брокер -->');
 const brEnd = indexHtml.indexOf('</div>\n      </div>\n    </main>', brStart);
 let brHtml = indexHtml.substring(brStart, brEnd).trim();
@@ -71,7 +66,6 @@ const fullHtml = `<!DOCTYPE html>
   ${appHeaderHtml}
   ${subbarHtml}
   <div class="w-full p-3.5 space-y-3.5">
-    ${headerHtml}
     ${brHtml}
   </div>
 
