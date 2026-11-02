@@ -270,22 +270,12 @@ function renderMonthDropdownMenu() {
       `;
     });
 
-    // Пункт «Весь <год> год» на всю ширину (в 2 колонки)
+    // Пункт «За весь год» на всю ширину (в 2 колонки)
     const isYearActive = currentFilterMonth === 'year-' + currentDropdownYear;
     mHtml += `
       <div class="col-span-2 pt-1 mt-0.5 border-t border-white/[0.06]">
-        <button type="button" onclick="selectFilterValue('month', 'year-${currentDropdownYear}', 'Весь ${currentDropdownYear} год')" class="custom-month-grid-btn w-full ${isYearActive ? 'is-active' : ''}">
-          <span>Весь ${currentDropdownYear} год</span>
-        </button>
-      </div>
-    `;
-
-    // Пункт «Все время» на всю ширину
-    const isAllActive = currentFilterMonth === 'all';
-    mHtml += `
-      <div class="col-span-2 pt-0.5">
-        <button type="button" onclick="selectFilterValue('month', 'all', 'Все время')" class="custom-month-grid-btn w-full text-zinc-400 hover:text-white ${isAllActive ? 'is-active' : ''}">
-          <span>Все время</span>
+        <button type="button" onclick="selectFilterValue('month', 'year-${currentDropdownYear}', 'За весь год')" class="custom-month-grid-btn w-full ${isYearActive ? 'is-active' : ''}">
+          <span>За весь год</span>
         </button>
       </div>
     `;
@@ -295,11 +285,6 @@ function renderMonthDropdownMenu() {
     mHtml += `
       <div class="px-3 py-3 text-center text-xs text-zinc-500">
         Нет операций за ${currentDropdownYear} год
-      </div>
-      <div class="p-1 border-t border-white/[0.06]">
-        <button type="button" onclick="selectFilterValue('month', 'all', 'Все время')" class="custom-month-grid-btn w-full ${currentFilterMonth === 'all' ? 'is-active' : ''}">
-          <span>Все время</span>
-        </button>
       </div>
     `;
   }
@@ -333,6 +318,12 @@ function selectFilterValue(type, value, label) {
     document.getElementById('menu-filter-cat').classList.add('hidden');
   }
   renderTransactions();
+  if (
+    typeof buildCharts === 'function' &&
+    !document.getElementById('transactions-chart')?.classList.contains('hidden')
+  ) {
+    buildCharts();
+  }
 }
 
 function toggleTxSearchBar() {
@@ -345,8 +336,8 @@ function toggleTxSearchBar() {
   if (isHidden) {
     container.classList.remove('hidden');
     if (btn) {
-      btn.classList.add('bg-[#6C5DD3]/25', 'text-[#8C7DFF]', 'border-[#6C5DD3]/50');
-      btn.classList.remove('bg-gray-800', 'text-gray-400');
+      btn.classList.add('bg-white/10', 'text-white', 'border-white/20');
+      btn.classList.remove('text-zinc-400');
     }
     if (input) {
       setTimeout(() => input.focus(), 60);
@@ -355,15 +346,15 @@ function toggleTxSearchBar() {
     if (!currentFilterSearch) {
       container.classList.add('hidden');
       if (btn) {
-        btn.classList.remove('bg-[#6C5DD3]/25', 'text-[#8C7DFF]', 'border-[#6C5DD3]/50');
-        btn.classList.add('bg-gray-800', 'text-gray-400');
+        btn.classList.remove('bg-white/10', 'text-white', 'border-white/20');
+        btn.classList.add('text-zinc-400');
       }
     } else {
       clearTxSearch();
       container.classList.add('hidden');
       if (btn) {
-        btn.classList.remove('bg-[#6C5DD3]/25', 'text-[#8C7DFF]', 'border-[#6C5DD3]/50');
-        btn.classList.add('bg-gray-800', 'text-gray-400');
+        btn.classList.remove('bg-white/10', 'text-white', 'border-white/20');
+        btn.classList.add('text-zinc-400');
       }
     }
   }
@@ -953,7 +944,7 @@ function renderTransactions() {
     if (currentFilterMonth === 'all') {
       monthBtnLabel.textContent = 'Все время';
     } else if (currentFilterMonth && currentFilterMonth.startsWith('year-')) {
-      monthBtnLabel.textContent = `Весь ${currentFilterMonth.replace('year-', '')} год`;
+      monthBtnLabel.textContent = 'За весь год';
     } else {
       const activeObj = data.find(m => m.id === currentFilterMonth);
       if (activeObj) {

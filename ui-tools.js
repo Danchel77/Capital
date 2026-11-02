@@ -665,7 +665,7 @@ function renderCustomDatePicker() {
     const isSelected = selectedDateStr === fullDate || selectedDateStr === fullDateRu;
 
     html += `
-      <button type="button" onclick="applyCustomDate('${fullDate}')" class="h-8 rounded-lg flex items-center justify-center transition-all cursor-pointer font-medium ${isSelected ? 'bg-[#6C5DD3] text-white font-bold' : 'hover:bg-[#212430] text-gray-300'}">
+      <button type="button" onclick="applyCustomDate('${fullDate}')" class="h-8 rounded-xl flex items-center justify-center transition-all cursor-pointer font-medium ${isSelected ? 'bg-white text-zinc-950 font-bold shadow-sm' : 'hover:bg-white/[0.06] text-zinc-300 hover:text-white'}">
         ${day}
       </button>
     `;

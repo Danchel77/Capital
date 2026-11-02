@@ -210,15 +210,15 @@ function updateCategorySelect(containerOrRow, type) {
       const isCustom = !defaultCats.includes(c.name);
       const icon = c.icon && c.icon !== 'package' ? c.icon : 'tag';
       return `
-      <div class="flex items-center justify-between hover:bg-[#212430] rounded-xl px-2.5 py-1.5 transition-colors group">
-        <button type="button" class="flex-1 text-left text-[13px] font-medium text-gray-200 flex items-center gap-2.5 cursor-pointer truncate min-w-0" data-cat="${escapeHtml(c.name)}" data-icon="${icon}">
-          <i data-lucide="${icon}" class="w-[18px] h-[18px] text-[#848D99]"></i>
+      <div class="flex items-center justify-between hover:bg-white/[0.06] rounded-xl px-2 py-1.5 transition-colors group">
+        <button type="button" class="flex-1 text-left text-xs font-medium text-zinc-200 hover:text-white flex items-center gap-2 cursor-pointer truncate min-w-0" data-cat="${escapeHtml(c.name)}" data-icon="${icon}">
+          <i data-lucide="${icon}" class="w-4 h-4 text-zinc-400 flex-shrink-0"></i>
           <span class="truncate">${escapeHtml(c.name)}</span>
         </button>
         ${
           isCustom
             ? `
-          <button type="button" onclick="event.stopPropagation(); deleteCategory('${escapeHtml(c.name)}', '${type}')" class="text-gray-500 hover:text-[#FF453A] p-1.5 flex-shrink-0 cursor-pointer"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+          <button type="button" onclick="event.stopPropagation(); deleteCategory('${escapeHtml(c.name)}', '${type}')" class="text-zinc-500 hover:text-rose-400 p-1 flex-shrink-0 cursor-pointer transition-colors" title="Удалить категорию"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
         `
             : ''
         }
@@ -228,10 +228,10 @@ function updateCategorySelect(containerOrRow, type) {
     .join('');
 
   itemsHtml += `
-    <div class="border-t border-[rgba(255,255,255,0.06)] pt-1 mt-1">
-      <button type="button" class="btn-add-cat-in-menu w-full text-left px-2.5 py-1.5 text-xs text-[#8C7DFF] hover:text-white hover:bg-[#6C5DD3]/15 rounded-lg flex items-center gap-1.5 font-semibold cursor-pointer transition-colors">
-        <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-        <span>Добавить категорию</span>
+    <div class="border-t border-white/[0.06] pt-1 mt-1">
+      <button type="button" class="btn-add-cat-in-menu w-full text-left px-2 py-1 text-[11px] text-zinc-300 hover:text-white hover:bg-white/[0.06] rounded-xl flex items-center gap-1.5 font-medium cursor-pointer transition-colors whitespace-nowrap">
+        <i data-lucide="plus" class="w-3.5 h-3.5 text-zinc-400 flex-shrink-0 pointer-events-none"></i>
+        <span>Категория</span>
       </button>
     </div>
   `;
@@ -262,10 +262,10 @@ function updateCategorySelect(containerOrRow, type) {
       const catName = itemBtn.dataset.cat;
       const catIcon = itemBtn.dataset.icon;
       input.value = catName;
-      label.innerHTML = `<span class="inline-flex items-center gap-1.5 text-xs text-gray-200 font-normal truncate min-w-0"><i data-lucide="${catIcon}" class="w-3.5 h-3.5 text-[#848D99] flex-shrink-0"></i><span class="truncate">${escapeHtml(catName)}</span></span>`;
+      label.innerHTML = `<span class="inline-flex items-center gap-1.5 text-xs text-zinc-200 font-normal truncate min-w-0"><i data-lucide="${catIcon}" class="w-3.5 h-3.5 text-zinc-400 flex-shrink-0"></i><span class="truncate">${escapeHtml(catName)}</span></span>`;
       if (typeof lucide !== 'undefined') lucide.createIcons();
-      label.classList.remove('text-gray-400', 'text-white');
-      label.classList.add('text-gray-200');
+      label.classList.remove('text-zinc-500', 'text-white');
+      label.classList.add('text-zinc-200');
       menu.classList.add('hidden');
       row.style.zIndex = '';
     };

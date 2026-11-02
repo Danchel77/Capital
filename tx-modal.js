@@ -879,9 +879,9 @@ function renderEditTxCategories() {
 
   itemsHtml += `
     <div class="border-t border-white/[0.06] pt-1 mt-1">
-      <button type="button" class="btn-add-cat-in-edit-modal w-full text-left px-2.5 py-1.5 text-xs text-zinc-300 hover:text-white hover:bg-white/[0.06] rounded-xl flex items-center gap-1.5 font-medium cursor-pointer transition-colors">
-        <i data-lucide="plus" class="w-3.5 h-3.5 text-zinc-400"></i>
-        <span>Добавить категорию</span>
+      <button type="button" class="btn-add-cat-in-edit-modal w-full text-left px-2 py-1 text-[11px] text-zinc-300 hover:text-white hover:bg-white/[0.06] rounded-xl flex items-center gap-1.5 font-medium cursor-pointer transition-colors whitespace-nowrap">
+        <i data-lucide="plus" class="w-3.5 h-3.5 text-zinc-400 flex-shrink-0 pointer-events-none"></i>
+        <span>Категория</span>
       </button>
     </div>
   `;
