@@ -142,7 +142,7 @@ export default [
 
   // Node.js scripts and config modules
   {
-    files: ['*.mjs', 'scripts/**/*.js'],
+    files: ['*.mjs', 'scripts/**/*.js', 'scripts/**/*.cjs'],
     plugins: {
       custom: customEmojiPlugin,
     },

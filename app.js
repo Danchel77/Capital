@@ -98,6 +98,11 @@ if (currentAuth && typeof currentAuth.onAuthStateChanged === 'function') {
         setTimeout(() => window.initDailyInsight(), 800);
       }
 
+      // Инициализируем мониторинг ставок ЦБ и банков
+      if (typeof window.initMarketRatesModule === 'function') {
+        setTimeout(() => window.initMarketRatesModule(), 600);
+      }
+
       // Проверяем и отправляем запланированные напоминания о счетах и вкладах (только в день наступления)
       if (typeof checkAndSendReminders === 'function') {
         setTimeout(() => checkAndSendReminders(), 1500);

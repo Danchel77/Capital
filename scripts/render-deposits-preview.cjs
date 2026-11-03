@@ -11,10 +11,12 @@ const indexHtml = fs.readFileSync('index.html', 'utf8');
 // 1. App Header
 const headerStart = indexHtml.indexOf('<header\n      class="bg-gray-900');
 const headerEnd = indexHtml.indexOf('</header>', headerStart) + '</header>'.length;
-let appHeaderHtml = indexHtml.substring(headerStart, headerEnd).trim();
+const appHeaderHtml = indexHtml.substring(headerStart, headerEnd).trim();
 
 // 2. Subbar switcher (pinned top bar like Analytics)
-const subbarStart = indexHtml.indexOf('<!-- ПОДХЕДЕР: Закрепленная полоса переключателя «Вклады / Инвестиции»');
+const subbarStart = indexHtml.indexOf(
+  '<!-- ПОДХЕДЕР: Закрепленная полоса переключателя «Вклады / Инвестиции»'
+);
 const subbarEnd = indexHtml.indexOf('<main id="app-content"', subbarStart);
 let subbarHtml = indexHtml.substring(subbarStart, subbarEnd).trim();
 // Unhide (Вклады active)
@@ -23,7 +25,7 @@ subbarHtml = subbarHtml.replace('class="hidden sticky', 'class="sticky');
 // 3. Deposits View
 const depStart = indexHtml.indexOf('<!-- Подвкладка: Вклады -->');
 const depEnd = indexHtml.indexOf('<!-- Подвкладка: Брокер -->', depStart);
-let depHtml = indexHtml.substring(depStart, depEnd).trim();
+const depHtml = indexHtml.substring(depStart, depEnd).trim();
 
 const fullHtml = `<!DOCTYPE html>
 <html lang="ru" class="dark">
@@ -55,6 +57,9 @@ const fullHtml = `<!DOCTYPE html>
   </div>
 
   <script>
+    ${fs.readFileSync('marketRates.js', 'utf8')}
+  </script>
+  <script>
     ${fs.readFileSync('deposits.js', 'utf8')}
   </script>
   <script>
@@ -72,39 +77,41 @@ const fullHtml = `<!DOCTYPE html>
     window.escapeHtml = s => s;
     window.openCardContextMenu = () => {};
 
+    const rawDeposits = [
+      {
+        id: 'dep-matured-1',
+        name: 'Газпром 2',
+        amount: 300000,
+        rate: 13.4,
+        startDate: '2026-04-10',
+        endDate: '2026-10-15',
+        status: 'Активен',
+        isClosed: false
+      },
+      {
+        id: 'dep-active-1',
+        name: 'Сбер Накопительный',
+        amount: 1727162,
+        rate: 16.0,
+        startDate: '2026-05-12',
+        endDate: '2027-01-25',
+        status: 'Активен',
+        isClosed: false
+      },
+      {
+        id: 'dep-active-2',
+        name: 'Т-Банк Доходный',
+        amount: 524000,
+        rate: 14.5,
+        startDate: '2026-06-01',
+        endDate: '2026-12-11',
+        status: 'Активен',
+        isClosed: false
+      }
+    ];
+
     window.Cache = {
-      deposits: [
-        {
-          id: 'dep-matured-1',
-          name: 'Газпром 2',
-          amount: 300000,
-          rate: 13.4,
-          startDate: '2026-04-10',
-          endDate: '2026-10-15',
-          status: 'Активен',
-          isClosed: false
-        },
-        {
-          id: 'dep-active-1',
-          name: 'Сбер Накопительный',
-          amount: 1727162,
-          rate: 16.0,
-          startDate: '2026-05-12',
-          endDate: '2027-01-25',
-          status: 'Активен',
-          isClosed: false
-        },
-        {
-          id: 'dep-active-2',
-          name: 'Т-Банк Доходный',
-          amount: 524000,
-          rate: 14.5,
-          startDate: '2026-06-01',
-          endDate: '2026-12-11',
-          status: 'Активен',
-          isClosed: false
-        }
-      ]
+      deposits: processDeposits(rawDeposits)
     };
 
     renderDeposits();

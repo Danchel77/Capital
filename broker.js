@@ -303,6 +303,88 @@ function drawBrokerChart() {
     }
   }
 
+  // Плагин для отображения меток минимума и максимума на графике (в стиле СберИнвестиций)
+  const minMaxPlugin = {
+    id: 'brokerMinMaxPlugin',
+    afterDatasetsDraw(chart) {
+      if (!data || data.length < 2) return;
+      const { ctx: chartCtx, chartArea } = chart;
+      if (!chartArea) return;
+
+      let minIdx = 0;
+      let maxIdx = 0;
+      let minVal = data[0];
+      let maxVal = data[0];
+
+      for (let i = 1; i < data.length; i++) {
+        if (data[i] < minVal) {
+          minVal = data[i];
+          minIdx = i;
+        }
+        if (data[i] > maxVal) {
+          maxVal = data[i];
+          maxIdx = i;
+        }
+      }
+
+      if (minVal === maxVal) return;
+
+      const meta = chart.getDatasetMeta(0);
+      const minPoint = meta?.data?.[minIdx];
+      const maxPoint = meta?.data?.[maxIdx];
+
+      if (!minPoint || !maxPoint) return;
+
+      chartCtx.save();
+      chartCtx.font = '600 10px Inter, system-ui, -apple-system, sans-serif';
+      chartCtx.textAlign = 'center';
+
+      // Отрисовка Max (не выводим над крайней точкой, так как текущая сумма крупно выведена в шапке)
+      if (maxIdx < data.length - 1) {
+        const maxText = formatMoney(maxVal);
+        let maxX = maxPoint.x;
+        const maxTextWidth = chartCtx.measureText(maxText).width;
+        if (maxX - maxTextWidth / 2 < chartArea.left + 4) {
+          maxX = chartArea.left + 4 + maxTextWidth / 2;
+        } else if (maxX + maxTextWidth / 2 > chartArea.right - 4) {
+          maxX = chartArea.right - 4 - maxTextWidth / 2;
+        }
+        const maxY = Math.max(chartArea.top + 12, maxPoint.y - 8);
+
+        chartCtx.beginPath();
+        chartCtx.arc(maxPoint.x, maxPoint.y, 3, 0, Math.PI * 2);
+        chartCtx.fillStyle = '#FFFFFF';
+        chartCtx.fill();
+
+        chartCtx.fillStyle = '#A1A1AA';
+        chartCtx.fillText(maxText, maxX, maxY);
+      }
+
+      // Отрисовка Min (не выводим над крайней точкой)
+      if (minIdx < data.length - 1) {
+        const minText = formatMoney(minVal);
+        let minX = minPoint.x;
+        const minTextWidth = chartCtx.measureText(minText).width;
+        if (minX - minTextWidth / 2 < chartArea.left + 4) {
+          minX = chartArea.left + 4 + minTextWidth / 2;
+        } else if (minX + minTextWidth / 2 > chartArea.right - 4) {
+          minX = chartArea.right - 4 - minTextWidth / 2;
+        }
+        const minY = Math.min(chartArea.bottom - 4, minPoint.y + 14);
+
+        chartCtx.beginPath();
+        chartCtx.arc(minPoint.x, minPoint.y, 3, 0, Math.PI * 2);
+        chartCtx.fillStyle = '#71717A';
+        chartCtx.fill();
+
+        chartCtx.fillStyle = '#71717A';
+        chartCtx.fillText(minText, minX, minY);
+      }
+
+      chartCtx.restore();
+    },
+  };
+
   brokerChartObj = new Chart(ctx, {
     type: 'line',
     data: {
@@ -324,10 +406,14 @@ function drawBrokerChart() {
         },
       ],
     },
+    plugins: [minMaxPlugin],
     options: {
       responsive: true,
       maintainAspectRatio: false,
       animation: false,
+      layout: {
+        padding: { top: 16, bottom: 4, left: 6, right: 6 },
+      },
       interaction: {
         mode: 'nearest',
         intersect: true,
@@ -392,11 +478,13 @@ function drawBrokerChart() {
             maxRotation: 0,
             minRotation: 0,
             maxTicksLimit: 5,
+            autoSkip: true,
           },
           border: { display: false },
         },
         y: {
           display: false,
+          grace: '8%',
         },
       },
     },

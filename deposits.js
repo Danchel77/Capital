@@ -127,6 +127,7 @@ function renderDeposits() {
 
   updateDepositsBadge();
   if (typeof updateCapitalSummaryHeader === 'function') updateCapitalSummaryHeader();
+  if (typeof renderMarketRatesWidget === 'function') renderMarketRatesWidget();
 
   if (!listEl) return;
 
@@ -265,7 +266,7 @@ function renderDeposits() {
 
         <!-- Этаж 4: Тонкий таймлайн (2px) -->
         <div class="w-full bg-white/[0.06] h-[2px] rounded-full overflow-hidden mt-2">
-          <div class="bg-white/80 h-full rounded-full transition-all duration-300" style="width:${dep.progress}%"></div>
+          <div class="bg-emerald-500 h-full rounded-full transition-all duration-300" style="width:${dep.progress}%"></div>
         </div>
       </div>
     `

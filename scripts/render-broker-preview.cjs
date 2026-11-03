@@ -11,10 +11,12 @@ const indexHtml = fs.readFileSync('index.html', 'utf8');
 // 1. App Header
 const headerStart = indexHtml.indexOf('<header\n      class="bg-gray-900');
 const headerEnd = indexHtml.indexOf('</header>', headerStart) + '</header>'.length;
-let appHeaderHtml = indexHtml.substring(headerStart, headerEnd).trim();
+const appHeaderHtml = indexHtml.substring(headerStart, headerEnd).trim();
 
 // 2. Subbar switcher (pinned top bar like Analytics)
-const subbarStart = indexHtml.indexOf('<!-- ПОДХЕДЕР: Закрепленная полоса переключателя «Вклады / Инвестиции»');
+const subbarStart = indexHtml.indexOf(
+  '<!-- ПОДХЕДЕР: Закрепленная полоса переключателя «Вклады / Инвестиции»'
+);
 const subbarEnd = indexHtml.indexOf('<main id="app-content"', subbarStart);
 let subbarHtml = indexHtml.substring(subbarStart, subbarEnd).trim();
 // Unhide and activate "Инвестиции" tab
