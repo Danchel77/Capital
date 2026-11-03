@@ -2,7 +2,8 @@ const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-const chromePath = '/home/deck/HarnessProjects/Budget/chrome-headless-shell/linux-156.0.8078.80/chrome-headless-shell-linux64/chrome-headless-shell';
+const chromePath =
+  '/home/deck/HarnessProjects/Budget/chrome-headless-shell/linux-156.0.8078.80/chrome-headless-shell-linux64/chrome-headless-shell';
 
 // Extract the chart section from index.html
 const indexHtml = fs.readFileSync('index.html', 'utf8');
@@ -11,8 +12,14 @@ const chartEnd = indexHtml.indexOf('</main>', chartStart);
 let chartHtml = indexHtml.substring(chartStart, chartEnd).trim();
 
 // Unhide the chart
-chartHtml = chartHtml.replace('class="hidden chart-screen"', 'class="chart-screen" style="display:block !important;"');
-chartHtml = chartHtml.replace('id="transactions-chart-content" class="space-y-3"', 'id="transactions-chart-content" class="space-y-3" style="display:block !important;"');
+chartHtml = chartHtml.replace(
+  'class="hidden chart-screen"',
+  'class="chart-screen" style="display:block !important;"'
+);
+chartHtml = chartHtml.replace(
+  'id="transactions-chart-content" class="space-y-3"',
+  'id="transactions-chart-content" class="space-y-3" style="display:block !important;"'
+);
 
 const fullHtml = `<!DOCTYPE html>
 <html lang="ru" class="dark">
@@ -113,5 +120,7 @@ const outputFile = path.resolve('preview-analytics-symmetric.png');
 fs.writeFileSync(previewFile, fullHtml);
 
 // Capture with exact mobile viewport 390x844
-execSync(`"${chromePath}" --headless --no-sandbox --hide-scrollbars --window-size=390,844 --screenshot="${outputFile}" "${previewFile}"`);
+execSync(
+  `"${chromePath}" --headless --no-sandbox --hide-scrollbars --window-size=390,844 --screenshot="${outputFile}" "${previewFile}"`
+);
 console.log('OK! Symmetric screenshot created, size:', fs.statSync(outputFile).size);

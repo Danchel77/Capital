@@ -1,0 +1,709 @@
+{
+  "updatedAt": "2026-11-03T11:02:25.100Z",
+  "cbrRate": 14,
+  "moexIndices": {
+    "3m": 13.8,
+    "6m": 13.05,
+    "12m": 12.52,
+    "accountMax": 13.81,
+    "accountAvg": 8.26
+  },
+  "totalOffers": 67,
+  "offers": [
+    {
+      "bankName": "МТС Банк",
+      "productName": "МТС счёт (на ежедневный остаток)",
+      "rate": 15.5,
+      "type": "account",
+      "termMonths": 0,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": ["На ежедневный остаток"]
+    },
+    {
+      "bankName": "Банк Жилищного Финансирования",
+      "productName": "Лидер 3",
+      "rate": 15,
+      "type": "deposit",
+      "termMonths": 3,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": []
+    },
+    {
+      "bankName": "Промсвязьбанк",
+      "productName": "Импульс",
+      "rate": 15,
+      "type": "account",
+      "termMonths": 0,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": ["На минимальный остаток"]
+    },
+    {
+      "bankName": "Яндекс Банк",
+      "productName": "Сейв",
+      "rate": 15,
+      "type": "account",
+      "termMonths": 0,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": ["На ежедневный остаток"]
+    },
+    {
+      "bankName": "ВТБ",
+      "productName": "Выгодное начало",
+      "rate": 15,
+      "type": "account",
+      "termMonths": 0,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": ["Новый клиент", "На минимальный остаток"]
+    },
+    {
+      "bankName": "Банк Санкт-Петербург",
+      "productName": "Выгодный старт",
+      "rate": 15,
+      "type": "account",
+      "termMonths": 0,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": ["Новый клиент", "С капитализацией", "На минимальный остаток"]
+    },
+    {
+      "bankName": "Примсоцбанк",
+      "productName": "Спринт Маркетплейс",
+      "rate": 14.9,
+      "type": "deposit",
+      "termMonths": 3,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": []
+    },
+    {
+      "bankName": "ФИНСТАР БАНК",
+      "productName": "Классический онлайн",
+      "rate": 14.85,
+      "type": "deposit",
+      "termMonths": 3,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": []
+    },
+    {
+      "bankName": "Локо-Банк",
+      "productName": "Локо-Вклад. Банки.ру",
+      "rate": 14.8,
+      "type": "deposit",
+      "termMonths": 3,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": []
+    },
+    {
+      "bankName": "Свой Банк",
+      "productName": "Свой вклад Банки.ру 91",
+      "rate": 14.79,
+      "type": "deposit",
+      "termMonths": 3,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": ["С капитализацией"]
+    },
+    {
+      "bankName": "Локо-Банк",
+      "productName": "Локо-Счет Плюс на минимальный остаток (онлайн)",
+      "rate": 14.75,
+      "type": "account",
+      "termMonths": 0,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": ["С капитализацией", "На минимальный остаток"]
+    },
+    {
+      "bankName": "Альфа-Банк",
+      "productName": "Альфа-Счёт (на минимальный остаток)",
+      "rate": 14.7,
+      "type": "account",
+      "termMonths": 0,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": ["На минимальный остаток"]
+    },
+    {
+      "bankName": "ВТБ",
+      "productName": "ВТБ-Счет (на минимальный остаток)",
+      "rate": 14.7,
+      "type": "account",
+      "termMonths": 0,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": ["На минимальный остаток"]
+    },
+    {
+      "bankName": "Совкомбанк",
+      "productName": "Доходный премиум на 91 день",
+      "rate": 14.5,
+      "type": "deposit",
+      "termMonths": 3,
+      "termDays": 91,
+      "minAmount": 0,
+      "tags": []
+    },
+    {
+      "bankName": "Самолет Банк",
+      "productName": "Самолет Вклад_91",
+      "rate": 14.5,
+      "type": "deposit",
+      "termMonths": 3,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": []
+    },
+    {
+      "bankName": "Промсвязьбанк",
+      "productName": "Сильная ставка",
+      "rate": 14.5,
+      "type": "account",
+      "termMonths": 0,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": ["Новый клиент", "Новые деньги", "С капитализацией", "На минимальный остаток"]
+    },
+    {
+      "bankName": "Промсвязьбанк",
+      "productName": "Сильная ставка",
+      "rate": 14.5,
+      "type": "deposit",
+      "termMonths": 12,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": ["Новые деньги"]
+    },
+    {
+      "bankName": "МОРСКОЙ БАНК",
+      "productName": "Морской (Банки.ру)",
+      "rate": 14.5,
+      "type": "deposit",
+      "termMonths": 3,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": []
+    },
+    {
+      "bankName": "БыстроБанк",
+      "productName": "Выгодный-Банки.Ру",
+      "rate": 14.5,
+      "type": "deposit",
+      "termMonths": 3,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": []
+    },
+    {
+      "bankName": "Альфа-Банк",
+      "productName": "Альфавыгодный 2.0",
+      "rate": 14.5,
+      "type": "account",
+      "termMonths": 0,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": ["Новый клиент", "На минимальный остаток"]
+    },
+    {
+      "bankName": "Банк ДОМ.РФ",
+      "productName": "Мой Дом (для новых клиентов, выплата % в конце срока)",
+      "rate": 14.5,
+      "type": "account",
+      "termMonths": 0,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": ["Новый клиент", "Новые деньги", "С капитализацией", "На минимальный остаток"]
+    },
+    {
+      "bankName": "Совкомбанк",
+      "productName": "Доходный премиум на 91 день",
+      "rate": 14.5,
+      "type": "account",
+      "termMonths": 0,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": ["С капитализацией", "На минимальный остаток"]
+    },
+    {
+      "bankName": "Реалист Банк",
+      "productName": "На минимальный остаток",
+      "rate": 14.3,
+      "type": "account",
+      "termMonths": 0,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": ["На минимальный остаток"]
+    },
+    {
+      "bankName": "Локо-Банк",
+      "productName": "Локо-Вклад. Банки.ру",
+      "rate": 14.12,
+      "type": "deposit",
+      "termMonths": 6,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": []
+    },
+    {
+      "bankName": "Локо-Банк",
+      "productName": "Локо-Вклад. Банки.ру",
+      "rate": 14.12,
+      "type": "deposit",
+      "termMonths": 3,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": []
+    },
+    {
+      "bankName": "Локо-Банк",
+      "productName": "Локо-Вклад. Банки.ру",
+      "rate": 14.12,
+      "type": "account",
+      "termMonths": 0,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": [
+        "Новые деньги",
+        "С капитализацией",
+        "На минимальный остаток",
+        "На ежедневный остаток"
+      ]
+    },
+    {
+      "bankName": "Металлинвестбанк",
+      "productName": "Максимальный доход_181",
+      "rate": 14.1,
+      "type": "deposit",
+      "termMonths": 6,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": ["Новый клиент"]
+    },
+    {
+      "bankName": "Металлинвестбанк",
+      "productName": "Максимальный доход_181",
+      "rate": 14.1,
+      "type": "account",
+      "termMonths": 0,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": ["Новый клиент", "С капитализацией", "На минимальный остаток"]
+    },
+    {
+      "bankName": "Банк Жилищного Финансирования",
+      "productName": "Лидер 6",
+      "rate": 14,
+      "type": "deposit",
+      "termMonths": 6,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": []
+    },
+    {
+      "bankName": "БыстроБанк",
+      "productName": "Выгодный-Банки.Ру",
+      "rate": 14,
+      "type": "deposit",
+      "termMonths": 6,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": []
+    },
+    {
+      "bankName": "БыстроБанк",
+      "productName": "Выгодный-Банки.Ру",
+      "rate": 14,
+      "type": "deposit",
+      "termMonths": 12,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": []
+    },
+    {
+      "bankName": "Газпромбанк",
+      "productName": "ГПБ-счет (на минимальный остаток)",
+      "rate": 14,
+      "type": "account",
+      "termMonths": 0,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": ["На минимальный остаток"]
+    },
+    {
+      "bankName": "СЕВЕРГАЗБАНК",
+      "productName": "Накопительный счет",
+      "rate": 14,
+      "type": "account",
+      "termMonths": 0,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": ["С капитализацией", "На минимальный остаток", "На ежедневный остаток"]
+    },
+    {
+      "bankName": "Россельхозбанк",
+      "productName": "Мой счёт",
+      "rate": 14,
+      "type": "account",
+      "termMonths": 0,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": [
+        "С капитализацией",
+        "С пополнением",
+        "На минимальный остаток",
+        "На ежедневный остаток"
+      ]
+    },
+    {
+      "bankName": "Банк Уралсиб",
+      "productName": "Доход (в конце срока)",
+      "rate": 14,
+      "type": "account",
+      "termMonths": 0,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": ["На минимальный остаток"]
+    },
+    {
+      "bankName": "Свой Банк",
+      "productName": "Свой вклад Банки.ру 181",
+      "rate": 13.99,
+      "type": "deposit",
+      "termMonths": 6,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": ["С капитализацией"]
+    },
+    {
+      "bankName": "МТС Банк",
+      "productName": "МТС Вклад плюс (ежемесячно)",
+      "rate": 13.91,
+      "type": "account",
+      "termMonths": 0,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": ["Новый клиент", "С капитализацией", "На минимальный остаток"]
+    },
+    {
+      "bankName": "Самолет Банк",
+      "productName": "Самолет Вклад_367",
+      "rate": 13.9,
+      "type": "deposit",
+      "termMonths": 12,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": []
+    },
+    {
+      "bankName": "ФИНСТАР БАНК",
+      "productName": "Классический онлайн",
+      "rate": 13.85,
+      "type": "deposit",
+      "termMonths": 6,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": []
+    },
+    {
+      "bankName": "Совкомбанк",
+      "productName": "Доходный премиум на 181 день",
+      "rate": 13.8,
+      "type": "deposit",
+      "termMonths": 6,
+      "termDays": 181,
+      "minAmount": 0,
+      "tags": []
+    },
+    {
+      "bankName": "Ozon Банк",
+      "productName": "Срочный (без пополнения)",
+      "rate": 13.7,
+      "type": "account",
+      "termMonths": 0,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": ["С капитализацией", "На минимальный остаток"]
+    },
+    {
+      "bankName": "Яндекс Банк",
+      "productName": "Сейв",
+      "rate": 13.7,
+      "type": "account",
+      "termMonths": 0,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": ["С капитализацией", "На минимальный остаток"]
+    },
+    {
+      "bankName": "Московский кредитный банк",
+      "productName": "Накопительный счет",
+      "rate": 13.62,
+      "type": "account",
+      "termMonths": 0,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": [
+        "С капитализацией",
+        "С пополнением",
+        "На минимальный остаток",
+        "На ежедневный остаток"
+      ]
+    },
+    {
+      "bankName": "Газпромбанк",
+      "productName": "В плюсе",
+      "rate": 13.6,
+      "type": "account",
+      "termMonths": 0,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": ["На минимальный остаток"]
+    },
+    {
+      "bankName": "Самолет Банк",
+      "productName": "Самолет Вклад_183",
+      "rate": 13.55,
+      "type": "deposit",
+      "termMonths": 6,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": []
+    },
+    {
+      "bankName": "Московский кредитный банк",
+      "productName": "МКБ. Простая выгода",
+      "rate": 13.5,
+      "type": "account",
+      "termMonths": 0,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": ["На минимальный остаток"]
+    },
+    {
+      "bankName": "Банк ДОМ.РФ",
+      "productName": "Накопительный счет",
+      "rate": 13.4,
+      "type": "account",
+      "termMonths": 0,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": [
+        "С капитализацией",
+        "С пополнением",
+        "На минимальный остаток",
+        "На ежедневный остаток"
+      ]
+    },
+    {
+      "bankName": "ФИНСТАР БАНК",
+      "productName": "Классический онлайн",
+      "rate": 13.25,
+      "type": "deposit",
+      "termMonths": 12,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": []
+    },
+    {
+      "bankName": "Сбербанк",
+      "productName": "Лучший % (ежемесячно)",
+      "rate": 13.25,
+      "type": "account",
+      "termMonths": 0,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": ["Новые деньги", "На минимальный остаток"]
+    },
+    {
+      "bankName": "КАМКОМБАНК",
+      "productName": "Онлайн",
+      "rate": 13.2,
+      "type": "deposit",
+      "termMonths": 3,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": []
+    },
+    {
+      "bankName": "Совкомбанк",
+      "productName": "Доходный премиум на 365 дней",
+      "rate": 13.2,
+      "type": "deposit",
+      "termMonths": 12,
+      "termDays": 365,
+      "minAmount": 0,
+      "tags": []
+    },
+    {
+      "bankName": "Россельхозбанк",
+      "productName": "Свой вклад (в конце срока)",
+      "rate": 13.1,
+      "type": "account",
+      "termMonths": 0,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": ["Новый клиент", "На минимальный остаток"]
+    },
+    {
+      "bankName": "КАМКОМБАНК",
+      "productName": "Онлайн",
+      "rate": 13,
+      "type": "deposit",
+      "termMonths": 6,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": []
+    },
+    {
+      "bankName": "Металлинвестбанк",
+      "productName": "Максимальный доход_367",
+      "rate": 13,
+      "type": "deposit",
+      "termMonths": 12,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": ["Новый клиент"]
+    },
+    {
+      "bankName": "МОРСКОЙ БАНК",
+      "productName": "Накопительный счет (Банки.ру)",
+      "rate": 12.5,
+      "type": "account",
+      "termMonths": 0,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": ["С капитализацией", "На ежедневный остаток"]
+    },
+    {
+      "bankName": "Сбербанк",
+      "productName": "Накопительный счёт (на ежедневный остаток)",
+      "rate": 12.5,
+      "type": "account",
+      "termMonths": 0,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": [
+        "С капитализацией",
+        "С пополнением",
+        "На минимальный остаток",
+        "На ежедневный остаток"
+      ]
+    },
+    {
+      "bankName": "КАМКОМБАНК",
+      "productName": "Онлайн",
+      "rate": 12.1,
+      "type": "deposit",
+      "termMonths": 12,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": []
+    },
+    {
+      "bankName": "Ozon Банк",
+      "productName": "Счёт с ежедневным доходом",
+      "rate": 12,
+      "type": "account",
+      "termMonths": 0,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": ["С капитализацией", "На минимальный остаток", "На ежедневный остаток"]
+    },
+    {
+      "bankName": "Банк ТКБ",
+      "productName": "ТКБ. Потенциальный доход_367",
+      "rate": 10.85,
+      "type": "account",
+      "termMonths": 0,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": ["С капитализацией", "На минимальный остаток"]
+    },
+    {
+      "bankName": "Локо-Банк",
+      "productName": "Локо-Вклад. Банки.ру",
+      "rate": 10.75,
+      "type": "deposit",
+      "termMonths": 12,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": []
+    },
+    {
+      "bankName": "Норвик Банк",
+      "productName": "Быстрый доход",
+      "rate": 10.5,
+      "type": "deposit",
+      "termMonths": 3,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": []
+    },
+    {
+      "bankName": "Свой Банк",
+      "productName": "Свой вклад Банки.ру 367",
+      "rate": 10.5,
+      "type": "deposit",
+      "termMonths": 12,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": ["С капитализацией"]
+    },
+    {
+      "bankName": "Банк Санкт-Петербург",
+      "productName": "Накопительный счёт БСПБ",
+      "rate": 10.5,
+      "type": "account",
+      "termMonths": 0,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": ["Новый клиент", "С капитализацией", "С пополнением", "На минимальный остаток"]
+    },
+    {
+      "bankName": "Норвик Банк",
+      "productName": "Быстрый доход",
+      "rate": 10,
+      "type": "account",
+      "termMonths": 0,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": ["Новый клиент", "С капитализацией", "На минимальный остаток"]
+    },
+    {
+      "bankName": "Банк Уралсиб",
+      "productName": "Накопительный счет",
+      "rate": 10,
+      "type": "account",
+      "termMonths": 0,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": ["С капитализацией", "С пополнением", "На минимальный остаток"]
+    },
+    {
+      "bankName": "Т-Банк",
+      "productName": "СмартВклад со стандартной ставкой",
+      "rate": 9.07,
+      "type": "account",
+      "termMonths": 0,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": ["С капитализацией", "На минимальный остаток"]
+    },
+    {
+      "bankName": "Т-Банк",
+      "productName": "Накопительный счет",
+      "rate": 6,
+      "type": "account",
+      "termMonths": 0,
+      "termDays": 0,
+      "minAmount": 0,
+      "tags": ["С капитализацией", "На минимальный остаток", "На ежедневный остаток"]
+    }
+  ]
+}

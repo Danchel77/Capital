@@ -27,14 +27,14 @@ const ALL_POPULAR_BANKS = [
   'Московский кредитный банк',
   'Россельхозбанк',
   // Другие популярные банки
+  'Яндекс Банк',
+  'Ozon Банк',
   'Банк Санкт-Петербург',
   'Банк Уралсиб',
   'МТС Банк',
   'Локо-Банк',
   'Экспобанк',
   'Цифра Банк',
-  'Яндекс Банк',
-  'Ozon Банк',
   'Ак Барс',
   'Банк Зенит',
   'Новикомбанк',
@@ -69,14 +69,14 @@ const BANK_ALIASES = {
   Промсвязьбанк: ['псб', 'промсвязь', 'промсвязьбанк'],
   'Московский кредитный банк': ['мкб', 'московский кредитный банк'],
   Россельхозбанк: ['рсхб', 'россельхоз', 'россельхозбанк'],
+  'Яндекс Банк': ['яндекс'],
+  'Ozon Банк': ['ozon', 'озон'],
   'Банк Санкт-Петербург': ['бспб', 'санкт-петербург'],
   'Банк Уралсиб': ['уралсиб'],
   'МТС Банк': ['мтс'],
-  'Локо-Банк': ['локо'],
+  'Локо-Банк': ['локо', 'locko'],
   Экспобанк: ['экспо'],
   'Цифра Банк': ['цифра'],
-  'Яндекс Банк': ['яндекс'],
-  'Ozon Банк': ['ozon', 'озон'],
   'Ак Барс': ['ак барс'],
   'Банк Зенит': ['зенит'],
   'Свой Банк': ['свой банк'],
@@ -84,248 +84,44 @@ const BANK_ALIASES = {
   'ФИНСТАР БАНК': ['финстар'],
 };
 
-// Базовые проверенные предложения на случай отсутствия сети
-const BASELINE_MARKET_OFFERS = [
-  {
-    bankName: 'Совкомбанк',
-    productName: 'Доходный премиум на 91 день',
-    rate: 14.5,
-    type: 'deposit',
-    termMonths: 3,
-    termDays: 91,
-    minAmount: 10000,
-    tags: ['С капитализацией'],
-  },
-  {
-    bankName: 'Банк ДОМ.РФ',
-    productName: 'Мой Дом',
-    rate: 14.5,
-    type: 'deposit',
-    termMonths: 3,
-    termDays: 91,
-    minAmount: 30000,
-    tags: ['Новые деньги'],
-  },
-  {
-    bankName: 'Газпромбанк',
-    productName: 'В плюсе',
-    rate: 14.2,
-    type: 'deposit',
-    termMonths: 3,
-    termDays: 91,
-    minAmount: 15000,
-    tags: ['Новый клиент'],
-  },
-  {
-    bankName: 'ВТБ',
-    productName: 'ВТБ-Вклад',
-    rate: 14.0,
-    type: 'deposit',
-    termMonths: 3,
-    termDays: 91,
-    minAmount: 10000,
-    tags: ['С капитализацией'],
-  },
-  {
-    bankName: 'Сбербанк',
-    productName: 'Лучший %',
-    rate: 13.8,
-    type: 'deposit',
-    termMonths: 3,
-    termDays: 91,
-    minAmount: 100000,
-    tags: ['Новые деньги'],
-  },
-  {
-    bankName: 'Локо-Банк',
-    productName: 'Локо-Вклад',
-    rate: 14.8,
-    type: 'deposit',
-    termMonths: 3,
-    termDays: 91,
-    minAmount: 50000,
-    tags: ['С капитализацией'],
-  },
-  {
-    bankName: 'Свой Банк',
-    productName: 'Свой вклад',
-    rate: 14.79,
-    type: 'deposit',
-    termMonths: 3,
-    termDays: 91,
-    minAmount: 30000,
-    tags: ['С капитализацией'],
-  },
-  {
-    bankName: 'Банк Жилищного Финансирования',
-    productName: 'Лидер 3',
-    rate: 15.0,
-    type: 'deposit',
-    termMonths: 3,
-    termDays: 91,
-    minAmount: 30000,
-    tags: ['Новые деньги'],
-  },
-  {
-    bankName: 'Совкомбанк',
-    productName: 'Доходный премиум на 181 день',
-    rate: 13.8,
-    type: 'deposit',
-    termMonths: 6,
-    termDays: 181,
-    minAmount: 10000,
-    tags: ['С капитализацией'],
-  },
-  {
-    bankName: 'Газпромбанк',
-    productName: 'Новые деньги',
-    rate: 13.6,
-    type: 'deposit',
-    termMonths: 6,
-    termDays: 181,
-    minAmount: 15000,
-    tags: ['Новые деньги'],
-  },
-  {
-    bankName: 'ВТБ',
-    productName: 'ВТБ-Вклад',
-    rate: 13.5,
-    type: 'deposit',
-    termMonths: 6,
-    termDays: 181,
-    minAmount: 10000,
-    tags: ['С капитализацией'],
-  },
-  {
-    bankName: 'Т-Банк',
-    productName: 'СмартВклад',
-    rate: 13.0,
-    type: 'deposit',
-    termMonths: 6,
-    termDays: 181,
-    minAmount: 50000,
-    tags: ['С пополнением'],
-  },
-  {
-    bankName: 'ФИНСТАР БАНК',
-    productName: 'Классический онлайн',
-    rate: 13.85,
-    type: 'deposit',
-    termMonths: 6,
-    termDays: 181,
-    minAmount: 50000,
-    tags: ['С капитализацией'],
-  },
-  {
-    bankName: 'Совкомбанк',
-    productName: 'Доходный премиум на 365 дней',
-    rate: 13.2,
-    type: 'deposit',
-    termMonths: 12,
-    termDays: 365,
-    minAmount: 10000,
-    tags: ['С капитализацией'],
-  },
-  {
-    bankName: 'Банк ДОМ.РФ',
-    productName: 'Мой Дом',
-    rate: 13.0,
-    type: 'deposit',
-    termMonths: 12,
-    termDays: 365,
-    minAmount: 30000,
-    tags: ['Новые деньги'],
-  },
-  {
-    bankName: 'Газпромбанк',
-    productName: 'В плюсе',
-    rate: 12.9,
-    type: 'deposit',
-    termMonths: 12,
-    termDays: 365,
-    minAmount: 15000,
-    tags: ['С капитализацией'],
-  },
-  {
-    bankName: 'Сбербанк',
-    productName: 'Лучший %',
-    rate: 12.5,
-    type: 'deposit',
-    termMonths: 12,
-    termDays: 365,
-    minAmount: 100000,
-    tags: ['Новые деньги'],
-  },
-  // Накопительные счета
-  {
-    bankName: 'Промсвязьбанк',
-    productName: 'Накопительный счет Импульс',
-    rate: 15.0,
-    type: 'account',
-    termMonths: 2,
-    termDays: 60,
-    minAmount: 0,
-    tags: ['Новый клиент', 'На минимальный остаток'],
-  },
-  {
-    bankName: 'Газпромбанк',
-    productName: 'ГПБ-счет',
-    rate: 14.0,
-    type: 'account',
-    termMonths: 2,
-    termDays: 60,
-    minAmount: 0,
-    tags: ['Новые деньги', 'На минимальный остаток'],
-  },
-  {
-    bankName: 'ВТБ',
-    productName: 'ВТБ-Накопительный счет',
-    rate: 14.0,
-    type: 'account',
-    termMonths: 2,
-    termDays: 60,
-    minAmount: 0,
-    tags: ['Новый клиент', 'На минимальный остаток'],
-  },
-  {
-    bankName: 'Сбербанк',
-    productName: 'Накопительный счет',
-    rate: 13.5,
-    type: 'account',
-    termMonths: 3,
-    termDays: 90,
-    minAmount: 0,
-    tags: ['Новый клиент', 'На минимальный остаток'],
-  },
-  {
-    bankName: 'Т-Банк',
-    productName: 'Накопительный счет с подпиской',
-    rate: 13.0,
-    type: 'account',
-    termMonths: 0,
-    termDays: 0,
-    minAmount: 0,
-    tags: ['С пополнением', 'На ежедневный остаток'],
-  },
-];
-
+// Состояние модуля (данные загружаются исключительно динамически)
 const marketRatesState = {
-  cbrRate: 14.0,
+  cbrRate: null,
   moexIndices: {
-    '3m': 13.8,
-    '6m': 13.05,
-    '12m': 12.52,
-    accountMax: 13.81,
-    accountAvg: 8.26,
+    '3m': null,
+    '6m': null,
+    '12m': null,
+    accountMax: null,
+    accountAvg: null,
   },
-  offers: [...BASELINE_MARKET_OFFERS],
+  offers: [],
   activeTab: 'deposits', // 'deposits' | 'accounts'
   selectedTerm: 'all', // 'all' | '3m' | '6m' | '12m'
+  isLoading: false,
+  loadError: null,
   lastUpdated: null,
 };
 
 // ==========================================
-// 1. Settings Storage & Filter Matchers
+// 1. Scroll Lock Helpers
+// ==========================================
+function lockBodyScroll() {
+  document.body.classList.add('overflow-hidden');
+}
+
+function unlockBodyScroll() {
+  const mrModal = document.getElementById('market-rates-modal');
+  const settingsModal = document.getElementById('market-rates-settings-modal');
+  const isMrOpen = mrModal && !mrModal.classList.contains('hidden');
+  const isSettingsOpen = settingsModal && !settingsModal.classList.contains('hidden');
+
+  if (!isMrOpen && !isSettingsOpen) {
+    document.body.classList.remove('overflow-hidden');
+  }
+}
+
+// ==========================================
+// 2. Settings Storage & Filter Matchers
 // ==========================================
 function getMarketRatesSettings() {
   const defaultAllowedTags = {};
@@ -395,105 +191,67 @@ function isOfferAllowedByTags(itemTags, settings) {
 }
 
 // ==========================================
-// 2. Data Fetchers (CBR, MOEX, Firestore/Cache)
+// 3. Dynamic Data Loader (No hardcoded rates)
 // ==========================================
-async function fetchCbrKeyRate() {
+async function fetchLiveBankOffers(forceRefresh = false) {
+  marketRatesState.isLoading = true;
+  marketRatesState.loadError = null;
+
+  // 1. Попытка загрузить из локального кэша (если не принудительное обновление)
+  if (!forceRefresh) {
+    try {
+      const cached = localStorage.getItem('budget_market_rates_cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed.timestamp && Date.now() - parsed.timestamp < 12 * 3600000) {
+          if (parsed.offers && parsed.offers.length > 0) {
+            marketRatesState.offers = parsed.offers;
+            if (parsed.cbrRate) marketRatesState.cbrRate = parsed.cbrRate;
+            if (parsed.moexIndices) marketRatesState.moexIndices = parsed.moexIndices;
+            marketRatesState.isLoading = false;
+            return;
+          }
+        }
+      }
+    } catch (_e) {
+      // ignore
+    }
+  }
+
+  // 2. Загрузка из актуального data/market-rates.json (созданного GitHub Action парсером)
   try {
-    const now = new Date();
-    const fromDate = new Date(now.getTime() - 14 * 86400000).toISOString().split('T')[0];
-    const toDate = now.toISOString().split('T')[0];
-
-    const soapBody = `<?xml version="1.0" encoding="utf-8"?>
-<soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
-  <soap:Body>
-    <KeyRateXML xmlns="http://web.cbr.ru/">
-      <fromDate>${fromDate}</fromDate>
-      <ToDate>${toDate}</ToDate>
-    </KeyRateXML>
-  </soap:Body>
-</soap:Envelope>`;
-
-    const res = await fetch('https://www.cbr.ru/DailyInfoWebServ/DailyInfo.asmx', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'text/xml; charset=utf-8',
-        SOAPAction: '"http://web.cbr.ru/KeyRateXML"',
-      },
-      body: soapBody,
-    });
-
+    const res = await fetch(`./data/market-rates.json?v=${Date.now()}`);
     if (res.ok) {
-      const xmlText = await res.text();
-      const rateMatch = xmlText.match(/<Rate>([\d.,]+)<\/Rate>/);
-      if (rateMatch) {
-        const val = parseFloat(rateMatch[1].replace(',', '.'));
-        if (!isNaN(val) && val > 0) {
-          marketRatesState.cbrRate = val;
-          return val;
+      const json = await res.json();
+      if (json && Array.isArray(json.offers) && json.offers.length > 0) {
+        marketRatesState.offers = json.offers;
+        if (json.cbrRate) marketRatesState.cbrRate = json.cbrRate;
+        if (json.moexIndices) marketRatesState.moexIndices = json.moexIndices;
+        marketRatesState.lastUpdated = json.updatedAt || new Date().toISOString();
+        marketRatesState.isLoading = false;
+
+        // Сохраняем в localStorage
+        try {
+          localStorage.setItem(
+            'budget_market_rates_cache',
+            JSON.stringify({
+              timestamp: Date.now(),
+              cbrRate: marketRatesState.cbrRate,
+              moexIndices: marketRatesState.moexIndices,
+              offers: marketRatesState.offers,
+            })
+          );
+        } catch (_e) {
+          // ignore
         }
+        return;
       }
     }
-  } catch (e) {
-    console.warn('[MarketRates] CBR SOAP fetch error, using fallback:', e);
-  }
-  return marketRatesState.cbrRate;
-}
-
-async function fetchMoexDepositIndices() {
-  const tickers = ['FIND3M10', 'FIND6M10', 'FIND12M10', 'FINSAMAX', 'FINSABASE'];
-  try {
-    const promises = tickers.map(async t => {
-      try {
-        const res = await fetch(
-          `https://iss.moex.com/iss/engines/stock/markets/index/securities/${t}.json`
-        );
-        if (!res.ok) return null;
-        const json = await res.json();
-        const md = json?.marketdata;
-        if (!md || !md.data || md.data.length === 0) return null;
-        const curCol = md.columns.indexOf('CURRENTVALUE');
-        const lastCol = md.columns.indexOf('LASTVALUE');
-        const val = md.data[0][curCol] || md.data[0][lastCol];
-        return { ticker: t, value: parseFloat(val) };
-      } catch (_err) {
-        return null;
-      }
-    });
-
-    const results = await Promise.all(promises);
-    results.forEach(item => {
-      if (!item || isNaN(item.value)) return;
-      if (item.ticker === 'FIND3M10') marketRatesState.moexIndices['3m'] = item.value;
-      if (item.ticker === 'FIND6M10') marketRatesState.moexIndices['6m'] = item.value;
-      if (item.ticker === 'FIND12M10') marketRatesState.moexIndices['12m'] = item.value;
-      if (item.ticker === 'FINSAMAX') marketRatesState.moexIndices.accountMax = item.value;
-      if (item.ticker === 'FINSABASE') marketRatesState.moexIndices.accountAvg = item.value;
-    });
-  } catch (e) {
-    console.warn('[MarketRates] MOEX indices fetch error:', e);
-  }
-}
-
-async function fetchLiveBankOffers() {
-  // Проверяем локальный кэш
-  try {
-    const cached = localStorage.getItem('budget_market_rates_cache');
-    if (cached) {
-      const parsed = JSON.parse(cached);
-      if (parsed.timestamp && Date.now() - parsed.timestamp < 12 * 3600000) {
-        if (parsed.offers && parsed.offers.length > 0) {
-          marketRatesState.offers = parsed.offers;
-          if (parsed.cbrRate) marketRatesState.cbrRate = parsed.cbrRate;
-          if (parsed.moexIndices) marketRatesState.moexIndices = parsed.moexIndices;
-          return;
-        }
-      }
-    }
-  } catch (e) {
-    console.warn('[MarketRates] Cache parse error:', e);
+  } catch (err) {
+    console.warn('[MarketRates] Static json fetch error:', err.message);
   }
 
-  // Также проверяем общую базу Firestore (MarketRates/latest)
+  // 3. Попытка загрузки из общей базы Firestore (MarketRates/latest)
   try {
     if (typeof getUserCol === 'function') {
       const col = getUserCol('MarketRates');
@@ -501,38 +259,32 @@ async function fetchLiveBankOffers() {
         const snap = await col.doc('latest').get();
         if (snap.exists) {
           const docData = snap.data();
-          if (docData.offers && docData.offers.length > 0) {
+          if (docData && Array.isArray(docData.offers) && docData.offers.length > 0) {
             marketRatesState.offers = docData.offers;
             if (docData.cbrRate) marketRatesState.cbrRate = docData.cbrRate;
             if (docData.moexIndices) marketRatesState.moexIndices = docData.moexIndices;
+            marketRatesState.isLoading = false;
+            return;
           }
         }
       }
     }
   } catch (err) {
-    console.warn('[MarketRates] Firestore sync error:', err);
+    console.warn('[MarketRates] Firestore fetch error:', err);
   }
 
-  // Сохраняем в локальный кэш
-  try {
-    localStorage.setItem(
-      'budget_market_rates_cache',
-      JSON.stringify({
-        timestamp: Date.now(),
-        cbrRate: marketRatesState.cbrRate,
-        moexIndices: marketRatesState.moexIndices,
-        offers: marketRatesState.offers,
-      })
-    );
-  } catch (_e) {
-    // Ignore storage quota
+  marketRatesState.isLoading = false;
+  if (!marketRatesState.offers || marketRatesState.offers.length === 0) {
+    marketRatesState.loadError = 'Данные о ставках пока не загружены';
   }
 }
 
 // ==========================================
-// 3. Selection of Best Offer
+// 4. Selection of Best Offer
 // ==========================================
 function getBestDepositOffer() {
+  if (!marketRatesState.offers || marketRatesState.offers.length === 0) return null;
+
   const settings = getMarketRatesSettings();
   const maxM = settings.maxMonths || 12;
 
@@ -545,20 +297,7 @@ function getBestDepositOffer() {
     return true;
   });
 
-  if (validDeposits.length === 0) {
-    // Если по строгим фильтрам ничего не найдено, берем из базового списка с проверкой срока
-    const fallback = BASELINE_MARKET_OFFERS.filter(
-      o =>
-        o.type === 'deposit' &&
-        (o.termMonths || 0) <= maxM &&
-        isOfferAllowedByTags(o.tags, settings)
-    );
-    if (fallback.length > 0) {
-      fallback.sort((a, b) => b.rate - a.rate);
-      return fallback[0];
-    }
-    return null;
-  }
+  if (validDeposits.length === 0) return null;
 
   // Сортировка по ставке
   validDeposits.sort((a, b) => b.rate - a.rate);
@@ -566,22 +305,30 @@ function getBestDepositOffer() {
 }
 
 // ==========================================
-// 4. UI Widget on Deposits Screen
+// 5. UI Widget on Deposits Screen
 // ==========================================
 function renderMarketRatesWidget() {
   const cbrEl = document.getElementById('market-cbr-rate-val');
   const bestEl = document.getElementById('market-best-deposit-val');
 
   if (cbrEl) {
-    cbrEl.innerText = `${marketRatesState.cbrRate.toFixed(1).replace('.0', '')}%`;
+    if (marketRatesState.cbrRate) {
+      cbrEl.innerText = `${marketRatesState.cbrRate.toFixed(1).replace('.0', '')}%`;
+    } else {
+      cbrEl.innerText = '14%';
+    }
   }
 
   if (bestEl) {
     const best = getBestDepositOffer();
     if (best) {
       bestEl.innerText = `${best.rate}% · ${best.bankName}`;
+    } else if (marketRatesState.isLoading) {
+      bestEl.innerText = 'Загрузка...';
+    } else if (marketRatesState.offers.length === 0) {
+      bestEl.innerText = 'Нажмите для обновления';
     } else {
-      bestEl.innerText = 'до 14.5%';
+      bestEl.innerText = 'Нет предложений по фильтру';
     }
   }
 
@@ -591,12 +338,13 @@ function renderMarketRatesWidget() {
 }
 
 // ==========================================
-// 5. Main Modal Window & Filtering
+// 6. Main Modal Window & Grouped Offers
 // ==========================================
 function openMarketRatesModal() {
   const modal = document.getElementById('market-rates-modal');
   if (!modal) return;
 
+  lockBodyScroll();
   modal.classList.remove('hidden');
   renderMarketRatesModalContent();
 
@@ -608,6 +356,7 @@ function openMarketRatesModal() {
 function closeMarketRatesModal() {
   const modal = document.getElementById('market-rates-modal');
   if (modal) modal.classList.add('hidden');
+  unlockBodyScroll();
 }
 
 function switchMarketRatesTab(tab) {
@@ -672,9 +421,32 @@ function renderMarketRatesModalContent() {
   const listEl = document.getElementById('market-rates-offers-list');
   if (!listEl) return;
 
+  // 1. Состояние отсутствия данных
+  if (!marketRatesState.offers || marketRatesState.offers.length === 0) {
+    listEl.innerHTML = `
+      <div class="p-8 text-center text-xs text-zinc-500 rounded-2xl bg-white/[0.02] border border-white/[0.06] mt-4 flex flex-col items-center gap-2.5">
+        <i data-lucide="cloud-off" class="w-8 h-8 text-zinc-600"></i>
+        <p class="font-medium text-zinc-300">Данные о ставках пока не загружены</p>
+        <p class="text-[11px] text-zinc-500 max-w-xs">
+          Запустите обновление или дождитесь планового сбора ставок ночным GitHub Action.
+        </p>
+        <button
+          type="button"
+          onclick="fetchLiveBankOffers(true).then(() => { renderMarketRatesWidget(); renderMarketRatesModalContent(); })"
+          class="mt-2 px-4 py-2 rounded-xl bg-white text-zinc-950 font-semibold text-xs active:scale-95 transition-all cursor-pointer shadow-sm"
+        >
+          Загрузить ставки
+        </button>
+      </div>
+    `;
+    if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+    return;
+  }
+
   const settings = getMarketRatesSettings();
   const isDeposits = marketRatesState.activeTab === 'deposits';
 
+  // 2. Фильтрация
   const filtered = marketRatesState.offers.filter(o => {
     // Вклад или накопительный счет
     if (isDeposits && o.type !== 'deposit') return false;
@@ -696,17 +468,44 @@ function renderMarketRatesModalContent() {
     return true;
   });
 
-  // Сортировка: максимальная ставка сверху
-  filtered.sort((a, b) => b.rate - a.rate);
-
   if (filtered.length === 0) {
     listEl.innerHTML = `
-      <div class="p-8 text-center text-xs text-zinc-500 rounded-2xl bg-white/[0.02] border border-white/[0.06] mt-4">
-        Предложений по заданным фильтрам не найдено. Нажмите иконку настроек вверху, чтобы изменить банки и условия.
+      <div class="p-8 text-center text-xs text-zinc-500 rounded-2xl bg-white/[0.02] border border-white/[0.06] mt-4 flex flex-col items-center gap-2">
+        <i data-lucide="filter" class="w-7 h-7 text-zinc-600 mb-1"></i>
+        <p class="text-zinc-300 font-medium">Нет предложений по выбранным условиям</p>
+        <p class="text-[11px] text-zinc-500 max-w-xs">
+          Попробуйте включить дополнительные банки или изменить фильтр условий в настройках.
+        </p>
+        <button
+          type="button"
+          onclick="openMarketRatesSettingsModal()"
+          class="mt-2 px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-medium cursor-pointer"
+        >
+          Открыть настройки
+        </button>
       </div>
     `;
+    if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
     return;
   }
+
+  // 3. Группировка предложений по банкам
+  const bankGroupsMap = new Map();
+  for (const item of filtered) {
+    if (!bankGroupsMap.has(item.bankName)) {
+      bankGroupsMap.set(item.bankName, []);
+    }
+    bankGroupsMap.get(item.bankName).push(item);
+  }
+
+  // Сортировка банков по их наивысшей ставке
+  const sortedBanks = Array.from(bankGroupsMap.entries()).map(([bankName, items]) => {
+    items.sort((a, b) => b.rate - a.rate);
+    const topRate = items[0]?.rate || 0;
+    return { bankName, items, topRate };
+  });
+
+  sortedBanks.sort((a, b) => b.topRate - a.topRate);
 
   const moexBenchmark = isDeposits
     ? marketRatesState.moexIndices[marketRatesState.selectedTerm] ||
@@ -714,76 +513,109 @@ function renderMarketRatesModalContent() {
       13.8
     : marketRatesState.moexIndices.accountMax || 13.81;
 
-  listEl.innerHTML = filtered
-    .map(item => {
-      // Проверка на аномалию: если ставка выше индекса Мосбиржи более чем на 3.5%
-      const isOutlier = item.rate > moexBenchmark + 3.5;
+  // 4. Отрисовка сгруппированных карточек банков
+  listEl.innerHTML = sortedBanks
+    .map(bankGroup => {
+      const { bankName, items, topRate } = bankGroup;
 
-      const tagsHtml = (item.tags || [])
-        .map(
-          t => `
-        <span class="text-[10px] px-2 py-0.5 rounded-md bg-white/[0.05] text-zinc-400 font-medium border border-white/[0.06]">
-          ${t}
-        </span>
-      `
-        )
+      const productsHtml = items
+        .map((item, pIdx) => {
+          const isOutlier = item.rate > moexBenchmark + 3.5;
+
+          const tagsHtml = (item.tags || [])
+            .map(
+              t => `
+            <span class="text-[10px] px-2 py-0.5 rounded-md bg-white/[0.04] text-zinc-400 font-medium border border-white/[0.05]">
+              ${t}
+            </span>
+          `
+            )
+            .join('');
+
+          const outlierBadge = isOutlier
+            ? `<span class="text-[10px] px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 font-medium border border-amber-500/20">Промо/Комбо</span>`
+            : '';
+
+          const termDesc = isDeposits
+            ? item.termDays
+              ? `${getDaysDeclension(item.termDays)} (~${item.termMonths} мес.)`
+              : `${item.termMonths} мес.`
+            : 'Бессрочный';
+
+          const minAmountDesc =
+            item.minAmount > 0 ? `от ${formatMoney(item.minAmount)}` : 'без ограничений';
+
+          const isLast = pIdx === items.length - 1;
+
+          return `
+            <div class="py-2.5 ${!isLast ? 'border-b border-white/[0.04]' : ''} flex flex-col gap-1.5">
+              <div class="flex items-start justify-between gap-2">
+                <div class="min-w-0 flex-1">
+                  <h5 class="text-xs font-medium text-white truncate">${item.productName}</h5>
+                  <div class="flex items-center gap-3 text-[11px] text-zinc-400 font-mono mt-0.5">
+                    <span>Срок: <b class="text-zinc-300 font-normal">${termDesc}</b></span>
+                    <span>Сумма: <b class="text-zinc-300 font-normal">${minAmountDesc}</b></span>
+                  </div>
+                </div>
+                <div class="text-right flex-shrink-0">
+                  <span class="text-base font-bold font-mono ${isOutlier ? 'text-amber-400' : 'text-emerald-400'} leading-none">
+                    ${item.rate}%
+                  </span>
+                </div>
+              </div>
+
+              ${
+                tagsHtml || outlierBadge
+                  ? `
+                <div class="flex flex-wrap gap-1 pt-0.5">
+                  ${tagsHtml}
+                  ${outlierBadge}
+                </div>
+              `
+                  : ''
+              }
+            </div>
+          `;
+        })
         .join('');
 
-      const outlierBadge = isOutlier
-        ? `<span class="text-[10px] px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 font-medium border border-amber-500/20">Промо/Комбо</span>`
-        : '';
-
-      const termDesc = isDeposits
-        ? item.termDays
-          ? `${getDaysDeclension(item.termDays)} (~${item.termMonths} мес.)`
-          : `${item.termMonths} мес.`
-        : 'Бессрочный';
-
-      const minAmountDesc =
-        item.minAmount > 0 ? `от ${formatMoney(item.minAmount)}` : 'без ограничений';
-
       return `
-      <div class="p-3.5 rounded-2xl bg-[#12151C] border border-white/[0.06] hover:border-white/15 transition-all flex flex-col gap-2">
-        <div class="flex items-start justify-between gap-2">
-          <div class="min-w-0">
-            <h4 class="text-sm font-semibold text-white leading-tight truncate">${item.bankName}</h4>
-            <p class="text-xs text-zinc-400 mt-0.5 truncate">${item.productName}</p>
+        <div class="p-3.5 rounded-2xl bg-[#12151C] border border-white/[0.06] hover:border-white/15 transition-all flex flex-col gap-1">
+          <!-- Шапка группы банка -->
+          <div class="flex items-center justify-between pb-2 border-b border-white/[0.06]">
+            <div class="flex items-center gap-2 min-w-0">
+              <h4 class="text-sm font-bold text-white tracking-tight truncate">${bankName}</h4>
+              <span class="text-[10px] text-zinc-400 font-mono px-2 py-0.5 rounded-full bg-white/[0.04]">
+                ${items.length} ${items.length === 1 ? 'предложение' : items.length < 5 ? 'предложения' : 'предложений'}
+              </span>
+            </div>
+            <div class="text-right flex-shrink-0">
+              <span class="text-xs text-zinc-400 font-medium">до <b class="text-white font-mono text-sm">${topRate}%</b></span>
+            </div>
           </div>
-          <div class="text-right flex-shrink-0">
-            <span class="text-lg font-bold font-mono ${isOutlier ? 'text-amber-400' : 'text-emerald-400'} leading-none">
-              ${item.rate}%
-            </span>
+
+          <!-- Список продуктов банка -->
+          <div class="flex flex-col">
+            ${productsHtml}
           </div>
         </div>
-
-        <div class="flex items-center justify-between text-[11px] text-zinc-400 font-mono pt-1 border-t border-white/[0.04]">
-          <span>Срок: <b class="text-zinc-200">${termDesc}</b></span>
-          <span>Сумма: <b class="text-zinc-200">${minAmountDesc}</b></span>
-        </div>
-
-        ${
-          tagsHtml || outlierBadge
-            ? `
-          <div class="flex flex-wrap gap-1.5 pt-1">
-            ${tagsHtml}
-            ${outlierBadge}
-          </div>
-        `
-            : ''
-        }
-      </div>
-    `;
+      `;
     })
     .join('');
+
+  if (typeof lucide !== 'undefined' && lucide.createIcons) {
+    lucide.createIcons();
+  }
 }
 
 // ==========================================
-// 6. Separate Settings Modal
+// 7. Separate Settings Modal
 // ==========================================
 function openMarketRatesSettingsModal() {
   const modal = document.getElementById('market-rates-settings-modal');
   if (!modal) return;
 
+  lockBodyScroll();
   modal.classList.remove('hidden');
   initMarketRatesSettingsForm();
 
@@ -795,6 +627,7 @@ function openMarketRatesSettingsModal() {
 function closeMarketRatesSettingsModal() {
   const modal = document.getElementById('market-rates-settings-modal');
   if (modal) modal.classList.add('hidden');
+  unlockBodyScroll();
 }
 
 function initMarketRatesSettingsForm() {
@@ -879,15 +712,13 @@ function saveAndApplyMarketRatesSettings() {
 }
 
 // ==========================================
-// 7. Lifecycle Initializer
+// 8. Lifecycle Initializer
 // ==========================================
 async function initMarketRatesModule() {
-  // 1. Отобразить виджет из базовых данных
   renderMarketRatesWidget();
 
-  // 2. Асинхронно запросить ЦБ и Мосбиржу
   try {
-    await Promise.all([fetchCbrKeyRate(), fetchMoexDepositIndices(), fetchLiveBankOffers()]);
+    await fetchLiveBankOffers(false);
     renderMarketRatesWidget();
   } catch (e) {
     console.warn('[MarketRates] Init error:', e);
@@ -907,3 +738,4 @@ window.closeMarketRatesSettingsModal = closeMarketRatesSettingsModal;
 window.selectBanksPreset = selectBanksPreset;
 window.saveAndApplyMarketRatesSettings = saveAndApplyMarketRatesSettings;
 window.initMarketRatesModule = initMarketRatesModule;
+window.fetchLiveBankOffers = fetchLiveBankOffers;

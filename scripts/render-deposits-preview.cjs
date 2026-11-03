@@ -59,6 +59,16 @@ const fullHtml = `<!DOCTYPE html>
   </main>
 
   <script>
+    window.formatMoney = n => Number(Math.round(n || 0)).toLocaleString('ru-RU') + ' ₽';
+    const liveMarketData = ${fs.readFileSync('data/market-rates.json', 'utf8')};
+    localStorage.setItem('budget_market_rates_cache', JSON.stringify({
+      timestamp: Date.now(),
+      cbrRate: liveMarketData.cbrRate,
+      moexIndices: liveMarketData.moexIndices,
+      offers: liveMarketData.offers
+    }));
+  </script>
+  <script>
     ${fs.readFileSync('marketRates.js', 'utf8')}
   </script>
   <script>

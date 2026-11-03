@@ -48,8 +48,17 @@ const fullHtml = `<!DOCTYPE html>
     ${fs.readFileSync('marketRates.js', 'utf8')}
   </script>
   <script>
-    openMarketRatesModal();
-    if (typeof lucide !== 'undefined') lucide.createIcons();
+    const liveData = ${fs.readFileSync('data/market-rates.json', 'utf8')};
+    localStorage.setItem('budget_market_rates_cache', JSON.stringify({
+      timestamp: Date.now(),
+      cbrRate: liveData.cbrRate,
+      moexIndices: liveData.moexIndices,
+      offers: liveData.offers
+    }));
+    fetchLiveBankOffers(false).then(() => {
+      openMarketRatesModal();
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    });
   </script>
 </body>
 </html>`;

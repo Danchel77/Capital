@@ -340,55 +340,51 @@ function drawBrokerChart() {
       chartCtx.textAlign = 'center';
       chartCtx.textBaseline = 'middle';
 
-      const drawPillBadge = (x, y, text, textColor, dotColor, isAbove) => {
+      const drawCleanLabel = (point, val, textColor, dotColor, isMax) => {
+        const text = formatMoney(val);
         const textWidth = chartCtx.measureText(text).width;
-        const pillW = textWidth + 10;
-        const pillH = 16;
-        const radius = 4;
-
-        // Ограничиваем X в пределах видимой области canvas
-        let pillX = x;
-        if (pillX - pillW / 2 < chartArea.left + 2) {
-          pillX = chartArea.left + 2 + pillW / 2;
-        } else if (pillX + pillW / 2 > chartArea.right - 2) {
-          pillX = chartArea.right - 2 - pillW / 2;
-        }
-
-        // Позиция по Y (выше точки или ниже точки)
-        const pillY = isAbove
-          ? Math.max(chartArea.top + pillH / 2 + 2, y - 14)
-          : Math.min(chartArea.bottom - pillH / 2 - 2, y + 14);
 
         // Точка на кривой
         chartCtx.beginPath();
-        chartCtx.arc(x, y, 3, 0, Math.PI * 2);
+        chartCtx.arc(point.x, point.y, 3, 0, Math.PI * 2);
         chartCtx.fillStyle = dotColor;
         chartCtx.fill();
 
-        // Подложка бейджа (цвет #0E1016 скрывает кривую, чтобы линия не пересекала цифры)
-        const rx = pillX - pillW / 2;
-        const ry = pillY - pillH / 2;
-        chartCtx.beginPath();
-        chartCtx.roundRect(rx, ry, pillW, pillH, radius);
-        chartCtx.fillStyle = '#0E1016';
-        chartCtx.fill();
-        chartCtx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
-        chartCtx.lineWidth = 1;
-        chartCtx.stroke();
+        // Ограничиваем X строго внутри chartArea с запасом
+        let textX = point.x;
+        if (textX - textWidth / 2 < chartArea.left + 4) {
+          textX = chartArea.left + 4 + textWidth / 2;
+        } else if (textX + textWidth / 2 > chartArea.right - 4) {
+          textX = chartArea.right - 4 - textWidth / 2;
+        }
 
-        // Текст подписи
+        // Позиция Y с динамическим флипом
+        let textY;
+        if (isMax) {
+          // Максимум всегда сверху, но не выше границы chartArea
+          textY = Math.max(chartArea.top + 8, point.y - 10);
+        } else {
+          // Минимум: если снизу мало места до оси дат, выводим над точкой
+          if (point.y + 16 > chartArea.bottom - 4) {
+            textY = point.y - 10;
+          } else {
+            textY = point.y + 12;
+          }
+        }
+
+        // Чистый аккуратный текст
         chartCtx.fillStyle = textColor;
-        chartCtx.fillText(text, pillX, pillY);
+        chartCtx.fillText(text, textX, textY);
       };
 
       // Отрисовка Max (не выводим над крайней точкой, так как текущая сумма крупно выведена в шапке)
       if (maxIdx < data.length - 1) {
-        drawPillBadge(maxPoint.x, maxPoint.y, formatMoney(maxVal), '#E4E4E7', '#FFFFFF', true);
+        drawCleanLabel(maxPoint, maxVal, '#FFFFFF', '#FFFFFF', true);
       }
 
       // Отрисовка Min (не выводим над крайней точкой)
       if (minIdx < data.length - 1) {
-        drawPillBadge(minPoint.x, minPoint.y, formatMoney(minVal), '#A1A1AA', '#71717A', false);
+        drawCleanLabel(minPoint, minVal, '#A1A1AA', '#71717A', false);
       }
 
       chartCtx.restore();
@@ -422,7 +418,7 @@ function drawBrokerChart() {
       maintainAspectRatio: false,
       animation: false,
       layout: {
-        padding: { top: 16, bottom: 4, left: 6, right: 6 },
+        padding: { top: 16, bottom: 8, left: 6, right: 6 },
       },
       interaction: {
         mode: 'nearest',
@@ -494,7 +490,7 @@ function drawBrokerChart() {
         },
         y: {
           display: false,
-          grace: '8%',
+          grace: '15%',
         },
       },
     },
