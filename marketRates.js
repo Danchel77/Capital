@@ -442,7 +442,7 @@ function setMarketRatesTermFilter(term) {
   renderMarketRatesModalContent();
 }
 
-function getDaysDeclension(n) {
+function _getDaysDeclension(n) {
   const abs = Math.abs(n) % 100;
   const rem = abs % 10;
   if (abs > 10 && abs < 20) return `${n} дней`;
@@ -479,12 +479,19 @@ function renderMarketRatesModalContent() {
 
   const settings = getMarketRatesSettings();
   const isDeposits = marketRatesState.activeTab === 'deposits';
+  const cbrRate = marketRatesState.cbrRate || 14;
+  const minDepositRate = cbrRate - 2.5; // Отсекаем ставки ниже ЦБ - 2.5% (например, ниже 11.5%)
+  const minAccountRate = 8.0;
 
   // 2. Фильтрация
   const filtered = marketRatesState.offers.filter(o => {
     // Вклад или накопительный счет
     if (isDeposits && o.type !== 'deposit') return false;
     if (!isDeposits && o.type !== 'account') return false;
+
+    // Отсекаем неконкурентные/мусорные ставки
+    if (isDeposits && o.rate < minDepositRate) return false;
+    if (!isDeposits && o.rate < minAccountRate) return false;
 
     // Банковский фильтр
     if (!isBankAllowed(o.bankName, settings)) return false;
@@ -552,67 +559,206 @@ function renderMarketRatesModalContent() {
     .map(bankGroup => {
       const { bankName, items, topRate } = bankGroup;
 
-      const productsHtml = items
-        .map((item, pIdx) => {
-          const isOutlier = item.rate > moexBenchmark + 3.5;
+      let productsHtml = '';
 
-          const tagsHtml = (item.tags || [])
-            .map(
-              t => `
-            <span class="text-[10px] px-2 py-0.5 rounded-md bg-white/[0.04] text-zinc-400 font-medium border border-white/[0.05]">
-              ${t}
-            </span>
-          `
-            )
-            .join('');
+      if (isDeposits && marketRatesState.selectedTerm === 'all') {
+        // Режим «Все сроки»: объединяем одинаковые продукты в единую карточку с сеткой ставок
+        const productMap = new Map();
+        for (const it of items) {
+          const baseName = it.productName.split('(')[0].trim() || it.productName;
+          if (!productMap.has(baseName)) {
+            productMap.set(baseName, {
+              productName: baseName,
+              bankName: it.bankName,
+              minAmount: it.minAmount || 0,
+              tags: new Set(it.tags || []),
+              conditionsNote: it.conditionsNote || '',
+              termRates: new Map(),
+              topRate: it.rate,
+            });
+          }
+          const entry = productMap.get(baseName);
+          if (it.minAmount > 0 && (entry.minAmount === 0 || it.minAmount < entry.minAmount)) {
+            entry.minAmount = it.minAmount;
+          }
+          (it.tags || []).forEach(t => entry.tags.add(t));
+          if (it.conditionsNote && !entry.conditionsNote) {
+            entry.conditionsNote = it.conditionsNote;
+          }
+          if (it.rate > entry.topRate) {
+            entry.topRate = it.rate;
+          }
+          const m = it.termMonths || Math.round((it.termDays || 90) / 30);
+          const curR = entry.termRates.get(m) || 0;
+          if (it.rate > curR) {
+            entry.termRates.set(m, it.rate);
+          }
+        }
 
-          const outlierBadge = isOutlier
-            ? `<span class="text-[10px] px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 font-medium border border-amber-500/20">Промо/Комбо</span>`
-            : '';
+        const productsList = Array.from(productMap.values()).sort((a, b) => b.topRate - a.topRate);
 
-          const termDesc = isDeposits
-            ? item.termDays
-              ? `${getDaysDeclension(item.termDays).replace(' ', '&nbsp;')}&nbsp;(~${item.termMonths}&nbsp;мес.)`
-              : `${item.termMonths}&nbsp;мес.`
-            : 'Бессрочный';
+        productsHtml = productsList
+          .map((entry, pIdx) => {
+            const isOutlier = entry.topRate > moexBenchmark + 3.5;
+            const isLast = pIdx === productsList.length - 1;
 
-          const minAmountDesc =
-            item.minAmount > 0 ? `от&nbsp;${formatMoney(item.minAmount)}` : 'без&nbsp;ограничений';
+            const sortedTerms = Array.from(entry.termRates.entries()).sort((a, b) => a[0] - b[0]);
+            const termGridParts = sortedTerms.map(([m, r]) => {
+              const label = m === 12 ? '1 год' : `${m}&nbsp;мес`;
+              return `<span class="px-1.5 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.05] text-[10px] text-zinc-300 font-mono whitespace-nowrap">${label}:&nbsp;<b class="text-white font-semibold">${r}%</b></span>`;
+            });
+            const termGridHtml = termGridParts.join('');
 
-          const isLast = pIdx === items.length - 1;
+            const minAmountDesc =
+              entry.minAmount > 0
+                ? `от&nbsp;${formatMoney(entry.minAmount)}`
+                : 'без&nbsp;ограничений';
 
-          return `
-            <div class="py-2.5 ${!isLast ? 'border-b border-white/[0.04]' : ''} flex flex-col gap-1.5">
-              <div class="flex items-start justify-between gap-2">
-                <div class="min-w-0 flex-1">
-                  <h5 class="text-xs font-medium text-white truncate">${item.productName}</h5>
-                  <div class="flex items-center flex-wrap gap-x-2 gap-y-0.5 text-[11px] text-zinc-400 font-mono mt-1">
-                    <span class="whitespace-nowrap text-zinc-300">${termDesc}</span>
-                    <span class="text-zinc-600 select-none">·</span>
-                    <span class="whitespace-nowrap text-zinc-400">${minAmountDesc}</span>
+            const tagsHtml = Array.from(entry.tags)
+              .map(
+                t => `
+              <span class="text-[10px] px-2 py-0.5 rounded-md bg-white/[0.04] text-zinc-400 font-medium border border-white/[0.05]">
+                ${t}
+              </span>
+            `
+              )
+              .join('');
+
+            const outlierBadge = isOutlier
+              ? `<span class="text-[10px] px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 font-medium border border-amber-500/20">Промо/Комбо</span>`
+              : '';
+
+            const infoBtnHtml = entry.conditionsNote
+              ? `
+                <button
+                  type="button"
+                  onclick="handleRateInfoClick(this)"
+                  data-bank="${encodeURIComponent(entry.bankName)}"
+                  data-product="${encodeURIComponent(entry.productName)}"
+                  data-note="${encodeURIComponent(entry.conditionsNote)}"
+                  class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-500/15 hover:bg-amber-500/25 text-amber-400 text-[10px] font-bold border border-amber-500/30 transition-all cursor-pointer flex-shrink-0"
+                  title="Официальные условия"
+                >
+                  !
+                </button>
+              `
+              : '';
+
+            return `
+              <div class="py-2.5 ${!isLast ? 'border-b border-white/[0.04]' : ''} flex flex-col gap-1.5">
+                <div class="flex items-start justify-between gap-2">
+                  <div class="min-w-0 flex-1">
+                    <div class="flex items-center gap-1.5">
+                      <h5 class="text-xs font-medium text-white truncate">${entry.productName}</h5>
+                      ${infoBtnHtml}
+                    </div>
+                    <div class="flex items-center flex-wrap gap-x-2 gap-y-0.5 text-[11px] text-zinc-400 font-mono mt-1">
+                      ${termGridHtml}
+                    </div>
+                    <div class="flex items-center flex-wrap gap-x-2 gap-y-0.5 text-[11px] text-zinc-400 font-mono mt-0.5">
+                      <span class="whitespace-nowrap text-zinc-400">${minAmountDesc}</span>
+                    </div>
+                  </div>
+                  <div class="text-right flex-shrink-0">
+                    <span class="text-base font-bold font-mono ${isOutlier ? 'text-amber-400' : 'text-emerald-400'} leading-none">
+                      до&nbsp;${entry.topRate}%
+                    </span>
                   </div>
                 </div>
-                <div class="text-right flex-shrink-0">
-                  <span class="text-base font-bold font-mono ${isOutlier ? 'text-amber-400' : 'text-emerald-400'} leading-none">
-                    ${item.rate}%
-                  </span>
-                </div>
-              </div>
 
-              ${
-                tagsHtml || outlierBadge
-                  ? `
-                <div class="flex flex-wrap gap-1 pt-0.5">
-                  ${tagsHtml}
-                  ${outlierBadge}
-                </div>
+                ${
+                  tagsHtml || outlierBadge
+                    ? `
+                  <div class="flex flex-wrap gap-1 pt-0.5">
+                    ${tagsHtml}
+                    ${outlierBadge}
+                  </div>
+                `
+                    : ''
+                }
+              </div>
+            `;
+          })
+          .join('');
+      } else {
+        // Режим конкретного срока или накопительных счетов
+        productsHtml = items
+          .map((item, pIdx) => {
+            const isOutlier = item.rate > moexBenchmark + 3.5;
+            const isLast = pIdx === items.length - 1;
+            const minAmountDesc =
+              item.minAmount > 0
+                ? `от&nbsp;${formatMoney(item.minAmount)}`
+                : 'без&nbsp;ограничений';
+
+            const tagsHtml = (item.tags || [])
+              .map(
+                t => `
+              <span class="text-[10px] px-2 py-0.5 rounded-md bg-white/[0.04] text-zinc-400 font-medium border border-white/[0.05]">
+                ${t}
+              </span>
+            `
+              )
+              .join('');
+
+            const outlierBadge = isOutlier
+              ? `<span class="text-[10px] px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 font-medium border border-amber-500/20">Промо/Комбо</span>`
+              : '';
+
+            const infoBtnHtml = item.conditionsNote
+              ? `
+                <button
+                  type="button"
+                  onclick="handleRateInfoClick(this)"
+                  data-bank="${encodeURIComponent(item.bankName)}"
+                  data-product="${encodeURIComponent(item.productName)}"
+                  data-note="${encodeURIComponent(item.conditionsNote)}"
+                  class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-500/15 hover:bg-amber-500/25 text-amber-400 text-[10px] font-bold border border-amber-500/30 transition-all cursor-pointer flex-shrink-0"
+                  title="Официальные условия"
+                >
+                  !
+                </button>
               `
-                  : ''
-              }
-            </div>
-          `;
-        })
-        .join('');
+              : '';
+
+            const sublineHtml = isDeposits
+              ? `<span class="whitespace-nowrap text-zinc-400">${minAmountDesc}</span>`
+              : `<span class="whitespace-nowrap text-zinc-300">Бессрочный</span><span class="text-zinc-600 select-none">·</span><span class="whitespace-nowrap text-zinc-400">${minAmountDesc}</span>`;
+
+            return `
+              <div class="py-2.5 ${!isLast ? 'border-b border-white/[0.04]' : ''} flex flex-col gap-1.5">
+                <div class="flex items-start justify-between gap-2">
+                  <div class="min-w-0 flex-1">
+                    <div class="flex items-center gap-1.5">
+                      <h5 class="text-xs font-medium text-white truncate">${item.productName}</h5>
+                      ${infoBtnHtml}
+                    </div>
+                    <div class="flex items-center flex-wrap gap-x-2 gap-y-0.5 text-[11px] text-zinc-400 font-mono mt-1">
+                      ${sublineHtml}
+                    </div>
+                  </div>
+                  <div class="text-right flex-shrink-0">
+                    <span class="text-base font-bold font-mono ${isOutlier ? 'text-amber-400' : 'text-emerald-400'} leading-none">
+                      ${item.rate}%
+                    </span>
+                  </div>
+                </div>
+
+                ${
+                  tagsHtml || outlierBadge
+                    ? `
+                  <div class="flex flex-wrap gap-1 pt-0.5">
+                    ${tagsHtml}
+                    ${outlierBadge}
+                  </div>
+                `
+                    : ''
+                }
+              </div>
+            `;
+          })
+          .join('');
+      }
 
       return `
         <div class="p-3.5 rounded-2xl bg-[#12151C] border border-white/[0.06] hover:border-white/15 transition-all flex flex-col gap-1">
@@ -642,6 +788,44 @@ function renderMarketRatesModalContent() {
     lucide.createIcons();
   }
 }
+
+// ==========================================
+// 6. Rate Conditions Tooltip Modal
+// ==========================================
+function showRateConditionsTooltip(event, bankName, productName, note) {
+  if (event && typeof event.stopPropagation === 'function') event.stopPropagation();
+  const modal = document.getElementById('rate-conditions-tooltip-modal');
+  if (!modal) return;
+  const bankEl = document.getElementById('rct-bank-title');
+  const prodEl = document.getElementById('rct-product-title');
+  const contentEl = document.getElementById('rct-content');
+  if (bankEl) bankEl.innerText = bankName || 'Банк';
+  if (prodEl) prodEl.innerText = productName || 'Условия ставки';
+  if (contentEl) contentEl.innerText = note || 'Подробные условия не указаны';
+  modal.classList.remove('hidden');
+  lockBodyScroll();
+}
+
+function closeRateConditionsTooltip() {
+  const modal = document.getElementById('rate-conditions-tooltip-modal');
+  if (modal) modal.classList.add('hidden');
+  const ratesModal = document.getElementById('market-rates-modal');
+  if (!ratesModal || ratesModal.classList.contains('hidden')) {
+    unlockBodyScroll();
+  }
+}
+
+function handleRateInfoClick(btn) {
+  if (!btn) return;
+  const bank = decodeURIComponent(btn.dataset.bank || '');
+  const product = decodeURIComponent(btn.dataset.product || '');
+  const note = decodeURIComponent(btn.dataset.note || '');
+  showRateConditionsTooltip(null, bank, product, note);
+}
+
+window.showRateConditionsTooltip = showRateConditionsTooltip;
+window.closeRateConditionsTooltip = closeRateConditionsTooltip;
+window.handleRateInfoClick = handleRateInfoClick;
 
 // ==========================================
 // 7. Separate Settings Modal

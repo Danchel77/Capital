@@ -92,6 +92,28 @@ function decodeHtmlEntities(str) {
     .replace(/&nbsp;/g, ' ');
 }
 
+function extractConditionsNote(r) {
+  const parts = [];
+  if (r.rate_comment_html) parts.push(r.rate_comment_html);
+  if (r.new_money_comment) parts.push(r.new_money_comment);
+  if (r.rate_increase_comment_html) parts.push(r.rate_increase_comment_html);
+  if (r.special_restrictions) parts.push(r.special_restrictions);
+
+  const raw = parts.join(' ');
+  const clean = raw
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  return clean.length > 5 ? clean : '';
+}
+
 // 3. Структурированный парсер Banki.ru (чтение data-module-options -> defaultOffersResults)
 function parseOffersFromBankiHtml(html, defaultType = 'deposit', defaultMonths = 3) {
   const offers = [];
@@ -121,6 +143,7 @@ function parseOffersFromBankiHtml(html, defaultType = 'deposit', defaultMonths =
           const type = isAccount ? 'account' : 'deposit';
 
           const minAmount = parseInt(r.amount_from || r.rates_extremum?.min_amount || 0, 10);
+          const conditionsNote = extractConditionsNote(r);
 
           // Объективные флаги условий
           const baseTags = [];
@@ -156,6 +179,7 @@ function parseOffersFromBankiHtml(html, defaultType = 'deposit', defaultMonths =
                 termDays: 0,
                 minAmount,
                 tags: accTags,
+                conditionsNote,
               });
             }
           } else {
@@ -187,6 +211,7 @@ function parseOffersFromBankiHtml(html, defaultType = 'deposit', defaultMonths =
                     termDays: p.days,
                     minAmount,
                     tags: [...baseTags],
+                    conditionsNote,
                   });
                   addedFromTable = true;
                 }
@@ -210,6 +235,7 @@ function parseOffersFromBankiHtml(html, defaultType = 'deposit', defaultMonths =
                   termDays: days,
                   minAmount,
                   tags: [...baseTags],
+                  conditionsNote,
                 });
               }
             }

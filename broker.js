@@ -361,22 +361,26 @@ function drawBrokerChart() {
         // Позиция Y с увеличенным безопасным отступом от линии графика
         let textY;
         if (isMax) {
-          // Максимум строго сверху с достаточным воздухом
-          textY = Math.max(chartArea.top + 10, point.y - 15);
+          // Максимум сверху над точкой; если слишком близко к верхнему краю, безопасно флипаем под точку
+          if (point.y - 18 < chartArea.top + 8) {
+            textY = point.y + 16;
+          } else {
+            textY = point.y - 18;
+          }
         } else {
           // Минимум: если снизу мало места до оси дат, поднимаем над точкой
           if (point.y + 20 > chartArea.bottom - 4) {
-            textY = point.y - 15;
+            textY = point.y - 18;
           } else {
-            textY = point.y + 15;
+            textY = point.y + 16;
           }
         }
 
         // Подложка в тон карточки (#0E1016) для полной защиты от наплыва на сплайн
         chartCtx.save();
         chartCtx.fillStyle = '#0E1016';
-        const pillW = textWidth + 8;
-        const pillH = 14;
+        const pillW = textWidth + 10;
+        const pillH = 15;
         const pillX = textX - pillW / 2;
         const pillY = textY - pillH / 2;
         if (typeof chartCtx.roundRect === 'function') {
@@ -434,7 +438,7 @@ function drawBrokerChart() {
       maintainAspectRatio: false,
       animation: false,
       layout: {
-        padding: { top: 22, bottom: 10, left: 8, right: 8 },
+        padding: { top: 28, bottom: 12, left: 8, right: 8 },
       },
       interaction: {
         mode: 'nearest',
@@ -506,7 +510,7 @@ function drawBrokerChart() {
         },
         y: {
           display: false,
-          grace: '20%',
+          grace: '25%',
         },
       },
     },
