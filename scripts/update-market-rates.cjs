@@ -81,112 +81,191 @@ async function fetchMoexIndices() {
   return indices;
 }
 
-// 3. Парсер карточек Banki.ru
-function parseCardsFromHtml(html, defaultType = 'deposit', defaultMonths = 3) {
+function decodeHtmlEntities(str) {
+  if (!str) return '';
+  return str
+    .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&#039;/g, "'")
+    .replace(/&nbsp;/g, ' ');
+}
+
+// 3. Структурированный парсер Banki.ru (чтение data-module-options -> defaultOffersResults)
+function parseOffersFromBankiHtml(html, defaultType = 'deposit', defaultMonths = 3) {
   const offers = [];
-  const rawCards = html.split('data-test="card-offer"').slice(1);
 
-  for (const card of rawCards) {
-    const lines = card
-      .replace(/<style[\s\S]*?<\/style>/g, '')
-      .replace(/<[^>]+>/g, '\n')
-      .split('\n')
-      .map(s => s.trim())
-      .filter(Boolean);
+  // Стратегия А: структурированный JSON defaultOffersResults (официальные данные Banki.ru)
+  const matches = [...html.matchAll(/data-module-options="([^"]*defaultOffersResults[^"]*)"/g)];
+  if (matches.length > 0) {
+    for (const m of matches) {
+      try {
+        const decoded = decodeHtmlEntities(m[1]);
+        const parsed = JSON.parse(decoded);
+        const results = parsed.defaultOffersResults?.results || [];
+        const rows = results.flatMap(r =>
+          r.deposit_result_rows && r.deposit_result_rows.length > 0 ? r.deposit_result_rows : [r]
+        );
 
-    if (lines.length < 5) continue;
+        for (const r of rows) {
+          if (!r.product_name || !r.bank_name) continue;
 
-    const bankName = lines[1].replace(/^(ПАО|АО|ООО|АКБ)\s+/i, '').trim();
-    const productName = lines[2]
-      .replace(/^Вклад\s*•\s*/i, '')
-      .replace(/^Накопительный счет\s*•\s*/i, '')
-      .trim();
+          const bankName = (r.bank_name || '').replace(/^(ПАО|АО|ООО|АКБ)\s+/i, '').trim();
+          const productName = r.product_name.trim();
 
-    // Извлечение ставки
-    let rate = 0;
-    for (let i = 0; i < lines.length; i++) {
-      if (lines[i] === '%' && i > 0) {
-        const val = parseFloat(lines[i - 1].replace(',', '.'));
-        if (!isNaN(val) && val >= 5 && val <= 30) {
-          rate = val;
-          break;
+          // Однозначное определение типа продукта
+          const isAccount =
+            r.is_saving_account === true ||
+            (defaultType === 'account' && r.is_saving_account !== false);
+          const type = isAccount ? 'account' : 'deposit';
+
+          const minAmount = parseInt(r.amount_from || r.rates_extremum?.min_amount || 0, 10);
+
+          // Объективные флаги условий
+          const baseTags = [];
+          if (r.is_new_client === true) baseTags.push('Новый клиент');
+          if (r.is_new_money === true) baseTags.push('Новые деньги');
+          if (r.capitalization && r.capitalization.name && r.capitalization.name !== 'нет') {
+            baseTags.push('С капитализацией');
+          }
+          if (r.is_replenishment_possible === true) baseTags.push('С пополнением');
+
+          if (type === 'account') {
+            const lowerInfo = (
+              productName +
+              ' ' +
+              (r.special_restrictions || '') +
+              ' ' +
+              (r.rate_comment_html || '')
+            ).toLowerCase();
+            const accTags = [...baseTags];
+            if (lowerInfo.includes('минимальн')) {
+              accTags.push('На минимальный остаток');
+            } else {
+              accTags.push('На ежедневный остаток');
+            }
+            const rate = parseFloat(r.rate_max || r.rate || r.rates_extremum?.max_rate || 0);
+            if (rate >= 4 && rate <= 35) {
+              offers.push({
+                bankName,
+                productName,
+                rate,
+                type: 'account',
+                termMonths: 0,
+                termDays: 0,
+                minAmount,
+                tags: accTags,
+              });
+            }
+          } else {
+            // Вклады
+            const ratesTable = r.rates_extremum?.rates_table;
+            let addedFromTable = false;
+
+            if (Array.isArray(ratesTable) && ratesTable.length > 1) {
+              // Поиск стандартных периодов размещения (3 мес, 6 мес, 12 мес)
+              const periodsMap = [
+                { months: 3, days: 91, matchRegex: /^(3m|9[0-5]d|3мес)/i },
+                { months: 6, days: 181, matchRegex: /^(6m|18[0-5]d|6мес)/i },
+                { months: 12, days: 365, matchRegex: /^(1y|12m|36[0-7]d|1год|12мес)/i },
+              ];
+
+              for (const p of periodsMap) {
+                const row = ratesTable.find(
+                  t =>
+                    p.matchRegex.test(t.from_notation || '') ||
+                    p.matchRegex.test(t.to_notation || '')
+                );
+                if (row && row.rate >= 4 && row.rate <= 35) {
+                  offers.push({
+                    bankName,
+                    productName,
+                    rate: parseFloat(row.rate),
+                    type: 'deposit',
+                    termMonths: p.months,
+                    termDays: p.days,
+                    minAmount,
+                    tags: [...baseTags],
+                  });
+                  addedFromTable = true;
+                }
+              }
+            }
+
+            if (!addedFromTable) {
+              const rate = parseFloat(r.rate_max || r.rate || r.rates_extremum?.max_rate || 0);
+              const days = parseInt(
+                r.period_from || r.rates_extremum?.min_period || defaultMonths * 30,
+                10
+              );
+              const months = Math.max(1, Math.round(days / 30));
+              if (rate >= 4 && rate <= 35) {
+                offers.push({
+                  bankName,
+                  productName,
+                  rate,
+                  type: 'deposit',
+                  termMonths: months,
+                  termDays: days,
+                  minAmount,
+                  tags: [...baseTags],
+                });
+              }
+            }
+          }
         }
+      } catch (err) {
+        console.warn('[UpdateRates] JSON parse error in defaultOffersResults:', err.message);
       }
     }
+  }
 
-    if (!rate) continue;
+  // Стратегия Б: Fallback на Schema.org application/ld+json если defaultOffersResults отсутствует
+  if (offers.length === 0) {
+    const ldJsonMatches = [
+      ...html.matchAll(
+        /<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi
+      ),
+    ];
+    for (const m of ldJsonMatches) {
+      try {
+        const data = JSON.parse(m[1]);
+        if (data['@type'] === 'Product' && data.offers?.offers?.itemListElement) {
+          const items = data.offers.offers.itemListElement;
+          for (const it of items) {
+            const bankName = (it.provider?.name || '').replace(/^(ПАО|АО|ООО|АКБ)\s+/i, '').trim();
+            const productName = (it.name || '').trim();
+            const rate = parseFloat(
+              it.interestRate?.maxValue || it.annualPercentageRate?.maxValue || 0
+            );
+            if (!bankName || !productName || !rate || rate < 4 || rate > 35) continue;
 
-    // Определение типа: вклад или счет
-    const isAccount =
-      defaultType === 'account' ||
-      card.includes('Накопительный счет') ||
-      card.includes('накопительный') ||
-      card.includes('минимальный остаток') ||
-      card.includes('ежедневный остаток');
+            const isAccount = defaultType === 'account';
+            const type = isAccount ? 'account' : 'deposit';
+            const minAmount = parseInt(it.amount?.minValue || 0, 10);
+            const termsStr = (it.description || it.termsOfService || '').toLowerCase();
 
-    const type = isAccount ? 'account' : 'deposit';
+            const tags = [];
+            if (termsStr.includes('нов')) tags.push('Новый клиент');
+            if (isAccount) tags.push('На ежедневный остаток');
 
-    // Определение срока
-    let termDays = 0;
-    let termMonths = defaultMonths;
-
-    const daysMatch = card.match(/(\d+)\s*(дн\.|дней|дня|день)/i);
-    if (daysMatch) {
-      termDays = parseInt(daysMatch[1], 10);
-      termMonths = Math.round(termDays / 30);
-    } else {
-      const monthMatch = card.match(/(\d+)\s*(мес\.|месяцев|месяца|месяц)/i);
-      if (monthMatch) {
-        termMonths = parseInt(monthMatch[1], 10);
-        termDays = termMonths * 30;
+            offers.push({
+              bankName,
+              productName,
+              rate,
+              type,
+              termMonths: isAccount ? 0 : defaultMonths,
+              termDays: isAccount ? 0 : defaultMonths * 30,
+              minAmount,
+              tags,
+            });
+          }
+        }
+      } catch (_e) {
+        // ignore
       }
     }
-
-    if (type === 'account') {
-      termDays = 0;
-      termMonths = 0;
-    }
-
-    // Извлечение бейджей/тегов
-    const tags = [];
-    if (card.includes('Новый клиент') || card.includes('для новых клиентов')) {
-      tags.push('Новый клиент');
-    }
-    if (card.includes('новые деньги') || card.includes('Новые деньги')) {
-      tags.push('Новые деньги');
-    }
-    if (card.includes('капитализацией') || card.includes('С капитализацией')) {
-      tags.push('С капитализацией');
-    }
-    if (card.includes('пополнением') || card.includes('С пополнением')) {
-      tags.push('С пополнением');
-    }
-    if (card.includes('минимальный остаток')) {
-      tags.push('На минимальный остаток');
-    }
-    if (card.includes('ежедневный остаток')) {
-      tags.push('На ежедневный остаток');
-    }
-
-    // Сумма
-    let minAmount = 0;
-    const amountMatch = card.match(/Сумма\s*(от\s*)?([\d\s]+)/i);
-    if (amountMatch) {
-      const rawNum = amountMatch[2].replace(/\s+/g, '');
-      const parsed = parseInt(rawNum, 10);
-      if (!isNaN(parsed)) minAmount = parsed;
-    }
-
-    offers.push({
-      bankName,
-      productName,
-      rate,
-      type,
-      termMonths,
-      termDays,
-      minAmount,
-      tags,
-    });
   }
 
   return offers;
@@ -246,21 +325,21 @@ async function main() {
   for (const c of catalogueUrls) {
     const html = await fetchPage(c.url);
     if (html) {
-      const parsed = parseCardsFromHtml(html, c.type, c.months);
+      const parsed = parseOffersFromBankiHtml(html, c.type, c.months);
       console.log(`  - ${c.url}: found ${parsed.length} offers`);
       allOffers.push(...parsed);
     }
   }
 
-  // 3. Банк-специфичные каталоги для популярных банков (в т.ч. Яндекс, Ozon, Т-Банк, Сбер, ВТБ, ДОМ.РФ и др.)
+  // 3. Банк-специфичные каталоги для ведущих банков
   const bankAliases = [
     'sberbank',
     'vtb',
     'gazprombank',
     'alfabank',
     'tcs',
-    'ecombank',
-    'yandexbank',
+    'ecombank', // Ozon
+    'yandexbank', // Яндекс
     'domrfbank',
     'sovcombank',
     'promsvyazbank',
@@ -270,6 +349,10 @@ async function main() {
     'uralsib',
     'mts-bank',
     'locko-bank',
+    'akbars',
+    'zenit',
+    'absolutbank',
+    'rencredit',
   ];
 
   console.log('Fetching bank-specific deposit catalogues...');
@@ -279,11 +362,11 @@ async function main() {
 
     const [depHtml, accHtml] = await Promise.all([fetchPage(depUrl), fetchPage(accUrl)]);
     if (depHtml) {
-      const parsed = parseCardsFromHtml(depHtml, 'deposit', 6);
+      const parsed = parseOffersFromBankiHtml(depHtml, 'deposit', 6);
       if (parsed.length) allOffers.push(...parsed);
     }
     if (accHtml) {
-      const parsed = parseCardsFromHtml(accHtml, 'account', 0);
+      const parsed = parseOffersFromBankiHtml(accHtml, 'account', 0);
       if (parsed.length) allOffers.push(...parsed);
     }
   }
@@ -313,6 +396,10 @@ async function main() {
     else if (bName.includes('Локо')) bName = 'Локо-Банк';
     else if (bName.includes('БСПБ') || bName.includes('Санкт-Петербург'))
       bName = 'Банк Санкт-Петербург';
+    else if (bName.includes('Ак Барс')) bName = 'Ак Барс';
+    else if (bName.includes('Зенит')) bName = 'Банк Зенит';
+    else if (bName.includes('Абсолют')) bName = 'Абсолют Банк';
+    else if (bName.includes('Ренессанс')) bName = 'Ренессанс Банк';
 
     o.bankName = bName;
 

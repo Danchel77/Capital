@@ -538,12 +538,12 @@ function renderMarketRatesModalContent() {
 
           const termDesc = isDeposits
             ? item.termDays
-              ? `${getDaysDeclension(item.termDays)} (~${item.termMonths} мес.)`
-              : `${item.termMonths} мес.`
+              ? `${getDaysDeclension(item.termDays).replace(' ', '&nbsp;')}&nbsp;(~${item.termMonths}&nbsp;мес.)`
+              : `${item.termMonths}&nbsp;мес.`
             : 'Бессрочный';
 
           const minAmountDesc =
-            item.minAmount > 0 ? `от ${formatMoney(item.minAmount)}` : 'без ограничений';
+            item.minAmount > 0 ? `от&nbsp;${formatMoney(item.minAmount)}` : 'без&nbsp;ограничений';
 
           const isLast = pIdx === items.length - 1;
 
@@ -552,9 +552,10 @@ function renderMarketRatesModalContent() {
               <div class="flex items-start justify-between gap-2">
                 <div class="min-w-0 flex-1">
                   <h5 class="text-xs font-medium text-white truncate">${item.productName}</h5>
-                  <div class="flex items-center gap-3 text-[11px] text-zinc-400 font-mono mt-0.5">
-                    <span>Срок: <b class="text-zinc-300 font-normal">${termDesc}</b></span>
-                    <span>Сумма: <b class="text-zinc-300 font-normal">${minAmountDesc}</b></span>
+                  <div class="flex items-center flex-wrap gap-x-2 gap-y-0.5 text-[11px] text-zinc-400 font-mono mt-1">
+                    <span class="whitespace-nowrap text-zinc-300">${termDesc}</span>
+                    <span class="text-zinc-600 select-none">·</span>
+                    <span class="whitespace-nowrap text-zinc-400">${minAmountDesc}</span>
                   </div>
                 </div>
                 <div class="text-right flex-shrink-0">

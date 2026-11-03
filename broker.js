@@ -352,25 +352,41 @@ function drawBrokerChart() {
 
         // Ограничиваем X строго внутри chartArea с запасом
         let textX = point.x;
-        if (textX - textWidth / 2 < chartArea.left + 4) {
-          textX = chartArea.left + 4 + textWidth / 2;
-        } else if (textX + textWidth / 2 > chartArea.right - 4) {
-          textX = chartArea.right - 4 - textWidth / 2;
+        if (textX - textWidth / 2 < chartArea.left + 6) {
+          textX = chartArea.left + 6 + textWidth / 2;
+        } else if (textX + textWidth / 2 > chartArea.right - 6) {
+          textX = chartArea.right - 6 - textWidth / 2;
         }
 
-        // Позиция Y с динамическим флипом
+        // Позиция Y с увеличенным безопасным отступом от линии графика
         let textY;
         if (isMax) {
-          // Максимум всегда сверху, но не выше границы chartArea
-          textY = Math.max(chartArea.top + 8, point.y - 10);
+          // Максимум строго сверху с достаточным воздухом
+          textY = Math.max(chartArea.top + 10, point.y - 15);
         } else {
-          // Минимум: если снизу мало места до оси дат, выводим над точкой
-          if (point.y + 16 > chartArea.bottom - 4) {
-            textY = point.y - 10;
+          // Минимум: если снизу мало места до оси дат, поднимаем над точкой
+          if (point.y + 20 > chartArea.bottom - 4) {
+            textY = point.y - 15;
           } else {
-            textY = point.y + 12;
+            textY = point.y + 15;
           }
         }
+
+        // Подложка в тон карточки (#0E1016) для полной защиты от наплыва на сплайн
+        chartCtx.save();
+        chartCtx.fillStyle = '#0E1016';
+        const pillW = textWidth + 8;
+        const pillH = 14;
+        const pillX = textX - pillW / 2;
+        const pillY = textY - pillH / 2;
+        if (typeof chartCtx.roundRect === 'function') {
+          chartCtx.beginPath();
+          chartCtx.roundRect(pillX, pillY, pillW, pillH, 4);
+          chartCtx.fill();
+        } else {
+          chartCtx.fillRect(pillX, pillY, pillW, pillH);
+        }
+        chartCtx.restore();
 
         // Чистый аккуратный текст
         chartCtx.fillStyle = textColor;
@@ -418,7 +434,7 @@ function drawBrokerChart() {
       maintainAspectRatio: false,
       animation: false,
       layout: {
-        padding: { top: 16, bottom: 8, left: 6, right: 6 },
+        padding: { top: 22, bottom: 10, left: 8, right: 8 },
       },
       interaction: {
         mode: 'nearest',
@@ -490,7 +506,7 @@ function drawBrokerChart() {
         },
         y: {
           display: false,
-          grace: '15%',
+          grace: '20%',
         },
       },
     },

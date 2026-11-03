@@ -11,3 +11,4 @@ chrome-headless-shell/
 preview-*.html
 preview-*.png
 temp-preview.*
+artifacts/
