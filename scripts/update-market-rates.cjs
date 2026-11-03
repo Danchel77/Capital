@@ -274,7 +274,10 @@ function parseOffersFromBankiHtml(html, defaultType = 'deposit', defaultMonths =
 async function fetchPage(url) {
   try {
     const res = await fetch(url, { headers: { 'User-Agent': USER_AGENT } });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.warn(`[UpdateRates] HTTP ${res.status} ${res.statusText} for ${url}`);
+      return null;
+    }
     return await res.text();
   } catch (err) {
     console.warn(`[UpdateRates] Error fetching ${url}:`, err.message);
@@ -414,6 +417,18 @@ async function main() {
   uniqueOffers.sort((a, b) => b.rate - a.rate);
 
   console.log(`Total unique offers collected: ${uniqueOffers.length}`);
+
+  // Защитный предохранитель: если парсер вернул мало офферов (геоблок, Cloudflare, капча в CI),
+  // НЕ перезаписываем базу нулями, а прерываем выполнение с ошибкой
+  if (uniqueOffers.length < 50) {
+    console.error(
+      `[UpdateRates] CRITICAL: Only ${uniqueOffers.length} offers collected (minimum required: 50).`
+    );
+    console.error(
+      '[UpdateRates] Aborting update to protect existing dataset from being overwritten with empty data.'
+    );
+    process.exit(1);
+  }
 
   const outputData = {
     updatedAt: new Date().toISOString(),
