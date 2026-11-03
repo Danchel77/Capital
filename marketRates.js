@@ -190,7 +190,16 @@ function isOfferAllowedByTags(itemTags, settings) {
   return true;
 }
 
-const MARKET_RATES_CACHE_VERSION = 2;
+function formatRate(val) {
+  const num = typeof val === 'number' ? val : parseFloat(val);
+  if (isNaN(num)) return '0,0';
+  if (Number.isInteger(num)) {
+    return `${num},0`;
+  }
+  return String(num).replace('.', ',');
+}
+
+const MARKET_RATES_CACHE_VERSION = 3;
 
 // ==========================================
 // 3. Dynamic Data Loader (No hardcoded rates)
@@ -210,7 +219,8 @@ async function fetchLiveBankOffers(forceRefresh = false) {
           parsed.timestamp &&
           Date.now() - parsed.timestamp < 12 * 3600000 &&
           parsed.offers &&
-          parsed.offers.length >= 100
+          parsed.offers.length >= 100 &&
+          parsed.offers.some(o => o.conditionsNote)
         ) {
           marketRatesState.offers = parsed.offers;
           if (parsed.cbrRate) marketRatesState.cbrRate = parsed.cbrRate;
@@ -347,16 +357,16 @@ function renderMarketRatesWidget() {
 
   if (cbrEl) {
     if (marketRatesState.cbrRate) {
-      cbrEl.innerText = `${marketRatesState.cbrRate.toFixed(1).replace('.0', '')}%`;
+      cbrEl.innerText = `${formatRate(marketRatesState.cbrRate)}%`;
     } else {
-      cbrEl.innerText = '14%';
+      cbrEl.innerText = '14,0%';
     }
   }
 
   if (bestEl) {
     const best = getBestDepositOffer();
     if (best) {
-      bestEl.innerText = `${best.rate}% · ${best.bankName}`;
+      bestEl.innerText = `${formatRate(best.rate)}% · ${best.bankName}`;
     } else if (marketRatesState.isLoading) {
       bestEl.innerText = 'Загрузка...';
     } else if (marketRatesState.offers.length === 0) {
@@ -637,7 +647,7 @@ function renderMarketRatesModalContent() {
             const termsLineParts = displayTerms.map(t => {
               const r = entry.termRates.get(t.m);
               const isTop = r === entry.topRate;
-              return `<span class="whitespace-nowrap text-zinc-400">${t.label}:&nbsp;<b class="${isTop ? 'text-emerald-400 font-bold' : 'text-zinc-200 font-semibold'}">${r}%</b></span>`;
+              return `<span class="whitespace-nowrap text-zinc-400">${t.label}:&nbsp;<b class="${isTop ? 'text-emerald-400 font-bold' : 'text-zinc-200 font-semibold'}">${formatRate(r)}%</b></span>`;
             });
             const termsLineHtml = termsLineParts.join(
               '<span class="text-zinc-600 select-none">·</span>'
@@ -715,14 +725,14 @@ function renderMarketRatesModalContent() {
                 <!-- Верхняя строка: Название продукта слева, ставка справа -->
                 <div class="flex items-center justify-between gap-2">
                   <h5 class="text-xs font-semibold text-white tracking-tight truncate">${item.productName}</h5>
-                  <span class="text-base font-bold font-mono text-emerald-400 leading-none flex-shrink-0">
-                    ${item.rate}%
+                  <span class="text-sm font-semibold font-mono text-emerald-400 leading-none flex-shrink-0 tabular-nums">
+                    ${formatRate(item.rate)}%
                   </span>
                 </div>
 
                 <!-- Нижняя строка: Параметры простым текстом слева, кнопка Условия справа -->
                 <div class="flex items-center justify-between gap-2 text-[11px] font-mono mt-0.5">
-                  <div class="flex items-center flex-wrap gap-x-1.5 gap-y-0.5 min-w-0">
+                  <div class="flex items-center flex-wrap gap-x-1.5 gap-y-0.5 min-w-0 flex-1">
                     ${sublineHtml}
                   </div>
                   ${conditionsBtn}
@@ -739,12 +749,9 @@ function renderMarketRatesModalContent() {
           <div class="flex items-center justify-between pb-2 border-b border-white/[0.06]">
             <div class="flex items-center gap-2 min-w-0">
               <h4 class="text-sm font-bold text-white tracking-tight truncate">${bankName}</h4>
-              <span class="text-[10px] text-zinc-400 font-mono px-2 py-0.5 rounded-full bg-white/[0.04]">
-                ${items.length} ${items.length === 1 ? 'предложение' : items.length < 5 ? 'предложения' : 'предложений'}
-              </span>
             </div>
             <div class="text-right flex-shrink-0">
-              <span class="text-xs text-zinc-400 font-medium whitespace-nowrap">до&nbsp;<b class="text-white font-semibold text-sm tabular-nums tracking-tight">${topRate}%</b></span>
+              <span class="text-xs text-zinc-400 font-medium whitespace-nowrap">до&nbsp;<b class="text-white font-semibold text-sm tabular-nums tracking-tight">${formatRate(topRate)}%</b></span>
             </div>
           </div>
 
@@ -799,6 +806,7 @@ function handleRateInfoClick(btn) {
 window.showRateConditionsTooltip = showRateConditionsTooltip;
 window.closeRateConditionsTooltip = closeRateConditionsTooltip;
 window.handleRateInfoClick = handleRateInfoClick;
+window.formatRate = formatRate;
 
 // ==========================================
 // 7. Separate Settings Modal

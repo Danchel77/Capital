@@ -99,18 +99,28 @@ function extractConditionsNote(r) {
   if (r.rate_increase_comment_html) parts.push(r.rate_increase_comment_html);
   if (r.special_restrictions) parts.push(r.special_restrictions);
 
-  const raw = parts.join(' ');
-  const clean = raw
-    .replace(/<style[\s\S]*?<\/style>/gi, '')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/&quot;/g, '"')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
+  const cleanParts = parts
+    .map(p =>
+      String(p)
+        .replace(/<style[\s\S]*?<\/style>/gi, '')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/&quot;/g, '"')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+    )
+    .filter(p => p.length > 0)
+    .map(p => {
+      if (!/[.!;]$/.test(p)) {
+        return p + '.';
+      }
+      return p;
+    });
 
+  const clean = cleanParts.join(' ');
   return clean.length > 5 ? clean : '';
 }
 
