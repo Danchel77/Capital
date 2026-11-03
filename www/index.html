@@ -4162,16 +4162,16 @@
           </button>
         </div>
 
-        <!-- Быстрый фильтр сроков для вкладов -->
+        <!-- Быстрый фильтр сроков для вкладов (на всю ширину окна) -->
         <div
           id="mr-period-chips-container"
-          class="flex items-center gap-1.5 mb-2.5 overflow-x-auto pb-1 flex-shrink-0"
+          class="grid grid-cols-4 gap-1 p-1 bg-white/[0.04] border border-white/[0.06] rounded-xl mb-3 flex-shrink-0 w-full"
         >
           <button
             type="button"
             onclick="setMarketRatesTermFilter('all')"
             data-term="all"
-            class="mr-period-btn px-3 py-1 rounded-xl bg-white text-zinc-950 text-xs font-semibold shadow-sm transition-all cursor-pointer"
+            class="mr-period-btn py-1.5 text-center rounded-lg bg-white text-zinc-950 text-xs font-semibold shadow-sm transition-all cursor-pointer"
           >
             Все сроки
           </button>
@@ -4179,7 +4179,7 @@
             type="button"
             onclick="setMarketRatesTermFilter('3m')"
             data-term="3m"
-            class="mr-period-btn px-3 py-1 rounded-xl bg-white/[0.05] hover:bg-white/10 text-zinc-400 text-xs font-medium transition-all cursor-pointer border border-white/[0.06]"
+            class="mr-period-btn py-1.5 text-center rounded-lg text-zinc-400 hover:text-white text-xs font-medium transition-all cursor-pointer"
           >
             3 мес.
           </button>
@@ -4187,7 +4187,7 @@
             type="button"
             onclick="setMarketRatesTermFilter('6m')"
             data-term="6m"
-            class="mr-period-btn px-3 py-1 rounded-xl bg-white/[0.05] hover:bg-white/10 text-zinc-400 text-xs font-medium transition-all cursor-pointer border border-white/[0.06]"
+            class="mr-period-btn py-1.5 text-center rounded-lg text-zinc-400 hover:text-white text-xs font-medium transition-all cursor-pointer"
           >
             6 мес.
           </button>
@@ -4195,7 +4195,7 @@
             type="button"
             onclick="setMarketRatesTermFilter('12m')"
             data-term="12m"
-            class="mr-period-btn px-3 py-1 rounded-xl bg-white/[0.05] hover:bg-white/10 text-zinc-400 text-xs font-medium transition-all cursor-pointer border border-white/[0.06]"
+            class="mr-period-btn py-1.5 text-center rounded-lg text-zinc-400 hover:text-white text-xs font-medium transition-all cursor-pointer"
           >
             1 год
           </button>

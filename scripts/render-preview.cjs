@@ -44,11 +44,11 @@ const ratesHtml = `<!DOCTYPE html>
         <button class="flex-1 py-1.5 text-center text-xs font-semibold rounded-lg bg-[#181c26] text-white border border-[#282e3e]">Вклады</button>
         <button class="flex-1 py-1.5 text-center text-xs font-semibold rounded-lg text-zinc-400">Накопительные счета</button>
       </div>
-      <div class="flex items-center gap-1.5 overflow-x-auto py-0.5">
-        <button class="px-3 py-1 rounded-lg text-xs font-semibold bg-white text-zinc-950">Все сроки</button>
-        <button class="px-3 py-1 rounded-lg text-xs font-medium bg-white/[0.04] text-zinc-400 border border-white/[0.06]">3 мес.</button>
-        <button class="px-3 py-1 rounded-lg text-xs font-medium bg-white/[0.04] text-zinc-400 border border-white/[0.06]">6 мес.</button>
-        <button class="px-3 py-1 rounded-lg text-xs font-medium bg-white/[0.04] text-zinc-400 border border-white/[0.06]">1 год</button>
+      <div id="mr-period-chips-container" class="grid grid-cols-4 gap-1 p-1 bg-white/[0.04] border border-white/[0.06] rounded-xl flex-shrink-0 w-full">
+        <button class="mr-period-btn py-1.5 text-center rounded-lg bg-white text-zinc-950 text-xs font-semibold shadow-sm">Все сроки</button>
+        <button class="mr-period-btn py-1.5 text-center rounded-lg text-zinc-400 text-xs font-medium">3 мес.</button>
+        <button class="mr-period-btn py-1.5 text-center rounded-lg text-zinc-400 text-xs font-medium">6 мес.</button>
+        <button class="mr-period-btn py-1.5 text-center rounded-lg text-zinc-400 text-xs font-medium">1 год</button>
       </div>
     </div>
     <div id="market-rates-offers-list" class="flex-1 overflow-y-auto px-4 py-3 space-y-3"></div>

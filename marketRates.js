@@ -432,10 +432,10 @@ function setMarketRatesTermFilter(term) {
     const isAct = btn.dataset.term === term;
     if (isAct) {
       btn.className =
-        'mr-period-btn px-3 py-1 rounded-xl bg-white text-zinc-950 text-xs font-semibold shadow-sm transition-all cursor-pointer';
+        'mr-period-btn py-1.5 text-center rounded-lg bg-white text-zinc-950 text-xs font-semibold shadow-sm transition-all cursor-pointer';
     } else {
       btn.className =
-        'mr-period-btn px-3 py-1 rounded-xl bg-white/[0.05] hover:bg-white/10 text-zinc-400 text-xs font-medium transition-all cursor-pointer border border-white/[0.06]';
+        'mr-period-btn py-1.5 text-center rounded-lg text-zinc-400 hover:text-white text-xs font-medium transition-all cursor-pointer';
     }
   });
 
@@ -610,7 +610,7 @@ function renderMarketRatesModalContent() {
                 data-bank="${encodeURIComponent(entry.bankName)}"
                 data-product="${encodeURIComponent(entry.productName)}"
                 data-note="${encodeURIComponent(entry.conditionsNote)}"
-                class="text-[11px] font-medium text-zinc-400 hover:text-white transition-colors cursor-pointer flex items-center gap-0.5 flex-shrink-0"
+                class="text-[11px] font-medium text-zinc-400 hover:text-white transition-colors cursor-pointer flex items-center gap-0.5 flex-shrink-0 ml-2"
                 title="Официальные условия"
               >
                 <span>Условия</span>
@@ -619,7 +619,7 @@ function renderMarketRatesModalContent() {
             `
               : '';
 
-            // Сетка сроков (3 мес, 6 мес, 1 год)
+            // Сроки и ставки чистым текстом через точку (без рамок и чипов)
             const standardTerms = [
               { m: 3, label: '3 мес' },
               { m: 6, label: '6 мес' },
@@ -634,58 +634,42 @@ function renderMarketRatesModalContent() {
                     label: m === 12 ? '1 год' : `${m} мес`,
                   }));
 
-            const gridColsClass =
-              displayTerms.length === 1
-                ? 'grid-cols-1'
-                : displayTerms.length === 2
-                  ? 'grid-cols-2'
-                  : 'grid-cols-3';
+            const termsLineParts = displayTerms.map(t => {
+              const r = entry.termRates.get(t.m);
+              const isTop = r === entry.topRate;
+              return `<span class="whitespace-nowrap text-zinc-400">${t.label}:&nbsp;<b class="${isTop ? 'text-emerald-400 font-bold' : 'text-zinc-200 font-semibold'}">${r}%</b></span>`;
+            });
+            const termsLineHtml = termsLineParts.join(
+              '<span class="text-zinc-600 select-none">·</span>'
+            );
 
-            const gridCellsHtml = displayTerms
-              .map(t => {
-                const r = entry.termRates.get(t.m);
-                const isTop = r === entry.topRate;
-                return `
-                <div class="flex flex-col items-center justify-center py-2 px-1 rounded-xl bg-white/[0.03] border border-white/[0.04]">
-                  <span class="text-[10px] text-zinc-400 uppercase tracking-wider font-medium">${t.label}</span>
-                  <span class="text-sm font-bold font-mono ${isTop ? 'text-emerald-400' : 'text-zinc-200'} mt-0.5">${r}%</span>
-                </div>
-              `;
-              })
-              .join('');
-
+            // Условия простым текстом через точки без чипов
             const minAmountDesc =
               entry.minAmount > 0
                 ? `от&nbsp;${formatMoney(entry.minAmount)}`
                 : 'без&nbsp;ограничений';
 
-            const tagsHtml = Array.from(entry.tags)
-              .map(
-                t => `
-              <span class="text-[10px] px-2 py-0.5 rounded-md bg-white/[0.04] text-zinc-400 font-medium border border-white/[0.05]">
-                ${t}
-              </span>
-            `
-              )
-              .join('');
+            const conditionsItems = [minAmountDesc, ...Array.from(entry.tags)];
+            const conditionsTextHtml = conditionsItems
+              .map(c => `<span class="whitespace-nowrap text-zinc-400">${c}</span>`)
+              .join('<span class="text-zinc-600 select-none">·</span>');
 
             return `
-              <div class="py-3 ${!isLast ? 'border-b border-white/[0.04]' : ''} flex flex-col gap-2">
-                <!-- Верхняя строка: Название слева, кнопка Условия справа -->
+              <div class="py-2.5 ${!isLast ? 'border-b border-white/[0.04]' : ''} flex flex-col gap-1">
+                <!-- Строка 1: Название продукта слева, кнопка Условия справа -->
                 <div class="flex items-center justify-between gap-2">
-                  <h5 class="text-sm font-semibold text-white tracking-tight truncate">${entry.productName}</h5>
+                  <h5 class="text-xs font-semibold text-white tracking-tight truncate">${entry.productName}</h5>
                   ${conditionsBtn}
                 </div>
 
-                <!-- Равномерная сетка сроков на всю ширину карточки -->
-                <div class="grid ${gridColsClass} gap-1 p-1 rounded-2xl bg-white/[0.02] border border-white/[0.04]">
-                  ${gridCellsHtml}
+                <!-- Строка 2: Сроки и ставки чистым текстом через точку -->
+                <div class="flex items-center flex-wrap gap-x-2 gap-y-0.5 text-[11px] font-mono mt-0.5">
+                  ${termsLineHtml}
                 </div>
 
-                <!-- Нижняя строка: Сумма и бейджи -->
-                <div class="flex items-center flex-wrap gap-2 text-[11px] text-zinc-400 font-mono">
-                  <span class="whitespace-nowrap">${minAmountDesc}</span>
-                  ${tagsHtml}
+                <!-- Строка 3: Сумма и параметры простым текстом через точки -->
+                <div class="flex items-center flex-wrap gap-x-1.5 gap-y-0.5 text-[11px] font-mono">
+                  ${conditionsTextHtml}
                 </div>
               </div>
             `;
@@ -701,16 +685,6 @@ function renderMarketRatesModalContent() {
                 ? `от&nbsp;${formatMoney(item.minAmount)}`
                 : 'без&nbsp;ограничений';
 
-            const tagsHtml = (item.tags || [])
-              .map(
-                t => `
-              <span class="text-[10px] px-2 py-0.5 rounded-md bg-white/[0.04] text-zinc-400 font-medium border border-white/[0.05]">
-                ${t}
-              </span>
-            `
-              )
-              .join('');
-
             const conditionsBtn = item.conditionsNote
               ? `
               <button
@@ -719,7 +693,7 @@ function renderMarketRatesModalContent() {
                 data-bank="${encodeURIComponent(item.bankName)}"
                 data-product="${encodeURIComponent(item.productName)}"
                 data-note="${encodeURIComponent(item.conditionsNote)}"
-                class="text-[11px] font-medium text-zinc-400 hover:text-white transition-colors cursor-pointer flex items-center gap-0.5 flex-shrink-0"
+                class="text-[11px] font-medium text-zinc-400 hover:text-white transition-colors cursor-pointer flex items-center gap-0.5 flex-shrink-0 ml-2"
                 title="Официальные условия"
               >
                 <span>Условия</span>
@@ -728,25 +702,28 @@ function renderMarketRatesModalContent() {
             `
               : '';
 
-            const sublineHtml = isDeposits
-              ? `<span class="whitespace-nowrap">${minAmountDesc}</span>`
-              : `<span class="whitespace-nowrap text-zinc-300">Бессрочный</span><span class="text-zinc-600 select-none">·</span><span class="whitespace-nowrap">${minAmountDesc}</span>`;
+            const sublineItems = isDeposits
+              ? [minAmountDesc, ...(item.tags || [])]
+              : ['Бессрочный', minAmountDesc, ...(item.tags || [])];
+
+            const sublineHtml = sublineItems
+              .map(c => `<span class="whitespace-nowrap text-zinc-400">${c}</span>`)
+              .join('<span class="text-zinc-600 select-none">·</span>');
 
             return `
-              <div class="py-2.5 ${!isLast ? 'border-b border-white/[0.04]' : ''} flex flex-col gap-1.5">
+              <div class="py-2.5 ${!isLast ? 'border-b border-white/[0.04]' : ''} flex flex-col gap-1">
                 <!-- Верхняя строка: Название продукта слева, ставка справа -->
                 <div class="flex items-center justify-between gap-2">
-                  <h5 class="text-xs font-medium text-white truncate">${item.productName}</h5>
-                  <span class="text-base font-bold font-mono text-emerald-400 leading-none">
+                  <h5 class="text-xs font-semibold text-white tracking-tight truncate">${item.productName}</h5>
+                  <span class="text-base font-bold font-mono text-emerald-400 leading-none flex-shrink-0">
                     ${item.rate}%
                   </span>
                 </div>
 
-                <!-- Нижняя строка: Параметры и бейджи слева, кнопка Условия справа -->
-                <div class="flex items-center justify-between gap-2 text-[11px] text-zinc-400 font-mono">
-                  <div class="flex items-center flex-wrap gap-2">
+                <!-- Нижняя строка: Параметры простым текстом слева, кнопка Условия справа -->
+                <div class="flex items-center justify-between gap-2 text-[11px] font-mono mt-0.5">
+                  <div class="flex items-center flex-wrap gap-x-1.5 gap-y-0.5 min-w-0">
                     ${sublineHtml}
-                    ${tagsHtml}
                   </div>
                   ${conditionsBtn}
                 </div>
