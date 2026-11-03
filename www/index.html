@@ -1375,14 +1375,14 @@
       </div>
 
       <!-- ЭКРАН КАПИТАЛА (АКТИВЫ: ВКЛАДЫ И ИНВЕСТИЦИИ) -->
-      <div id="capital-tab" class="tab-pane hidden space-y-3.5">
+      <div id="capital-tab" class="tab-pane hidden flex flex-col gap-3.5">
         <!-- Скрытые элементы для совместимости со старыми скриптами -->
-        <span id="capital-total-amount" class="hidden">0 ₽</span>
-        <span id="capital-summary-deposits" class="hidden">0 ₽</span>
-        <span id="capital-summary-broker" class="hidden">0 ₽</span>
+        <span id="capital-total-amount" class="hidden" hidden style="display: none">0 ₽</span>
+        <span id="capital-summary-deposits" class="hidden" hidden style="display: none">0 ₽</span>
+        <span id="capital-summary-broker" class="hidden" hidden style="display: none">0 ₽</span>
 
         <!-- Подвкладка: Вклады -->
-        <div id="capital-deposits-view" class="space-y-3">
+        <div id="capital-deposits-view" class="flex flex-col gap-3">
           <!-- Сводная карточка вкладов (Obsidian Minimalist) -->
           <div
             class="bg-[#0E1016] p-4 sm:p-5 rounded-2xl border border-white/10 shadow-sm relative overflow-hidden"
@@ -1414,15 +1414,26 @@
             class="bg-[#0E1016] px-3.5 py-2.5 rounded-2xl border border-white/[0.08] hover:border-white/20 transition-all cursor-pointer active:scale-[0.99] flex items-center justify-between text-xs select-none"
           >
             <div class="flex items-center gap-1.5 flex-shrink-0">
-              <span class="text-zinc-500 font-semibold text-[11px] uppercase tracking-wider">ЦБ</span>
-              <span id="market-cbr-rate-val" class="font-mono font-bold text-white text-xs">14%</span>
+              <span class="text-zinc-500 font-semibold text-[11px] uppercase tracking-wider"
+                >ЦБ</span
+              >
+              <span id="market-cbr-rate-val" class="font-mono font-bold text-white text-xs"
+                >14%</span
+              >
             </div>
 
             <div class="h-3 w-px bg-white/10 mx-2 flex-shrink-0"></div>
 
             <div class="flex items-center gap-1.5 min-w-0 flex-1 justify-end">
-              <span class="text-zinc-500 font-semibold text-[11px] uppercase tracking-wider flex-shrink-0">Лучший вклад:</span>
-              <span id="market-best-deposit-val" class="font-mono font-bold text-emerald-400 truncate text-xs">14.5% · Совкомбанк</span>
+              <span
+                class="text-zinc-500 font-semibold text-[11px] uppercase tracking-wider flex-shrink-0"
+                >Лучший вклад:</span
+              >
+              <span
+                id="market-best-deposit-val"
+                class="font-mono font-bold text-emerald-400 truncate text-xs"
+                >14.5% · Совкомбанк</span
+              >
               <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-zinc-500 flex-shrink-0"></i>
             </div>
           </div>
@@ -1544,7 +1555,7 @@
         </div>
 
         <!-- Подвкладка: Брокер -->
-        <div id="capital-broker-view" class="hidden space-y-3.5">
+        <div id="capital-broker-view" class="hidden flex flex-col gap-3.5">
           <!-- Лаконичное пустое состояние -->
           <div
             id="broker-empty-state"
@@ -4085,14 +4096,14 @@
       </div>
     </div>
 
-    <!-- МОДАЛКА: СТАВКИ И ПРЕДЛОЖЕНИЯ БАНКОВ (Obsidian Minimalist) -->
+    <!-- МОДАЛКА: СТАВКИ И ПРЕДЛОЖЕНИЯ БАНКОВ (Obsidian Minimalist - Фиксированная высота) -->
     <div
       id="market-rates-modal"
       class="fixed inset-0 bg-black/80 z-[120] hidden flex flex-col justify-end sm:justify-center items-center p-0 sm:p-4 backdrop-blur-sm animate-fade-in"
       onclick="if (event.target === this) closeMarketRatesModal();"
     >
       <div
-        class="bg-[#0E1016] border border-white/10 w-full sm:max-w-lg rounded-t-3xl sm:rounded-2xl p-4 sm:p-5 shadow-2xl relative flex flex-col max-h-[85vh] overflow-hidden"
+        class="bg-[#0E1016] border border-white/10 w-full sm:max-w-lg rounded-t-3xl sm:rounded-2xl p-4 sm:p-5 shadow-2xl relative flex flex-col h-[94vh] sm:h-[86vh] overflow-hidden"
         onclick="event.stopPropagation()"
       >
         <!-- Шапка модалки -->
@@ -4105,14 +4116,14 @@
             </div>
             <div>
               <h3 class="text-base font-bold text-white leading-tight">Ставки и предложения</h3>
-              <p class="text-[11px] text-zinc-400">ЦБ РФ • Индексы Мосбиржи • Банки</p>
+              <p class="text-[11px] text-zinc-400">Лучшие доходности в банках</p>
             </div>
           </div>
           <div class="flex items-center gap-2">
             <button
               type="button"
               id="btn-market-rates-settings"
-              onclick="toggleMarketRatesSettings()"
+              onclick="openMarketRatesSettingsModal()"
               class="w-8 h-8 rounded-full bg-white/[0.06] hover:bg-white/10 text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors"
               title="Настройки фильтра"
             >
@@ -4126,69 +4137,6 @@
             >
               ✕
             </button>
-          </div>
-        </div>
-
-        <!-- Выдвижная панель настроек фильтров -->
-        <div
-          id="market-rates-settings-panel"
-          class="hidden mb-3 p-3.5 rounded-2xl bg-[#12151C] border border-white/10 space-y-3 flex-shrink-0 animate-fade-in text-xs"
-        >
-          <div class="flex items-center justify-between">
-            <span class="font-semibold text-white">Параметры отбора лучших ставок</span>
-            <span class="text-[10px] text-zinc-400">Для главной плашки</span>
-          </div>
-
-          <div>
-            <label class="block text-zinc-400 text-[11px] mb-1 font-medium"
-              >Максимальный срок вклада (месяцев)</label
-            >
-            <input
-              type="number"
-              id="mr-settings-max-months"
-              min="1"
-              max="60"
-              class="w-full bg-[#0E1016] border border-white/10 rounded-xl px-3 py-1.5 text-white font-mono text-xs focus:border-white/30 focus:outline-none"
-              placeholder="12"
-            />
-          </div>
-
-          <div class="pt-1 border-t border-white/[0.06]">
-            <label class="flex items-center gap-2 text-white font-medium cursor-pointer mb-2">
-              <input
-                type="checkbox"
-                id="mr-settings-only-top10"
-                class="rounded bg-white/10 border-white/20 text-emerald-500 focus:ring-0"
-              />
-              <span>Только ТОП-10 банков ЦБ РФ (по умолчанию)</span>
-            </label>
-            <div id="mr-settings-banks-list" class="grid grid-cols-2 gap-1.5 pl-6"></div>
-          </div>
-
-          <div class="flex justify-end gap-2 pt-1">
-            <button
-              type="button"
-              onclick="saveAndApplyMarketRatesSettings()"
-              class="px-4 py-1.5 rounded-xl bg-white text-zinc-950 font-semibold text-xs hover:bg-zinc-200 transition-all cursor-pointer"
-            >
-              Применить
-            </button>
-          </div>
-        </div>
-
-        <!-- Индикаторы бенчмарков: Ставка ЦБ и Индекс Мосбиржи -->
-        <div class="grid grid-cols-2 gap-2 mb-3 flex-shrink-0">
-          <div
-            class="bg-[#12151C] p-2.5 rounded-xl border border-white/[0.06] flex items-center justify-between"
-          >
-            <span class="text-[11px] text-zinc-400 font-medium">Ключевая ставка ЦБ</span>
-            <span id="mr-cbr-rate-badge" class="text-xs font-bold text-white font-mono">14%</span>
-          </div>
-          <div
-            class="bg-[#12151C] p-2.5 rounded-xl border border-white/[0.06] flex items-center justify-between"
-          >
-            <span class="text-[11px] text-zinc-400 font-medium">Индекс MOEX 3M</span>
-            <span id="mr-moex-rate-badge" class="text-xs font-bold text-white font-mono">13.8%</span>
           </div>
         </div>
 
@@ -4253,11 +4201,141 @@
           </button>
         </div>
 
-        <!-- Скроллируемый список предложений -->
+        <!-- Скроллируемый список предложений (на всю оставшуюся высоту) -->
         <div
           id="market-rates-offers-list"
-          class="flex-1 overflow-y-auto space-y-2 pr-1 -mr-1 min-h-[160px]"
+          class="flex-1 overflow-y-auto space-y-2 pr-1 -mr-1 min-h-0"
         ></div>
+      </div>
+    </div>
+
+    <!-- МОДАЛКА: НАСТРОЙКИ СТАВОК И БАНКОВ (Открывается поверх) -->
+    <div
+      id="market-rates-settings-modal"
+      class="fixed inset-0 bg-black/85 z-[130] hidden flex flex-col justify-end sm:justify-center items-center p-0 sm:p-4 backdrop-blur-sm animate-fade-in"
+      onclick="if (event.target === this) closeMarketRatesSettingsModal();"
+    >
+      <div
+        class="bg-[#0E1016] border border-white/10 w-full sm:max-w-lg rounded-t-3xl sm:rounded-2xl p-4 sm:p-5 shadow-2xl relative flex flex-col max-h-[92vh] sm:max-h-[85vh] overflow-hidden"
+        onclick="event.stopPropagation()"
+      >
+        <!-- Шапка окна настроек -->
+        <div class="flex items-center justify-between mb-3.5 flex-shrink-0">
+          <div class="flex items-center gap-2">
+            <div
+              class="w-8 h-8 rounded-xl bg-white/[0.06] text-white flex items-center justify-center border border-white/10"
+            >
+              <i data-lucide="sliders" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <h3 class="text-base font-bold text-white leading-tight">Настройки фильтра</h3>
+              <p class="text-[11px] text-zinc-400">Параметры отбора и показа предложений</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onclick="closeMarketRatesSettingsModal()"
+            class="w-8 h-8 rounded-full bg-white/[0.06] hover:bg-white/10 text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors text-xs font-semibold"
+            title="Закрыть"
+          >
+            ✕
+          </button>
+        </div>
+
+        <!-- Скроллируемое тело настроек -->
+        <div class="flex-1 overflow-y-auto space-y-4 pr-1 -mr-1 pb-4 text-xs">
+          <!-- 1. Максимальный срок -->
+          <div class="p-3.5 rounded-2xl bg-[#12151C] border border-white/[0.06] space-y-1.5">
+            <label class="block text-zinc-300 font-semibold text-xs"
+              >Максимальный срок для главной плашки</label
+            >
+            <p class="text-[11px] text-zinc-400 leading-tight">
+              Вклады с большим сроком не будут попадать в строку «Лучший вклад».
+            </p>
+            <div class="flex items-center gap-2 pt-1">
+              <input
+                type="number"
+                id="mr-settings-max-months"
+                min="1"
+                max="60"
+                class="w-24 bg-[#0E1016] border border-white/10 rounded-xl px-3 py-1.5 text-white font-mono text-xs focus:border-white/30 focus:outline-none"
+                placeholder="12"
+              />
+              <span class="text-zinc-400 text-xs">месяцев (по умолчанию 12)</span>
+            </div>
+          </div>
+
+          <!-- 2. Фильтрация по условиям (бейджам) -->
+          <div class="p-3.5 rounded-2xl bg-[#12151C] border border-white/[0.06] space-y-2">
+            <div>
+              <span class="block text-zinc-300 font-semibold text-xs"
+                >Учитывать условия предложений</span
+              >
+              <p class="text-[11px] text-zinc-400 leading-tight mt-0.5">
+                Снимите галочку, чтобы исключить такие предложения из выдачи.
+              </p>
+            </div>
+            <div id="mr-settings-tags-list" class="space-y-1 pt-1"></div>
+          </div>
+
+          <!-- 3. Список отслеживаемых банков -->
+          <div class="p-3.5 rounded-2xl bg-[#12151C] border border-white/[0.06] space-y-2.5">
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="block text-zinc-300 font-semibold text-xs">Отслеживаемые банки</span>
+                <p class="text-[11px] text-zinc-400 leading-tight mt-0.5">
+                  По умолчанию выбраны ТОП-10 банков ЦБ РФ.
+                </p>
+              </div>
+            </div>
+
+            <!-- Быстрые кнопки выбора -->
+            <div class="flex items-center gap-1.5 pt-0.5">
+              <button
+                type="button"
+                onclick="selectBanksPreset('top10')"
+                class="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/15 text-zinc-200 text-[11px] font-medium transition-all cursor-pointer"
+              >
+                Только ТОП-10
+              </button>
+              <button
+                type="button"
+                onclick="selectBanksPreset('all')"
+                class="px-2.5 py-1 rounded-lg bg-white/[0.05] hover:bg-white/10 text-zinc-400 hover:text-white text-[11px] font-medium transition-all cursor-pointer"
+              >
+                Выбрать все
+              </button>
+              <button
+                type="button"
+                onclick="selectBanksPreset('none')"
+                class="px-2.5 py-1 rounded-lg bg-white/[0.05] hover:bg-white/10 text-zinc-400 hover:text-white text-[11px] font-medium transition-all cursor-pointer"
+              >
+                Сбросить
+              </button>
+            </div>
+
+            <!-- Сетка чекбоксов банков -->
+            <div id="mr-settings-banks-list" class="grid grid-cols-2 gap-1 pt-1"></div>
+          </div>
+        </div>
+
+        <!-- Кнопки действий -->
+        <div class="flex gap-2 pt-3 flex-shrink-0 border-t border-white/[0.06] mt-2">
+          <button
+            type="button"
+            onclick="closeMarketRatesSettingsModal()"
+            class="flex-1 py-2.5 px-3 rounded-xl bg-white/[0.06] hover:bg-white/10 active:scale-95 text-zinc-300 text-xs font-semibold transition-all cursor-pointer"
+          >
+            Отмена
+          </button>
+          <button
+            type="button"
+            onclick="saveAndApplyMarketRatesSettings()"
+            class="flex-1 py-2.5 px-3 rounded-xl bg-white hover:bg-zinc-200 active:scale-95 text-zinc-950 text-xs font-semibold transition-all shadow-sm cursor-pointer"
+          >
+            Сохранить
+          </button>
+        </div>
       </div>
     </div>
 

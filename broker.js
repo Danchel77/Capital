@@ -338,47 +338,57 @@ function drawBrokerChart() {
       chartCtx.save();
       chartCtx.font = '600 10px Inter, system-ui, -apple-system, sans-serif';
       chartCtx.textAlign = 'center';
+      chartCtx.textBaseline = 'middle';
+
+      const drawPillBadge = (x, y, text, textColor, dotColor, isAbove) => {
+        const textWidth = chartCtx.measureText(text).width;
+        const pillW = textWidth + 10;
+        const pillH = 16;
+        const radius = 4;
+
+        // Ограничиваем X в пределах видимой области canvas
+        let pillX = x;
+        if (pillX - pillW / 2 < chartArea.left + 2) {
+          pillX = chartArea.left + 2 + pillW / 2;
+        } else if (pillX + pillW / 2 > chartArea.right - 2) {
+          pillX = chartArea.right - 2 - pillW / 2;
+        }
+
+        // Позиция по Y (выше точки или ниже точки)
+        const pillY = isAbove
+          ? Math.max(chartArea.top + pillH / 2 + 2, y - 14)
+          : Math.min(chartArea.bottom - pillH / 2 - 2, y + 14);
+
+        // Точка на кривой
+        chartCtx.beginPath();
+        chartCtx.arc(x, y, 3, 0, Math.PI * 2);
+        chartCtx.fillStyle = dotColor;
+        chartCtx.fill();
+
+        // Подложка бейджа (цвет #0E1016 скрывает кривую, чтобы линия не пересекала цифры)
+        const rx = pillX - pillW / 2;
+        const ry = pillY - pillH / 2;
+        chartCtx.beginPath();
+        chartCtx.roundRect(rx, ry, pillW, pillH, radius);
+        chartCtx.fillStyle = '#0E1016';
+        chartCtx.fill();
+        chartCtx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+        chartCtx.lineWidth = 1;
+        chartCtx.stroke();
+
+        // Текст подписи
+        chartCtx.fillStyle = textColor;
+        chartCtx.fillText(text, pillX, pillY);
+      };
 
       // Отрисовка Max (не выводим над крайней точкой, так как текущая сумма крупно выведена в шапке)
       if (maxIdx < data.length - 1) {
-        const maxText = formatMoney(maxVal);
-        let maxX = maxPoint.x;
-        const maxTextWidth = chartCtx.measureText(maxText).width;
-        if (maxX - maxTextWidth / 2 < chartArea.left + 4) {
-          maxX = chartArea.left + 4 + maxTextWidth / 2;
-        } else if (maxX + maxTextWidth / 2 > chartArea.right - 4) {
-          maxX = chartArea.right - 4 - maxTextWidth / 2;
-        }
-        const maxY = Math.max(chartArea.top + 12, maxPoint.y - 8);
-
-        chartCtx.beginPath();
-        chartCtx.arc(maxPoint.x, maxPoint.y, 3, 0, Math.PI * 2);
-        chartCtx.fillStyle = '#FFFFFF';
-        chartCtx.fill();
-
-        chartCtx.fillStyle = '#A1A1AA';
-        chartCtx.fillText(maxText, maxX, maxY);
+        drawPillBadge(maxPoint.x, maxPoint.y, formatMoney(maxVal), '#E4E4E7', '#FFFFFF', true);
       }
 
       // Отрисовка Min (не выводим над крайней точкой)
       if (minIdx < data.length - 1) {
-        const minText = formatMoney(minVal);
-        let minX = minPoint.x;
-        const minTextWidth = chartCtx.measureText(minText).width;
-        if (minX - minTextWidth / 2 < chartArea.left + 4) {
-          minX = chartArea.left + 4 + minTextWidth / 2;
-        } else if (minX + minTextWidth / 2 > chartArea.right - 4) {
-          minX = chartArea.right - 4 - minTextWidth / 2;
-        }
-        const minY = Math.min(chartArea.bottom - 4, minPoint.y + 14);
-
-        chartCtx.beginPath();
-        chartCtx.arc(minPoint.x, minPoint.y, 3, 0, Math.PI * 2);
-        chartCtx.fillStyle = '#71717A';
-        chartCtx.fill();
-
-        chartCtx.fillStyle = '#71717A';
-        chartCtx.fillText(minText, minX, minY);
+        drawPillBadge(minPoint.x, minPoint.y, formatMoney(minVal), '#A1A1AA', '#71717A', false);
       }
 
       chartCtx.restore();

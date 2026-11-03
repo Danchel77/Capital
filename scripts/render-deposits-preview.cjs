@@ -52,9 +52,11 @@ const fullHtml = `<!DOCTYPE html>
 <body class="bg-black text-white min-h-screen">
   ${appHeaderHtml}
   ${subbarHtml}
-  <div class="w-full p-3.5 space-y-3.5">
-    ${depHtml}
-  </div>
+  <main id="app-content" class="p-3.5 sm:p-4 pb-20 sm:pb-16">
+    <div id="capital-tab" class="tab-pane flex flex-col gap-3.5">
+      ${depHtml}
+    </div>
+  </main>
 
   <script>
     ${fs.readFileSync('marketRates.js', 'utf8')}

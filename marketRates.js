@@ -14,6 +14,50 @@ const TOP_10_BANKS_DEFAULT = [
   'Россельхозбанк',
 ];
 
+const ALL_POPULAR_BANKS = [
+  // ТОП-10 ЦБ РФ
+  'Сбербанк',
+  'ВТБ',
+  'Газпромбанк',
+  'Альфа-Банк',
+  'Т-Банк',
+  'Банк ДОМ.РФ',
+  'Совкомбанк',
+  'Промсвязьбанк',
+  'Московский кредитный банк',
+  'Россельхозбанк',
+  // Другие популярные банки
+  'Банк Санкт-Петербург',
+  'Банк Уралсиб',
+  'МТС Банк',
+  'Локо-Банк',
+  'Экспобанк',
+  'Цифра Банк',
+  'Яндекс Банк',
+  'Ozon Банк',
+  'Ак Барс',
+  'Банк Зенит',
+  'Новикомбанк',
+  'Почта Банк',
+  'РНКБ',
+  'Абсолют Банк',
+  'Сургутнефтегазбанк',
+  'Фора-Банк',
+  'Банк Жилищного Финансирования',
+  'Свой Банк',
+  'Примсоцбанк',
+  'ФИНСТАР БАНК',
+];
+
+const ALL_CONDITION_TAGS = [
+  { id: 'Новый клиент', label: 'Только для новых клиентов', defaultChecked: false },
+  { id: 'Новые деньги', label: 'Только на новые деньги', defaultChecked: true },
+  { id: 'С капитализацией', label: 'С капитализацией процентов', defaultChecked: true },
+  { id: 'С пополнением', label: 'С пополнением', defaultChecked: true },
+  { id: 'На минимальный остаток', label: 'На минимальный остаток', defaultChecked: true },
+  { id: 'На ежедневный остаток', label: 'На ежедневный остаток', defaultChecked: true },
+];
+
 const BANK_ALIASES = {
   Сбербанк: ['сбер', 'сбербанк', 'пао сбербанк', 'sber'],
   ВТБ: ['втб', 'vtb', 'банк втб'],
@@ -25,6 +69,19 @@ const BANK_ALIASES = {
   Промсвязьбанк: ['псб', 'промсвязь', 'промсвязьбанк'],
   'Московский кредитный банк': ['мкб', 'московский кредитный банк'],
   Россельхозбанк: ['рсхб', 'россельхоз', 'россельхозбанк'],
+  'Банк Санкт-Петербург': ['бспб', 'санкт-петербург'],
+  'Банк Уралсиб': ['уралсиб'],
+  'МТС Банк': ['мтс'],
+  'Локо-Банк': ['локо'],
+  Экспобанк: ['экспо'],
+  'Цифра Банк': ['цифра'],
+  'Яндекс Банк': ['яндекс'],
+  'Ozon Банк': ['ozon', 'озон'],
+  'Ак Барс': ['ак барс'],
+  'Банк Зенит': ['зенит'],
+  'Свой Банк': ['свой банк'],
+  Примсоцбанк: ['примсоцбанк'],
+  'ФИНСТАР БАНК': ['финстар'],
 };
 
 // Базовые проверенные предложения на случай отсутствия сети
@@ -80,6 +137,36 @@ const BASELINE_MARKET_OFFERS = [
     tags: ['Новые деньги'],
   },
   {
+    bankName: 'Локо-Банк',
+    productName: 'Локо-Вклад',
+    rate: 14.8,
+    type: 'deposit',
+    termMonths: 3,
+    termDays: 91,
+    minAmount: 50000,
+    tags: ['С капитализацией'],
+  },
+  {
+    bankName: 'Свой Банк',
+    productName: 'Свой вклад',
+    rate: 14.79,
+    type: 'deposit',
+    termMonths: 3,
+    termDays: 91,
+    minAmount: 30000,
+    tags: ['С капитализацией'],
+  },
+  {
+    bankName: 'Банк Жилищного Финансирования',
+    productName: 'Лидер 3',
+    rate: 15.0,
+    type: 'deposit',
+    termMonths: 3,
+    termDays: 91,
+    minAmount: 30000,
+    tags: ['Новые деньги'],
+  },
+  {
     bankName: 'Совкомбанк',
     productName: 'Доходный премиум на 181 день',
     rate: 13.8,
@@ -118,6 +205,16 @@ const BASELINE_MARKET_OFFERS = [
     termDays: 181,
     minAmount: 50000,
     tags: ['С пополнением'],
+  },
+  {
+    bankName: 'ФИНСТАР БАНК',
+    productName: 'Классический онлайн',
+    rate: 13.85,
+    type: 'deposit',
+    termMonths: 6,
+    termDays: 181,
+    minAmount: 50000,
+    tags: ['С капитализацией'],
   },
   {
     bankName: 'Совкомбанк',
@@ -228,21 +325,29 @@ const marketRatesState = {
 };
 
 // ==========================================
-// 1. Settings Storage & Matchers
+// 1. Settings Storage & Filter Matchers
 // ==========================================
 function getMarketRatesSettings() {
+  const defaultAllowedTags = {};
+  ALL_CONDITION_TAGS.forEach(t => {
+    defaultAllowedTags[t.id] = t.defaultChecked;
+  });
+
   const defaultSettings = {
     maxMonths: 12,
-    onlyTop10: true,
     selectedBanks: [...TOP_10_BANKS_DEFAULT],
-    allowAllBanks: false,
+    allowedTags: defaultAllowedTags,
   };
 
   try {
     const raw = localStorage.getItem('budget_market_rates_settings');
     if (raw) {
       const parsed = JSON.parse(raw);
-      return { ...defaultSettings, ...parsed };
+      return {
+        ...defaultSettings,
+        ...parsed,
+        allowedTags: { ...defaultSettings.allowedTags, ...(parsed.allowedTags || {}) },
+      };
     }
   } catch (e) {
     console.warn('[MarketRates] Error reading settings:', e);
@@ -260,11 +365,10 @@ function saveMarketRatesSettings(settings) {
 
 function isBankAllowed(bankName, settings) {
   if (!settings) settings = getMarketRatesSettings();
-  if (settings.allowAllBanks) return true;
+  const allowedList = settings.selectedBanks || TOP_10_BANKS_DEFAULT;
+  if (allowedList.length === 0) return true;
 
   const bLower = (bankName || '').toLowerCase().trim();
-  const allowedList = settings.onlyTop10 ? TOP_10_BANKS_DEFAULT : settings.selectedBanks;
-
   for (const mainBank of allowedList) {
     const aliases = BANK_ALIASES[mainBank] || [mainBank.toLowerCase()];
     if (aliases.some(alias => bLower.includes(alias))) {
@@ -274,8 +378,24 @@ function isBankAllowed(bankName, settings) {
   return false;
 }
 
+function isOfferAllowedByTags(itemTags, settings) {
+  if (!settings) settings = getMarketRatesSettings();
+  const allowedTags = settings.allowedTags || {};
+
+  // Если у предложения есть тег, который пользователь выключил (например, "Новый клиент" === false)
+  // то такое предложение отбрасывается
+  if (Array.isArray(itemTags)) {
+    for (const tag of itemTags) {
+      if (allowedTags[tag] === false) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
 // ==========================================
-// 2. Data Fetchers (CBR, MOEX, Banki.ru)
+// 2. Data Fetchers (CBR, MOEX, Firestore/Cache)
 // ==========================================
 async function fetchCbrKeyRate() {
   try {
@@ -416,17 +536,22 @@ function getBestDepositOffer() {
   const settings = getMarketRatesSettings();
   const maxM = settings.maxMonths || 12;
 
-  // Фильтруем депозиты по сроку и банкам
+  // Фильтруем депозиты по сроку, банкам и разрешенным бейджам
   const validDeposits = marketRatesState.offers.filter(o => {
     if (o.type !== 'deposit') return false;
     if (o.termMonths && o.termMonths > maxM) return false;
-    return isBankAllowed(o.bankName, settings);
+    if (!isBankAllowed(o.bankName, settings)) return false;
+    if (!isOfferAllowedByTags(o.tags, settings)) return false;
+    return true;
   });
 
   if (validDeposits.length === 0) {
-    // Если по фильтрам ничего не найдено, берем из базового списка
+    // Если по строгим фильтрам ничего не найдено, берем из базового списка с проверкой срока
     const fallback = BASELINE_MARKET_OFFERS.filter(
-      o => o.type === 'deposit' && (o.termMonths || 0) <= maxM
+      o =>
+        o.type === 'deposit' &&
+        (o.termMonths || 0) <= maxM &&
+        isOfferAllowedByTags(o.tags, settings)
     );
     if (fallback.length > 0) {
       fallback.sort((a, b) => b.rate - a.rate);
@@ -466,7 +591,7 @@ function renderMarketRatesWidget() {
 }
 
 // ==========================================
-// 5. Modal Window and Filtering
+// 5. Main Modal Window & Filtering
 // ==========================================
 function openMarketRatesModal() {
   const modal = document.getElementById('market-rates-modal');
@@ -483,10 +608,6 @@ function openMarketRatesModal() {
 function closeMarketRatesModal() {
   const modal = document.getElementById('market-rates-modal');
   if (modal) modal.classList.add('hidden');
-
-  // Скрываем панель настроек при закрытии
-  const panel = document.getElementById('market-rates-settings-panel');
-  if (panel) panel.classList.add('hidden');
 }
 
 function switchMarketRatesTab(tab) {
@@ -538,81 +659,6 @@ function setMarketRatesTermFilter(term) {
   renderMarketRatesModalContent();
 }
 
-function toggleMarketRatesSettings() {
-  const panel = document.getElementById('market-rates-settings-panel');
-  if (!panel) return;
-
-  const isHidden = panel.classList.contains('hidden');
-  if (isHidden) {
-    panel.classList.remove('hidden');
-    initMarketRatesSettingsForm();
-  } else {
-    panel.classList.add('hidden');
-  }
-
-  if (typeof lucide !== 'undefined' && lucide.createIcons) {
-    lucide.createIcons();
-  }
-}
-
-function initMarketRatesSettingsForm() {
-  const settings = getMarketRatesSettings();
-  const maxMonthsInput = document.getElementById('mr-settings-max-months');
-  const onlyTop10Checkbox = document.getElementById('mr-settings-only-top10');
-  const banksContainer = document.getElementById('mr-settings-banks-list');
-
-  if (maxMonthsInput) maxMonthsInput.value = settings.maxMonths || 12;
-  if (onlyTop10Checkbox) {
-    onlyTop10Checkbox.checked = settings.onlyTop10 !== false;
-    onlyTop10Checkbox.onchange = e => {
-      if (banksContainer) {
-        banksContainer.style.opacity = e.target.checked ? '0.5' : '1';
-        banksContainer.style.pointerEvents = e.target.checked ? 'none' : 'auto';
-      }
-    };
-  }
-
-  if (banksContainer) {
-    banksContainer.style.opacity = settings.onlyTop10 ? '0.5' : '1';
-    banksContainer.style.pointerEvents = settings.onlyTop10 ? 'none' : 'auto';
-
-    banksContainer.innerHTML = TOP_10_BANKS_DEFAULT.map(b => {
-      const isChecked = (settings.selectedBanks || []).includes(b);
-      return `
-        <label class="flex items-center gap-2 text-xs text-zinc-300 py-0.5 cursor-pointer select-none">
-          <input type="checkbox" class="mr-bank-cb rounded bg-white/10 border-white/20 text-emerald-500 focus:ring-0" value="${b}" ${isChecked ? 'checked' : ''}>
-          <span>${b}</span>
-        </label>
-      `;
-    }).join('');
-  }
-}
-
-function saveAndApplyMarketRatesSettings() {
-  const maxMonthsInput = document.getElementById('mr-settings-max-months');
-  const onlyTop10Checkbox = document.getElementById('mr-settings-only-top10');
-
-  const maxMonths = parseInt(maxMonthsInput?.value, 10) || 12;
-  const onlyTop10 = onlyTop10Checkbox ? onlyTop10Checkbox.checked : true;
-
-  const selectedBanks = [];
-  document.querySelectorAll('.mr-bank-cb:checked').forEach(cb => {
-    selectedBanks.push(cb.value);
-  });
-
-  const newSettings = {
-    maxMonths: Math.max(1, Math.min(60, maxMonths)),
-    onlyTop10: onlyTop10,
-    selectedBanks: selectedBanks.length > 0 ? selectedBanks : [...TOP_10_BANKS_DEFAULT],
-    allowAllBanks: false,
-  };
-
-  saveMarketRatesSettings(newSettings);
-  toggleMarketRatesSettings();
-  renderMarketRatesWidget();
-  renderMarketRatesModalContent();
-}
-
 function getDaysDeclension(n) {
   const abs = Math.abs(n) % 100;
   const rem = abs % 10;
@@ -624,17 +670,6 @@ function getDaysDeclension(n) {
 
 function renderMarketRatesModalContent() {
   const listEl = document.getElementById('market-rates-offers-list');
-  const cbrHeadEl = document.getElementById('mr-cbr-rate-badge');
-  const moexHeadEl = document.getElementById('mr-moex-rate-badge');
-
-  if (cbrHeadEl) {
-    cbrHeadEl.innerText = `${marketRatesState.cbrRate.toFixed(1).replace('.0', '')}%`;
-  }
-  if (moexHeadEl) {
-    const ind3 = marketRatesState.moexIndices['3m'] || 13.8;
-    moexHeadEl.innerText = `${ind3.toFixed(1)}%`;
-  }
-
   if (!listEl) return;
 
   const settings = getMarketRatesSettings();
@@ -647,6 +682,9 @@ function renderMarketRatesModalContent() {
 
     // Банковский фильтр
     if (!isBankAllowed(o.bankName, settings)) return false;
+
+    // Фильтр условий (бейджей)
+    if (!isOfferAllowedByTags(o.tags, settings)) return false;
 
     // Фильтр сроков (только для вкладов)
     if (isDeposits && marketRatesState.selectedTerm !== 'all') {
@@ -663,8 +701,8 @@ function renderMarketRatesModalContent() {
 
   if (filtered.length === 0) {
     listEl.innerHTML = `
-      <div class="p-6 text-center text-xs text-zinc-500 rounded-2xl bg-white/[0.02] border border-white/[0.06]">
-        Предложений по заданным фильтрам не найдено. Попробуйте изменить параметры в настройках.
+      <div class="p-8 text-center text-xs text-zinc-500 rounded-2xl bg-white/[0.02] border border-white/[0.06] mt-4">
+        Предложений по заданным фильтрам не найдено. Нажмите иконку настроек вверху, чтобы изменить банки и условия.
       </div>
     `;
     return;
@@ -740,7 +778,108 @@ function renderMarketRatesModalContent() {
 }
 
 // ==========================================
-// 6. Lifecycle Initializer
+// 6. Separate Settings Modal
+// ==========================================
+function openMarketRatesSettingsModal() {
+  const modal = document.getElementById('market-rates-settings-modal');
+  if (!modal) return;
+
+  modal.classList.remove('hidden');
+  initMarketRatesSettingsForm();
+
+  if (typeof lucide !== 'undefined' && lucide.createIcons) {
+    lucide.createIcons();
+  }
+}
+
+function closeMarketRatesSettingsModal() {
+  const modal = document.getElementById('market-rates-settings-modal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function initMarketRatesSettingsForm() {
+  const settings = getMarketRatesSettings();
+  const maxMonthsInput = document.getElementById('mr-settings-max-months');
+  const tagsContainer = document.getElementById('mr-settings-tags-list');
+  const banksContainer = document.getElementById('mr-settings-banks-list');
+
+  if (maxMonthsInput) maxMonthsInput.value = settings.maxMonths || 12;
+
+  // 1. Отрисовка списка бейджей
+  if (tagsContainer) {
+    tagsContainer.innerHTML = ALL_CONDITION_TAGS.map(t => {
+      const isChecked = settings.allowedTags?.[t.id] !== false;
+      return `
+        <label class="flex items-center gap-2.5 text-xs text-zinc-200 py-1 cursor-pointer select-none">
+          <input type="checkbox" class="mr-tag-cb rounded bg-white/10 border-white/20 text-emerald-500 accent-emerald-500 focus:ring-0" value="${t.id}" ${isChecked ? 'checked' : ''}>
+          <span>${t.label}</span>
+        </label>
+      `;
+    }).join('');
+  }
+
+  // 2. Отрисовка списка банков
+  if (banksContainer) {
+    const selected = settings.selectedBanks || TOP_10_BANKS_DEFAULT;
+    banksContainer.innerHTML = ALL_POPULAR_BANKS.map(b => {
+      const isChecked = selected.includes(b);
+      return `
+        <label class="flex items-center gap-2 text-xs text-zinc-300 py-1 cursor-pointer select-none">
+          <input type="checkbox" class="mr-bank-cb rounded bg-white/10 border-white/20 text-emerald-500 accent-emerald-500 focus:ring-0 flex-shrink-0" value="${b}" ${isChecked ? 'checked' : ''}>
+          <span class="leading-snug text-[11px]">${b}</span>
+        </label>
+      `;
+    }).join('');
+  }
+}
+
+function selectBanksPreset(preset) {
+  const checkboxes = document.querySelectorAll('.mr-bank-cb');
+  if (preset === 'top10') {
+    checkboxes.forEach(cb => {
+      cb.checked = TOP_10_BANKS_DEFAULT.includes(cb.value);
+    });
+  } else if (preset === 'all') {
+    checkboxes.forEach(cb => {
+      cb.checked = true;
+    });
+  } else if (preset === 'none') {
+    checkboxes.forEach(cb => {
+      cb.checked = false;
+    });
+  }
+}
+
+function saveAndApplyMarketRatesSettings() {
+  const maxMonthsInput = document.getElementById('mr-settings-max-months');
+  const maxMonths = parseInt(maxMonthsInput?.value, 10) || 12;
+
+  // Считываем выбранные бейджи условий
+  const allowedTags = {};
+  document.querySelectorAll('.mr-tag-cb').forEach(cb => {
+    allowedTags[cb.value] = cb.checked;
+  });
+
+  // Считываем выбранные банки
+  const selectedBanks = [];
+  document.querySelectorAll('.mr-bank-cb:checked').forEach(cb => {
+    selectedBanks.push(cb.value);
+  });
+
+  const newSettings = {
+    maxMonths: Math.max(1, Math.min(60, maxMonths)),
+    selectedBanks: selectedBanks.length > 0 ? selectedBanks : [...TOP_10_BANKS_DEFAULT],
+    allowedTags,
+  };
+
+  saveMarketRatesSettings(newSettings);
+  closeMarketRatesSettingsModal();
+  renderMarketRatesWidget();
+  renderMarketRatesModalContent();
+}
+
+// ==========================================
+// 7. Lifecycle Initializer
 // ==========================================
 async function initMarketRatesModule() {
   // 1. Отобразить виджет из базовых данных
@@ -763,6 +902,8 @@ window.openMarketRatesModal = openMarketRatesModal;
 window.closeMarketRatesModal = closeMarketRatesModal;
 window.switchMarketRatesTab = switchMarketRatesTab;
 window.setMarketRatesTermFilter = setMarketRatesTermFilter;
-window.toggleMarketRatesSettings = toggleMarketRatesSettings;
+window.openMarketRatesSettingsModal = openMarketRatesSettingsModal;
+window.closeMarketRatesSettingsModal = closeMarketRatesSettingsModal;
+window.selectBanksPreset = selectBanksPreset;
 window.saveAndApplyMarketRatesSettings = saveAndApplyMarketRatesSettings;
 window.initMarketRatesModule = initMarketRatesModule;

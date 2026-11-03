@@ -8,11 +8,14 @@ const chromePath =
 const indexHtml = fs.readFileSync('index.html', 'utf8');
 
 // Extract market-rates-modal
-const modalStart = indexHtml.indexOf('<!-- МОДАЛКА: СТАВКИ И ПРЕДЛОЖЕНИЯ БАНКОВ (Obsidian Minimalist) -->');
-const modalEnd = indexHtml.indexOf('<!-- Модальное окно Личного кабинета -->', modalStart);
+const modalStart = indexHtml.indexOf('<!-- МОДАЛКА: СТАВКИ И ПРЕДЛОЖЕНИЯ БАНКОВ');
+const modalEnd = indexHtml.indexOf('<!-- МОДАЛКА: НАСТРОЙКИ СТАВОК И БАНКОВ', modalStart);
 let modalHtml = indexHtml.substring(modalStart, modalEnd).trim();
 // Make modal visible
-modalHtml = modalHtml.replace('id="market-rates-modal"\n      class="fixed inset-0 bg-black/80 z-[120] hidden', 'id="market-rates-modal"\n      class="fixed inset-0 bg-black/80 z-[120] flex');
+modalHtml = modalHtml.replace(
+  'id="market-rates-modal"\n      class="fixed inset-0 bg-black/80 z-[120] hidden',
+  'id="market-rates-modal"\n      class="fixed inset-0 bg-black/80 z-[120] flex'
+);
 
 const fullHtml = `<!DOCTYPE html>
 <html lang="ru" class="dark">

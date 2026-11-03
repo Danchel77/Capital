@@ -37,8 +37,8 @@ let brHtml = indexHtml.substring(brStart, brEnd).trim();
 
 // Unhide broker view
 brHtml = brHtml.replace(
-  'id="capital-broker-view" class="hidden space-y-3.5"',
-  'id="capital-broker-view" class="space-y-3.5" style="display:block !important;"'
+  'id="capital-broker-view" class="hidden flex flex-col gap-3.5"',
+  'id="capital-broker-view" class="flex flex-col gap-3.5"'
 );
 
 const fullHtml = `<!DOCTYPE html>
@@ -67,9 +67,11 @@ const fullHtml = `<!DOCTYPE html>
 <body class="bg-black text-white min-h-screen">
   ${appHeaderHtml}
   ${subbarHtml}
-  <div class="w-full p-3.5 space-y-3.5">
-    ${brHtml}
-  </div>
+  <main id="app-content" class="p-3.5 sm:p-4 pb-20 sm:pb-16">
+    <div id="capital-tab" class="tab-pane flex flex-col gap-3.5">
+      ${brHtml}
+    </div>
+  </main>
 
   <script>
     ${fs.readFileSync('broker.js', 'utf8')}
