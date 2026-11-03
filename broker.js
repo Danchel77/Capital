@@ -376,22 +376,6 @@ function drawBrokerChart() {
           }
         }
 
-        // Подложка в тон карточки (#0E1016) для полной защиты от наплыва на сплайн
-        chartCtx.save();
-        chartCtx.fillStyle = '#0E1016';
-        const pillW = textWidth + 10;
-        const pillH = 15;
-        const pillX = textX - pillW / 2;
-        const pillY = textY - pillH / 2;
-        if (typeof chartCtx.roundRect === 'function') {
-          chartCtx.beginPath();
-          chartCtx.roundRect(pillX, pillY, pillW, pillH, 4);
-          chartCtx.fill();
-        } else {
-          chartCtx.fillRect(pillX, pillY, pillW, pillH);
-        }
-        chartCtx.restore();
-
         // Чистый аккуратный текст
         chartCtx.fillStyle = textColor;
         chartCtx.fillText(text, textX, textY);

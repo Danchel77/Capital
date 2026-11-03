@@ -548,7 +548,7 @@ function renderMarketRatesModalContent() {
 
   sortedBanks.sort((a, b) => b.topRate - a.topRate);
 
-  const moexBenchmark = isDeposits
+  const _moexBenchmark = isDeposits
     ? marketRatesState.moexIndices[marketRatesState.selectedTerm] ||
       marketRatesState.moexIndices['3m'] ||
       13.8
@@ -599,15 +599,60 @@ function renderMarketRatesModalContent() {
 
         productsHtml = productsList
           .map((entry, pIdx) => {
-            const isOutlier = entry.topRate > moexBenchmark + 3.5;
             const isLast = pIdx === productsList.length - 1;
 
-            const sortedTerms = Array.from(entry.termRates.entries()).sort((a, b) => a[0] - b[0]);
-            const termGridParts = sortedTerms.map(([m, r]) => {
-              const label = m === 12 ? '1 год' : `${m}&nbsp;мес`;
-              return `<span class="px-1.5 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.05] text-[10px] text-zinc-300 font-mono whitespace-nowrap">${label}:&nbsp;<b class="text-white font-semibold">${r}%</b></span>`;
-            });
-            const termGridHtml = termGridParts.join('');
+            // Кнопка Условия › (только если есть conditionsNote)
+            const conditionsBtn = entry.conditionsNote
+              ? `
+              <button
+                type="button"
+                onclick="handleRateInfoClick(this)"
+                data-bank="${encodeURIComponent(entry.bankName)}"
+                data-product="${encodeURIComponent(entry.productName)}"
+                data-note="${encodeURIComponent(entry.conditionsNote)}"
+                class="text-[11px] font-medium text-zinc-400 hover:text-white transition-colors cursor-pointer flex items-center gap-0.5 flex-shrink-0"
+                title="Официальные условия"
+              >
+                <span>Условия</span>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-zinc-500"></i>
+              </button>
+            `
+              : '';
+
+            // Сетка сроков (3 мес, 6 мес, 1 год)
+            const standardTerms = [
+              { m: 3, label: '3 мес' },
+              { m: 6, label: '6 мес' },
+              { m: 12, label: '1 год' },
+            ];
+            const presentTerms = standardTerms.filter(t => entry.termRates.has(t.m));
+            const displayTerms =
+              presentTerms.length > 0
+                ? presentTerms
+                : Array.from(entry.termRates.entries()).map(([m]) => ({
+                    m,
+                    label: m === 12 ? '1 год' : `${m} мес`,
+                  }));
+
+            const gridColsClass =
+              displayTerms.length === 1
+                ? 'grid-cols-1'
+                : displayTerms.length === 2
+                  ? 'grid-cols-2'
+                  : 'grid-cols-3';
+
+            const gridCellsHtml = displayTerms
+              .map(t => {
+                const r = entry.termRates.get(t.m);
+                const isTop = r === entry.topRate;
+                return `
+                <div class="flex flex-col items-center justify-center py-2 px-1 rounded-xl bg-white/[0.03] border border-white/[0.04]">
+                  <span class="text-[10px] text-zinc-400 uppercase tracking-wider font-medium">${t.label}</span>
+                  <span class="text-sm font-bold font-mono ${isTop ? 'text-emerald-400' : 'text-zinc-200'} mt-0.5">${r}%</span>
+                </div>
+              `;
+              })
+              .join('');
 
             const minAmountDesc =
               entry.minAmount > 0
@@ -624,58 +669,24 @@ function renderMarketRatesModalContent() {
               )
               .join('');
 
-            const outlierBadge = isOutlier
-              ? `<span class="text-[10px] px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 font-medium border border-amber-500/20">Промо/Комбо</span>`
-              : '';
-
-            const infoBtnHtml = entry.conditionsNote
-              ? `
-                <button
-                  type="button"
-                  onclick="handleRateInfoClick(this)"
-                  data-bank="${encodeURIComponent(entry.bankName)}"
-                  data-product="${encodeURIComponent(entry.productName)}"
-                  data-note="${encodeURIComponent(entry.conditionsNote)}"
-                  class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-500/15 hover:bg-amber-500/25 text-amber-400 text-[10px] font-bold border border-amber-500/30 transition-all cursor-pointer flex-shrink-0"
-                  title="Официальные условия"
-                >
-                  !
-                </button>
-              `
-              : '';
-
             return `
-              <div class="py-2.5 ${!isLast ? 'border-b border-white/[0.04]' : ''} flex flex-col gap-1.5">
-                <div class="flex items-start justify-between gap-2">
-                  <div class="min-w-0 flex-1">
-                    <div class="flex items-center gap-1.5">
-                      <h5 class="text-xs font-medium text-white truncate">${entry.productName}</h5>
-                      ${infoBtnHtml}
-                    </div>
-                    <div class="flex items-center flex-wrap gap-x-2 gap-y-0.5 text-[11px] text-zinc-400 font-mono mt-1">
-                      ${termGridHtml}
-                    </div>
-                    <div class="flex items-center flex-wrap gap-x-2 gap-y-0.5 text-[11px] text-zinc-400 font-mono mt-0.5">
-                      <span class="whitespace-nowrap text-zinc-400">${minAmountDesc}</span>
-                    </div>
-                  </div>
-                  <div class="text-right flex-shrink-0">
-                    <span class="text-base font-bold font-mono ${isOutlier ? 'text-amber-400' : 'text-emerald-400'} leading-none">
-                      до&nbsp;${entry.topRate}%
-                    </span>
-                  </div>
+              <div class="py-3 ${!isLast ? 'border-b border-white/[0.04]' : ''} flex flex-col gap-2">
+                <!-- Верхняя строка: Название слева, кнопка Условия справа -->
+                <div class="flex items-center justify-between gap-2">
+                  <h5 class="text-sm font-semibold text-white tracking-tight truncate">${entry.productName}</h5>
+                  ${conditionsBtn}
                 </div>
 
-                ${
-                  tagsHtml || outlierBadge
-                    ? `
-                  <div class="flex flex-wrap gap-1 pt-0.5">
-                    ${tagsHtml}
-                    ${outlierBadge}
-                  </div>
-                `
-                    : ''
-                }
+                <!-- Равномерная сетка сроков на всю ширину карточки -->
+                <div class="grid ${gridColsClass} gap-1 p-1 rounded-2xl bg-white/[0.02] border border-white/[0.04]">
+                  ${gridCellsHtml}
+                </div>
+
+                <!-- Нижняя строка: Сумма и бейджи -->
+                <div class="flex items-center flex-wrap gap-2 text-[11px] text-zinc-400 font-mono">
+                  <span class="whitespace-nowrap">${minAmountDesc}</span>
+                  ${tagsHtml}
+                </div>
               </div>
             `;
           })
@@ -684,7 +695,6 @@ function renderMarketRatesModalContent() {
         // Режим конкретного срока или накопительных счетов
         productsHtml = items
           .map((item, pIdx) => {
-            const isOutlier = item.rate > moexBenchmark + 3.5;
             const isLast = pIdx === items.length - 1;
             const minAmountDesc =
               item.minAmount > 0
@@ -701,59 +711,45 @@ function renderMarketRatesModalContent() {
               )
               .join('');
 
-            const outlierBadge = isOutlier
-              ? `<span class="text-[10px] px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 font-medium border border-amber-500/20">Промо/Комбо</span>`
-              : '';
-
-            const infoBtnHtml = item.conditionsNote
+            const conditionsBtn = item.conditionsNote
               ? `
-                <button
-                  type="button"
-                  onclick="handleRateInfoClick(this)"
-                  data-bank="${encodeURIComponent(item.bankName)}"
-                  data-product="${encodeURIComponent(item.productName)}"
-                  data-note="${encodeURIComponent(item.conditionsNote)}"
-                  class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-500/15 hover:bg-amber-500/25 text-amber-400 text-[10px] font-bold border border-amber-500/30 transition-all cursor-pointer flex-shrink-0"
-                  title="Официальные условия"
-                >
-                  !
-                </button>
-              `
+              <button
+                type="button"
+                onclick="handleRateInfoClick(this)"
+                data-bank="${encodeURIComponent(item.bankName)}"
+                data-product="${encodeURIComponent(item.productName)}"
+                data-note="${encodeURIComponent(item.conditionsNote)}"
+                class="text-[11px] font-medium text-zinc-400 hover:text-white transition-colors cursor-pointer flex items-center gap-0.5 flex-shrink-0"
+                title="Официальные условия"
+              >
+                <span>Условия</span>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-zinc-500"></i>
+              </button>
+            `
               : '';
 
             const sublineHtml = isDeposits
-              ? `<span class="whitespace-nowrap text-zinc-400">${minAmountDesc}</span>`
-              : `<span class="whitespace-nowrap text-zinc-300">Бессрочный</span><span class="text-zinc-600 select-none">·</span><span class="whitespace-nowrap text-zinc-400">${minAmountDesc}</span>`;
+              ? `<span class="whitespace-nowrap">${minAmountDesc}</span>`
+              : `<span class="whitespace-nowrap text-zinc-300">Бессрочный</span><span class="text-zinc-600 select-none">·</span><span class="whitespace-nowrap">${minAmountDesc}</span>`;
 
             return `
               <div class="py-2.5 ${!isLast ? 'border-b border-white/[0.04]' : ''} flex flex-col gap-1.5">
-                <div class="flex items-start justify-between gap-2">
-                  <div class="min-w-0 flex-1">
-                    <div class="flex items-center gap-1.5">
-                      <h5 class="text-xs font-medium text-white truncate">${item.productName}</h5>
-                      ${infoBtnHtml}
-                    </div>
-                    <div class="flex items-center flex-wrap gap-x-2 gap-y-0.5 text-[11px] text-zinc-400 font-mono mt-1">
-                      ${sublineHtml}
-                    </div>
-                  </div>
-                  <div class="text-right flex-shrink-0">
-                    <span class="text-base font-bold font-mono ${isOutlier ? 'text-amber-400' : 'text-emerald-400'} leading-none">
-                      ${item.rate}%
-                    </span>
-                  </div>
+                <!-- Верхняя строка: Название продукта слева, ставка справа -->
+                <div class="flex items-center justify-between gap-2">
+                  <h5 class="text-xs font-medium text-white truncate">${item.productName}</h5>
+                  <span class="text-base font-bold font-mono text-emerald-400 leading-none">
+                    ${item.rate}%
+                  </span>
                 </div>
 
-                ${
-                  tagsHtml || outlierBadge
-                    ? `
-                  <div class="flex flex-wrap gap-1 pt-0.5">
+                <!-- Нижняя строка: Параметры и бейджи слева, кнопка Условия справа -->
+                <div class="flex items-center justify-between gap-2 text-[11px] text-zinc-400 font-mono">
+                  <div class="flex items-center flex-wrap gap-2">
+                    ${sublineHtml}
                     ${tagsHtml}
-                    ${outlierBadge}
                   </div>
-                `
-                    : ''
-                }
+                  ${conditionsBtn}
+                </div>
               </div>
             `;
           })
@@ -771,7 +767,7 @@ function renderMarketRatesModalContent() {
               </span>
             </div>
             <div class="text-right flex-shrink-0">
-              <span class="text-xs text-zinc-400 font-medium">до <b class="text-white font-mono text-sm">${topRate}%</b></span>
+              <span class="text-xs text-zinc-400 font-medium whitespace-nowrap">до&nbsp;<b class="text-white font-semibold text-sm tabular-nums tracking-tight">${topRate}%</b></span>
             </div>
           </div>
 
