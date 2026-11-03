@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-03T12:12:58.695Z",
+  "updatedAt": "2026-11-03T15:53:21.714Z",
   "cbrRate": 14,
   "moexIndices": {
     "3m": 13.8,
@@ -8,7 +8,7 @@
     "accountMax": 13.81,
     "accountAvg": 8.26
   },
-  "totalOffers": 359,
+  "totalOffers": 371,
   "offers": [
     {
       "bankName": "Промсвязьбанк",
@@ -421,6 +421,16 @@
       "tags": []
     },
     {
+      "bankName": "Банк ТКБ",
+      "productName": "Старт",
+      "rate": 13.84,
+      "type": "deposit",
+      "termMonths": 3,
+      "termDays": 91,
+      "minAmount": 50000,
+      "tags": ["Новый клиент", "С капитализацией"]
+    },
+    {
       "bankName": "Промсвязьбанк",
       "productName": "Мой доход",
       "rate": 13.8,
@@ -489,6 +499,16 @@
       "termDays": 181,
       "minAmount": 10000,
       "tags": ["Новый клиент"]
+    },
+    {
+      "bankName": "Банк ТКБ",
+      "productName": "Новые деньги",
+      "rate": 13.74,
+      "type": "deposit",
+      "termMonths": 3,
+      "termDays": 91,
+      "minAmount": 50000,
+      "tags": ["Новые деньги", "С капитализацией"]
     },
     {
       "bankName": "Банк Уралсиб",
@@ -911,6 +931,16 @@
       "tags": ["Новые деньги", "С капитализацией"]
     },
     {
+      "bankName": "Банк ТКБ",
+      "productName": "Старт",
+      "rate": 13.42,
+      "type": "deposit",
+      "termMonths": 6,
+      "termDays": 181,
+      "minAmount": 50000,
+      "tags": ["Новый клиент", "С капитализацией"]
+    },
+    {
       "bankName": "МТС Банк",
       "productName": "МТС Вклад плюс (ежемесячно)",
       "rate": 13.41,
@@ -1009,6 +1039,16 @@
       "termDays": 300,
       "minAmount": 50000,
       "tags": []
+    },
+    {
+      "bankName": "Банк ТКБ",
+      "productName": "Новые деньги",
+      "rate": 13.32,
+      "type": "deposit",
+      "termMonths": 6,
+      "termDays": 181,
+      "minAmount": 50000,
+      "tags": ["Новые деньги", "С капитализацией"]
     },
     {
       "bankName": "Альфа-Банк",
@@ -1201,6 +1241,16 @@
       "tags": []
     },
     {
+      "bankName": "Банк ТКБ",
+      "productName": "Хит (ежемесячная капитализация)",
+      "rate": 13.2,
+      "type": "deposit",
+      "termMonths": 3,
+      "termDays": 91,
+      "minAmount": 50000,
+      "tags": ["С капитализацией"]
+    },
+    {
       "bankName": "ВТБ",
       "productName": "ВТБ-Счет (на ежедневный остаток)",
       "rate": 13.2,
@@ -1241,6 +1291,16 @@
       "tags": ["С капитализацией", "С пополнением", "На ежедневный остаток"]
     },
     {
+      "bankName": "Банк ТКБ",
+      "productName": "Хит (ежемесячная капитализация)",
+      "rate": 13.18,
+      "type": "deposit",
+      "termMonths": 6,
+      "termDays": 181,
+      "minAmount": 50000,
+      "tags": ["С капитализацией"]
+    },
+    {
       "bankName": "Банк Уралсиб",
       "productName": "Доход (ежемесячно)",
       "rate": 13.17,
@@ -1269,6 +1329,16 @@
       "termDays": 91,
       "minAmount": 30000,
       "tags": ["С капитализацией"]
+    },
+    {
+      "bankName": "Банк ТКБ",
+      "productName": "Хит (ежемесячная выплата)",
+      "rate": 13.15,
+      "type": "deposit",
+      "termMonths": 6,
+      "termDays": 181,
+      "minAmount": 50000,
+      "tags": []
     },
     {
       "bankName": "Альфа-Банк",
@@ -1418,6 +1488,16 @@
       "termMonths": 12,
       "termDays": 365,
       "minAmount": 3000000,
+      "tags": []
+    },
+    {
+      "bankName": "Банк ТКБ",
+      "productName": "Хит (ежемесячная выплата)",
+      "rate": 13,
+      "type": "deposit",
+      "termMonths": 3,
+      "termDays": 91,
+      "minAmount": 50000,
       "tags": []
     },
     {
@@ -2221,6 +2301,16 @@
       "tags": []
     },
     {
+      "bankName": "Банк ТКБ",
+      "productName": "Хит (пополняемый)",
+      "rate": 11.88,
+      "type": "deposit",
+      "termMonths": 3,
+      "termDays": 91,
+      "minAmount": 50000,
+      "tags": ["С капитализацией", "С пополнением"]
+    },
+    {
       "bankName": "Сбербанк",
       "productName": "СберВклад Молодёжный (без пополнения, в конце срока)",
       "rate": 11.8,
@@ -2471,6 +2561,16 @@
       "tags": ["С капитализацией", "С пополнением"]
     },
     {
+      "bankName": "Банк ТКБ",
+      "productName": "Хит (управляемый)",
+      "rate": 11.39,
+      "type": "deposit",
+      "termMonths": 3,
+      "termDays": 91,
+      "minAmount": 50000,
+      "tags": ["С капитализацией", "С пополнением"]
+    },
+    {
       "bankName": "Альфа-Банк",
       "productName": "Альфа-Вклад (без пополнения и снятия)",
       "rate": 11.39,
@@ -2711,6 +2811,16 @@
       "tags": []
     },
     {
+      "bankName": "Банк ТКБ",
+      "productName": "Хит (пополняемый)",
+      "rate": 10.76,
+      "type": "deposit",
+      "termMonths": 6,
+      "termDays": 181,
+      "minAmount": 50000,
+      "tags": ["С капитализацией", "С пополнением"]
+    },
+    {
       "bankName": "Ozon Банк",
       "productName": "Срочный (без пополнения)",
       "rate": 10.76,
@@ -2899,6 +3009,16 @@
       "termDays": 181,
       "minAmount": 30000,
       "tags": ["С пополнением"]
+    },
+    {
+      "bankName": "Банк ТКБ",
+      "productName": "Хит (управляемый)",
+      "rate": 10.28,
+      "type": "deposit",
+      "termMonths": 6,
+      "termDays": 181,
+      "minAmount": 50000,
+      "tags": ["С капитализацией", "С пополнением"]
     },
     {
       "bankName": "Локо-Банк",

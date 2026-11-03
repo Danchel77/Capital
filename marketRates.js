@@ -190,6 +190,8 @@ function isOfferAllowedByTags(itemTags, settings) {
   return true;
 }
 
+const MARKET_RATES_CACHE_VERSION = 2;
+
 // ==========================================
 // 3. Dynamic Data Loader (No hardcoded rates)
 // ==========================================
@@ -197,20 +199,25 @@ async function fetchLiveBankOffers(forceRefresh = false) {
   marketRatesState.isLoading = true;
   marketRatesState.loadError = null;
 
-  // 1. Попытка загрузить из локального кэша (если не принудительное обновление)
+  // 1. Попытка загрузить из локального кэша (если не принудительное обновление и кэш актуален)
   if (!forceRefresh) {
     try {
       const cached = localStorage.getItem('budget_market_rates_cache');
       if (cached) {
         const parsed = JSON.parse(cached);
-        if (parsed.timestamp && Date.now() - parsed.timestamp < 12 * 3600000) {
-          if (parsed.offers && parsed.offers.length > 0) {
-            marketRatesState.offers = parsed.offers;
-            if (parsed.cbrRate) marketRatesState.cbrRate = parsed.cbrRate;
-            if (parsed.moexIndices) marketRatesState.moexIndices = parsed.moexIndices;
-            marketRatesState.isLoading = false;
-            return;
-          }
+        if (
+          parsed.version === MARKET_RATES_CACHE_VERSION &&
+          parsed.timestamp &&
+          Date.now() - parsed.timestamp < 12 * 3600000 &&
+          parsed.offers &&
+          parsed.offers.length >= 100
+        ) {
+          marketRatesState.offers = parsed.offers;
+          if (parsed.cbrRate) marketRatesState.cbrRate = parsed.cbrRate;
+          if (parsed.moexIndices) marketRatesState.moexIndices = parsed.moexIndices;
+          marketRatesState.lastUpdated = parsed.lastUpdated || new Date().toISOString();
+          marketRatesState.isLoading = false;
+          return;
         }
       }
     } catch (_e) {
@@ -218,7 +225,7 @@ async function fetchLiveBankOffers(forceRefresh = false) {
     }
   }
 
-  // 2. Загрузка из актуального data/market-rates.json (созданного GitHub Action парсером)
+  // 2. Загрузка из актуального data/market-rates.json (созданного парсером)
   try {
     const res = await fetch(`./data/market-rates.json?v=${Date.now()}`);
     if (res.ok) {
@@ -230,12 +237,14 @@ async function fetchLiveBankOffers(forceRefresh = false) {
         marketRatesState.lastUpdated = json.updatedAt || new Date().toISOString();
         marketRatesState.isLoading = false;
 
-        // Сохраняем в localStorage
+        // Сохраняем в localStorage с версией
         try {
           localStorage.setItem(
             'budget_market_rates_cache',
             JSON.stringify({
+              version: MARKET_RATES_CACHE_VERSION,
               timestamp: Date.now(),
+              lastUpdated: marketRatesState.lastUpdated,
               cbrRate: marketRatesState.cbrRate,
               moexIndices: marketRatesState.moexIndices,
               offers: marketRatesState.offers,
@@ -244,6 +253,31 @@ async function fetchLiveBankOffers(forceRefresh = false) {
         } catch (_e) {
           // ignore
         }
+
+        // Синхронизируем свежие данные в общую Firestore коллекцию (MarketRates/latest)
+        try {
+          if (typeof getUserCol === 'function') {
+            const col = getUserCol('MarketRates');
+            if (col && json.offers.length > 50) {
+              col
+                .doc('latest')
+                .set(
+                  {
+                    updatedAt: marketRatesState.lastUpdated,
+                    cbrRate: marketRatesState.cbrRate,
+                    moexIndices: marketRatesState.moexIndices,
+                    totalOffers: marketRatesState.offers.length,
+                    offers: marketRatesState.offers,
+                  },
+                  { merge: true }
+                )
+                .catch(() => {});
+            }
+          }
+        } catch (_e) {
+          // ignore
+        }
+
         return;
       }
     }
