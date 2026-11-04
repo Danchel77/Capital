@@ -199,9 +199,20 @@ function formatRate(val) {
   return String(num).replace('.', ',');
 }
 
-function preventHangingPrepositions(str) {
-  if (!str) return '';
-  return String(str).replace(/(^|\s)([свкоиунаСВКОИУНА])\s+/g, '$1$2&nbsp;');
+const TAG_DISPLAY_NAMES = {
+  'С капитализацией': 'капитализация',
+  'С пополнением': 'пополнение',
+  'Со снятием': 'снятие',
+  'С частичным снятием': 'снятие',
+  'На минимальный остаток': 'мин. остаток',
+  'На ежедневный остаток': 'ежедневный остаток',
+  'Новые деньги': 'новые деньги',
+  'Новый клиент': 'новый клиент',
+};
+
+function formatTag(tag) {
+  if (!tag) return '';
+  return TAG_DISPLAY_NAMES[tag] || String(tag).trim().toLowerCase();
 }
 
 const MARKET_RATES_CACHE_VERSION = 3;
@@ -661,15 +672,21 @@ function renderMarketRatesModalContent() {
             const termsLineHtml = termsLineParts.join('');
 
             // Условия простым текстом через точки без чипов
+            const rawAmount = entry.minAmount > 0 ? formatMoney(entry.minAmount) : '';
             const minAmountDesc =
               entry.minAmount > 0
-                ? `от&nbsp;${formatMoney(entry.minAmount)}`
+                ? `от&nbsp;${String(rawAmount).replace(/\s+/g, '&nbsp;')}`
                 : 'без&nbsp;ограничений';
 
-            let conditionsTextHtml = minAmountDesc;
+            let conditionsTextHtml = `<span class="whitespace-nowrap text-zinc-400 font-medium">${minAmountDesc}</span>`;
             if (entry.tags && entry.tags.size > 0) {
-              const tagsText = Array.from(entry.tags).map(preventHangingPrepositions).join(', ');
-              conditionsTextHtml += ` <span class="text-zinc-600 select-none mx-1.5">·</span> ${tagsText}`;
+              const formattedTags = Array.from(entry.tags).map(formatTag).filter(Boolean);
+              if (formattedTags.length > 0) {
+                const tagsHtml = formattedTags
+                  .map(t => `<span class="whitespace-nowrap text-zinc-500">${t}</span>`)
+                  .join(' <span class="text-zinc-600 select-none mx-1.5">·</span> ');
+                conditionsTextHtml += ` <span class="text-zinc-600 select-none mx-1.5">·</span> ${tagsHtml}`;
+              }
             }
 
             return `
@@ -686,7 +703,7 @@ function renderMarketRatesModalContent() {
                 </div>
 
                 <!-- Строка 3: Сумма и параметры простым текстом через точки -->
-                <p class="text-[11px] text-zinc-400 leading-normal">
+                <p class="text-[11px] leading-normal">
                   ${conditionsTextHtml}
                 </p>
               </div>
@@ -698,9 +715,10 @@ function renderMarketRatesModalContent() {
         productsHtml = items
           .map((item, pIdx) => {
             const isLast = pIdx === items.length - 1;
+            const rawAmount = item.minAmount > 0 ? formatMoney(item.minAmount) : '';
             const minAmountDesc =
               item.minAmount > 0
-                ? `от&nbsp;${formatMoney(item.minAmount)}`
+                ? `от&nbsp;${String(rawAmount).replace(/\s+/g, '&nbsp;')}`
                 : 'без&nbsp;ограничений';
 
             const conditionsBtn = item.conditionsNote
@@ -720,17 +738,19 @@ function renderMarketRatesModalContent() {
             `
               : '';
 
-            const tagsText =
-              item.tags && item.tags.length > 0
-                ? item.tags.map(preventHangingPrepositions).join(', ')
-                : '';
+            const formattedTags =
+              item.tags && item.tags.length > 0 ? item.tags.map(formatTag).filter(Boolean) : [];
             let sublineHtml = '';
             if (!isDeposits) {
-              sublineHtml += 'Бессрочный <span class="text-zinc-600 select-none mx-1.5">·</span> ';
+              sublineHtml +=
+                '<span class="whitespace-nowrap text-zinc-500">бессрочный</span> <span class="text-zinc-600 select-none mx-1.5">·</span> ';
             }
-            sublineHtml += minAmountDesc;
-            if (tagsText) {
-              sublineHtml += ` <span class="text-zinc-600 select-none mx-1.5">·</span> ${tagsText}`;
+            sublineHtml += `<span class="whitespace-nowrap text-zinc-400 font-medium">${minAmountDesc}</span>`;
+            if (formattedTags.length > 0) {
+              const tagsHtml = formattedTags
+                .map(t => `<span class="whitespace-nowrap text-zinc-500">${t}</span>`)
+                .join(' <span class="text-zinc-600 select-none mx-1.5">·</span> ');
+              sublineHtml += ` <span class="text-zinc-600 select-none mx-1.5">·</span> ${tagsHtml}`;
             }
 
             return `
@@ -744,8 +764,8 @@ function renderMarketRatesModalContent() {
                 </div>
 
                 <!-- Нижняя строка: Параметры простым текстом слева, кнопка Условия справа -->
-                <div class="flex items-center justify-between gap-2 text-[11px] mt-0.5">
-                  <p class="text-[11px] text-zinc-400 leading-normal min-w-0 flex-1">
+                <div class="flex items-start justify-between gap-2 text-[11px] mt-0.5">
+                  <p class="text-[11px] leading-normal min-w-0 flex-1">
                     ${sublineHtml}
                   </p>
                   ${conditionsBtn}
