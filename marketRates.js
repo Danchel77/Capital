@@ -52,10 +52,10 @@ const ALL_POPULAR_BANKS = [
 const ALL_CONDITION_TAGS = [
   { id: 'Новый клиент', label: 'Только для новых клиентов', defaultChecked: false },
   { id: 'Новые деньги', label: 'Только на новые деньги', defaultChecked: true },
-  { id: 'С капитализацией', label: 'С капитализацией процентов', defaultChecked: true },
-  { id: 'С пополнением', label: 'С пополнением', defaultChecked: true },
-  { id: 'На минимальный остаток', label: 'На минимальный остаток', defaultChecked: true },
-  { id: 'На ежедневный остаток', label: 'На ежедневный остаток', defaultChecked: true },
+  { id: 'С капитализацией', label: 'Капитализация процентов', defaultChecked: true },
+  { id: 'С пополнением', label: 'Пополнение вклада', defaultChecked: true },
+  { id: 'На ежедневный остаток', label: 'Ежедневный остаток', defaultChecked: true },
+  { id: 'На минимальный остаток', label: 'Минимальный остаток', defaultChecked: true },
 ];
 
 const BANK_ALIASES = {
@@ -105,18 +105,26 @@ const marketRatesState = {
 // ==========================================
 // 1. Scroll Lock Helpers
 // ==========================================
-function lockBodyScroll() {
-  document.body.classList.add('overflow-hidden');
+function mrLockScroll() {
+  if (typeof window.lockBodyScroll === 'function') {
+    window.lockBodyScroll();
+  } else {
+    document.body.classList.add('overflow-hidden');
+  }
 }
 
-function unlockBodyScroll() {
+function mrUnlockScroll() {
   const mrModal = document.getElementById('market-rates-modal');
   const settingsModal = document.getElementById('market-rates-settings-modal');
   const isMrOpen = mrModal && !mrModal.classList.contains('hidden');
   const isSettingsOpen = settingsModal && !settingsModal.classList.contains('hidden');
 
   if (!isMrOpen && !isSettingsOpen) {
-    document.body.classList.remove('overflow-hidden');
+    if (typeof window.unlockBodyScroll === 'function') {
+      window.unlockBodyScroll();
+    } else {
+      document.body.classList.remove('overflow-hidden');
+    }
   }
 }
 
@@ -368,16 +376,14 @@ function getBestDepositOffer() {
 // 5. UI Widget on Deposits Screen
 // ==========================================
 function renderMarketRatesWidget() {
+  const modalCbrEl = document.getElementById('market-modal-cbr-rate');
   const cbrEl = document.getElementById('market-cbr-rate-val');
   const bestEl = document.getElementById('market-best-deposit-val');
 
-  if (cbrEl) {
-    if (marketRatesState.cbrRate) {
-      cbrEl.innerText = `${formatRate(marketRatesState.cbrRate)}%`;
-    } else {
-      cbrEl.innerText = '14,0%';
-    }
-  }
+  const cbrText = marketRatesState.cbrRate ? `${formatRate(marketRatesState.cbrRate)}%` : '14,0%';
+
+  if (modalCbrEl) modalCbrEl.innerText = cbrText;
+  if (cbrEl) cbrEl.innerText = cbrText;
 
   if (bestEl) {
     const best = getBestDepositOffer();
@@ -404,7 +410,14 @@ function openMarketRatesModal() {
   const modal = document.getElementById('market-rates-modal');
   if (!modal) return;
 
-  lockBodyScroll();
+  const modalCbrEl = document.getElementById('market-modal-cbr-rate');
+  if (modalCbrEl) {
+    modalCbrEl.innerText = marketRatesState.cbrRate
+      ? `${formatRate(marketRatesState.cbrRate)}%`
+      : '14,0%';
+  }
+
+  mrLockScroll();
   modal.classList.remove('hidden');
   renderMarketRatesModalContent();
 
@@ -417,7 +430,7 @@ function closeMarketRatesModal() {
   closeRateConditionsPopover();
   const modal = document.getElementById('market-rates-modal');
   if (modal) modal.classList.add('hidden');
-  unlockBodyScroll();
+  mrUnlockScroll();
 }
 
 function switchMarketRatesTab(tab) {
@@ -739,13 +752,12 @@ function renderMarketRatesModalContent() {
               : '';
 
             const formattedTags =
-              item.tags && item.tags.length > 0 ? item.tags.map(formatTag).filter(Boolean) : [];
-            let sublineHtml = '';
-            if (!isDeposits) {
-              sublineHtml +=
-                '<span class="whitespace-nowrap text-zinc-500">бессрочный</span> <span class="text-zinc-600 select-none mx-1.5">·</span> ';
-            }
-            sublineHtml += `<span class="whitespace-nowrap text-zinc-400 font-medium">${minAmountDesc}</span>`;
+              item.tags && item.tags.length > 0
+                ? item.tags
+                    .map(formatTag)
+                    .filter(t => Boolean(t) && (isDeposits || t !== 'пополнение'))
+                : [];
+            let sublineHtml = `<span class="whitespace-nowrap text-zinc-400 font-medium">${minAmountDesc}</span>`;
             if (formattedTags.length > 0) {
               const tagsHtml = formattedTags
                 .map(t => `<span class="whitespace-nowrap text-zinc-500">${t}</span>`)
@@ -914,7 +926,7 @@ function openMarketRatesSettingsModal() {
   const modal = document.getElementById('market-rates-settings-modal');
   if (!modal) return;
 
-  lockBodyScroll();
+  mrLockScroll();
   modal.classList.remove('hidden');
   initMarketRatesSettingsForm();
 
@@ -926,39 +938,91 @@ function openMarketRatesSettingsModal() {
 function closeMarketRatesSettingsModal() {
   const modal = document.getElementById('market-rates-settings-modal');
   if (modal) modal.classList.add('hidden');
-  unlockBodyScroll();
+  mrUnlockScroll();
+}
+
+const MONTHS_SLIDER_VALUES = [1, 3, 6, 12];
+
+function handleMaxMonthsSliderChange(val) {
+  const idx = parseInt(val, 10);
+  const months = MONTHS_SLIDER_VALUES[idx] || 12;
+  const hiddenInput = document.getElementById('mr-settings-max-months');
+  if (hiddenInput) hiddenInput.value = months;
+}
+
+function toggleCustomCheckbox(input) {
+  const box = input.nextElementSibling;
+  if (!box) return;
+  if (input.checked) {
+    box.className =
+      'custom-cb-box w-4 h-4 rounded-md border flex items-center justify-center transition-all bg-white border-white text-black flex-shrink-0';
+  } else {
+    box.className =
+      'custom-cb-box w-4 h-4 rounded-md border flex items-center justify-center transition-all border-white/20 bg-white/[0.04] text-transparent flex-shrink-0';
+  }
+}
+
+function filterBanksList(query) {
+  const q = (query || '').trim().toLowerCase();
+  document.querySelectorAll('.mr-bank-row').forEach(row => {
+    const bank = row.getAttribute('data-bank') || '';
+    if (!q || bank.includes(q)) {
+      row.classList.remove('hidden');
+    } else {
+      row.classList.add('hidden');
+    }
+  });
 }
 
 function initMarketRatesSettingsForm() {
   const settings = getMarketRatesSettings();
-  const maxMonthsInput = document.getElementById('mr-settings-max-months');
+  const hiddenInput = document.getElementById('mr-settings-max-months');
+  const slider = document.getElementById('mr-settings-max-months-slider');
   const tagsContainer = document.getElementById('mr-settings-tags-list');
   const banksContainer = document.getElementById('mr-settings-banks-list');
+  const searchInput = document.getElementById('mr-settings-bank-search');
 
-  if (maxMonthsInput) maxMonthsInput.value = settings.maxMonths || 12;
+  if (searchInput) searchInput.value = '';
 
-  // 1. Отрисовка списка бейджей
+  const currentMonths = settings.maxMonths || 12;
+  if (hiddenInput) hiddenInput.value = currentMonths;
+  if (slider) {
+    const idx = MONTHS_SLIDER_VALUES.indexOf(currentMonths);
+    slider.value = idx >= 0 ? idx : 3;
+  }
+
+  // 1. Отрисовка списка бейджей с минималистичными белыми чекбоксами
   if (tagsContainer) {
     tagsContainer.innerHTML = ALL_CONDITION_TAGS.map(t => {
       const isChecked = settings.allowedTags?.[t.id] !== false;
       return `
-        <label class="flex items-center gap-2.5 text-xs text-zinc-200 py-1 cursor-pointer select-none">
-          <input type="checkbox" class="mr-tag-cb rounded bg-white/10 border-white/20 text-emerald-500 accent-emerald-500 focus:ring-0" value="${t.id}" ${isChecked ? 'checked' : ''}>
-          <span>${t.label}</span>
+        <label class="flex items-center justify-between py-2 cursor-pointer select-none group border-b border-white/[0.04] last:border-b-0">
+          <span class="text-xs text-zinc-300 group-hover:text-white transition-colors">${t.label}</span>
+          <input type="checkbox" class="mr-tag-cb sr-only" value="${t.id}" ${isChecked ? 'checked' : ''} onchange="toggleCustomCheckbox(this)">
+          <div class="custom-cb-box w-4 h-4 rounded-md border flex items-center justify-center transition-all flex-shrink-0 ${isChecked ? 'bg-white border-white text-black' : 'border-white/20 bg-white/[0.04] text-transparent'}">
+            <svg class="w-3 h-3 stroke-[2.5]" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
         </label>
       `;
     }).join('');
   }
 
-  // 2. Отрисовка списка банков
+  // 2. Отрисовка списка банков строками во всю ширину
   if (banksContainer) {
     const selected = settings.selectedBanks || TOP_10_BANKS_DEFAULT;
     banksContainer.innerHTML = ALL_POPULAR_BANKS.map(b => {
       const isChecked = selected.includes(b);
       return `
-        <label class="flex items-center gap-2 text-xs text-zinc-300 py-1 cursor-pointer select-none">
-          <input type="checkbox" class="mr-bank-cb rounded bg-white/10 border-white/20 text-emerald-500 accent-emerald-500 focus:ring-0 flex-shrink-0" value="${b}" ${isChecked ? 'checked' : ''}>
-          <span class="leading-snug text-[11px]">${b}</span>
+        <label class="mr-bank-row flex items-center justify-between py-2 cursor-pointer select-none group border-b border-white/[0.04] last:border-b-0" data-bank="${b.toLowerCase()}">
+          <span class="text-xs text-zinc-300 group-hover:text-white transition-colors leading-snug">${b}</span>
+          <input type="checkbox" class="mr-bank-cb sr-only flex-shrink-0" value="${b}" ${isChecked ? 'checked' : ''} onchange="toggleCustomCheckbox(this)">
+          <div class="custom-cb-box w-4 h-4 rounded-md border flex items-center justify-center transition-all flex-shrink-0 ${isChecked ? 'bg-white border-white text-black' : 'border-white/20 bg-white/[0.04] text-transparent'}">
+            <svg class="w-3 h-3 stroke-[2.5]" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
         </label>
       `;
     }).join('');
@@ -967,19 +1031,16 @@ function initMarketRatesSettingsForm() {
 
 function selectBanksPreset(preset) {
   const checkboxes = document.querySelectorAll('.mr-bank-cb');
-  if (preset === 'top10') {
-    checkboxes.forEach(cb => {
+  checkboxes.forEach(cb => {
+    if (preset === 'top10') {
       cb.checked = TOP_10_BANKS_DEFAULT.includes(cb.value);
-    });
-  } else if (preset === 'all') {
-    checkboxes.forEach(cb => {
+    } else if (preset === 'all') {
       cb.checked = true;
-    });
-  } else if (preset === 'none') {
-    checkboxes.forEach(cb => {
+    } else if (preset === 'none') {
       cb.checked = false;
-    });
-  }
+    }
+    toggleCustomCheckbox(cb);
+  });
 }
 
 function saveAndApplyMarketRatesSettings() {
@@ -1038,3 +1099,6 @@ window.selectBanksPreset = selectBanksPreset;
 window.saveAndApplyMarketRatesSettings = saveAndApplyMarketRatesSettings;
 window.initMarketRatesModule = initMarketRatesModule;
 window.fetchLiveBankOffers = fetchLiveBankOffers;
+window.handleMaxMonthsSliderChange = handleMaxMonthsSliderChange;
+window.toggleCustomCheckbox = toggleCustomCheckbox;
+window.filterBanksList = filterBanksList;

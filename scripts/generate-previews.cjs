@@ -42,28 +42,30 @@ function createPreviewHtml({ term = 'all', openPopover = false, activeTab = 'dep
     }
   </style>
 </head>
-<body class="p-3.5 bg-black min-h-screen flex items-center justify-center">
+<body class="bg-black min-h-screen flex items-center justify-center p-0">
 
-  <!-- МОДАЛКА: СТАВКИ И ПРЕДЛОЖЕНИЯ -->
-  <div id="market-rates-modal" class="w-full max-w-sm rounded-3xl bg-[#0E1016] border border-white/10 p-4 shadow-2xl flex flex-col h-[780px] overflow-hidden relative">
+  <!-- МОДАЛКА: СТАВКИ И ПРЕДЛОЖЕНИЯ (Obsidian Minimalist - Full Mobile View) -->
+  <div id="market-rates-modal" class="w-full h-[844px] bg-[#0E1016] p-4 pt-6 pb-6 shadow-2xl flex flex-col overflow-hidden relative">
     
     <!-- Шапка модалки -->
     <div class="flex items-center justify-between pb-3 border-b border-white/[0.06] mb-3 flex-shrink-0">
       <div class="flex items-center gap-2.5">
-        <div class="w-8 h-8 rounded-full bg-white/[0.06] border border-white/10 flex items-center justify-center text-white font-bold text-sm">
-          %
+        <div class="w-8 h-8 rounded-xl bg-white/[0.06] border border-white/10 flex items-center justify-center text-white">
+          <i data-lucide="percent" class="w-4 h-4"></i>
         </div>
         <div>
-          <h3 class="text-sm font-bold text-white leading-tight">Ставки и предложения</h3>
-          <p class="text-[11px] text-zinc-400">Лучшие доходности в банках</p>
+          <h3 class="text-base font-bold text-white leading-tight">Ставки и предложения</h3>
+          <p class="text-[11px] text-zinc-400">
+            Ставка ЦБ: <span id="market-modal-cbr-rate" class="font-mono font-medium text-zinc-200">14,0%</span>
+          </p>
         </div>
       </div>
-      <div class="flex items-center gap-1.5">
-        <button type="button" class="w-8 h-8 rounded-full bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-zinc-400">
-          <i data-lucide="settings-2" class="w-4 h-4"></i>
+      <div class="flex items-center gap-2">
+        <button type="button" class="w-8 h-8 rounded-full bg-white/[0.06] hover:bg-white/10 text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors">
+          <i data-lucide="sliders" class="w-4 h-4"></i>
         </button>
-        <button type="button" class="w-8 h-8 rounded-full bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-zinc-400">
-          <i data-lucide="x" class="w-4 h-4"></i>
+        <button type="button" class="w-8 h-8 rounded-full bg-white/[0.06] hover:bg-white/10 text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors text-xs font-semibold">
+          ✕
         </button>
       </div>
     </div>
@@ -132,10 +134,8 @@ function createPreviewHtml({ term = 'all', openPopover = false, activeTab = 'dep
   </div>
 
   <script>
-    // Подставляем мок-данные и логику ставок
     const mockJson = ${dataJson};
 
-    // Helper functions expected by marketRates.js
     function formatMoney(amount) {
       if (amount === undefined || amount === null) return '0 ₽';
       return Math.round(amount).toLocaleString('ru-RU') + ' ₽';
@@ -146,7 +146,6 @@ function createPreviewHtml({ term = 'all', openPopover = false, activeTab = 'dep
 
     ${marketRatesJs}
 
-    // Инициализируем состояние
     marketRatesState.offers = mockJson.offers;
     marketRatesState.cbrRate = mockJson.cbrRate;
     marketRatesState.moexIndices = mockJson.moexIndices;
@@ -165,6 +164,180 @@ function createPreviewHtml({ term = 'all', openPopover = false, activeTab = 'dep
         showRateConditionsPopover(null, 'Банк ВТБ', 'ВТБ-Вклад', 'Ставка действует при открытии онлайн и размещении новых денежных средств. Для клиентов с пакетом услуг Привилегия действует надбавка +0.5% годовых.');
       }
     }
+
+    if (typeof lucide !== 'undefined' && lucide.createIcons) {
+      lucide.createIcons();
+    }
+  </script>
+</body>
+</html>`;
+}
+
+function createSettingsPreviewHtml() {
+  return `<!DOCTYPE html>
+<html lang="ru" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Preview: Market Rates Settings Modal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    :root {
+      --bg: #000000;
+      --surface: #0e1016;
+      --surface-2: #12151c;
+      --surface-3: #1a1e29;
+    }
+    body {
+      margin: 0;
+      background: #000000;
+      color: #ffffff;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-variant-numeric: tabular-nums;
+      -webkit-font-smoothing: antialiased;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="bg-black min-h-screen flex items-center justify-center p-0">
+
+  <!-- МОДАЛКА: НАСТРОЙКИ СТАВОК И БАНКОВ (Obsidian Minimalist - Full Mobile View) -->
+  <div id="market-rates-settings-modal" class="w-full h-[844px] bg-[#0E1016] p-4 pt-6 pb-6 shadow-2xl flex flex-col overflow-hidden relative">
+    
+    <!-- Шапка окна настроек -->
+    <div class="flex items-center justify-between mb-4 flex-shrink-0">
+      <h3 class="text-base font-bold text-white leading-tight">Настройки фильтров</h3>
+      <button
+        type="button"
+        class="w-8 h-8 rounded-full bg-white/[0.06] hover:bg-white/10 text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors text-xs font-semibold"
+        title="Закрыть"
+      >
+        ✕
+      </button>
+    </div>
+
+    <!-- Скроллируемое тело настроек -->
+    <div class="flex-1 overflow-y-auto space-y-4 pr-1 -mr-1 pb-4 text-xs overscroll-contain touch-pan-y custom-scrollbar">
+      <!-- 1. Максимальный срок вклада в виджете -->
+      <div class="space-y-2 pb-4 border-b border-white/[0.06]">
+        <label class="block text-zinc-300 font-semibold text-xs">
+          Максимальный срок вклада в виджете
+        </label>
+        <div class="px-1 pt-1.5">
+          <input
+            type="range"
+            id="mr-settings-max-months-slider"
+            min="0"
+            max="3"
+            step="1"
+            class="w-full accent-white h-1.5 bg-white/10 rounded-lg cursor-pointer"
+            oninput="handleMaxMonthsSliderChange(this.value)"
+          />
+          <input type="hidden" id="mr-settings-max-months" value="12" />
+          <div class="flex justify-between text-[11px] text-zinc-400 font-mono mt-2 select-none">
+            <span>1 мес.</span>
+            <span>3 мес.</span>
+            <span>6 мес.</span>
+            <span>1 год</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Условия предложений -->
+      <div class="space-y-1.5 pb-4 border-b border-white/[0.06]">
+        <span class="block text-zinc-300 font-semibold text-xs mb-1">
+          Условия предложений
+        </span>
+        <div id="mr-settings-tags-list" class="space-y-0.5"></div>
+      </div>
+
+      <!-- 3. Список отслеживаемых банков -->
+      <div class="space-y-2.5 pt-1">
+        <span class="block text-zinc-300 font-semibold text-xs">
+          Отслеживаемые банки
+        </span>
+
+        <!-- Быстрые кнопки выбора -->
+        <div class="grid grid-cols-3 gap-1 p-1 bg-white/[0.04] border border-white/[0.06] rounded-xl">
+          <button
+            type="button"
+            onclick="selectBanksPreset('top10')"
+            class="py-1 rounded-lg text-center text-[11px] font-medium text-zinc-300 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
+          >
+            ТОП-10
+          </button>
+          <button
+            type="button"
+            onclick="selectBanksPreset('all')"
+            class="py-1 rounded-lg text-center text-[11px] font-medium text-zinc-300 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
+          >
+            Все банки
+          </button>
+          <button
+            type="button"
+            onclick="selectBanksPreset('none')"
+            class="py-1 rounded-lg text-center text-[11px] font-medium text-zinc-400 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
+          >
+            Сбросить
+          </button>
+        </div>
+
+        <!-- Поиск банка -->
+        <div class="relative">
+          <i data-lucide="search" class="w-3.5 h-3.5 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2"></i>
+          <input
+            type="text"
+            id="mr-settings-bank-search"
+            oninput="filterBanksList(this.value)"
+            placeholder="Поиск банка..."
+            class="w-full bg-[#0E1016] border border-white/10 rounded-xl pl-8 pr-3 py-1.5 text-xs text-white placeholder-zinc-500 focus:border-white/30 focus:outline-none transition-all"
+          />
+        </div>
+
+        <!-- Список чекбоксов банков во всю ширину -->
+        <div id="mr-settings-banks-list" class="pt-1"></div>
+      </div>
+    </div>
+
+    <!-- Кнопки действий -->
+    <div class="flex gap-2 pt-3 flex-shrink-0 border-t border-white/[0.06] mt-2">
+      <button
+        type="button"
+        class="flex-1 py-2.5 px-3 rounded-xl bg-white/[0.06] hover:bg-white/10 active:scale-95 text-zinc-300 text-xs font-semibold transition-all cursor-pointer"
+      >
+        Отмена
+      </button>
+      <button
+        type="button"
+        class="flex-1 py-2.5 px-3 rounded-xl bg-white hover:bg-zinc-200 active:scale-95 text-zinc-950 text-xs font-semibold transition-all shadow-sm cursor-pointer"
+      >
+        Сохранить
+      </button>
+    </div>
+  </div>
+
+  <script>
+    function lockBodyScroll() {}
+    function unlockBodyScroll() {}
+    function showNotification() {}
+
+    ${marketRatesJs}
+
+    initMarketRatesSettingsForm();
+
+    if (typeof lucide !== 'undefined' && lucide.createIcons) {
+      lucide.createIcons();
+    }
   </script>
 </body>
 </html>`;
@@ -173,6 +346,7 @@ function createPreviewHtml({ term = 'all', openPopover = false, activeTab = 'dep
 const tests = [
   { name: 'preview-mode1-all', config: { term: 'all', openPopover: false, activeTab: 'deposits' } },
   { name: 'preview-mode2-3m', config: { term: '3m', openPopover: false, activeTab: 'deposits' } },
+  { name: 'preview-accounts', config: { term: 'all', openPopover: false, activeTab: 'accounts' } },
   { name: 'preview-popover', config: { term: 'all', openPopover: true, activeTab: 'deposits' } }
 ];
 
@@ -186,3 +360,11 @@ for (const t of tests) {
   execSync(cmd);
   console.log(`Rendered ${pngPath}`);
 }
+
+// Generate Settings Preview
+const settingsHtmlPath = path.resolve(__dirname, 'preview-settings.html');
+const settingsPngPath = path.resolve(__dirname, 'preview-settings.png');
+fs.writeFileSync(settingsHtmlPath, createSettingsPreviewHtml(), 'utf8');
+console.log(`Wrote ${settingsHtmlPath}`);
+execSync(`"${CHROME_PATH}" --headless --no-sandbox --hide-scrollbars --window-size=390,844 --screenshot="${settingsPngPath}" "${settingsHtmlPath}"`);
+console.log(`Rendered ${settingsPngPath}`);

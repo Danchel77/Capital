@@ -1413,29 +1413,18 @@
             onclick="openMarketRatesModal()"
             class="bg-[#0E1016] px-3.5 py-2.5 rounded-2xl border border-white/[0.08] hover:border-white/20 transition-all cursor-pointer active:scale-[0.99] flex items-center justify-between text-xs select-none"
           >
-            <div class="flex items-center gap-1.5 flex-shrink-0">
-              <span class="text-zinc-500 font-semibold text-[11px] uppercase tracking-wider"
-                >ЦБ</span
-              >
-              <span id="market-cbr-rate-val" class="font-mono font-bold text-white text-xs"
-                >14,0%</span
-              >
-            </div>
-
-            <div class="h-3 w-px bg-white/10 mx-2 flex-shrink-0"></div>
-
-            <div class="flex items-center gap-1.5 min-w-0 flex-1 justify-end">
+            <div class="flex items-center gap-2 min-w-0">
               <span
                 class="text-zinc-500 font-semibold text-[11px] uppercase tracking-wider flex-shrink-0"
-                >Лучший вклад:</span
+                >Лучший вклад</span
               >
               <span
                 id="market-best-deposit-val"
                 class="font-mono font-bold text-emerald-400 truncate text-xs"
                 >14,5% · Совкомбанк</span
               >
-              <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-zinc-500 flex-shrink-0"></i>
             </div>
+            <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-zinc-500 flex-shrink-0 ml-2"></i>
           </div>
 
           <!-- Инлайн-форма добавления нового вклада (Obsidian Minimalist) -->
@@ -4096,14 +4085,14 @@
       </div>
     </div>
 
-    <!-- МОДАЛКА: СТАВКИ И ПРЕДЛОЖЕНИЯ БАНКОВ (Obsidian Minimalist - Фиксированная высота) -->
+    <!-- МОДАЛКА: СТАВКИ И ПРЕДЛОЖЕНИЯ БАНКОВ (Obsidian Minimalist - На весь экран на мобильных) -->
     <div
       id="market-rates-modal"
-      class="fixed inset-0 bg-black/80 z-[120] hidden flex flex-col justify-end sm:justify-center items-center p-0 sm:p-4 backdrop-blur-sm animate-fade-in"
+      class="fixed inset-0 bg-black/80 z-[120] hidden flex flex-col justify-end sm:justify-center items-center p-0 sm:p-4 backdrop-blur-sm animate-fade-in overscroll-contain select-none"
       onclick="if (event.target === this) closeMarketRatesModal();"
     >
       <div
-        class="bg-[#0E1016] border border-white/10 w-full sm:max-w-lg rounded-t-3xl sm:rounded-2xl p-4 sm:p-5 shadow-2xl relative flex flex-col h-[94vh] sm:h-[86vh] overflow-hidden"
+        class="bg-[#0E1016] border-0 sm:border sm:border-white/10 w-full sm:max-w-lg rounded-none sm:rounded-2xl p-4 sm:p-5 shadow-2xl relative flex flex-col h-[100dvh] sm:h-[86vh] overflow-hidden overscroll-contain pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]"
         onclick="event.stopPropagation()"
       >
         <!-- Шапка модалки -->
@@ -4116,7 +4105,9 @@
             </div>
             <div>
               <h3 class="text-base font-bold text-white leading-tight">Ставки и предложения</h3>
-              <p class="text-[11px] text-zinc-400">Лучшие доходности в банках</p>
+              <p class="text-[11px] text-zinc-400">
+                Ставка ЦБ: <span id="market-modal-cbr-rate" class="font-mono font-medium text-zinc-200">14,0%</span>
+              </p>
             </div>
           </div>
           <div class="flex items-center gap-2">
@@ -4209,29 +4200,19 @@
       </div>
     </div>
 
-    <!-- МОДАЛКА: НАСТРОЙКИ СТАВОК И БАНКОВ (Открывается поверх) -->
+    <!-- МОДАЛКА: НАСТРОЙКИ СТАВОК И БАНКОВ (Obsidian Minimalist - На весь экран на мобильных) -->
     <div
       id="market-rates-settings-modal"
-      class="fixed inset-0 bg-black/85 z-[130] hidden flex flex-col justify-end sm:justify-center items-center p-0 sm:p-4 backdrop-blur-sm animate-fade-in"
+      class="fixed inset-0 bg-black/85 z-[130] hidden flex flex-col justify-end sm:justify-center items-center p-0 sm:p-4 backdrop-blur-sm animate-fade-in overscroll-contain select-none"
       onclick="if (event.target === this) closeMarketRatesSettingsModal();"
     >
       <div
-        class="bg-[#0E1016] border border-white/10 w-full sm:max-w-lg rounded-t-3xl sm:rounded-2xl p-4 sm:p-5 shadow-2xl relative flex flex-col max-h-[92vh] sm:max-h-[85vh] overflow-hidden"
+        class="bg-[#0E1016] border-0 sm:border sm:border-white/10 w-full sm:max-w-lg rounded-none sm:rounded-2xl p-4 sm:p-5 shadow-2xl relative flex flex-col h-[100dvh] sm:h-[86vh] overflow-hidden overscroll-contain pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]"
         onclick="event.stopPropagation()"
       >
         <!-- Шапка окна настроек -->
-        <div class="flex items-center justify-between mb-3.5 flex-shrink-0">
-          <div class="flex items-center gap-2">
-            <div
-              class="w-8 h-8 rounded-xl bg-white/[0.06] text-white flex items-center justify-center border border-white/10"
-            >
-              <i data-lucide="sliders" class="w-4 h-4"></i>
-            </div>
-            <div>
-              <h3 class="text-base font-bold text-white leading-tight">Настройки фильтра</h3>
-              <p class="text-[11px] text-zinc-400">Параметры отбора и показа предложений</p>
-            </div>
-          </div>
+        <div class="flex items-center justify-between mb-4 flex-shrink-0">
+          <h3 class="text-base font-bold text-white leading-tight">Настройки фильтров</h3>
           <button
             type="button"
             onclick="closeMarketRatesSettingsModal()"
@@ -4243,79 +4224,85 @@
         </div>
 
         <!-- Скроллируемое тело настроек -->
-        <div class="flex-1 overflow-y-auto space-y-4 pr-1 -mr-1 pb-4 text-xs">
-          <!-- 1. Максимальный срок -->
-          <div class="p-3.5 rounded-2xl bg-[#12151C] border border-white/[0.06] space-y-1.5">
-            <label class="block text-zinc-300 font-semibold text-xs"
-              >Максимальный срок для главной плашки</label
-            >
-            <p class="text-[11px] text-zinc-400 leading-tight">
-              Вклады с большим сроком не будут попадать в строку «Лучший вклад».
-            </p>
-            <div class="flex items-center gap-2 pt-1">
+        <div class="flex-1 overflow-y-auto space-y-4 pr-1 -mr-1 pb-4 text-xs overscroll-contain touch-pan-y">
+          <!-- 1. Максимальный срок вклада в виджете -->
+          <div class="space-y-2 pb-4 border-b border-white/[0.06]">
+            <label class="block text-zinc-300 font-semibold text-xs">
+              Максимальный срок вклада в виджете
+            </label>
+            <div class="px-1 pt-1.5">
               <input
-                type="number"
-                id="mr-settings-max-months"
-                min="1"
-                max="60"
-                class="w-24 bg-[#0E1016] border border-white/10 rounded-xl px-3 py-1.5 text-white font-mono text-xs focus:border-white/30 focus:outline-none"
-                placeholder="12"
+                type="range"
+                id="mr-settings-max-months-slider"
+                min="0"
+                max="3"
+                step="1"
+                class="w-full accent-white h-1.5 bg-white/10 rounded-lg cursor-pointer"
+                oninput="handleMaxMonthsSliderChange(this.value)"
               />
-              <span class="text-zinc-400 text-xs">месяцев (по умолчанию 12)</span>
+              <input type="hidden" id="mr-settings-max-months" value="12" />
+              <div class="flex justify-between text-[11px] text-zinc-400 font-mono mt-2 select-none">
+                <span>1 мес.</span>
+                <span>3 мес.</span>
+                <span>6 мес.</span>
+                <span>1 год</span>
+              </div>
             </div>
           </div>
 
-          <!-- 2. Фильтрация по условиям (бейджам) -->
-          <div class="p-3.5 rounded-2xl bg-[#12151C] border border-white/[0.06] space-y-2">
-            <div>
-              <span class="block text-zinc-300 font-semibold text-xs"
-                >Учитывать условия предложений</span
-              >
-              <p class="text-[11px] text-zinc-400 leading-tight mt-0.5">
-                Снимите галочку, чтобы исключить такие предложения из выдачи.
-              </p>
-            </div>
-            <div id="mr-settings-tags-list" class="space-y-1 pt-1"></div>
+          <!-- 2. Условия предложений -->
+          <div class="space-y-1.5 pb-4 border-b border-white/[0.06]">
+            <span class="block text-zinc-300 font-semibold text-xs mb-1">
+              Условия предложений
+            </span>
+            <div id="mr-settings-tags-list" class="space-y-0.5"></div>
           </div>
 
           <!-- 3. Список отслеживаемых банков -->
-          <div class="p-3.5 rounded-2xl bg-[#12151C] border border-white/[0.06] space-y-2.5">
-            <div class="flex items-center justify-between">
-              <div>
-                <span class="block text-zinc-300 font-semibold text-xs">Отслеживаемые банки</span>
-                <p class="text-[11px] text-zinc-400 leading-tight mt-0.5">
-                  По умолчанию выбраны ТОП-10 банков ЦБ РФ.
-                </p>
-              </div>
-            </div>
+          <div class="space-y-2.5 pt-1">
+            <span class="block text-zinc-300 font-semibold text-xs">
+              Отслеживаемые банки
+            </span>
 
             <!-- Быстрые кнопки выбора -->
-            <div class="flex items-center gap-1.5 pt-0.5">
+            <div class="grid grid-cols-3 gap-1 p-1 bg-white/[0.04] border border-white/[0.06] rounded-xl">
               <button
                 type="button"
                 onclick="selectBanksPreset('top10')"
-                class="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/15 text-zinc-200 text-[11px] font-medium transition-all cursor-pointer"
+                class="py-1 rounded-lg text-center text-[11px] font-medium text-zinc-300 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
               >
-                Только ТОП-10
+                ТОП-10
               </button>
               <button
                 type="button"
                 onclick="selectBanksPreset('all')"
-                class="px-2.5 py-1 rounded-lg bg-white/[0.05] hover:bg-white/10 text-zinc-400 hover:text-white text-[11px] font-medium transition-all cursor-pointer"
+                class="py-1 rounded-lg text-center text-[11px] font-medium text-zinc-300 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
               >
-                Выбрать все
+                Все банки
               </button>
               <button
                 type="button"
                 onclick="selectBanksPreset('none')"
-                class="px-2.5 py-1 rounded-lg bg-white/[0.05] hover:bg-white/10 text-zinc-400 hover:text-white text-[11px] font-medium transition-all cursor-pointer"
+                class="py-1 rounded-lg text-center text-[11px] font-medium text-zinc-400 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
               >
                 Сбросить
               </button>
             </div>
 
-            <!-- Сетка чекбоксов банков -->
-            <div id="mr-settings-banks-list" class="grid grid-cols-2 gap-1 pt-1"></div>
+            <!-- Поиск банка -->
+            <div class="relative">
+              <i data-lucide="search" class="w-3.5 h-3.5 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2"></i>
+              <input
+                type="text"
+                id="mr-settings-bank-search"
+                oninput="filterBanksList(this.value)"
+                placeholder="Поиск банка..."
+                class="w-full bg-[#0E1016] border border-white/10 rounded-xl pl-8 pr-3 py-1.5 text-xs text-white placeholder-zinc-500 focus:border-white/30 focus:outline-none transition-all"
+              />
+            </div>
+
+            <!-- Список чекбоксов банков во всю ширину -->
+            <div id="mr-settings-banks-list" class="pt-1"></div>
           </div>
         </div>
 
