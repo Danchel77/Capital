@@ -2153,3 +2153,66 @@ body.keyboard-visible #bottom-nav-bar {
     transform 0.15s ease,
     background-color 0.15s ease;
 }
+
+/* Discrete Obsidian Range Slider (Market Rates Settings) */
+.discrete-range-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+  outline: none;
+  margin: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.discrete-range-slider::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 6px;
+  background: transparent;
+  border-radius: 9999px;
+}
+
+.discrete-range-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffffff;
+  cursor: pointer;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
+  border: 2px solid #0e1016;
+  margin-top: -5px;
+  transition:
+    transform 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.discrete-range-slider::-webkit-slider-thumb:hover,
+.discrete-range-slider::-webkit-slider-thumb:active {
+  transform: scale(1.15);
+  background: #f4f4f5;
+}
+
+.discrete-range-slider::-moz-range-track {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+}
+
+.discrete-range-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffffff;
+  cursor: pointer;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
+  border: 2px solid #0e1016;
+  transition:
+    transform 0.15s ease,
+    background-color 0.15s ease;
+}

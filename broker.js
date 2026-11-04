@@ -784,7 +784,11 @@ async function refreshMoexQuotes() {
 
   try {
     await autoUpdateBrokerQuotesAndSnapshot(true);
-    renderBroker();
+    if (typeof fetchCollection === 'function') {
+      await fetchCollection('Broker');
+    } else {
+      renderBroker();
+    }
     showToast('Котировки и оценка портфеля обновлены');
   } catch (err) {
     console.warn('Ошибка ручного обновления котировок MOEX:', err);

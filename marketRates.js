@@ -350,6 +350,14 @@ async function fetchLiveBankOffers(forceRefresh = false) {
 // ==========================================
 // 4. Selection of Best Offer
 // ==========================================
+function formatTermMonths(m) {
+  if (!m) return '';
+  if (m === 12) return '1 год';
+  if (m === 24) return '2 года';
+  if (m === 36) return '3 года';
+  return `${m} мес.`;
+}
+
 function getBestDepositOffer() {
   if (!marketRatesState.offers || marketRatesState.offers.length === 0) return null;
 
@@ -388,7 +396,9 @@ function renderMarketRatesWidget() {
   if (bestEl) {
     const best = getBestDepositOffer();
     if (best) {
-      bestEl.innerText = `${formatRate(best.rate)}% · ${best.bankName}`;
+      const termDesc = formatTermMonths(best.termMonths);
+      const termPart = termDesc ? ` на ${termDesc}` : '';
+      bestEl.innerText = `${formatRate(best.rate)}%${termPart} · ${best.bankName}`;
     } else if (marketRatesState.isLoading) {
       bestEl.innerText = 'Загрузка...';
     } else if (marketRatesState.offers.length === 0) {
@@ -439,7 +449,6 @@ function switchMarketRatesTab(tab) {
 
   const btnDep = document.getElementById('mr-tab-deposits');
   const btnAcc = document.getElementById('mr-tab-accounts');
-  const periodChips = document.getElementById('mr-period-chips-container');
 
   if (tab === 'deposits') {
     if (btnDep) {
@@ -450,7 +459,6 @@ function switchMarketRatesTab(tab) {
       btnAcc.className =
         'flex-1 py-1.5 text-center text-xs font-medium rounded-xl text-zinc-400 hover:text-white transition-all cursor-pointer';
     }
-    if (periodChips) periodChips.classList.remove('hidden');
   } else {
     if (btnDep) {
       btnDep.className =
@@ -460,28 +468,13 @@ function switchMarketRatesTab(tab) {
       btnAcc.className =
         'flex-1 py-1.5 text-center text-xs font-semibold rounded-xl bg-[#181c26] text-white border border-[#282e3e] shadow-sm transition-all cursor-pointer is-active';
     }
-    if (periodChips) periodChips.classList.add('hidden');
   }
 
   renderMarketRatesModalContent();
 }
 
-function setMarketRatesTermFilter(term) {
-  closeRateConditionsPopover();
-  marketRatesState.selectedTerm = term;
-
-  document.querySelectorAll('.mr-period-btn').forEach(btn => {
-    const isAct = btn.dataset.term === term;
-    if (isAct) {
-      btn.className =
-        'mr-period-btn py-1.5 text-center rounded-lg bg-white text-zinc-950 text-xs font-semibold shadow-sm transition-all cursor-pointer';
-    } else {
-      btn.className =
-        'mr-period-btn py-1.5 text-center rounded-lg text-zinc-400 hover:text-white text-xs font-medium transition-all cursor-pointer';
-    }
-  });
-
-  renderMarketRatesModalContent();
+function setMarketRatesTermFilter(_term) {
+  // Обратная совместимость: выбор сроков убран, все сроки видны сразу
 }
 
 function _getDaysDeclension(n) {
@@ -541,13 +534,6 @@ function renderMarketRatesModalContent() {
     // Фильтр условий (бейджей)
     if (!isOfferAllowedByTags(o.tags, settings)) return false;
 
-    // Фильтр сроков (только для вкладов)
-    if (isDeposits && marketRatesState.selectedTerm !== 'all') {
-      if (marketRatesState.selectedTerm === '3m' && o.termMonths !== 3) return false;
-      if (marketRatesState.selectedTerm === '6m' && o.termMonths !== 6) return false;
-      if (marketRatesState.selectedTerm === '12m' && o.termMonths !== 12) return false;
-    }
-
     return true;
   });
 
@@ -603,8 +589,8 @@ function renderMarketRatesModalContent() {
 
       let productsHtml = '';
 
-      if (isDeposits && marketRatesState.selectedTerm === 'all') {
-        // Режим «Все сроки»: объединяем одинаковые продукты в единую карточку с сеткой ставок
+      if (isDeposits) {
+        // Режим вкладов: объединяем одинаковые продукты в единую карточку со всеми сроками
         const productMap = new Map();
         for (const it of items) {
           const baseName = it.productName.split('(')[0].trim() || it.productName;
@@ -724,15 +710,10 @@ function renderMarketRatesModalContent() {
           })
           .join('');
       } else {
-        // Режим конкретного срока или накопительных счетов
+        // Накопительные счета: унифицированная 3-строчная карточка (срок: бессрочно)
         productsHtml = items
           .map((item, pIdx) => {
             const isLast = pIdx === items.length - 1;
-            const rawAmount = item.minAmount > 0 ? formatMoney(item.minAmount) : '';
-            const minAmountDesc =
-              item.minAmount > 0
-                ? `от&nbsp;${String(rawAmount).replace(/\s+/g, '&nbsp;')}`
-                : 'без&nbsp;ограничений';
 
             const conditionsBtn = item.conditionsNote
               ? `
@@ -751,48 +732,59 @@ function renderMarketRatesModalContent() {
             `
               : '';
 
+            const ratesLineHtml = `<span class="whitespace-nowrap text-zinc-400">бессрочно:&nbsp;<b class="text-emerald-400 font-bold">${formatRate(item.rate)}%</b></span>`;
+
+            const rawAmount = item.minAmount > 0 ? formatMoney(item.minAmount) : '';
+            const minAmountDesc =
+              item.minAmount > 0
+                ? `от&nbsp;${String(rawAmount).replace(/\s+/g, '&nbsp;')}`
+                : 'без&nbsp;ограничений';
+
             const formattedTags =
               item.tags && item.tags.length > 0
-                ? item.tags
-                    .map(formatTag)
-                    .filter(t => Boolean(t) && (isDeposits || t !== 'пополнение'))
+                ? item.tags.map(formatTag).filter(t => Boolean(t) && t !== 'пополнение')
                 : [];
-            let sublineHtml = `<span class="whitespace-nowrap text-zinc-400 font-medium">${minAmountDesc}</span>`;
+            let conditionsTextHtml = `<span class="whitespace-nowrap text-zinc-400 font-medium">${minAmountDesc}</span>`;
             if (formattedTags.length > 0) {
               const tagsHtml = formattedTags
                 .map(t => `<span class="whitespace-nowrap text-zinc-500">${t}</span>`)
                 .join(' <span class="text-zinc-600 select-none mx-1.5">·</span> ');
-              sublineHtml += ` <span class="text-zinc-600 select-none mx-1.5">·</span> ${tagsHtml}`;
+              conditionsTextHtml += ` <span class="text-zinc-600 select-none mx-1.5">·</span> ${tagsHtml}`;
             }
 
             return `
               <div class="py-2.5 ${!isLast ? 'border-b border-white/[0.04]' : ''} flex flex-col gap-1">
-                <!-- Верхняя строка: Название продукта слева, ставка справа -->
+                <!-- Строка 1: Название продукта слева, кнопка Условия справа -->
                 <div class="flex items-start justify-between gap-2">
                   <h5 class="text-xs font-semibold text-white tracking-tight leading-snug min-w-0 flex-1">${item.productName}</h5>
-                  <span class="text-sm font-semibold tabular-nums text-emerald-400 leading-tight flex-shrink-0">
-                    ${formatRate(item.rate)}%
-                  </span>
-                </div>
-
-                <!-- Нижняя строка: Параметры простым текстом слева, кнопка Условия справа -->
-                <div class="flex items-start justify-between gap-2 text-[11px] mt-0.5">
-                  <p class="text-[11px] leading-normal min-w-0 flex-1">
-                    ${sublineHtml}
-                  </p>
                   ${conditionsBtn}
                 </div>
+
+                <!-- Строка 2: Срок и ставка в едином стиле -->
+                <div class="flex items-center flex-wrap gap-y-0.5 text-[11px] font-mono mt-0.5">
+                  ${ratesLineHtml}
+                </div>
+
+                <!-- Строка 3: Сумма и параметры простым текстом через точки -->
+                <p class="text-[11px] leading-normal text-zinc-500">
+                  ${conditionsTextHtml}
+                </p>
               </div>
             `;
           })
           .join('');
       }
 
+      const logoHtml = window.getBankLogoSvg ? window.getBankLogoSvg(bankName) : '';
+
       return `
         <div class="p-3.5 rounded-2xl bg-[#12151C] border border-white/[0.06] hover:border-white/15 transition-all flex flex-col gap-1">
           <!-- Шапка группы банка -->
           <div class="flex items-center justify-between pb-2 border-b border-white/[0.06]">
-            <div class="flex items-center gap-2 min-w-0">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <div class="w-5 h-5 rounded-md overflow-hidden flex-shrink-0 flex items-center justify-center bg-white/[0.04] border border-white/10">
+                ${logoHtml}
+              </div>
               <h4 class="text-sm font-bold text-white tracking-tight truncate">${bankName}</h4>
             </div>
             <div class="text-right flex-shrink-0">
@@ -1009,14 +1001,29 @@ function initMarketRatesSettingsForm() {
     }).join('');
   }
 
-  // 2. Отрисовка списка банков строками во всю ширину
+  // 2. Отрисовка списка банков строками во всю ширину с логотипами и сортировкой выбранных наверх
   if (banksContainer) {
     const selected = settings.selectedBanks || TOP_10_BANKS_DEFAULT;
-    banksContainer.innerHTML = ALL_POPULAR_BANKS.map(b => {
-      const isChecked = selected.includes(b);
-      return `
+    const sortedBanks = [...ALL_POPULAR_BANKS].sort((a, b) => {
+      const aSel = selected.includes(a);
+      const bSel = selected.includes(b);
+      if (aSel && !bSel) return -1;
+      if (!aSel && bSel) return 1;
+      return a.localeCompare(b, 'ru');
+    });
+
+    banksContainer.innerHTML = sortedBanks
+      .map(b => {
+        const isChecked = selected.includes(b);
+        const logoSvg = window.getBankLogoSvg ? window.getBankLogoSvg(b) : '';
+        return `
         <label class="mr-bank-row flex items-center justify-between py-2 cursor-pointer select-none group border-b border-white/[0.04] last:border-b-0" data-bank="${b.toLowerCase()}">
-          <span class="text-xs text-zinc-300 group-hover:text-white transition-colors leading-snug">${b}</span>
+          <div class="flex items-center gap-2.5 min-w-0 pr-2">
+            <div class="w-6 h-6 rounded-md overflow-hidden flex-shrink-0 flex items-center justify-center bg-white/[0.04] border border-white/10">
+              ${logoSvg}
+            </div>
+            <span class="text-xs text-zinc-300 group-hover:text-white transition-colors leading-snug truncate">${b}</span>
+          </div>
           <input type="checkbox" class="mr-bank-cb sr-only flex-shrink-0" value="${b}" ${isChecked ? 'checked' : ''} onchange="toggleCustomCheckbox(this)">
           <div class="custom-cb-box w-4 h-4 rounded-md border flex items-center justify-center transition-all flex-shrink-0 ${isChecked ? 'bg-white border-white text-black' : 'border-white/20 bg-white/[0.04] text-transparent'}">
             <svg class="w-3 h-3 stroke-[2.5]" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -1025,7 +1032,8 @@ function initMarketRatesSettingsForm() {
           </div>
         </label>
       `;
-    }).join('');
+      })
+      .join('');
   }
 }
 

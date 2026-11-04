@@ -5,6 +5,8 @@ const { execSync } = require('child_process');
 const CHROME_PATH = path.resolve(__dirname, '../chrome-headless-shell/linux-156.0.8078.80/chrome-headless-shell-linux64/chrome-headless-shell');
 const dataJson = fs.readFileSync(path.resolve(__dirname, '../data/market-rates.json'), 'utf8');
 const marketRatesJs = fs.readFileSync(path.resolve(__dirname, '../marketRates.js'), 'utf8');
+const bankLogosJs = fs.readFileSync(path.resolve(__dirname, '../bank-logos.js'), 'utf8');
+const styleCss = fs.readFileSync(path.resolve(__dirname, '../style.css'), 'utf8');
 
 function createPreviewHtml({ term = 'all', openPopover = false, activeTab = 'deposits' }) {
   return `<!DOCTYPE html>
@@ -40,6 +42,7 @@ function createPreviewHtml({ term = 'all', openPopover = false, activeTab = 'dep
       background: rgba(255, 255, 255, 0.15);
       border-radius: 4px;
     }
+    ${styleCss}
   </style>
 </head>
 <body class="bg-black min-h-screen flex items-center justify-center p-0">
@@ -86,14 +89,6 @@ function createPreviewHtml({ term = 'all', openPopover = false, activeTab = 'dep
       >
         Накопительные счета
       </button>
-    </div>
-
-    <!-- Быстрый фильтр сроков для вкладов -->
-    <div id="mr-period-chips-container" class="grid grid-cols-4 gap-1 p-1 bg-white/[0.04] border border-white/[0.06] rounded-xl mb-3 flex-shrink-0 w-full ${activeTab === 'accounts' ? 'hidden' : ''}">
-      <button type="button" data-term="all" class="mr-period-btn py-1.5 text-center rounded-lg text-xs ${term === 'all' ? 'bg-white text-zinc-950 font-semibold shadow-sm' : 'text-zinc-400 font-medium'}">Все сроки</button>
-      <button type="button" data-term="3m" class="mr-period-btn py-1.5 text-center rounded-lg text-xs ${term === '3m' ? 'bg-white text-zinc-950 font-semibold shadow-sm' : 'text-zinc-400 font-medium'}">3 мес.</button>
-      <button type="button" data-term="6m" class="mr-period-btn py-1.5 text-center rounded-lg text-xs ${term === '6m' ? 'bg-white text-zinc-950 font-semibold shadow-sm' : 'text-zinc-400 font-medium'}">6 мес.</button>
-      <button type="button" data-term="12m" class="mr-period-btn py-1.5 text-center rounded-lg text-xs ${term === '12m' ? 'bg-white text-zinc-950 font-semibold shadow-sm' : 'text-zinc-400 font-medium'}">1 год</button>
     </div>
 
     <!-- Скроллируемый список предложений (id: market-rates-offers-list) -->
@@ -144,6 +139,7 @@ function createPreviewHtml({ term = 'all', openPopover = false, activeTab = 'dep
     function unlockBodyScroll() {}
     function showNotification() {}
 
+    ${bankLogosJs}
     ${marketRatesJs}
 
     marketRatesState.offers = mockJson.offers;
@@ -292,18 +288,6 @@ function createSettingsPreviewHtml() {
           </button>
         </div>
 
-        <!-- Поиск банка -->
-        <div class="relative">
-          <i data-lucide="search" class="w-3.5 h-3.5 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2"></i>
-          <input
-            type="text"
-            id="mr-settings-bank-search"
-            oninput="filterBanksList(this.value)"
-            placeholder="Поиск банка..."
-            class="w-full bg-[#0E1016] border border-white/10 rounded-xl pl-8 pr-3 py-1.5 text-xs text-white placeholder-zinc-500 focus:border-white/30 focus:outline-none transition-all"
-          />
-        </div>
-
         <!-- Список чекбоксов банков во всю ширину -->
         <div id="mr-settings-banks-list" class="pt-1"></div>
       </div>
@@ -331,6 +315,7 @@ function createSettingsPreviewHtml() {
     function unlockBodyScroll() {}
     function showNotification() {}
 
+    ${bankLogosJs}
     ${marketRatesJs}
 
     initMarketRatesSettingsForm();
@@ -344,8 +329,7 @@ function createSettingsPreviewHtml() {
 }
 
 const tests = [
-  { name: 'preview-mode1-all', config: { term: 'all', openPopover: false, activeTab: 'deposits' } },
-  { name: 'preview-mode2-3m', config: { term: '3m', openPopover: false, activeTab: 'deposits' } },
+  { name: 'preview-deposits', config: { term: 'all', openPopover: false, activeTab: 'deposits' } },
   { name: 'preview-accounts', config: { term: 'all', openPopover: false, activeTab: 'accounts' } },
   { name: 'preview-popover', config: { term: 'all', openPopover: true, activeTab: 'deposits' } }
 ];
