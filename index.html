@@ -4204,7 +4204,7 @@
         <!-- Скроллируемый список предложений (на всю оставшуюся высоту) -->
         <div
           id="market-rates-offers-list"
-          class="flex-1 overflow-y-auto space-y-2 pr-1 -mr-1 min-h-0"
+          class="flex-1 overflow-y-auto space-y-2 pr-1 -mr-1 min-h-0 pb-8 custom-scrollbar"
         ></div>
       </div>
     </div>
@@ -4339,54 +4339,41 @@
       </div>
     </div>
 
-    <!-- МОДАЛКА / ТУЛТИП: ОФИЦИАЛЬНЫЕ УСЛОВИЯ СТАВКИ -->
+    <!-- ВСПЛЫВАЮЩИЙ ПОПОВЕР: ОФИЦИАЛЬНЫЕ УСЛОВИЯ СТАВКИ (Obsidian Minimalist - Floating Card) -->
     <div
-      id="rate-conditions-tooltip-modal"
-      class="fixed inset-0 bg-black/85 z-[140] hidden flex flex-col justify-end sm:justify-center items-center p-0 sm:p-4 backdrop-blur-sm animate-fade-in"
-      onclick="if (event.target === this) closeRateConditionsTooltip();"
+      id="rate-conditions-popover"
+      class="fixed z-[130] hidden bg-[#1A1E29] border border-white/15 rounded-2xl p-4 shadow-2xl backdrop-blur-md transition-all duration-150 animate-fade-in w-[calc(100%-32px)] max-w-sm"
+      style="left: 16px; right: 16px; margin: 0 auto"
     >
-      <div
-        class="bg-[#0E1016] border border-white/10 w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl p-4 sm:p-5 shadow-2xl relative flex flex-col max-h-[85vh] overflow-hidden"
-        onclick="event.stopPropagation()"
-      >
-        <div class="flex items-center justify-between mb-3 flex-shrink-0">
-          <div class="flex items-center gap-2 min-w-0">
-            <div
-              class="w-7 h-7 rounded-lg bg-amber-500/15 text-amber-400 flex items-center justify-center font-bold text-xs border border-amber-500/30 flex-shrink-0"
-            >
-              !
-            </div>
-            <div class="min-w-0">
-              <h3 id="rct-bank-title" class="text-[11px] font-semibold text-zinc-400 truncate">
-                Банк
-              </h3>
-              <p id="rct-product-title" class="text-sm font-bold text-white truncate">
-                Условия ставки
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onclick="closeRateConditionsTooltip()"
-            class="w-7 h-7 rounded-full bg-white/[0.06] hover:bg-white/10 text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors text-xs font-semibold flex-shrink-0"
-            title="Закрыть"
+      <!-- Шапка поповера -->
+      <div class="flex items-center justify-between pb-2 mb-2.5 border-b border-white/[0.08]">
+        <div class="flex items-center gap-1.5 min-w-0">
+          <div class="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0"></div>
+          <span id="rcp-bank-title" class="text-[11px] font-semibold text-zinc-400 truncate"
+            >Банк</span
           >
-            ✕
-          </button>
+          <span class="text-zinc-600 select-none">·</span>
+          <span id="rcp-product-title" class="text-xs font-bold text-white truncate">Условия</span>
         </div>
-
-        <div
-          class="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06] text-xs text-zinc-300 leading-relaxed overflow-y-auto max-h-64 custom-scrollbar"
-          id="rct-content"
-        ></div>
-
         <button
           type="button"
-          onclick="closeRateConditionsTooltip()"
-          class="mt-3.5 w-full py-2.5 rounded-xl bg-white hover:bg-zinc-100 text-zinc-950 font-semibold text-xs transition-all cursor-pointer shadow-sm active:scale-[0.98]"
+          onclick="closeRateConditionsPopover()"
+          class="w-6 h-6 rounded-full bg-white/[0.06] hover:bg-white/10 text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors text-xs font-semibold flex-shrink-0 ml-2"
+          title="Закрыть"
         >
-          Понятно
+          ✕
         </button>
+      </div>
+
+      <!-- Скроллируемый текст условий с внутренним скроллом и защитным градиентом -->
+      <div class="relative">
+        <div
+          id="rcp-content"
+          class="text-xs text-zinc-300 leading-relaxed max-h-44 overflow-y-auto overscroll-contain pr-1 pb-6 custom-scrollbar select-text"
+        ></div>
+        <div
+          class="pointer-events-none absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-[#1A1E29] to-transparent rounded-b-xl"
+        ></div>
       </div>
     </div>
 

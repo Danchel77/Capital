@@ -199,6 +199,11 @@ function formatRate(val) {
   return String(num).replace('.', ',');
 }
 
+function preventHangingPrepositions(str) {
+  if (!str) return '';
+  return String(str).replace(/(^|\s)([свкоиунаСВКОИУНА])\s+/g, '$1$2&nbsp;');
+}
+
 const MARKET_RATES_CACHE_VERSION = 3;
 
 // ==========================================
@@ -398,12 +403,14 @@ function openMarketRatesModal() {
 }
 
 function closeMarketRatesModal() {
+  closeRateConditionsPopover();
   const modal = document.getElementById('market-rates-modal');
   if (modal) modal.classList.add('hidden');
   unlockBodyScroll();
 }
 
 function switchMarketRatesTab(tab) {
+  closeRateConditionsPopover();
   marketRatesState.activeTab = tab;
 
   const btnDep = document.getElementById('mr-tab-deposits');
@@ -436,6 +443,7 @@ function switchMarketRatesTab(tab) {
 }
 
 function setMarketRatesTermFilter(term) {
+  closeRateConditionsPopover();
   marketRatesState.selectedTerm = term;
 
   document.querySelectorAll('.mr-period-btn').forEach(btn => {
@@ -644,14 +652,13 @@ function renderMarketRatesModalContent() {
                     label: m === 12 ? '1 год' : `${m} мес`,
                   }));
 
-            const termsLineParts = displayTerms.map(t => {
+            const termsLineParts = displayTerms.map((t, idx) => {
               const r = entry.termRates.get(t.m);
               const isTop = r === entry.topRate;
-              return `<span class="whitespace-nowrap text-zinc-400">${t.label}:&nbsp;<b class="${isTop ? 'text-emerald-400 font-bold' : 'text-zinc-200 font-semibold'}">${formatRate(r)}%</b></span>`;
+              const dot = idx > 0 ? '<span class="text-zinc-600 select-none mx-1.5">·</span>' : '';
+              return `${dot}<span class="whitespace-nowrap text-zinc-400">${t.label}:&nbsp;<b class="${isTop ? 'text-emerald-400 font-bold' : 'text-zinc-200 font-semibold'}">${formatRate(r)}%</b></span>`;
             });
-            const termsLineHtml = termsLineParts.join(
-              '<span class="text-zinc-600 select-none">·</span>'
-            );
+            const termsLineHtml = termsLineParts.join('');
 
             // Условия простым текстом через точки без чипов
             const minAmountDesc =
@@ -659,28 +666,29 @@ function renderMarketRatesModalContent() {
                 ? `от&nbsp;${formatMoney(entry.minAmount)}`
                 : 'без&nbsp;ограничений';
 
-            const conditionsItems = [minAmountDesc, ...Array.from(entry.tags)];
-            const conditionsTextHtml = conditionsItems
-              .map(c => `<span class="whitespace-nowrap text-zinc-400">${c}</span>`)
-              .join('<span class="text-zinc-600 select-none">·</span>');
+            let conditionsTextHtml = minAmountDesc;
+            if (entry.tags && entry.tags.size > 0) {
+              const tagsText = Array.from(entry.tags).map(preventHangingPrepositions).join(', ');
+              conditionsTextHtml += ` <span class="text-zinc-600 select-none mx-1.5">·</span> ${tagsText}`;
+            }
 
             return `
               <div class="py-2.5 ${!isLast ? 'border-b border-white/[0.04]' : ''} flex flex-col gap-1">
                 <!-- Строка 1: Название продукта слева, кнопка Условия справа -->
-                <div class="flex items-center justify-between gap-2">
-                  <h5 class="text-xs font-semibold text-white tracking-tight truncate">${entry.productName}</h5>
+                <div class="flex items-start justify-between gap-2">
+                  <h5 class="text-xs font-semibold text-white tracking-tight leading-snug min-w-0 flex-1">${entry.productName}</h5>
                   ${conditionsBtn}
                 </div>
 
                 <!-- Строка 2: Сроки и ставки чистым текстом через точку -->
-                <div class="flex items-center flex-wrap gap-x-2 gap-y-0.5 text-[11px] font-mono mt-0.5">
+                <div class="flex items-center flex-wrap gap-y-0.5 text-[11px] font-mono mt-0.5">
                   ${termsLineHtml}
                 </div>
 
                 <!-- Строка 3: Сумма и параметры простым текстом через точки -->
-                <div class="flex items-center flex-wrap gap-x-1.5 gap-y-0.5 text-[11px] font-mono">
+                <p class="text-[11px] text-zinc-400 leading-normal">
                   ${conditionsTextHtml}
-                </div>
+                </p>
               </div>
             `;
           })
@@ -712,29 +720,34 @@ function renderMarketRatesModalContent() {
             `
               : '';
 
-            const sublineItems = isDeposits
-              ? [minAmountDesc, ...(item.tags || [])]
-              : ['Бессрочный', minAmountDesc, ...(item.tags || [])];
-
-            const sublineHtml = sublineItems
-              .map(c => `<span class="whitespace-nowrap text-zinc-400">${c}</span>`)
-              .join('<span class="text-zinc-600 select-none">·</span>');
+            const tagsText =
+              item.tags && item.tags.length > 0
+                ? item.tags.map(preventHangingPrepositions).join(', ')
+                : '';
+            let sublineHtml = '';
+            if (!isDeposits) {
+              sublineHtml += 'Бессрочный <span class="text-zinc-600 select-none mx-1.5">·</span> ';
+            }
+            sublineHtml += minAmountDesc;
+            if (tagsText) {
+              sublineHtml += ` <span class="text-zinc-600 select-none mx-1.5">·</span> ${tagsText}`;
+            }
 
             return `
               <div class="py-2.5 ${!isLast ? 'border-b border-white/[0.04]' : ''} flex flex-col gap-1">
                 <!-- Верхняя строка: Название продукта слева, ставка справа -->
-                <div class="flex items-center justify-between gap-2">
-                  <h5 class="text-xs font-semibold text-white tracking-tight truncate">${item.productName}</h5>
-                  <span class="text-sm font-semibold font-mono text-emerald-400 leading-none flex-shrink-0 tabular-nums">
+                <div class="flex items-start justify-between gap-2">
+                  <h5 class="text-xs font-semibold text-white tracking-tight leading-snug min-w-0 flex-1">${item.productName}</h5>
+                  <span class="text-sm font-semibold tabular-nums text-emerald-400 leading-tight flex-shrink-0">
                     ${formatRate(item.rate)}%
                   </span>
                 </div>
 
                 <!-- Нижняя строка: Параметры простым текстом слева, кнопка Условия справа -->
-                <div class="flex items-center justify-between gap-2 text-[11px] font-mono mt-0.5">
-                  <div class="flex items-center flex-wrap gap-x-1.5 gap-y-0.5 min-w-0 flex-1">
+                <div class="flex items-center justify-between gap-2 text-[11px] mt-0.5">
+                  <p class="text-[11px] text-zinc-400 leading-normal min-w-0 flex-1">
                     ${sublineHtml}
-                  </div>
+                  </p>
                   ${conditionsBtn}
                 </div>
               </div>
@@ -770,28 +783,92 @@ function renderMarketRatesModalContent() {
 }
 
 // ==========================================
-// 6. Rate Conditions Tooltip Modal
+// 6. Rate Conditions Floating Popover Card
 // ==========================================
-function showRateConditionsTooltip(event, bankName, productName, note) {
-  if (event && typeof event.stopPropagation === 'function') event.stopPropagation();
-  const modal = document.getElementById('rate-conditions-tooltip-modal');
-  if (!modal) return;
-  const bankEl = document.getElementById('rct-bank-title');
-  const prodEl = document.getElementById('rct-product-title');
-  const contentEl = document.getElementById('rct-content');
+let _rateConditionsPopoverCleanup = null;
+
+function showRateConditionsPopover(btn, bankName, productName, note) {
+  const popover = document.getElementById('rate-conditions-popover');
+  if (!popover) return;
+
+  const bankEl = document.getElementById('rcp-bank-title');
+  const prodEl = document.getElementById('rcp-product-title');
+  const contentEl = document.getElementById('rcp-content');
+
   if (bankEl) bankEl.innerText = bankName || 'Банк';
   if (prodEl) prodEl.innerText = productName || 'Условия ставки';
-  if (contentEl) contentEl.innerText = note || 'Подробные условия не указаны';
-  modal.classList.remove('hidden');
-  lockBodyScroll();
+  if (contentEl) {
+    let cleanNote = (note || 'Подробные условия не указаны').trim();
+    if (cleanNote.length > 0) {
+      cleanNote = cleanNote.charAt(0).toUpperCase() + cleanNote.slice(1);
+    }
+    contentEl.innerText = cleanNote;
+    contentEl.scrollTop = 0;
+  }
+
+  popover.classList.remove('hidden');
+
+  // Динамическое позиционирование над/под кнопкой
+  if (btn && typeof btn.getBoundingClientRect === 'function') {
+    const rect = btn.getBoundingClientRect();
+    const popoverH = popover.offsetHeight || 220;
+    const winH = window.innerHeight;
+
+    // По умолчанию показываем под кнопкой с зазором 6px
+    let top = rect.bottom + 6;
+    // Если выходит за пределы экрана снизу — поднимаем над кнопкой
+    if (top + popoverH > winH - 20) {
+      top = Math.max(50, rect.top - popoverH - 6);
+    }
+    popover.style.top = `${Math.round(top)}px`;
+  } else {
+    popover.style.top = '30%';
+  }
+
+  // Привязываем слушатели закрытия при скролле и клике вне поповера
+  bindPopoverAutoClose();
 }
 
-function closeRateConditionsTooltip() {
-  const modal = document.getElementById('rate-conditions-tooltip-modal');
-  if (modal) modal.classList.add('hidden');
-  const ratesModal = document.getElementById('market-rates-modal');
-  if (!ratesModal || ratesModal.classList.contains('hidden')) {
-    unlockBodyScroll();
+function bindPopoverAutoClose() {
+  if (_rateConditionsPopoverCleanup) {
+    _rateConditionsPopoverCleanup();
+  }
+
+  const popover = document.getElementById('rate-conditions-popover');
+  const listEl = document.getElementById('market-rates-offers-list');
+
+  const onScroll = () => {
+    closeRateConditionsPopover();
+  };
+
+  const onPointerDown = e => {
+    if (!popover || popover.classList.contains('hidden')) return;
+    // Если тап внутри поповера или по кнопке открытия — не закрываем
+    if (popover.contains(e.target) || (e.target.closest && e.target.closest('[data-note]'))) {
+      return;
+    }
+    closeRateConditionsPopover();
+  };
+
+  if (listEl) {
+    listEl.addEventListener('scroll', onScroll, { passive: true });
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  document.addEventListener('pointerdown', onPointerDown, { capture: true });
+
+  _rateConditionsPopoverCleanup = () => {
+    if (listEl) listEl.removeEventListener('scroll', onScroll);
+    window.removeEventListener('scroll', onScroll);
+    document.removeEventListener('pointerdown', onPointerDown, { capture: true });
+    _rateConditionsPopoverCleanup = null;
+  };
+}
+
+function closeRateConditionsPopover() {
+  const popover = document.getElementById('rate-conditions-popover');
+  if (popover) popover.classList.add('hidden');
+  if (_rateConditionsPopoverCleanup) {
+    _rateConditionsPopoverCleanup();
   }
 }
 
@@ -800,11 +877,13 @@ function handleRateInfoClick(btn) {
   const bank = decodeURIComponent(btn.dataset.bank || '');
   const product = decodeURIComponent(btn.dataset.product || '');
   const note = decodeURIComponent(btn.dataset.note || '');
-  showRateConditionsTooltip(null, bank, product, note);
+  showRateConditionsPopover(btn, bank, product, note);
 }
 
-window.showRateConditionsTooltip = showRateConditionsTooltip;
-window.closeRateConditionsTooltip = closeRateConditionsTooltip;
+window.showRateConditionsPopover = showRateConditionsPopover;
+window.closeRateConditionsPopover = closeRateConditionsPopover;
+window.showRateConditionsTooltip = showRateConditionsPopover;
+window.closeRateConditionsTooltip = closeRateConditionsPopover;
 window.handleRateInfoClick = handleRateInfoClick;
 window.formatRate = formatRate;
 

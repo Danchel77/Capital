@@ -114,10 +114,11 @@ function extractConditionsNote(r) {
     )
     .filter(p => p.length > 0)
     .map(p => {
-      if (!/[.!;]$/.test(p)) {
-        return p + '.';
+      let sentence = p.charAt(0).toUpperCase() + p.slice(1);
+      if (!/[.!;]$/.test(sentence)) {
+        sentence += '.';
       }
-      return p;
+      return sentence;
     });
 
   const clean = cleanParts.join(' ');
