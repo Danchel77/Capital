@@ -116,9 +116,10 @@ function processGoals(goals) {
     const totalAccumulated = piggyBank + capitalAlloc;
     const remaining = Math.max(0, target - totalAccumulated);
 
+    const totalVis = Math.max(target, totalAccumulated);
     const progress = target > 0 ? Math.min(100, (totalAccumulated / target) * 100) : 0;
-    const capitalPct = target > 0 ? Math.min(100, (capitalAlloc / target) * 100) : 0;
-    const piggyPct = target > 0 ? Math.min(100 - capitalPct, (piggyBank / target) * 100) : 0;
+    const capitalPct = totalVis > 0 ? (capitalAlloc / totalVis) * 100 : 0;
+    const piggyPct = totalVis > 0 ? (piggyBank / totalVis) * 100 : 0;
     const isAchieved = target > 0 && totalAccumulated >= target;
     const icon = g.icon || getGoalIcon(g.name) || 'target';
 
@@ -132,8 +133,8 @@ function processGoals(goals) {
       remaining,
       share,
       progress: progress.toFixed(1),
-      capitalPct: capitalPct.toFixed(1),
-      piggyPct: piggyPct.toFixed(1),
+      capitalPct: Math.min(100, capitalPct).toFixed(1),
+      piggyPct: Math.min(100 - Math.min(100, capitalPct), piggyPct).toFixed(1),
       isAchieved,
       icon,
     };
@@ -191,7 +192,7 @@ function renderBudgetGoals(goals) {
     .map(g => {
       const statusText = g.isAchieved
         ? '<span class="text-emerald-400 font-medium">Цель достигнута</span>'
-        : `<span class="text-zinc-500 font-mono text-[11px]">Осталось ${formatMoney(g.remaining)}</span>`;
+        : '<span class="text-zinc-500 font-medium text-xs">В процессе накопления</span>';
 
       return `
       <div class="card bg-[#0E1016] border border-white/[0.08] hover:border-white/20 rounded-2xl p-4 shadow-sm cursor-pointer relative transition-all"
@@ -215,9 +216,9 @@ function renderBudgetGoals(goals) {
           
           <button type="button" 
                   onclick="event.stopPropagation(); openGoalTopupModal('${g.id}', '${escapeHtml(g.name)}')" 
-                  class="px-2.5 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/10 border border-white/[0.08] text-zinc-300 text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 flex-shrink-0">
-            <i data-lucide="wallet" class="w-3.5 h-3.5 text-sky-400"></i>
-            <span>Копилка</span>
+                  class="p-2 rounded-xl bg-white/[0.04] hover:bg-white/10 text-zinc-400 hover:text-white transition-all cursor-pointer active:scale-95 flex-shrink-0"
+                  title="Копилка цели">
+            <i data-lucide="wallet" class="w-4 h-4 text-sky-400"></i>
           </button>
         </div>
 
@@ -441,7 +442,7 @@ function renderGoalSharesManagerList(currentEditingId = null) {
       const capitalAmount = Math.round(totalCapital * (shareVal / 100));
 
       return `
-      <div class="px-3 py-2.5 rounded-xl bg-[#0A0C10] border border-white/[0.06] space-y-2" data-share-goal-id="${item.id}">
+      <div class="py-2.5 border-b border-white/[0.06] last:border-b-0 space-y-2" data-share-goal-id="${item.id}">
         <div class="flex items-center justify-between text-xs">
           <div class="flex items-center gap-2 min-w-0 flex-1 mr-2">
             <div class="w-6 h-6 rounded-lg bg-white/[0.05] text-zinc-300 flex items-center justify-center flex-shrink-0">
@@ -563,7 +564,7 @@ function updateGoalSharesUI() {
     if (freePct > 0) {
       freeIndicator.innerHTML = `Свободно: <span class="text-emerald-400 font-semibold">${freePct}%</span> (${formatMoney(freeAmount)})`;
     } else {
-      freeIndicator.innerHTML = `<span class="text-zinc-400">100% распределено</span>`;
+      freeIndicator.innerHTML = '';
     }
   }
 }
@@ -772,18 +773,21 @@ function setTopupMode(mode) {
   currentTopupMode = mode;
   const addBtn = document.getElementById('tab-topup-add');
   const subBtn = document.getElementById('tab-topup-sub');
+  const submitBtn = document.getElementById('goal-topup-submit-btn');
   if (!addBtn || !subBtn) return;
 
   if (mode === 'add') {
     addBtn.className =
-      'py-1.5 rounded-lg text-xs font-semibold bg-white text-zinc-950 transition-all cursor-pointer';
+      'py-1.5 rounded-lg text-xs font-semibold bg-white/10 text-white border border-white/15 transition-all cursor-pointer';
     subBtn.className =
-      'py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-white transition-all cursor-pointer';
+      'py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-white border border-transparent transition-all cursor-pointer';
+    if (submitBtn) submitBtn.innerText = 'Пополнить';
   } else {
     subBtn.className =
-      'py-1.5 rounded-lg text-xs font-semibold bg-white text-zinc-950 transition-all cursor-pointer';
+      'py-1.5 rounded-lg text-xs font-semibold bg-white/10 text-white border border-white/15 transition-all cursor-pointer';
     addBtn.className =
-      'py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-white transition-all cursor-pointer';
+      'py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-white border border-transparent transition-all cursor-pointer';
+    if (submitBtn) submitBtn.innerText = 'Снять';
   }
 
   handleGoalTopupAmountInput();
