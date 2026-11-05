@@ -610,6 +610,9 @@ function closeForm(containerId, btnId, btnText, formId) {
   if (container) container.classList.add('hidden');
   const form = document.getElementById(formId);
   if (form) form.reset();
+  if (formId === 'deposit-form' && typeof window.setCustomBankSelectValue === 'function') {
+    window.setCustomBankSelectValue('dep-bank', '');
+  }
   if (formId === 'tx-form') {
     const list = document.getElementById('tx-items-list');
     if (list) list.innerHTML = '';

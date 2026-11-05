@@ -320,11 +320,17 @@ function applyMonthSummaryViewMode(mode) {
     }
   }
 
-  if (isChart && typeof window.updateAnalyticsForMonth === 'function') {
+  if (isChart) {
     requestAnimationFrame(() => {
-      const targetDate = getSelectedBudgetDate();
-      const mId = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}`;
-      window.updateAnalyticsForMonth(mId);
+      if (typeof window.updateAnalyticsForMonth === 'function') {
+        const targetDate = getSelectedBudgetDate();
+        const mId = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}`;
+        window.updateAnalyticsForMonth(mId);
+      }
+      if (window.categoryChartObj) {
+        window.categoryChartObj.resize();
+        window.categoryChartObj.update();
+      }
     });
   }
 }

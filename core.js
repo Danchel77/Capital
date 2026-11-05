@@ -975,6 +975,14 @@ async function submitAction(btnId, table, data) {
     if (typeof renderTransactions === 'function') renderTransactions();
     if (typeof renderBudgetTab === 'function') renderBudgetTab();
   } else if (table === 'Deposits') {
+    if (!Cache.deposits) Cache.deposits = [];
+    if (isEdit) {
+      const idx = Cache.deposits.findIndex(d => d.id === targetId);
+      if (idx !== -1) Cache.deposits[idx] = { ...Cache.deposits[idx], ...data, id: targetId };
+    } else {
+      const optId = `opt_dep_${Date.now()}`;
+      Cache.deposits.unshift({ ...data, id: optId });
+    }
     markTabsDirty();
     if (typeof renderDeposits === 'function') renderDeposits();
     if (typeof renderBudgetTab === 'function') renderBudgetTab();

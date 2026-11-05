@@ -2258,7 +2258,6 @@ window.submitDeleteAccountWithGoogle = submitDeleteAccountWithGoogle;
 window.openProfileModal = openProfileModal;
 window.closeProfileModal = closeProfileModal;
 window.toggleBrokerSetting = toggleBrokerSetting;
-window.togglePdfInfoSetting = togglePdfInfoSetting;
 window.toggleNotificationsSetting = toggleNotificationsSetting;
 window.changeNotificationTimeSetting = changeNotificationTimeSetting;
 window.openSubModalFromProfile = openSubModalFromProfile;

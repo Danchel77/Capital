@@ -950,7 +950,7 @@
             <div id="month-summary-numbers-view">
               <p
                 id="budget-month-delta-val"
-                class="text-3xl sm:text-4xl font-bold text-white tracking-tight leading-tight my-1.5 [font-variant-numeric:tabular-nums]"
+                class="text-3xl sm:text-4xl font-bold text-white tracking-tight leading-tight font-mono tabular-nums my-1.5"
               >
                 0 ₽
               </p>
@@ -1329,7 +1329,7 @@
             <div class="flex items-baseline justify-between gap-2 flex-wrap">
               <p
                 id="deposits-total-amount"
-                class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight font-mono tabular-nums"
+                class="text-3xl sm:text-4xl font-bold text-white tracking-tight leading-tight font-mono tabular-nums"
               >
                 0 ₽
               </p>
@@ -1401,16 +1401,37 @@
               </div>
 
               <div class="mb-3">
-                <label class="block text-[10px] text-zinc-400 uppercase font-bold mb-1"
-                  >Банк</label
-                >
-                <select
-                  id="dep-bank"
-                  onchange="handleDepositBankSelect(this, 'dep-name')"
-                  class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white rounded-xl p-3 outline-none text-xs cursor-pointer"
-                >
-                  <option value="" class="bg-[#12151C] text-zinc-400">Выберите банк (необязательно)</option>
-                </select>
+                <label class="block text-[10px] text-zinc-400 uppercase font-bold mb-1">Банк</label>
+                <div class="relative" id="dep-bank-select-container">
+                  <input type="hidden" id="dep-bank" value="" />
+                  <button
+                    type="button"
+                    id="dep-bank-select-btn"
+                    onclick="toggleCustomBankDropdown('dep-bank')"
+                    class="w-full bg-[#12151C] border border-white/[0.08] hover:border-white/15 focus:border-white/25 text-white rounded-xl p-3 outline-none text-xs flex items-center justify-between transition-colors cursor-pointer select-none"
+                  >
+                    <div class="flex items-center gap-2 min-w-0" id="dep-bank-selected-display">
+                      <span class="text-zinc-500">Выберите банк (необязательно)</span>
+                    </div>
+                    <i data-lucide="chevron-down" id="dep-bank-chevron" class="w-4 h-4 text-zinc-500 flex-shrink-0 transition-transform duration-200"></i>
+                  </button>
+
+                  <div
+                    id="dep-bank-dropdown"
+                    class="hidden absolute left-0 right-0 top-full mt-1.5 z-50 bg-[#12151C] border border-white/15 rounded-2xl shadow-2xl overflow-hidden max-h-60 flex flex-col"
+                  >
+                    <div class="p-2 border-b border-white/[0.06] bg-[#0E1016]">
+                      <input
+                        type="text"
+                        id="dep-bank-search"
+                        placeholder="Поиск банка..."
+                        oninput="filterCustomBankDropdown('dep-bank', this.value)"
+                        class="w-full bg-[#181C26] border border-white/[0.08] text-white placeholder-zinc-500 text-xs rounded-lg px-2.5 py-1.5 outline-none"
+                      />
+                    </div>
+                    <div id="dep-bank-options-list" class="overflow-y-auto divide-y divide-white/[0.04]"></div>
+                  </div>
+                </div>
               </div>
 
               <div class="mb-3">
@@ -1433,7 +1454,7 @@
                   id="dep-amount"
                   placeholder="Сумма (₽)"
                   required
-                  class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white rounded-xl p-3 outline-none flex-1 text-xs font-mono font-bold"
+                  class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white placeholder-zinc-500 rounded-xl p-3 outline-none flex-1 text-xs font-bold"
                 />
                 <input
                   type="text"
@@ -1442,7 +1463,7 @@
                   id="dep-rate"
                   placeholder="Ставка %"
                   required
-                  class="w-1/3 bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white rounded-xl p-3 outline-none text-xs font-mono font-bold"
+                  class="w-1/3 bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white placeholder-zinc-500 rounded-xl p-3 outline-none text-xs font-bold"
                 />
               </div>
 
@@ -1562,7 +1583,7 @@
             <!-- Основной баланс портфеля -->
             <p
               id="broker-balance"
-              class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight font-mono tabular-nums mt-1"
+              class="text-3xl sm:text-4xl font-bold text-white tracking-tight leading-tight font-mono tabular-nums mt-1"
             >
               0 ₽
             </p>
@@ -6436,16 +6457,37 @@
 
           <!-- Выбор банка -->
           <div>
-            <label class="block text-[10px] text-zinc-400 uppercase font-bold mb-1"
-              >Банк</label
-            >
-            <select
-              id="edit-dep-bank"
-              onchange="handleDepositBankSelect(this, 'edit-dep-name')"
-              class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white rounded-xl p-3 outline-none text-xs cursor-pointer"
-            >
-              <option value="" class="bg-[#12151C] text-zinc-400">Выберите банк (необязательно)</option>
-            </select>
+            <label class="block text-[10px] text-zinc-400 uppercase font-bold mb-1">Банк</label>
+            <div class="relative" id="edit-dep-bank-select-container">
+              <input type="hidden" id="edit-dep-bank" value="" />
+              <button
+                type="button"
+                id="edit-dep-bank-select-btn"
+                onclick="toggleCustomBankDropdown('edit-dep-bank')"
+                class="w-full bg-[#12151C] border border-white/[0.08] hover:border-white/15 focus:border-white/25 text-white rounded-xl p-3 outline-none text-xs flex items-center justify-between transition-colors cursor-pointer select-none"
+              >
+                <div class="flex items-center gap-2 min-w-0" id="edit-dep-bank-selected-display">
+                  <span class="text-zinc-500">Выберите банк (необязательно)</span>
+                </div>
+                <i data-lucide="chevron-down" id="edit-dep-bank-chevron" class="w-4 h-4 text-zinc-500 flex-shrink-0 transition-transform duration-200"></i>
+              </button>
+
+              <div
+                id="edit-dep-bank-dropdown"
+                class="hidden absolute left-0 right-0 top-full mt-1.5 z-50 bg-[#12151C] border border-white/15 rounded-2xl shadow-2xl overflow-hidden max-h-60 flex flex-col"
+              >
+                <div class="p-2 border-b border-white/[0.06] bg-[#0E1016]">
+                  <input
+                    type="text"
+                    id="edit-dep-bank-search"
+                    placeholder="Поиск банка..."
+                    oninput="filterCustomBankDropdown('edit-dep-bank', this.value)"
+                    class="w-full bg-[#181C26] border border-white/[0.08] text-white placeholder-zinc-500 text-xs rounded-lg px-2.5 py-1.5 outline-none"
+                  />
+                </div>
+                <div id="edit-dep-bank-options-list" class="overflow-y-auto divide-y divide-white/[0.04]"></div>
+              </div>
+            </div>
           </div>
 
           <!-- Название вклада -->
@@ -6474,7 +6516,7 @@
                 id="edit-dep-amount"
                 placeholder="0 ₽"
                 required
-                class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white rounded-xl p-3 outline-none text-xs font-mono font-bold"
+                class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white placeholder-zinc-500 rounded-xl p-3 outline-none text-xs font-bold"
               />
             </div>
             <div class="w-1/3">
@@ -6488,7 +6530,7 @@
                 id="edit-dep-rate"
                 placeholder="0%"
                 required
-                class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white rounded-xl p-3 outline-none text-xs font-mono font-bold"
+                class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white placeholder-zinc-500 rounded-xl p-3 outline-none text-xs font-bold"
               />
             </div>
           </div>

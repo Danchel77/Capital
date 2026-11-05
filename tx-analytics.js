@@ -660,27 +660,21 @@ function updateAnalyticsForMonth(monthId) {
             const pct = total ? Math.round((item.value / total) * 100) : 0;
             if (item.isOthers) {
               return `
-      <div class="category-legend__item flex items-center justify-between p-1.5 rounded-lg bg-[#12151C] border border-white/[0.04] hover:bg-white/[0.08] transition-colors cursor-pointer select-none" onclick="showCategoryOthersPopover(this, event)">
-        <div class="flex items-center gap-1.5 min-w-0 pr-1">
+      <div class="category-legend__item flex items-center justify-between py-1.5 px-2 rounded-lg bg-[#12151C] border border-white/[0.04] hover:bg-white/[0.08] transition-colors cursor-pointer select-none" onclick="showCategoryOthersPopover(this, event)">
+        <div class="flex items-center gap-2 min-w-0 flex-1 pr-1">
           <span class="category-legend__dot w-2 h-2 rounded-full flex-shrink-0 bg-[#71717A]"></span>
           <span class="category-legend__name text-xs font-medium text-zinc-300 truncate">${safeEscape(item.label)}</span>
         </div>
-        <div class="flex items-center gap-2 flex-shrink-0">
-          <span class="category-legend__value font-mono font-semibold text-xs text-white">${formatMoney(item.value)}</span>
-          <span class="category-legend__percent font-mono text-[11px] text-zinc-400 w-7 text-right">${pct}%</span>
-        </div>
+        <span class="category-legend__percent font-mono text-xs font-semibold text-zinc-400 flex-shrink-0">${pct}%</span>
       </div>`;
             }
             return `
-      <div class="category-legend__item flex items-center justify-between p-1.5 rounded-lg bg-[#12151C] border border-white/[0.04] hover:bg-white/[0.06] transition-colors cursor-pointer select-none" onclick="selectCategorySlice(${i})">
-        <div class="flex items-center gap-1.5 min-w-0 pr-1">
+      <div class="category-legend__item flex items-center justify-between py-1.5 px-2 rounded-lg bg-[#12151C] border border-white/[0.04] hover:bg-white/[0.06] transition-colors cursor-pointer select-none" onclick="selectCategorySlice(${i})">
+        <div class="flex items-center gap-2 min-w-0 flex-1 pr-1">
           <span class="category-legend__dot w-2 h-2 rounded-full flex-shrink-0" style="background:${item.color}"></span>
           <span class="category-legend__name text-xs font-medium text-zinc-200 truncate">${safeEscape(item.label)}</span>
         </div>
-        <div class="flex items-center gap-2 flex-shrink-0">
-          <span class="category-legend__value font-mono font-semibold text-xs text-white">${formatMoney(item.value)}</span>
-          <span class="category-legend__percent font-mono text-[11px] text-zinc-500 w-7 text-right">${pct}%</span>
-        </div>
+        <span class="category-legend__percent font-mono text-xs font-semibold text-zinc-400 flex-shrink-0">${pct}%</span>
       </div>`;
           })
           .join('')
@@ -701,6 +695,7 @@ function updateAnalyticsForMonth(monthId) {
       ? chartColors
       : ['#1C202A'];
     categoryChartObj.options.cutout = '74%';
+    categoryChartObj.resize();
     categoryChartObj.update();
   } else {
     if (categoryChartObj) categoryChartObj.destroy();

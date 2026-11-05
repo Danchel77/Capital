@@ -130,19 +130,198 @@ const BANK_NAMES_LIST = [
   'ФИНСТАР БАНК',
 ];
 
-function initDepositBankSelects() {
-  const selects = ['dep-bank', 'edit-dep-bank'];
-  selects.forEach(id => {
-    const el = document.getElementById(id);
-    if (!el || el.options.length > 1) return;
-    BANK_NAMES_LIST.forEach(b => {
-      const opt = document.createElement('option');
-      opt.value = b;
-      opt.textContent = b;
-      opt.className = 'bg-[#12151C] text-white';
-      el.appendChild(opt);
-    });
+function getSortedBankList() {
+  let favoriteBanks = [];
+  try {
+    if (typeof getMarketRatesSettings === 'function') {
+      const s = getMarketRatesSettings();
+      favoriteBanks = s.selectedBanks || [];
+    }
+  } catch (_e) {
+    // ignore
+  }
+
+  const favoritesSet = new Set(favoriteBanks.map(b => b.toLowerCase()));
+  const favList = [];
+  const otherList = [];
+
+  BANK_NAMES_LIST.forEach(b => {
+    if (favoritesSet.has(b.toLowerCase())) {
+      favList.push(b);
+    } else {
+      otherList.push(b);
+    }
   });
+
+  return [...favList, ...otherList];
+}
+
+let activeBankDropdownCleanup = null;
+
+function closeCustomBankDropdown(targetPrefix) {
+  const dropdown = document.getElementById(`${targetPrefix}-dropdown`);
+  const chevron = document.getElementById(`${targetPrefix}-chevron`);
+  if (dropdown) dropdown.classList.add('hidden');
+  if (chevron) chevron.classList.remove('rotate-180');
+}
+window.closeCustomBankDropdown = closeCustomBankDropdown;
+
+function bindCustomBankDropdownAutoClose(targetPrefix) {
+  if (typeof activeBankDropdownCleanup === 'function') {
+    activeBankDropdownCleanup();
+  }
+
+  const container = document.getElementById(`${targetPrefix}-select-container`);
+  const onPointerDown = e => {
+    if (container && !container.contains(e.target)) {
+      closeCustomBankDropdown(targetPrefix);
+      cleanup();
+    }
+  };
+
+  const cleanup = () => {
+    document.removeEventListener('pointerdown', onPointerDown, { capture: true });
+    activeBankDropdownCleanup = null;
+  };
+
+  document.addEventListener('pointerdown', onPointerDown, { capture: true });
+  activeBankDropdownCleanup = cleanup;
+}
+
+function renderCustomBankOptions(targetPrefix, filterQuery = '') {
+  const listEl = document.getElementById(`${targetPrefix}-options-list`);
+  if (!listEl) return;
+
+  const currentVal = document.getElementById(targetPrefix)?.value || '';
+  const sortedBanks = getSortedBankList();
+  const query = (filterQuery || '').trim().toLowerCase();
+  const safeEscape = typeof escapeHtml === 'function' ? escapeHtml : s => s;
+
+  const filteredBanks = query
+    ? sortedBanks.filter(b => b.toLowerCase().includes(query))
+    : sortedBanks;
+
+  let html = '';
+  if (!query) {
+    const isNoneSelected = !currentVal;
+    html += `
+      <div
+        onclick="selectCustomBank('${targetPrefix}', '')"
+        class="flex items-center justify-between p-2.5 hover:bg-white/[0.06] transition-colors cursor-pointer select-none ${isNoneSelected ? 'bg-white/[0.04]' : ''}"
+      >
+        <span class="text-xs text-zinc-400">Не указывать банк</span>
+        ${isNoneSelected ? '<i data-lucide="check" class="w-3.5 h-3.5 text-emerald-400"></i>' : ''}
+      </div>
+    `;
+  }
+
+  if (filteredBanks.length === 0) {
+    html += `<div class="p-3 text-center text-xs text-zinc-500">Банк не найден</div>`;
+  } else {
+    filteredBanks.forEach(b => {
+      const isSelected = currentVal.toLowerCase() === b.toLowerCase();
+      const logoSvg = (typeof getBankLogoSvg === 'function' ? getBankLogoSvg(b) : '') || '';
+      const logoHtml = logoSvg
+        ? `<div class="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 overflow-hidden">${logoSvg}</div>`
+        : '';
+
+      html += `
+        <div
+          onclick="selectCustomBank('${targetPrefix}', '${safeEscape(b)}')"
+          class="flex items-center justify-between p-2.5 hover:bg-white/[0.06] transition-colors cursor-pointer select-none ${isSelected ? 'bg-white/[0.04]' : ''}"
+        >
+          <div class="flex items-center gap-2.5 min-w-0 pr-2">
+            ${logoHtml}
+            <span class="text-xs font-medium text-white truncate">${safeEscape(b)}</span>
+          </div>
+          ${isSelected ? '<i data-lucide="check" class="w-3.5 h-3.5 text-emerald-400 flex-shrink-0"></i>' : ''}
+        </div>
+      `;
+    });
+  }
+
+  listEl.innerHTML = html;
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function openCustomBankDropdown(targetPrefix) {
+  const dropdown = document.getElementById(`${targetPrefix}-dropdown`);
+  const chevron = document.getElementById(`${targetPrefix}-chevron`);
+  if (!dropdown) return;
+
+  closeCustomBankDropdown('dep-bank');
+  closeCustomBankDropdown('edit-dep-bank');
+
+  dropdown.classList.remove('hidden');
+  if (chevron) chevron.classList.add('rotate-180');
+
+  const searchInput = document.getElementById(`${targetPrefix}-search`);
+  if (searchInput) {
+    searchInput.value = '';
+    setTimeout(() => searchInput.focus(), 50);
+  }
+  renderCustomBankOptions(targetPrefix, '');
+  bindCustomBankDropdownAutoClose(targetPrefix);
+}
+window.openCustomBankDropdown = openCustomBankDropdown;
+
+function toggleCustomBankDropdown(targetPrefix) {
+  const dropdown = document.getElementById(`${targetPrefix}-dropdown`);
+  if (!dropdown) return;
+
+  const isHidden = dropdown.classList.contains('hidden');
+  if (isHidden) {
+    openCustomBankDropdown(targetPrefix);
+  } else {
+    closeCustomBankDropdown(targetPrefix);
+  }
+}
+window.toggleCustomBankDropdown = toggleCustomBankDropdown;
+
+function filterCustomBankDropdown(targetPrefix, query) {
+  renderCustomBankOptions(targetPrefix, query);
+}
+window.filterCustomBankDropdown = filterCustomBankDropdown;
+
+function selectCustomBank(targetPrefix, bankName) {
+  const hiddenInput = document.getElementById(targetPrefix);
+  const displayEl = document.getElementById(`${targetPrefix}-selected-display`);
+  const safeEscape = typeof escapeHtml === 'function' ? escapeHtml : s => s;
+
+  if (hiddenInput) {
+    hiddenInput.value = bankName;
+  }
+
+  if (displayEl) {
+    if (bankName) {
+      const logoSvg = (typeof getBankLogoSvg === 'function' ? getBankLogoSvg(bankName) : '') || '';
+      const logoHtml = logoSvg
+        ? `<div class="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 overflow-hidden">${logoSvg}</div>`
+        : '';
+      displayEl.innerHTML = `
+        ${logoHtml}
+        <span class="text-white font-medium text-xs truncate">${safeEscape(bankName)}</span>
+      `;
+    } else {
+      displayEl.innerHTML = `<span class="text-zinc-500">Выберите банк (необязательно)</span>`;
+    }
+  }
+
+  const nameInputId = targetPrefix === 'edit-dep-bank' ? 'edit-dep-name' : 'dep-name';
+  handleDepositBankSelect({ value: bankName }, nameInputId);
+
+  closeCustomBankDropdown(targetPrefix);
+}
+window.selectCustomBank = selectCustomBank;
+
+function setCustomBankSelectValue(targetPrefix, bankName) {
+  selectCustomBank(targetPrefix, bankName || '');
+}
+window.setCustomBankSelectValue = setCustomBankSelectValue;
+
+function initDepositBankSelects() {
+  renderCustomBankOptions('dep-bank');
+  renderCustomBankOptions('edit-dep-bank');
 }
 window.initDepositBankSelects = initDepositBankSelects;
 
@@ -257,7 +436,7 @@ function renderDeposits() {
               (typeof getBankLogoSvg === 'function' ? getBankLogoSvg(dep.bank || dep.name) : '') ||
               '';
             const logoHtml = logoSvg
-              ? `<div class="w-8 h-8 rounded-xl bg-white/[0.04] p-1 flex items-center justify-center flex-shrink-0 border border-amber-500/30 overflow-hidden">${logoSvg}</div>`
+              ? `<div class="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden shadow-sm">${logoSvg}</div>`
               : `<div class="w-8 h-8 rounded-xl bg-amber-500/15 text-amber-300 flex items-center justify-center flex-shrink-0 border border-amber-500/25"><i data-lucide="vault" class="w-4 h-4"></i></div>`;
             return `
           <div class="card bg-[#0E1016] border border-amber-500/30 rounded-2xl p-3.5 flex flex-col gap-2.5 transition-all cursor-pointer shadow-lg active:scale-[0.99]"
@@ -313,7 +492,7 @@ function renderDeposits() {
         const logoSvg =
           (typeof getBankLogoSvg === 'function' ? getBankLogoSvg(dep.bank || dep.name) : '') || '';
         const logoHtml = logoSvg
-          ? `<div class="w-7 h-7 rounded-lg bg-white/[0.04] p-1 flex items-center justify-center flex-shrink-0 border border-white/[0.06] overflow-hidden">${logoSvg}</div>`
+          ? `<div class="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden shadow-sm">${logoSvg}</div>`
           : `<div class="w-7 h-7 rounded-lg bg-white/[0.05] text-zinc-300 flex items-center justify-center flex-shrink-0 border border-white/[0.06]"><i data-lucide="vault" class="w-3.5 h-3.5"></i></div>`;
         return `
       <div
@@ -384,7 +563,7 @@ function renderDeposits() {
               (typeof getBankLogoSvg === 'function' ? getBankLogoSvg(dep.bank || dep.name) : '') ||
               '';
             const logoHtml = logoSvg
-              ? `<div class="w-7 h-7 rounded-lg bg-white/[0.03] p-1 flex items-center justify-center flex-shrink-0 border border-white/[0.04] opacity-70 overflow-hidden">${logoSvg}</div>`
+              ? `<div class="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 opacity-70 overflow-hidden">${logoSvg}</div>`
               : `<div class="w-7 h-7 rounded-lg bg-white/[0.03] text-zinc-500 flex items-center justify-center flex-shrink-0"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i></div>`;
             return `
           <div
@@ -460,7 +639,7 @@ function submitDeposit(e) {
       ? formatDateStr(parsedEnd, 'yyyy-MM-dd')
       : formatDateStr(endRaw) || endRaw;
 
-  addRecord('Deposits', {
+  submitAction('dep-submit-btn', 'Deposits', {
     name,
     bank: selectedBank,
     amount: getUnformattedVal(document.getElementById('dep-amount')),
@@ -472,6 +651,7 @@ function submitDeposit(e) {
   });
 
   closeForm('deposit-form-container', 'dep-submit-btn', 'Сохранить', 'deposit-form');
+  setCustomBankSelectValue('dep-bank', '');
 }
 
 // ==========================================
@@ -489,8 +669,7 @@ function openEditDepModal(id) {
 
   initDepositBankSelects();
   document.getElementById('edit-dep-id').value = dep.id;
-  const bankSelect = document.getElementById('edit-dep-bank');
-  if (bankSelect) bankSelect.value = dep.bank || '';
+  setCustomBankSelectValue('edit-dep-bank', dep.bank || '');
   document.getElementById('edit-dep-name').value = dep.name || '';
   setFormattedVal('edit-dep-amount', dep.amount);
   setFormattedVal('edit-dep-rate', dep.rate);
@@ -513,6 +692,7 @@ function openEditDepModal(id) {
 function closeEditDepModal() {
   const dlg = document.getElementById('dep-edit-modal');
   if (dlg) dlg.classList.add('hidden');
+  closeCustomBankDropdown('edit-dep-bank');
 }
 
 async function submitEditDepModal(e) {
