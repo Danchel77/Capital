@@ -696,19 +696,6 @@ header button:hover {
   transform: scale(0.98);
 }
 
-.btn-destructive {
-  background: #2a151b !important;
-  color: #fb7185 !important;
-  border: 1px solid #4a212c !important;
-  transition: all 0.15s ease;
-}
-.btn-destructive:hover {
-  background: #361b23 !important;
-}
-.btn-destructive:active {
-  transform: scale(0.98);
-}
-
 #transactions-list {
   padding-top: 4px;
 }
@@ -771,10 +758,6 @@ body.selection-mode .card[data-table='Transactions'] .select-checkbox {
 }
 
 /* При мультивыборе скрываем кнопку оплаты и кнопку "Пополнить" на карточке цели */
-body.selection-mode .bill-pay-status,
-body.selection-mode .goal-topup-btn {
-  display: none !important;
-}
 
 /* Правая часть строки транзакции: плавный аппаратный GPU-сдвиг */
 .tx-row-right {
@@ -817,14 +800,6 @@ body.selection-mode .card.tx-has-author .tx-row-right {
 }
 
 /* При мультивыборе бейдж цели плавно сдвигается левее через GPU */
-.deposit-goal-tag {
-  transform: translate3d(0, 0, 0);
-  will-change: transform;
-  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-}
-body.selection-mode .deposit-goal-tag {
-  transform: translate3d(-28px, 0, 0);
-}
 
 /* Единый стиль мультивыбора для всех карточек: мягкая заливка без резких контуров */
 .card.selected,
@@ -894,109 +869,6 @@ body.selection-mode .deposit-goal-tag {
   box-shadow: none !important;
 }
 
-/* ---------- charts ---------- */
-.chart-screen {
-  padding: 2px 0 22px;
-}
-.chart-screen:not(.hidden) {
-  animation: chart-pane-in 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-@keyframes chart-pane-in {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-.chart-filter {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  padding: 13px 15px;
-  margin: 2px 0 12px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 18px;
-}
-.chart-filter__eyebrow,
-.chart-card__eyebrow {
-  margin: 0 0 2px;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  font-size: 9px;
-  font-weight: 750;
-  color: var(--muted-2);
-}
-.chart-filter__label {
-  font-size: 14px;
-  font-weight: 650;
-  color: var(--text);
-}
-.chart-select {
-  width: 150px;
-  min-height: 42px;
-  padding: 0 12px;
-  color: var(--text);
-  background: var(--surface-2);
-  border: 1px solid var(--line-strong);
-  border-radius: 13px;
-  outline: none;
-  font-size: 13px;
-}
-.chart-card {
-  background: #0e1016;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 20px;
-  padding: 16px;
-  margin-bottom: 12px;
-  overflow: hidden;
-}
-.chart-card__header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 13px;
-}
-.chart-card__header h3 {
-  margin: 0;
-  font-size: 18px;
-  line-height: 1.25;
-  letter-spacing: -0.02em;
-}
-.chart-card__hint {
-  color: var(--muted-2);
-  font-size: 11px;
-  padding-top: 3px;
-  max-width: 150px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  text-align: right;
-}
-.chart-canvas {
-  position: relative;
-  width: 100%;
-}
-.chart-canvas--trend {
-  height: 220px;
-}
-.category-chart-wrap {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 12px;
-}
-.chart-canvas--donut {
-  height: 236px;
-  max-width: 280px;
-  margin: 0 auto;
-  position: relative;
-}
 /* Компактный Donut для сводной карточки месяца */
 .chart-canvas--donut-mini {
   width: 120px !important;
@@ -1066,24 +938,6 @@ body.selection-mode .deposit-goal-tag {
   transform: translateY(-2px);
   transition: opacity 0.15s ease;
 }
-.donut-center__clickable {
-  width: 136px;
-  height: 136px;
-  border-radius: 50%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  pointer-events: auto;
-  cursor: pointer;
-  user-select: none;
-  padding: 6px;
-  box-sizing: border-box;
-  transition: transform 0.15s ease;
-}
-.donut-center__clickable:active {
-  transform: scale(0.96);
-}
 .donut-center__label,
 .donut-center span:not(.donut-center__percent) {
   color: var(--muted-2);
@@ -1126,14 +980,6 @@ body.selection-mode .deposit-goal-tag {
   transition:
     color 0.15s ease,
     opacity 0.15s ease;
-}
-
-/* Интегрированная полоса месяца внутри карточки структуры */
-.analytics-month-strip {
-  background: rgba(255, 255, 255, 0.028);
-  border: 1px solid rgba(255, 255, 255, 0.055);
-  border-radius: 14px;
-  padding: 8px 10px;
 }
 
 .category-legend {
@@ -1179,12 +1025,6 @@ body.selection-mode .deposit-goal-tag {
   color: #c6ccd4;
   font-size: 12px;
 }
-.category-legend__value {
-  color: #eef0f3;
-  font-size: 12px;
-  font-weight: 650;
-  white-space: nowrap;
-}
 
 /* Кнопки управления категориями в форме транзакции */
 .manage-categories-btn,
@@ -1206,7 +1046,6 @@ body.selection-mode .deposit-goal-tag {
 }
 
 /* ---------- forms / generic UI ---------- */
-.input-reset,
 #edit-tx-date {
   border: none !important;
   background: transparent !important;
@@ -1393,13 +1232,11 @@ nav button {
   padding: 4px 0 !important;
 }
 nav button.text-[#8C7DFF],
-nav button.text-blue-400,
-nav button.text-blue-500 {
+nav button.text-[#8C7DFF] {
   color: #8c7dff !important;
 }
 nav button.text-[#8C7DFF]::before,
-nav button.text-blue-400::before,
-nav button.text-blue-500::before {
+nav button.text-[#8C7DFF]::before {
   content: '';
   position: absolute;
   top: 0px;
@@ -1677,33 +1514,6 @@ body.selection-mode .selection-panel {
   header > div > span {
     display: none;
   }
-  .analytics-heading h2 {
-    font-size: 22px;
-  }
-  .analytics-heading .chart-select {
-    width: 142px;
-    font-size: 12px;
-  }
-  .analytics-summary__main {
-    padding: 18px 15px;
-  }
-  .analytics-summary__main strong {
-    font-size: 21px;
-  }
-  .analytics-summary__rows {
-    padding: 15px 12px;
-  }
-  .chart-canvas--trend {
-    height: 245px;
-  }
-  .chart-canvas--donut {
-    height: 226px;
-  }
-  .donut-center__clickable {
-    width: 128px;
-    height: 128px;
-    padding: 4px;
-  }
   .donut-center__label,
   .donut-center span:not(.donut-center__percent) {
     max-width: 110px;
@@ -1717,112 +1527,6 @@ body.selection-mode .selection-panel {
   .donut-center__percent {
     font-size: 10.5px;
   }
-}
-
-/* ---------- analytics-specific layout ---------- */
-.analytics-heading {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 14px;
-  margin: 2px 0 12px;
-}
-.analytics-heading h2 {
-  margin: 0;
-  font-size: 25px;
-  line-height: 1.05;
-  letter-spacing: -0.045em;
-}
-.analytics-heading .chart-select {
-  width: 152px;
-  min-height: 44px;
-}
-.analytics-summary {
-  display: grid;
-  grid-template-columns: 1.15fr 0.85fr;
-  gap: 0;
-  overflow: hidden;
-  margin-bottom: 12px;
-  background: linear-gradient(145deg, #1a2028, #141a20);
-  border: 1px solid var(--line-strong);
-  border-radius: 22px;
-}
-.analytics-summary__main {
-  padding: 20px;
-  border-right: 1px solid var(--line);
-}
-.analytics-summary__label {
-  display: block;
-  color: var(--muted-2);
-  text-transform: uppercase;
-  letter-spacing: 0.09em;
-  font-size: 9px;
-  font-weight: 750;
-}
-.analytics-summary__main strong {
-  display: block;
-  margin: 7px 0 4px;
-  color: var(--green);
-  font-size: 25px;
-  line-height: 1.1;
-  letter-spacing: -0.035em;
-}
-.analytics-summary__main strong.is-negative {
-  color: var(--red);
-}
-.analytics-summary__sub {
-  color: var(--muted);
-  font-size: 11px;
-}
-.analytics-summary__rows {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 13px;
-  padding: 17px 16px;
-}
-.analytics-summary__rows div {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-.analytics-summary__rows span {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  color: #aeb6c1;
-  font-size: 11px;
-}
-.analytics-summary__rows strong {
-  color: var(--text);
-  font-size: 12px;
-  white-space: nowrap;
-}
-.analytics-dot {
-  display: inline-block;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-}
-.analytics-dot--income {
-  background: var(--green);
-  box-shadow: 0 0 9px rgba(54, 214, 155, 0.35);
-}
-.analytics-dot--expense {
-  background: var(--red);
-  box-shadow: 0 0 9px rgba(255, 111, 125, 0.3);
-}
-.chart-card--structure {
-  padding-bottom: 17px;
-}
-.analytics-empty {
-  padding: 13px;
-  color: var(--muted-2);
-  font-size: 12px;
-  text-align: center;
-  border: 1px dashed var(--line);
-  border-radius: 12px;
 }
 
 /* ============================================================
@@ -2048,33 +1752,9 @@ body.selection-mode .selection-panel {
   background: rgba(108, 93, 211, 0.18);
 }
 
-/* Унификация шагов мастера бюджета */
-.wiz-step-card {
-  min-height: auto;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-}
-
-.wiz-step-content {
-  flex: 1 1 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
 @media (max-width: 640px) {
   #app-content {
     padding: 12px 14px 80px !important;
-  }
-
-  .wiz-step-card {
-    padding: 14px !important;
-    border-radius: 20px !important;
-  }
-
-  .wiz-step-content {
-    gap: 10px;
   }
 
   .wiz-day-cell {

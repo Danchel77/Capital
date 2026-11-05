@@ -7,16 +7,19 @@ let isAppInitialized = false;
 let currentAuthedUid = null;
 let lastVisibilitySyncTimestamp = Date.now();
 
-// Показываем экран загрузки сразу при первом старте
-if (typeof window.showLoadingScreen === 'function') {
-  window.showLoadingScreen();
-} else {
-  document.getElementById('loading-screen')?.classList.remove('hidden');
+// Показываем экран загрузки сразу при первом старте (если не мок-режим)
+const isPreviewMockActive = window.__MOCK_MODE__ || window.location.search.includes('mock=1');
+if (!isPreviewMockActive) {
+  if (typeof window.showLoadingScreen === 'function') {
+    window.showLoadingScreen();
+  } else {
+    document.getElementById('loading-screen')?.classList.remove('hidden');
+  }
 }
 
 // Слушатель состояния авторизации пользователя (Запуск приложения)
 const currentAuth = typeof auth !== 'undefined' ? auth : window.auth;
-if (currentAuth && typeof currentAuth.onAuthStateChanged === 'function') {
+if (!isPreviewMockActive && currentAuth && typeof currentAuth.onAuthStateChanged === 'function') {
   currentAuth.onAuthStateChanged(async user => {
     if (user) {
       document.getElementById('login-screen')?.classList.add('hidden');

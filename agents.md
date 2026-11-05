@@ -1,122 +1,45 @@
-# Capital — правила для AI-агентов
+# Capital — Core Agent Rules
 
-Финансовый трекер (PWA + Capacitor Android).
-**Стек:** Vanilla JS (ES6+), Tailwind CSS, Firebase Firestore. Без React/Next.js в рантайме.
+PWA/Android (Capacitor) offline-first personal finance tracker.
+Stack: Vanilla JS (ES6+), Tailwind CSS, Firebase Firestore. Mobile-only viewport (380–412px).
 
----
+## 1. Commands
 
-## 1. Запуск и команды
+- Run dev server: `npm run dev`
+- Lint changed files: `npx eslint $(git diff --name-only origin/main -- '*.js') --fix`
+- Sync assets to Android: `npx cap sync android`
+- Never run full-project `npm run check` or `eslint .` (legacy files exist).
 
-- `npm run dev` — локальный сервер разработки
-- `npx eslint <path-to-file> --fix` — линтинг измененных файлов перед сдачей задачи
-- `npx cap sync android` — синхронизация ресурсов перед сборкой APK
+## 2. Hard Architectural Invariants
 
----
+- **window.Cache integrity:** NEVER overwrite `window.Cache` directly (breaks UI subscriptions). Mutate inner properties.
+- **Transactions cache structure:** `Cache.transactions` is an array of month objects `[{ id: 'YYYY-MM', items: [...] }]`, NOT a flat list.
+- **Database queries:** Always use `getUserCol(tableName)` from `core.js`.
+- **Numbers & Money:** Strictly use `Math.round(val * 100) / 100`, `formatMoney(sum)` and CSS class `tabular-nums`.
+- **Dates:** Strict calendar format `'YYYY-MM-DD'`. Never rely on UTC parsing for local month shifts.
 
-## 2. Архитектурные инварианты и ловушки
+## 3. Mobile UI & Anti-Slop Guidelines
 
-- **Оффлайн-first:** изменения сначала мутируют `window.Cache` → мгновенный UI → фоновая запись в Firestore.
-- **Целостность `window.Cache`:**
-  - `Cache.transactions` — массив **месяцев** вида `[{ id: 'YYYY-MM', items: [tx, ...] }]`, НЕ плоский список.
-  - **Никогда не перезаписывай `Cache` целиком** (только точечная мутация внутренних полей), иначе слетят подписки UI.
-  - При ошибке записи в Firestore: обязательный откат локального изменения в `Cache` + `showToast(...)`.
-- **Доступ к данным:**
-  - Коллекции базы: **строго** через `getUserCol(tableName)` из `core.js` (автовыбор личной коллекции `users/{uid}/...` или семейной `families/{familyId}/...`).
-  - Финансовые параметры, лимиты и правила автокатегоризации — строго в `default-rules.js`.
-- **Финансовые расчеты и числа:**
-  - Защита от JS floating point: все промежуточные суммы округлять (`Math.round(val * 100) / 100`).
-  - Отображение сумм: строго через `formatMoney(sum)` и Tailwind-класс `tabular-nums`.
-  - Формат объекта транзакции: `{ id, amount, type: 'expense'|'income'|'transfer', category, date: 'YYYY-MM-DD', comment }`.
-- **Даты:** строго локальные календарные даты `'YYYY-MM-DD'`, избегать сдвигов часовых поясов UTC при расчете месяцев.
+- **Strictly Mobile (380–412px):** Touch target >= 44x44px. No desktop patterns: no drag-and-drop, no visible scrollbars (`scrollbar-none`), no hover-dependent actions. Modals max-height: `92vh`.
+- **Single Source of Truth (No Redundancy):** Do not repeat data. Never duplicate slider values above and below it. Never add redundant status tags (e.g., no "Transfer" tag inside the Transfers tab, no "Indefinite" tag on deposits).
+- **Clean Controls:** If a button contains an icon (e.g. plus), its text label is a single noun without symbols.
+- **Flat Card Hierarchy:** Do not nest mini-cards inside cards. Use clean flat rows with `border-white/[0.05]`.
+- Design tokens & button classes: Refer to `design-system/capital/MASTER.md`. Do not invent new colors.
 
----
+## 4. Visual Verification & Design Critique
 
-## 3. Дизайн-система (Obsidian Minimalist)
-
-- **Платформа:** Мобильный вьюпорт **380–412px**. Минимальный tap-target для всех кликабельных элементов — **44×44px** (`min-h-[44px] min-w-[44px]`).
-- **Защита от переполнения:** Любые динамические суммы и названия обязаны иметь `truncate` и родительский контейнер с `min-w-0`.
-- **Палитра:**
-  - Фоны: экран `#000000` (`--bg`), карточки `#0E1016` (`--surface`), вложенные `#151821` (`--surface-2`).
-  - Границы: `rgba(255, 255, 255, 0.07)` (`--line`), радиус скруглений `rounded-[14px]`.
-  - Текст: основной `#FFFFFF`, вторичный нейтральный `#8E96A4`. Язык интерфейса — русский.
-  - Статусы: доходы `#10B981` (emerald), расходы `#F43F5E` (rose), предупреждения `#F59E0B` (amber).
-- **Кнопки:**
-  - **Primary:** `bg-white text-zinc-950 font-semibold shadow-sm hover:bg-zinc-100 active:scale-[0.98]`
-  - **Secondary:** `bg-white/[0.05] hover:bg-white/[0.09] text-zinc-300 border border-white/[0.08] active:scale-[0.98]`
-  - **Destructive:** `bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 active:scale-[0.98]`
-- **Иконки:** Никаких emoji в служебном UI. Иконки Lucide: `<i data-lucide="icon-name" class="..."></i>` с последующим вызовом `lucide.createIcons({ root: container })`. Логотипы банков — в `iconsSVG.js`.
-- **Anti-Slop:** Запрещены цветные pill-бейджи для обычных дат («Завтра», «Через 3 дн.»), дублирующие подписи и массивные серые рамки аватарок.
-
----
-
-## 4. Обязательный пайплайн разработки (Development Workflow)
-
-Любая задача, затрагивающая UI или логику, проходит 4 обязательных этапа:
-
-```
-[1. Локализация] ➔ [2. Код] ➔ [3. Headless Render & Vision QA] ➔ [4. Lint & Сдача]
-```
-
-1. **Этап 1: Локализация и контекст**
-   - Найти затрагиваемые файлы через `grep` или `glob`.
-   - Изучить структуру данных и существующие UI-примитивы перед редактированием.
-
-2. **Этап 2: Изменение кода**
-   - Вносить точечные изменения через `edit`.
-   - Строго соблюдать `tabular-nums`, tap-target >= 44px и защиту от переполнения (`truncate`, `min-w-0`).
-
-3. **Этап 3: Визуальный аудит (Mobile Viewport QA)**
-   - **Для любых UI-изменений:** запрещено сдавать задачу «вслепую» без проверки отображения на реальном мобильном разрешении.
-   - **Стандарт рендеринга:**
-     - Вьюпорт: строго **`390 × 844 px`** (`chrome-headless-shell`).
-     - Симметрия: контейнер `w-full` с боковыми отступами `p-3.5` (по 14px слева и справа), без обрезки карточек.
-     - «Принцип одного экрана»: высота кадра строго ограничена 844px. Модалки центрируются на черном оверлее; длинные экраны тестируются поэкранно (Above the fold / конкретная секция), без неестественных длинных простыней.
-   - **Разделение зон контроля:**
-     - _Код (Static Guard):_ запрещённый цвет `#6C5DD3`, `tabular-nums` и синтаксис проверяются скриптами (`grep`, `eslint`). Зрение на них не отвлекается.
-     - _Зрение (Visual Design Review):_ модель через `vision_describe` в роли беспристрастного QA-инспектора оценивает скриншот строго по универсальному шаблону `prompts/visual-qa-auditor.md`.
-     - **Защита от слепоты к пустым экранам (Mandatory Screen Context):** в промпт обязательно передается краткая секция `SCREEN CONTEXT:` с 1–2 предложениями описания того, что это за экран и какие данные должны быть отрисованы (например, "Dark-themed mobile screen showing a populated list of bank deposit offers with rates and terms"). Если контейнер пуст, данные не отрисовались или экран белый/черный — аудитор обязан зафиксировать CRITICAL-дефект и выставить FAIL.
-     - **Запрет на confirmation bias:** категорически запрещено передавать в промпт наводящие подсказки о конкретных правках («верно ли выровнен отступ?», «исправлен ли баг?»). Промпт формулируется нейтрально и беспристрастно.
-   - **Канонический шаблон промпта:**
-     - См. [`prompts/visual-qa-auditor.md`](prompts/visual-qa-auditor.md). Текст промпта передается на английском языке с заполнением секции `SCREEN CONTEXT`.
-   - **Методология сборки тестовых экранов (Real `index.html` Preview Harness):**
-     - Основным инструментом тестирования является эталонный раннер `scripts/run-preview-harness.cjs`, который рендерит **настоящий `index.html`** приложения через локальный веб-сервер с внедрением синхронного мока авторизации и тестового `window.Cache`. Это полностью исключает рассинхронизацию между моками и реальной кодовой базой.
-     - Рендеринг ключевых экранов (размер экрана `390×844 px`):
-       - Капитал: `node scripts/run-preview-harness.cjs --tab=capital --out=scripts/preview-capital.png`
-       - Аналитика (цифры): `node scripts/run-preview-harness.cjs --tab=budget --mode=numbers --out=scripts/preview-analytics-numbers.png`
-       - Аналитика (диаграмма): `node scripts/run-preview-harness.cjs --tab=budget --mode=chart --out=scripts/preview-analytics-chart.png`
-       - Операции: `node scripts/run-preview-harness.cjs --tab=transactions --out=scripts/preview-operations.png`
-     - Для тестирования изолированных модалок (например, модалка ставок или настроек) используется специализированный скрипт `scripts/generate-previews.cjs`.
-   - **Проверка через Vision:** Полученный скриншот отправляется инструменту `vision_describe` с системным промптом из `prompts/visual-qa-auditor.md`. Аудит считается пройденным только при `VERDICT: PASS` и отсутствии критических дефектов верстки.
-
-4. **Этап 4: Верификация, отправка скриншотов пользователю и коммит**
-   - Если найдены дефекты верстки — устранить их в коде до ответа пользователю.
-   - Запустить линтер на затронутых файлах: `npx eslint <path-to-file> --fix`.
-   - Синхронизировать `index.html` и `www/index.html` (`cp -f index.html www/index.html`).
-   - **Обязательная отправка скриншотов пользователю (User Screenshot Presentation Mandate):** При сдаче любой задачи, затрагивающей визуальный интерфейс, агент **ОБЯЗАН** вызвать `vision_present` для каждого финального скриншота и **ОБЯЗАТЕЛЬНО** включить возвращённый код `replyImage` (в формате `![Описание](<путь>)`) в тело финального текстового ответа пользователю, чтобы интерфейс отобразился в чате в полном разрешении.
-   - **Обязательный пуш в GitHub (Git Auto-Push Mandate):** Когда все изменения кода внесены, линтер и визуальный аудит пройдены, и у агента нет открытых вопросов к пользователю — агент обязан автоматически закоммитить изменения с осмысленным сообщением и запушить их в GitHub (`git push origin main`), не требуя от пользователя отдельного напоминания.
-   - Сдать задачу с кратким отчетом и предоставлением проверенных скриншотов через `vision_present`.
-
----
-
-## 5. Политика субагентов (Subagent Mandate)
-
-Субагенты используются строго для тяжелых вычислений и изолированных фоновых задач, не связанных с визуальным рендерингом (визуальный аудит выполняется напрямую через Headless Chrome + Vision):
-
-### Обязательные триггеры вызова `subagent` (Hard Triggers):
-
-1. **Триггер парсинга (Bank Parser Verification):** При правках `statement-parser.js` или файлов в `banks/*.js` — запустить `subagent` для тестовой прогонки парсера на сырых данных выписки, не засоряя основной контекст логами.
-2. **Триггер ресерча:** Если поиск бага требует изучения более 3 файлов суммарным объемом свыше 1000 строк.
-3. **Триггер миграции данных:** Проверка тяжелых фоновых скриптов миграции или экспорта/импорта бэкапов.
-
-### Правило формирования промпта для `subagent`:
-
-- `description`: 3–5 слов о сути проверки (например: _"Тест парсера выписки Сбера"_).
-- `prompt`: Полностью изолированный, самодостаточный контекст с указанием файлов и жестким требованием вернуть только факты со ссылками на `файл:строка`. Без пространных вступлений.
-
----
-
-## 6. Коммуникация
-
-- **Без дежурной лести:** Не использовать пустые приветствия и похвалу («Отличная идея!», «Прекрасно!»). Отвечать кратко и сразу по делу.
-- **Инженерная оценка:** Если предложение пользователя ломает оффлайн-кэш `window.Cache`, архитектуру коллекций или перегружает экран 390px — кратко указать технический риск и предложить минималистичную альтернативу.
-- **Готовность к коду:** При обсуждении вариантов реализации сразу приводить краткие примеры кода.
+- **Capture Screenshot (Native Mock Mode):**
+  - Run: `node scripts/screenshot.cjs --tab=<capital|budget|transactions> --out=scripts/preview.png`
+  - Zero mock-setup overhead: uses native `?mock=1` mode in `mock-mode.js`.
+- **When to Run Design Critique (Triggers):**
+  - **RUN:** New screen, new modal dialog, or major card/list layout refactoring.
+  - **SKIP:** Bug fixes, calculation logic, text/translation tweaks, or minor CSS color fixes.
+- **Design Critic Workflow (`prompts/visual-design-critic.md`):**
+  - Send screenshot to `vision_describe` with template `prompts/visual-design-critic.md`.
+  - Focus is anti-slop: removing redundant numbers, obvious badges, nested cards, and button clutter.
+- **Anti-Loop Policy (Strict Budget = 1 Pass):**
+  - Exactly ONE critic pass per task.
+  - Apply the critic's simplifications to code.
+  - Present result directly to the user with `vision_present`. Never run a second critic pass on the same task.
+- **Delivery:**
+  - Push clean commits to `origin/main` when verified.

@@ -573,32 +573,27 @@ function showBudgetModalDayTooltip(day, bills, targetEl) {
   list.innerHTML = bills
     .map(b => {
       const info = getOneTimeBillMonthInfo(b, today);
+      const tagHtml = info.isSpread
+        ? `<span class="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-0.5 flex-shrink-0 font-medium font-mono">${info.currentStep}/${info.totalSteps}</span>`
+        : info.isOneTime
+          ? `<span class="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-0.5 flex-shrink-0 font-medium">Разовый</span>`
+          : '';
+
       return `
-      <div class="flex items-center justify-between p-2 rounded-xl bg-[#0E1016] border border-white/[0.06] hover:border-white/15 transition-all">
+      <div class="flex items-center justify-between p-2.5 rounded-xl bg-[#0E1016] border border-white/[0.06] hover:border-white/15 transition-all">
         <div class="min-w-0 pr-2 cursor-pointer flex-1" onclick="openEditBillModal('${b.id}')">
           <div class="flex items-center gap-1.5 mb-0.5">
             <span class="text-xs font-semibold text-white truncate block">${escapeHtml(b.name)}</span>
-            ${
-              info.isSpread
-                ? `<span class="text-[8px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-0.5 flex-shrink-0 font-medium font-mono"><i data-lucide="split" class="w-2.5 h-2.5"></i>${info.currentStep}/${info.totalSteps}</span>`
-                : info.isOneTime
-                  ? `<span class="text-[8px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-0.5 flex-shrink-0 font-medium"><i data-lucide="zap" class="w-2.5 h-2.5"></i>Разовый</span>`
-                  : `<span class="text-[8px] px-1.5 py-0.2 rounded bg-white/10 text-zinc-300 border border-white/15 flex items-center gap-0.5 flex-shrink-0 font-medium">Ежемесячно</span>`
-            }
+            ${tagHtml}
           </div>
           <div class="flex items-center gap-1.5">
-            <span class="text-[11px] font-mono font-bold text-zinc-200">-${formatMoney(b.amount)}</span>
-            ${info.isSpread ? `<span class="text-[9px] text-zinc-400 font-mono">из ${formatMoney(b.totalAmount || b.amount * b.spreadMonths)}</span>` : ''}
+            <span class="text-xs font-mono font-bold text-zinc-200">-${formatMoney(b.amount)}</span>
+            ${info.isSpread ? `<span class="text-[10px] text-zinc-400 font-mono">из ${formatMoney(b.totalAmount || b.amount * b.spreadMonths)}</span>` : ''}
           </div>
         </div>
-        <div class="flex items-center gap-1 flex-shrink-0">
-          <button type="button" onclick="openEditBillModal('${b.id}')" class="text-zinc-400 hover:text-white p-1 rounded-lg hover:bg-white/10 cursor-pointer transition-colors" title="Редактировать">
-            <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
-          </button>
-          <button type="button" onclick="deleteCalendarBill('${b.id}')" class="text-zinc-400 hover:text-[#F43F5E] p-1 rounded-lg hover:bg-white/10 cursor-pointer transition-colors" title="Удалить">
-            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-          </button>
-        </div>
+        <button type="button" onclick="deleteCalendarBill('${b.id}')" class="text-zinc-500 hover:text-[#F43F5E] p-1.5 rounded-lg hover:bg-white/10 cursor-pointer transition-colors flex-shrink-0" title="Удалить">
+          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+        </button>
       </div>
     `;
     })
@@ -670,11 +665,7 @@ function renderCalendarGrid() {
       const b = dayBills[0];
       const info = getOneTimeBillMonthInfo(b, today);
       const formatted = formatShortSum(b.amount, false);
-      const spreadHint = info.isSpread
-        ? ` (${info.currentStep}/${info.totalSteps})`
-        : info.isOneTime
-          ? ' (Разовый)'
-          : ' (Ежемесячно)';
+      const spreadHint = info.isSpread ? ` (${info.currentStep}/${info.totalSteps})` : '';
       chipsHtml = `
         <div class="wiz-chips-wrap">
           <span class="wiz-bill-chip is-single ${info.isOneTime ? 'is-onetime' : 'is-recurring'}" title="${escapeHtml(b.name)}: ${formatMoney(b.amount)}${spreadHint}">${formatted}</span>
@@ -685,11 +676,7 @@ function renderCalendarGrid() {
         .map(b => {
           const info = getOneTimeBillMonthInfo(b, today);
           const formatted = formatShortSum(b.amount, true);
-          const spreadHint = info.isSpread
-            ? ` (${info.currentStep}/${info.totalSteps})`
-            : info.isOneTime
-              ? ' (Разовый)'
-              : ' (Ежемесячно)';
+          const spreadHint = info.isSpread ? ` (${info.currentStep}/${info.totalSteps})` : '';
           return `<span class="wiz-bill-chip ${info.isOneTime ? 'is-onetime' : 'is-recurring'}" title="${escapeHtml(b.name)}: ${formatMoney(b.amount)}${spreadHint}">${formatted}</span>`;
         })
         .join('')}</div>`;

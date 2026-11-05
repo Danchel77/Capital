@@ -187,6 +187,16 @@ function buildCharts() {
   const oldTooltip = canvas.parentNode?.querySelector('#chart-spline-tooltip');
   if (oldTooltip) oldTooltip.remove();
 
+  if (!window.__splineScrollBound) {
+    window.__splineScrollBound = true;
+    const hideSplineTip = () => {
+      const tip = document.getElementById('chart-spline-tooltip');
+      if (tip && tip.style.opacity !== '0') tip.style.opacity = '0';
+    };
+    window.addEventListener('scroll', hideSplineTip, { passive: true });
+    window.addEventListener('touchmove', hideSplineTip, { passive: true });
+  }
+
   monthlyChartObj = new Chart(ctx, {
     type: 'line',
     data: {
@@ -215,6 +225,7 @@ function buildCharts() {
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      events: ['click'], // Тултип активируется исключительно по одиночному тапу/клику по точке
       interaction: {
         mode: 'nearest',
         intersect: true, // Клик вне радиуса точки не активирует точку и скрывает тултип

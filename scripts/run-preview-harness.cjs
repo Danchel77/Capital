@@ -21,6 +21,8 @@ const openDepForm = getArg('openDepositForm', false);
 const openBankDropdown = getArg('openBankDropdown', false);
 const openCalendarModal = getArg('openCalendarModal', false);
 const openBillDialog = getArg('openBillDialog', false);
+const openGoalModal = getArg('openGoalModal', false);
+const openGoalTopupModal = getArg('openGoalTopupModal', false);
 const emptyData = getArg('emptyData', false);
 const outPath = path.resolve(process.cwd(), getArg('out', 'scripts/preview-harness.png'));
 
@@ -96,8 +98,8 @@ const mockCache = {
     }
   ],
   goals: [
-    { id: 'goal-1', name: 'Резервный фонд', target: 1000000, saved: 850000, share: 50, color: '#10B981', icon: 'shield-check' },
-    { id: 'goal-2', name: 'Отпуск на море', target: 350000, saved: 195000, share: 50, color: '#38BDF8', icon: 'plane' }
+    { id: 'goal-1', name: 'Резервный фонд', target: 2000000, saved: 150000, share: 50, color: '#10B981', icon: 'shield-check' },
+    { id: 'goal-2', name: 'Отпуск на море', target: 500000, saved: 50000, share: 30, color: '#38BDF8', icon: 'plane' }
   ],
   calendarBills: [
     { id: 'bill-1', name: 'Ипотека / аренда', amount: 45000, day: 12, category: 'Квартира и ЖКХ' },
@@ -214,6 +216,24 @@ const previewInjectionScript = `
             if (dlg) dlg.classList.remove('hidden');
           }
         }
+        if ('${openGoalModal}' === 'true') {
+          console.log('[Preview] Opening goal modal...');
+          if (typeof window.openGoalModal === 'function') {
+            window.openGoalModal();
+            console.log('[Preview] openGoalModal executed, dialog hidden:', document.getElementById('budget-goal-dialog')?.classList.contains('hidden'));
+          } else {
+            const dlg = document.getElementById('budget-goal-dialog');
+            if (dlg) dlg.classList.remove('hidden');
+          }
+        }
+        if ('${openGoalTopupModal}' === 'true') {
+          if (typeof window.openGoalTopupModal === 'function') {
+            window.openGoalTopupModal('goal-1', 'Резервный фонд');
+          } else {
+            const dlg = document.getElementById('goal-topup-dialog');
+            if (dlg) dlg.classList.remove('hidden');
+          }
+        }
       } else if ('${targetTab}' === 'transactions') {
         console.log('[Preview] transactions branch: calling renderTransactions');
         if (typeof window.renderTransactions === 'function') {
@@ -255,7 +275,7 @@ const previewInjectionScript = `
   } else {
     runHarnessOnce();
   }
-  window.addEventListener('load', initHarness);
+  window.addEventListener('load', runHarnessOnce);
 </script>
 `;
 

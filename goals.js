@@ -1,6 +1,6 @@
 /**
  * goals.js
- * Financial goals, piggy banks, shares allocation, and savings flow animations.
+ * Financial goals, piggy banks, capital allocation, and True OLED Obsidian Minimalist design system.
  */
 
 // Global goal icons catalog
@@ -29,51 +29,17 @@ window.WIZARD_GOAL_ICONS = WIZARD_GOAL_ICONS;
 
 // Module state
 let activeTopupGoalId = null;
-let currentTopupMode = 'topup';
+let currentTopupMode = 'add';
 let tempGoalShares = {};
 
-const GOAL_SHARE_TOTAL_VIRTUAL = 1000;
-
-function getGoalShareWeight(share) {
-  return share % 5 === 0 ? 2.5 : 1.0;
-}
-
-const GOAL_SHARE_INTERVALS = (() => {
-  let totalW = 0;
-  for (let s = 1; s <= 99; s++) {
-    totalW += getGoalShareWeight(s);
-  }
-  const intervals = [];
-  let currentPos = 0;
-  for (let s = 1; s <= 99; s++) {
-    const w = getGoalShareWeight(s);
-    const start = currentPos;
-    const end = currentPos + (w / totalW) * GOAL_SHARE_TOTAL_VIRTUAL;
-    intervals.push({ share: s, start, end, center: (start + end) / 2 });
-    currentPos = end;
-  }
-  return intervals;
-})();
-
-function virtualPosToShare(pos) {
-  const p = Math.max(0, Math.min(GOAL_SHARE_TOTAL_VIRTUAL, pos));
-  for (let i = 0; i < GOAL_SHARE_INTERVALS.length; i++) {
-    if (p >= GOAL_SHARE_INTERVALS[i].start && p <= GOAL_SHARE_INTERVALS[i].end) {
-      return GOAL_SHARE_INTERVALS[i].share;
-    }
-  }
-  return p < GOAL_SHARE_INTERVALS[0].start ? 1 : 99;
-}
-
-function shareToVirtualPos(share) {
-  const s = Math.max(1, Math.min(99, Math.round(share)));
-  const found = GOAL_SHARE_INTERVALS.find(item => item.share === s);
-  return found ? found.center : (s / 100) * GOAL_SHARE_TOTAL_VIRTUAL;
-}
-
 function getTotalDepositsValue() {
-  const data = Cache?.deposits || [];
-  return data.filter(d => !d.isClosed).reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0);
+  const deps = (Cache?.deposits || [])
+    .filter(d => !d.isClosed)
+    .reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0);
+  const sa = (Cache?.savingsAccounts || [])
+    .filter(a => !a.isClosed && a.status !== 'Закрыт')
+    .reduce((sum, a) => sum + (parseFloat(a.amount) || 0), 0);
+  return deps + sa;
 }
 window.getTotalDepositsValue = getTotalDepositsValue;
 
@@ -134,29 +100,40 @@ function getMonthlyPlannedSavingsTotal() {
 }
 window.getMonthlyPlannedSavingsTotal = getMonthlyPlannedSavingsTotal;
 
+/**
+ * Process raw goals into structured model with distinct capital & piggy bank allocations.
+ * CRITICAL: Keeps g.saved strictly as the manual piggy bank balance without mutating it into total accumulated!
+ */
 function processGoals(goals) {
   const totalCapital = getTotalCapitalValue();
   const rawGoals = goals || Cache?.goals || [];
 
   return rawGoals.map(g => {
-    const target = parseFloat(g.target) || 0;
-    const manualSaved = parseFloat(g.saved) || 0;
-    const share =
-      parseFloat(g.share) || (rawGoals.length > 0 ? Math.round(100 / rawGoals.length) : 100);
+    const target = Math.max(0, parseFloat(g.target) || 0);
+    const piggyBank = Math.max(0, parseFloat(g.saved) || 0);
+    const share = Math.max(0, Math.min(100, parseFloat(g.share) || 0));
     const capitalAlloc = Math.round(totalCapital * (share / 100));
-    const totalAccumulated = manualSaved + capitalAlloc;
-    const progress = Math.min(100, target > 0 ? (totalAccumulated / target) * 100 : 0);
+    const totalAccumulated = piggyBank + capitalAlloc;
+    const remaining = Math.max(0, target - totalAccumulated);
+
+    const progress = target > 0 ? Math.min(100, (totalAccumulated / target) * 100) : 0;
+    const capitalPct = target > 0 ? Math.min(100, (capitalAlloc / target) * 100) : 0;
+    const piggyPct = target > 0 ? Math.min(100 - capitalPct, (piggyBank / target) * 100) : 0;
     const isAchieved = target > 0 && totalAccumulated >= target;
     const icon = g.icon || getGoalIcon(g.name) || 'target';
 
     return {
       ...g,
       target,
-      manualSaved,
+      saved: piggyBank, // Keep saved strictly as manual piggy bank
+      piggyBank,
       capitalAlloc,
-      saved: totalAccumulated,
+      totalAccumulated,
+      remaining,
       share,
       progress: progress.toFixed(1),
+      capitalPct: capitalPct.toFixed(1),
+      piggyPct: piggyPct.toFixed(1),
       isAchieved,
       icon,
     };
@@ -183,7 +160,6 @@ function renderBudgetGoals(goals) {
   if (!container) return;
 
   const processedGoals = processGoals(goals || Cache?.goals || []);
-  const avgSurplus = calculateRecentMonthlySurplus(3);
 
   if (surplusEl) {
     surplusEl.innerText = '';
@@ -193,13 +169,13 @@ function renderBudgetGoals(goals) {
 
   if (processedGoals.length === 0) {
     container.innerHTML = `
-      <div class="card rounded-2xl p-5 text-center flex flex-col items-center justify-center gap-2.5 bg-[#0E1016] border border-[#1E222D]">
+      <div class="card rounded-2xl p-5 text-center flex flex-col items-center justify-center gap-2.5 bg-[#0E1016] border border-white/[0.08]">
         <div class="w-10 h-10 rounded-xl bg-[#13251E] border border-[#1E3E32] text-[#34D399] flex items-center justify-center">
           <i data-lucide="target" class="w-5 h-5 text-[#34D399]"></i>
         </div>
         <div>
           <p class="text-sm font-medium text-zinc-200">Целей пока нет</p>
-          <p class="text-xs text-zinc-500 mt-0.5">Создайте цель, чтобы распределить долю накоплений капитала</p>
+          <p class="text-xs text-zinc-500 mt-0.5">Создайте цель, чтобы направить долю капитала и копить</p>
         </div>
         <button type="button" onclick="openGoalModal()" class="btn-primary px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 active:scale-95 cursor-pointer">
           <i data-lucide="plus" class="w-3.5 h-3.5"></i>
@@ -213,56 +189,63 @@ function renderBudgetGoals(goals) {
 
   container.innerHTML = processedGoals
     .map(g => {
-      const remaining = Math.max(0, g.target - g.saved);
-      let timeHint = '';
-      if (g.isAchieved) {
-        timeHint = '<span class="text-emerald-400 font-medium">Цель достигнута</span>';
-      } else if (avgSurplus > 0) {
-        const monthlyAlloc = Math.round(avgSurplus * (g.share / 100));
-        const monthsNeeded = monthlyAlloc > 0 ? Math.ceil(remaining / monthlyAlloc) : 0;
-        timeHint =
-          monthsNeeded > 0 ? `~${monthsNeeded} мес. при текущем темпе` : 'Скоро будет достигнута';
-      } else {
-        timeHint = 'Зависит от накоплений';
-      }
+      const statusText = g.isAchieved
+        ? '<span class="text-emerald-400 font-medium">Цель достигнута</span>'
+        : `<span class="text-zinc-500 font-mono text-[11px]">Осталось ${formatMoney(g.remaining)}</span>`;
 
       return `
-      <div class="card bg-[#0E1016] border border-[#1E222D] hover:border-[#2E364A] rounded-2xl p-4 shadow-sm cursor-pointer relative transition-all"
+      <div class="card bg-[#0E1016] border border-white/[0.08] hover:border-white/20 rounded-2xl p-4 shadow-sm cursor-pointer relative transition-all"
            data-id="${g.id}"
            data-table="Goals"
            onclick="openEditGoalModal('${g.id}')">
         
         <input type="checkbox" class="select-checkbox hidden" data-id="${g.id}">
 
-        <div class="flex items-start justify-between mb-2.5 gap-2">
+        <!-- Шапка: Иконка, название, статус и быстрая кнопка копилки -->
+        <div class="flex items-center justify-between mb-3 gap-2">
           <div class="flex items-center gap-3 min-w-0 flex-1">
             <div class="w-10 h-10 rounded-xl bg-[#13251E] border border-[#1E3E32] text-[#34D399] flex items-center justify-center flex-shrink-0">
               <i data-lucide="${g.icon || 'target'}" class="w-5 h-5"></i>
             </div>
             <div class="min-w-0 flex-1">
               <h4 class="text-sm font-semibold text-white truncate">${escapeHtml(g.name)}</h4>
-              <p class="text-xs text-zinc-400 mt-0.5">${timeHint}</p>
+              <p class="text-xs text-zinc-400 mt-0.5">${statusText}</p>
             </div>
           </div>
           
           <button type="button" 
                   onclick="event.stopPropagation(); openGoalTopupModal('${g.id}', '${escapeHtml(g.name)}')" 
-                  class="btn-secondary text-xs font-medium px-2.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 flex-shrink-0 active:scale-95">
-            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                  class="px-2.5 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/10 border border-white/[0.08] text-zinc-300 text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 flex-shrink-0">
+            <i data-lucide="wallet" class="w-3.5 h-3.5 text-sky-400"></i>
             <span>Копилка</span>
           </button>
         </div>
 
+        <!-- Суммы: Всего накоплено / Цель и общий процент -->
         <div class="flex justify-between items-baseline text-xs mb-1.5">
-          <span class="text-white font-mono font-semibold text-sm [font-variant-numeric:tabular-nums]">
-            ${formatMoney(g.saved)}
+          <span class="text-white font-mono font-semibold text-sm tabular-nums">
+            ${formatMoney(g.totalAccumulated)}
             <span class="text-zinc-500 font-normal text-xs">/ ${formatMoney(g.target)}</span>
           </span>
-          <span class="text-sm font-mono font-bold text-emerald-400 [font-variant-numeric:tabular-nums]">${g.progress}%</span>
+          <span class="text-sm font-mono font-bold text-emerald-400 tabular-nums">${g.progress}%</span>
         </div>
 
-        <div class="w-full bg-[#1A1F2C] h-2 rounded-full overflow-hidden">
-          <div class="bg-emerald-500 h-full rounded-full transition-all duration-500" style="width: ${g.progress}%"></div>
+        <!-- Двухцветная шкала прогресса: Капитал (изумрудный) + Копилка (небесно-синий) -->
+        <div class="w-full bg-white/[0.06] h-2 rounded-full overflow-hidden flex my-2">
+          <div class="bg-emerald-500 h-full transition-all duration-500" style="width: ${g.capitalPct}%" title="Капитал: ${formatMoney(g.capitalAlloc)}"></div>
+          <div class="bg-sky-400 h-full transition-all duration-500" style="width: ${g.piggyPct}%" title="Копилка: ${formatMoney(g.piggyBank)}"></div>
+        </div>
+
+        <!-- Детализация источников средств -->
+        <div class="flex items-center justify-between text-[11px] text-zinc-400 pt-0.5">
+          <span class="flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0"></span>
+            <span>Капитал (${g.share}%): <span class="text-zinc-200 font-mono font-medium">${formatMoney(g.capitalAlloc)}</span></span>
+          </span>
+          <span class="flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-sky-400 flex-shrink-0"></span>
+            <span>Копилка: <span class="text-zinc-200 font-mono font-medium">${formatMoney(g.piggyBank)}</span></span>
+          </span>
         </div>
       </div>
     `;
@@ -327,10 +310,10 @@ function renderGoalModalIconGrid() {
       return `
       <button type="button" 
               onclick="selectGoalIcon('${item.name}')" 
-              class="h-10 rounded-xl ${isSelected ? 'bg-[#6C5DD3]/25 border-[#6C5DD3] text-[#727cff]' : 'hover:bg-[#212430] border-transparent text-gray-300 hover:text-white'} border flex flex-col items-center justify-center p-1 transition-all cursor-pointer group active:scale-95" 
+              class="h-10 rounded-xl ${isSelected ? 'bg-white/20 border-white/40 text-white font-bold' : 'hover:bg-white/[0.06] border-transparent text-zinc-400 hover:text-white'} border flex flex-col items-center justify-center p-1 transition-all cursor-pointer group active:scale-95" 
               title="${item.label}">
         <i data-lucide="${item.name}" class="w-4 h-4 group-hover:scale-110 transition-transform"></i>
-        <span class="text-[8px] mt-0.5 truncate w-full text-center leading-none ${isSelected ? 'text-[#727cff] font-bold' : 'text-[#848D99]'}">${item.label}</span>
+        <span class="text-[8px] mt-0.5 truncate w-full text-center leading-none ${isSelected ? 'text-white font-semibold' : 'text-zinc-500'}">${item.label}</span>
       </button>
     `;
     })
@@ -345,21 +328,8 @@ function selectGoalIcon(iconName) {
   if (input) input.value = iconName;
 
   const display = document.getElementById('goal-modal-icon-display');
-  const btn = document.getElementById('goal-modal-icon-btn');
-  const label = document.getElementById('goal-modal-icon-label');
-  const iconsList = window.GOAL_ICONS || [];
-  const found = iconsList.find(i => i.name === iconName);
-
   if (display) {
-    display.className = 'text-[#727cff] flex items-center justify-center transition-colors';
-    display.innerHTML = `<i data-lucide="${iconName}" class="w-6 h-6"></i>`;
-  }
-  if (btn) {
-    btn.className =
-      'w-14 h-14 rounded-2xl bg-[#6C5DD3]/15 border border-[#6C5DD3]/40 flex items-center justify-center transition-all cursor-pointer shadow-inner active:scale-95 group flex-shrink-0';
-  }
-  if (label) {
-    label.innerText = found ? found.label : 'Выбрать иконку';
+    display.innerHTML = `<i data-lucide="${iconName}" class="w-5 h-5 text-white"></i>`;
   }
 
   const isEditing = !!document.getElementById('goal-edit-id')?.value;
@@ -392,6 +362,10 @@ function handleGoalNameInput(name) {
 }
 window.handleGoalNameInput = handleGoalNameInput;
 
+/**
+ * Render multi-goal capital shares manager inside creation/edit dialog.
+ * Allows setting shares 0..100% per goal with total <= 100%.
+ */
 function renderGoalSharesManagerList(currentEditingId = null) {
   const container = document.getElementById('goal-shares-list');
   const section = document.getElementById('goal-shares-manager-section');
@@ -399,18 +373,6 @@ function renderGoalSharesManagerList(currentEditingId = null) {
 
   const existingGoals = (Cache?.goals || []).filter(g => g.status !== 'Архив');
   const isCreatingNew = !currentEditingId;
-  const totalCount = isCreatingNew ? existingGoals.length + 1 : existingGoals.length;
-
-  if (totalCount <= 1) {
-    section.classList.add('hidden');
-    tempGoalShares = {};
-    if (isCreatingNew) {
-      tempGoalShares['__new__'] = 100;
-    } else if (existingGoals[0]) {
-      tempGoalShares[existingGoals[0].id] = 100;
-    }
-    return;
-  }
 
   section.classList.remove('hidden');
 
@@ -451,83 +413,49 @@ function renderGoalSharesManagerList(currentEditingId = null) {
   if (!isFullyInit) {
     tempGoalShares = {};
     if (isCreatingNew) {
-      const defaultNewShare = Math.round(100 / list.length);
-      tempGoalShares['__new__'] = defaultNewShare;
-      const remaining = 100 - defaultNewShare;
-      const sumExisting = existingGoals.reduce((s, g) => s + (parseFloat(g.share) || 0), 0) || 100;
-      let acc = 0;
-      existingGoals.forEach((g, idx) => {
-        if (idx === existingGoals.length - 1) {
-          tempGoalShares[g.id] = Math.max(1, remaining - acc);
-        } else {
-          const s = Math.max(
-            1,
-            Math.round(
-              ((parseFloat(g.share) || 100 / existingGoals.length) / sumExisting) * remaining
-            )
-          );
-          tempGoalShares[g.id] = s;
-          acc += s;
-        }
+      const sumExisting = existingGoals.reduce((s, g) => s + (parseFloat(g.share) || 0), 0);
+      const freeRemaining = Math.max(0, 100 - sumExisting);
+      tempGoalShares['__new__'] = freeRemaining > 0 ? freeRemaining : Math.round(100 / list.length);
+
+      existingGoals.forEach(g => {
+        tempGoalShares[g.id] = parseFloat(g.share) || 0;
       });
+
+      // If initial sum > 100, normalize
+      const totalInitial = Object.values(tempGoalShares).reduce((a, b) => a + b, 0);
+      if (totalInitial > 100) {
+        normalizeTempGoalShares('__new__');
+      }
     } else {
-      const sumShares = existingGoals.reduce((s, g) => s + (parseFloat(g.share) || 0), 0) || 100;
-      let acc = 0;
-      existingGoals.forEach((g, idx) => {
-        if (idx === existingGoals.length - 1) {
-          tempGoalShares[g.id] = Math.max(1, 100 - acc);
-        } else {
-          const s = Math.max(
-            1,
-            Math.round(((parseFloat(g.share) || 100 / existingGoals.length) / sumShares) * 100)
-          );
-          tempGoalShares[g.id] = s;
-          acc += s;
-        }
+      existingGoals.forEach(g => {
+        tempGoalShares[g.id] = parseFloat(g.share) || 0;
       });
     }
-    normalizeTempGoalShares();
   }
 
-  const plannedSavingsTotal = getMonthlyPlannedSavingsTotal();
-  const totalMonthlyEl = document.getElementById('goal-shares-total-monthly');
-  if (totalMonthlyEl) {
-    if (plannedSavingsTotal > 0) {
-      totalMonthlyEl.innerText = `План: +${formatMoney(plannedSavingsTotal)}/мес`;
-      totalMonthlyEl.classList.remove('hidden');
-    } else {
-      totalMonthlyEl.classList.add('hidden');
-    }
-  }
+  const totalCapital = getTotalCapitalValue();
 
   container.innerHTML = list
     .map(item => {
       const shareVal = tempGoalShares[item.id] !== undefined ? tempGoalShares[item.id] : 0;
-      const plannedAmount =
-        plannedSavingsTotal > 0 ? Math.round(plannedSavingsTotal * (shareVal / 100)) : 0;
-      const amountBadgeHtml =
-        plannedSavingsTotal > 0
-          ? `
-      <span class="text-[10px] font-mono font-bold text-[#30D158]" id="goal-share-amount-${item.id}">
-        +${formatMoney(plannedAmount)}/мес
-      </span>
-    `
-          : '';
+      const capitalAmount = Math.round(totalCapital * (shareVal / 100));
 
       return `
-      <div class="px-3 py-2 rounded-xl bg-[#12151C] border border-[rgba(255,255,255,0.04)] space-y-1.5" data-share-goal-id="${item.id}">
+      <div class="px-3 py-2.5 rounded-xl bg-[#0A0C10] border border-white/[0.06] space-y-2" data-share-goal-id="${item.id}">
         <div class="flex items-center justify-between text-xs">
           <div class="flex items-center gap-2 min-w-0 flex-1 mr-2">
-            <div class="w-5 h-5 rounded-lg bg-[#1E2330] text-[#8C7DFF] flex items-center justify-center flex-shrink-0">
-              <i data-lucide="${item.icon}" class="w-3 h-3" id="goal-share-icon-${item.id}"></i>
+            <div class="w-6 h-6 rounded-lg bg-white/[0.05] text-zinc-300 flex items-center justify-center flex-shrink-0">
+              <i data-lucide="${item.icon}" class="w-3.5 h-3.5" id="goal-share-icon-${item.id}"></i>
             </div>
-            <span class="font-bold text-xs text-gray-200 truncate" id="goal-share-title-${item.id}">
+            <span class="font-medium text-xs text-white truncate" id="goal-share-title-${item.id}">
               ${escapeHtml(item.name)}
             </span>
           </div>
-          <div class="flex items-center gap-1.5 flex-shrink-0">
-            ${amountBadgeHtml}
-            <span class="font-mono font-bold text-xs text-[#8C7DFF] bg-[#6C5DD3]/15 px-2 py-0.5 rounded-lg border border-[#6C5DD3]/20" id="goal-share-val-${item.id}">
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <span class="text-[11px] font-mono text-zinc-400" id="goal-share-amount-${item.id}">
+              ${formatMoney(capitalAmount)}
+            </span>
+            <span class="font-mono font-bold text-xs text-white bg-white/10 px-2 py-0.5 rounded-lg border border-white/15" id="goal-share-val-${item.id}">
               ${shareVal}%
             </span>
           </div>
@@ -535,10 +463,11 @@ function renderGoalSharesManagerList(currentEditingId = null) {
         <div class="flex items-center pt-0.5">
           <input type="range" 
                  min="0" 
-                 max="1000" 
+                 max="100" 
                  step="1" 
-                 value="${shareToVirtualPos(shareVal)}" 
-                 oninput="handleGoalShareVirtualSliderChange('${item.id}', parseFloat(this.value))"
+                 value="${shareVal}" 
+                 id="goal-share-slider-${item.id}"
+                 oninput="handleGoalShareSliderChange('${item.id}', parseFloat(this.value))"
                  class="goal-share-slider w-full cursor-pointer">
         </div>
       </div>
@@ -546,107 +475,113 @@ function renderGoalSharesManagerList(currentEditingId = null) {
     })
     .join('');
 
+  updateGoalSharesUI();
   if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 window.renderGoalSharesManagerList = renderGoalSharesManagerList;
 
 function normalizeTempGoalShares(targetLockedId = null) {
   const ids = Object.keys(tempGoalShares);
-  if (ids.length === 0) return;
-  if (ids.length === 1) {
-    tempGoalShares[ids[0]] = 100;
-    return;
-  }
-
   const total = ids.reduce((s, id) => s + (tempGoalShares[id] || 0), 0);
-  const diff = 100 - total;
-  if (diff !== 0) {
-    const adjustableIds = targetLockedId ? ids.filter(id => id !== targetLockedId) : ids;
-    if (adjustableIds.length > 0) {
-      tempGoalShares[adjustableIds[0]] = Math.max(1, tempGoalShares[adjustableIds[0]] + diff);
-    } else {
-      tempGoalShares[ids[0]] = Math.max(1, tempGoalShares[ids[0]] + diff);
-    }
-  }
-}
+  if (total <= 100) return;
 
-function handleGoalShareVirtualSliderChange(targetId, virtualPos) {
-  const ids = Object.keys(tempGoalShares);
-  if (ids.length <= 1) return;
-
-  const newShare = virtualPosToShare(virtualPos);
-  const clampedVal = Math.max(1, Math.min(99, newShare));
-  if (tempGoalShares[targetId] === clampedVal) return;
-
-  tempGoalShares[targetId] = clampedVal;
-
-  const otherIds = ids.filter(id => id !== targetId);
-  const remaining = 100 - clampedVal;
+  const overflow = total - 100;
+  const otherIds = targetLockedId ? ids.filter(id => id !== targetLockedId) : ids;
   const currentOthersSum = otherIds.reduce((sum, id) => sum + (tempGoalShares[id] || 0), 0);
 
   if (currentOthersSum > 0) {
-    let allocated = 0;
-    otherIds.forEach((id, index) => {
-      if (index === otherIds.length - 1) {
-        tempGoalShares[id] = Math.max(1, remaining - allocated);
+    let reduced = 0;
+    otherIds.forEach((id, idx) => {
+      if (idx === otherIds.length - 1) {
+        tempGoalShares[id] = Math.max(0, tempGoalShares[id] - (overflow - reduced));
       } else {
-        const proportional = Math.max(
-          1,
-          Math.round((tempGoalShares[id] / currentOthersSum) * remaining)
-        );
-        tempGoalShares[id] = proportional;
-        allocated += proportional;
-      }
-    });
-  } else {
-    const equalShare = Math.floor(remaining / otherIds.length);
-    let allocated = 0;
-    otherIds.forEach((id, index) => {
-      if (index === otherIds.length - 1) {
-        tempGoalShares[id] = Math.max(1, remaining - allocated);
-      } else {
-        tempGoalShares[id] = Math.max(1, equalShare);
-        allocated += equalShare;
+        const shareOfOverflow = Math.round((tempGoalShares[id] / currentOthersSum) * overflow);
+        tempGoalShares[id] = Math.max(0, tempGoalShares[id] - shareOfOverflow);
+        reduced += shareOfOverflow;
       }
     });
   }
+}
 
-  normalizeTempGoalShares(targetId);
+function handleGoalShareSliderChange(targetId, newShareVal) {
+  const ids = Object.keys(tempGoalShares);
+  const clampedVal = Math.max(0, Math.min(100, Math.round(newShareVal)));
+  tempGoalShares[targetId] = clampedVal;
 
-  const plannedSavingsTotal = getMonthlyPlannedSavingsTotal();
+  const otherIds = ids.filter(id => id !== targetId);
+  const currentOthersSum = otherIds.reduce((sum, id) => sum + (tempGoalShares[id] || 0), 0);
+  const total = clampedVal + currentOthersSum;
 
-  ids.forEach(id => {
-    const valEl = document.getElementById(`goal-share-val-${id}`);
-    const amountEl = document.getElementById(`goal-share-amount-${id}`);
-    const slider = document.querySelector(`[data-share-goal-id="${id}"] input[type="range"]`);
-    if (valEl) valEl.innerText = `${tempGoalShares[id]}%`;
-    if (amountEl && plannedSavingsTotal > 0) {
-      const plannedAmount = Math.round(plannedSavingsTotal * (tempGoalShares[id] / 100));
-      amountEl.innerText = `+${formatMoney(plannedAmount)}/мес`;
+  if (total > 100) {
+    const overflow = total - 100;
+    if (currentOthersSum > 0) {
+      let reduced = 0;
+      otherIds.forEach((id, idx) => {
+        if (idx === otherIds.length - 1) {
+          tempGoalShares[id] = Math.max(0, tempGoalShares[id] - (overflow - reduced));
+        } else {
+          const shareOfOverflow = Math.round((tempGoalShares[id] / currentOthersSum) * overflow);
+          tempGoalShares[id] = Math.max(0, tempGoalShares[id] - shareOfOverflow);
+          reduced += shareOfOverflow;
+        }
+      });
     }
-    if (slider && id !== targetId) {
-      slider.value = shareToVirtualPos(tempGoalShares[id]);
+  }
+
+  updateGoalSharesUI();
+}
+window.handleGoalShareSliderChange = handleGoalShareSliderChange;
+
+function updateGoalSharesUI() {
+  const totalCapital = getTotalCapitalValue();
+  const ids = Object.keys(tempGoalShares);
+
+  let totalAllocatedShare = 0;
+  ids.forEach(id => {
+    const val = tempGoalShares[id] || 0;
+    totalAllocatedShare += val;
+
+    const valEl = document.getElementById(`goal-share-val-${id}`);
+    if (valEl) valEl.innerText = `${val}%`;
+
+    const sliderEl = document.getElementById(`goal-share-slider-${id}`);
+    if (sliderEl && parseFloat(sliderEl.value) !== val) {
+      sliderEl.value = val;
+    }
+
+    const amountEl = document.getElementById(`goal-share-amount-${id}`);
+    if (amountEl) {
+      const amount = Math.round(totalCapital * (val / 100));
+      amountEl.innerText = formatMoney(amount);
     }
   });
+
+  const freeIndicator = document.getElementById('goal-shares-free-indicator');
+  if (freeIndicator) {
+    const freePct = Math.max(0, 100 - totalAllocatedShare);
+    const freeAmount = Math.round(totalCapital * (freePct / 100));
+    if (freePct > 0) {
+      freeIndicator.innerHTML = `Свободно: <span class="text-emerald-400 font-semibold">${freePct}%</span> (${formatMoney(freeAmount)})`;
+    } else {
+      freeIndicator.innerHTML = `<span class="text-zinc-400">100% распределено</span>`;
+    }
+  }
 }
-window.handleGoalShareVirtualSliderChange = handleGoalShareVirtualSliderChange;
-window.handleGoalShareSliderChange = handleGoalShareVirtualSliderChange;
+window.updateGoalSharesUI = updateGoalSharesUI;
 
 function openGoalModal() {
-  const form = document.getElementById('budget-goal-form');
-  if (form) form.reset();
-
   document.getElementById('goal-edit-id').value = '';
+  document.getElementById('goal-name-input').value = '';
+  document.getElementById('goal-target-input').value = '';
+  document.getElementById('goal-saved-input').value = '';
   document.getElementById('goal-delete-btn').classList.add('hidden');
   document.getElementById('budget-goal-dialog-title').innerText = 'Новая цель';
 
+  const submitBtn = document.getElementById('goal-submit-btn');
+  if (submitBtn) submitBtn.innerText = 'Создать цель';
+
   closeBudgetGoalIconPicker();
   selectGoalIcon('target');
-  const addGoalBtn = document.getElementById('goal-modal-icon-btn');
-  if (addGoalBtn) {
-    addGoalBtn.className =
-      'w-14 h-14 rounded-2xl bg-[#12151C] hover:bg-[#212430] border border-dashed border-[#727cff]/40 hover:border-[#727cff] flex items-center justify-center transition-all cursor-pointer shadow-inner active:scale-95 group flex-shrink-0';
-  }
 
   tempGoalShares = {};
   renderGoalSharesManagerList(null);
@@ -682,9 +617,12 @@ function openEditGoalModal(goalId) {
   document.getElementById('goal-edit-id').value = goal.id;
   document.getElementById('goal-name-input').value = goal.name;
   setFormattedVal('goal-target-input', goal.target);
-  setFormattedVal('goal-saved-input', goal.saved);
+  setFormattedVal('goal-saved-input', goal.saved || 0);
   document.getElementById('goal-delete-btn').classList.remove('hidden');
   document.getElementById('budget-goal-dialog-title').innerText = 'Редактировать цель';
+
+  const submitBtn = document.getElementById('goal-submit-btn');
+  if (submitBtn) submitBtn.innerText = 'Сохранить';
 
   closeBudgetGoalIconPicker();
   const initialIcon = goal.icon || getGoalIcon(goal.name) || 'target';
@@ -710,13 +648,18 @@ async function submitBudgetGoal(e) {
 
   const existingGoals = (Cache?.goals || []).filter(g => g.status !== 'Архив');
   const isCreatingNew = !editId;
-  const totalCount = isCreatingNew ? existingGoals.length + 1 : existingGoals.length;
 
-  let finalShare = 100;
-  if (totalCount > 1) {
-    normalizeTempGoalShares();
-    finalShare = isCreatingNew ? tempGoalShares['__new__'] || 100 : tempGoalShares[editId] || 100;
-  }
+  const finalShare = isCreatingNew
+    ? tempGoalShares['__new__'] !== undefined
+      ? tempGoalShares['__new__']
+      : 100
+    : tempGoalShares[editId] !== undefined
+      ? tempGoalShares[editId]
+      : parseFloat(existingGoals.find(g => g.id === editId)?.share) || 100;
+
+  const totalCapital = getTotalCapitalValue();
+  const capitalAlloc = Math.round(totalCapital * (finalShare / 100));
+  const isAchieved = saved + capitalAlloc >= target;
 
   try {
     const col = getUserCol('Goals');
@@ -725,10 +668,10 @@ async function submitBudgetGoal(e) {
     const goalData = {
       name,
       target,
-      saved,
+      saved, // Strictly the piggy bank balance
       share: finalShare,
       icon,
-      status: saved >= target ? 'Выполнена' : 'В процессе',
+      status: isAchieved ? 'Выполнена' : 'В процессе',
       updatedAt: Date.now(),
     };
 
@@ -739,16 +682,15 @@ async function submitBudgetGoal(e) {
       batch.set(newDocRef, { ...goalData, createdAt: Date.now() });
     }
 
-    if (totalCount > 1) {
-      existingGoals.forEach(g => {
-        if (g.id !== editId && tempGoalShares[g.id] !== undefined) {
-          batch.update(col.doc(g.id), {
-            share: tempGoalShares[g.id],
-            updatedAt: Date.now(),
-          });
-        }
-      });
-    }
+    // Save other goals' adjusted shares
+    existingGoals.forEach(g => {
+      if (g.id !== editId && tempGoalShares[g.id] !== undefined) {
+        batch.update(col.doc(g.id), {
+          share: tempGoalShares[g.id],
+          updatedAt: Date.now(),
+        });
+      }
+    });
 
     await batch.commit();
     closeGoalModal();
@@ -770,58 +712,26 @@ async function deleteCurrentEditingGoal() {
 window.deleteCurrentEditingGoal = deleteCurrentEditingGoal;
 
 function deleteBudgetGoal(goalId, goalName) {
-  showDialog(
-    'Удаление цели',
-    `Удалить цель "${goalName}"? Накопленный прогресс будет удален.`,
-    true,
-    async () => {
-      try {
-        const batch = db.batch();
-        batch.delete(getUserCol('Goals').doc(goalId));
+  showDialog('Удаление цели', `Удалить цель "${goalName}"?`, true, async () => {
+    try {
+      const batch = db.batch();
+      batch.delete(getUserCol('Goals').doc(goalId));
 
-        const remainingGoals = (Cache?.goals || []).filter(
-          g => g.id !== goalId && g.status !== 'Архив'
-        );
-        if (remainingGoals.length === 1) {
-          batch.update(getUserCol('Goals').doc(remainingGoals[0].id), {
-            share: 100,
-            updatedAt: Date.now(),
-          });
-        } else if (remainingGoals.length > 1) {
-          const sumShares =
-            remainingGoals.reduce((s, g) => s + (parseFloat(g.share) || 0), 0) || 100;
-          let acc = 0;
-          remainingGoals.forEach((g, idx) => {
-            let newShare;
-            if (idx === remainingGoals.length - 1) {
-              newShare = Math.max(1, 100 - acc);
-            } else {
-              newShare = Math.max(
-                1,
-                Math.round(((parseFloat(g.share) || 100 / remainingGoals.length) / sumShares) * 100)
-              );
-              acc += newShare;
-            }
-            batch.update(getUserCol('Goals').doc(g.id), {
-              share: newShare,
-              updatedAt: Date.now(),
-            });
-          });
-        }
-
-        await batch.commit();
-        closeGoalModal();
-        await fetchAllData();
-        showToast('Цель удалена');
-      } catch (e) {
-        console.error('Ошибка удаления цели:', e);
-        showToast('Ошибка удаления', true);
-      }
+      await batch.commit();
+      closeGoalModal();
+      await fetchAllData();
+      showToast('Цель удалена');
+    } catch (e) {
+      console.error('Ошибка удаления цели:', e);
+      showToast('Ошибка удаления', true);
     }
-  );
+  });
 }
 window.deleteBudgetGoal = deleteBudgetGoal;
 
+/**
+ * Piggy bank modal controls
+ */
 function openGoalTopupModal(goalId, goalName) {
   document
     .querySelectorAll('.card[data-table="Goals"].context-active')
@@ -832,8 +742,17 @@ function openGoalTopupModal(goalId, goalName) {
   activeTopupGoalId = goalId;
   const dlg = document.getElementById('goal-topup-dialog');
   const title = document.getElementById('goal-topup-title');
-  if (title) title.innerText = goalName;
+  if (title) title.innerText = goalName || 'Копилка цели';
+
+  const goal = Cache?.goals?.find(g => g.id === goalId);
+  const currentPiggy = parseFloat(goal?.saved) || 0;
+  const balanceEl = document.getElementById('goal-topup-current-balance');
+  if (balanceEl) balanceEl.innerText = formatMoney(currentPiggy);
+
   document.getElementById('goal-topup-amount').value = '';
+  const noteEl = document.getElementById('goal-topup-preview-note');
+  if (noteEl) noteEl.innerHTML = '';
+
   setTopupMode('add');
   if (dlg) dlg.classList.remove('hidden');
 }
@@ -854,36 +773,88 @@ function setTopupMode(mode) {
   const addBtn = document.getElementById('tab-topup-add');
   const subBtn = document.getElementById('tab-topup-sub');
   if (!addBtn || !subBtn) return;
+
   if (mode === 'add') {
     addBtn.className =
-      'flex-1 py-1.5 rounded-lg font-semibold bg-[#212430] text-white transition-all';
+      'py-1.5 rounded-lg text-xs font-semibold bg-white text-zinc-950 transition-all cursor-pointer';
     subBtn.className =
-      'flex-1 py-1.5 rounded-lg font-medium text-[#848D99] hover:text-white transition-all';
+      'py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-white transition-all cursor-pointer';
   } else {
     subBtn.className =
-      'flex-1 py-1.5 rounded-lg font-semibold bg-[#212430] text-white transition-all';
+      'py-1.5 rounded-lg text-xs font-semibold bg-white text-zinc-950 transition-all cursor-pointer';
     addBtn.className =
-      'flex-1 py-1.5 rounded-lg font-medium text-[#848D99] hover:text-white transition-all';
+      'py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-white transition-all cursor-pointer';
   }
+
+  handleGoalTopupAmountInput();
 }
 window.setTopupMode = setTopupMode;
+
+function handleGoalTopupAmountInput() {
+  if (!activeTopupGoalId) return;
+  const goal = Cache?.goals?.find(g => g.id === activeTopupGoalId);
+  const currentPiggy = parseFloat(goal?.saved) || 0;
+  const amount = getUnformattedVal(document.getElementById('goal-topup-amount')) || 0;
+  const noteEl = document.getElementById('goal-topup-preview-note');
+  const submitBtn = document.getElementById('goal-topup-submit-btn');
+
+  if (!noteEl) return;
+
+  if (amount <= 0) {
+    noteEl.innerHTML = '';
+    if (submitBtn) submitBtn.disabled = false;
+    return;
+  }
+
+  if (currentTopupMode === 'add') {
+    const newTotal = currentPiggy + amount;
+    noteEl.innerHTML = `Станет в копилке: <span class="text-emerald-400 font-semibold">${formatMoney(newTotal)}</span>`;
+    if (submitBtn) submitBtn.disabled = false;
+  } else {
+    if (amount > currentPiggy) {
+      noteEl.innerHTML = `<span class="text-[#F43F5E] font-medium">Нельзя снять больше, чем есть в копилке</span>`;
+      if (submitBtn) submitBtn.disabled = true;
+    } else {
+      const newTotal = currentPiggy - amount;
+      noteEl.innerHTML = `Останется в копилке: <span class="text-zinc-300 font-semibold">${formatMoney(newTotal)}</span>`;
+      if (submitBtn) submitBtn.disabled = false;
+    }
+  }
+}
+window.handleGoalTopupAmountInput = handleGoalTopupAmountInput;
 
 async function submitGoalTopup() {
   if (!activeTopupGoalId) return;
   const amount = getUnformattedVal(document.getElementById('goal-topup-amount'));
-  if (!amount) return;
+  if (!amount || amount <= 0) return;
 
   const goal = Cache?.goals?.find(g => g.id === activeTopupGoalId);
   if (!goal) return;
 
-  const newSaved =
-    currentTopupMode === 'add' ? goal.saved + amount : Math.max(0, goal.saved - amount);
+  const currentPiggy = parseFloat(goal.saved) || 0;
+  let newSaved = currentPiggy;
+
+  if (currentTopupMode === 'add') {
+    newSaved = currentPiggy + amount;
+  } else {
+    if (amount > currentPiggy) {
+      showToast('Нельзя снять больше, чем есть в копилке', true);
+      return;
+    }
+    newSaved = Math.max(0, currentPiggy - amount);
+  }
 
   try {
-    await getUserCol('Goals').doc(activeTopupGoalId).update({ saved: newSaved });
+    await getUserCol('Goals').doc(activeTopupGoalId).update({
+      saved: newSaved,
+      updatedAt: Date.now(),
+    });
+
     closeGoalTopupModal();
     await fetchAllData();
+    showToast(currentTopupMode === 'add' ? 'Копилка пополнена' : 'Средства выведены');
   } catch (err) {
+    console.error('Ошибка изменения копилки цели:', err);
     showToast('Ошибка: ' + err.message, true);
   }
 }
