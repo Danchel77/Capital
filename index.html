@@ -851,9 +851,9 @@
 
     <main id="app-content" class="p-3.5 sm:p-4 pb-20 sm:pb-16">
       <!-- ЭКРАН БЮДЖЕТА (ГЛАВНЫЙ ЭКРАН УПРАВЛЕНИЯ ФИНАНСАМИ) -->
-      <div id="budget-tab" class="tab-pane space-y-4">
+      <div id="budget-tab" class="tab-pane flex flex-col gap-3.5">
         <!-- ДАШБОРД БЮДЖЕТА -->
-        <div id="budget-dashboard" class="space-y-4">
+        <div id="budget-dashboard" class="flex flex-col gap-3.5">
           <!-- Чистая шапка экрана с переключением месяцев -->
           <div class="flex items-center justify-between px-1">
             <div class="flex items-center gap-2">
@@ -956,10 +956,12 @@
               </p>
 
               <!-- Фиксированная сетка 50/50: Доходы и Расходы -->
-              <div class="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-white/[0.06] text-xs">
-                <div class="flex items-center gap-2 min-w-0">
-                  <span class="w-2 h-2 rounded-full bg-[#10B981] shrink-0"></span>
-                  <span class="text-xs text-zinc-400 shrink-0">Доходы</span>
+              <div class="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-white/[0.06]">
+                <div class="flex flex-col gap-0.5 min-w-0">
+                  <div class="flex items-center gap-1.5 text-[11px] text-zinc-400">
+                    <span class="w-1.5 h-1.5 rounded-full bg-[#10B981] shrink-0"></span>
+                    <span>Доходы</span>
+                  </div>
                   <span
                     id="budget-month-income-val"
                     class="font-mono font-bold text-[#10B981] text-sm truncate"
@@ -967,9 +969,11 @@
                   >
                 </div>
 
-                <div class="flex items-center gap-2 min-w-0">
-                  <span class="w-2 h-2 rounded-full bg-[#F43F5E] shrink-0"></span>
-                  <span class="text-xs text-zinc-400 shrink-0">Расходы</span>
+                <div class="flex flex-col gap-0.5 min-w-0">
+                  <div class="flex items-center gap-1.5 text-[11px] text-zinc-400">
+                    <span class="w-1.5 h-1.5 rounded-full bg-[#F43F5E] shrink-0"></span>
+                    <span>Расходы</span>
+                  </div>
                   <span
                     id="budget-month-expense-val"
                     class="font-mono font-bold text-zinc-200 text-sm truncate"
@@ -1036,7 +1040,7 @@
           </div>
 
           <!-- 2. Предстоящие платежи -->
-          <div class="space-y-2.5">
+          <div class="space-y-1.5">
             <div class="flex items-center justify-between px-1">
               <div>
                 <p class="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
@@ -1060,7 +1064,7 @@
           </div>
 
           <!-- 3. Цели накопления -->
-          <div class="space-y-2.5 relative z-20">
+          <div class="space-y-1.5 relative z-20">
             <div class="flex items-center justify-between px-1">
               <div>
                 <p class="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
@@ -1084,7 +1088,7 @@
           <!-- 4. Динамика сальдо за текущий год (Obsidian Minimalist) -->
           <div
             id="budget-trend-section"
-            class="bg-[#0E1016] border border-white/[0.08] rounded-2xl p-4 shadow-sm pb-5 mb-4"
+            class="bg-[#0E1016] border border-white/[0.08] rounded-2xl p-4 shadow-sm"
           >
             <div class="flex items-center justify-between gap-2 mb-3">
               <div>
@@ -1147,9 +1151,9 @@
         </div>
 
         <!-- 2. Панель фильтров операций -->
-        <div class="pb-1 border-b border-white/[0.06]">
+        <div class="pb-2 border-b border-white/[0.06] flex flex-col gap-2">
           <!-- Верхний ряд: Меню фильтрации + кнопка поиска -->
-          <div id="tx-filter-bar" class="flex gap-2 items-center mb-2.5">
+          <div id="tx-filter-bar" class="flex gap-2 items-center">
             <!-- Меню выбора месяца -->
             <div class="relative flex-1 min-w-0" id="wrap-filter-month">
               <button
@@ -1191,6 +1195,31 @@
               title="Поиск по операциям"
             >
               <i data-lucide="search" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+
+          <!-- Выдвижная строка поиска -->
+          <div id="tx-search-bar-container" class="hidden animate-fade-in relative w-full">
+            <div
+              class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-500"
+            >
+              <i data-lucide="search" class="w-4 h-4"></i>
+            </div>
+            <input
+              type="text"
+              id="tx-search-input"
+              oninput="handleTxSearchInput(event)"
+              placeholder="Поиск по операциям или суммам..."
+              class="w-full bg-[#0E1016] border border-white/[0.08] focus:border-white/20 text-xs text-white placeholder-zinc-500 rounded-xl pl-10 pr-9 py-2 outline-none transition-all shadow-sm"
+            />
+            <button
+              type="button"
+              id="tx-search-clear-btn"
+              onclick="clearTxSearch()"
+              class="hidden absolute inset-y-0 right-0 pr-2.5 flex items-center text-zinc-500 hover:text-white transition-colors cursor-pointer"
+              title="Очистить поиск"
+            >
+              <i data-lucide="x" class="w-3.5 h-3.5"></i>
             </button>
           </div>
 
@@ -1275,31 +1304,6 @@
             </div>
           </div>
 
-          <!-- Выдвижная строка поиска -->
-          <div id="tx-search-bar-container" class="hidden animate-fade-in relative w-full">
-            <div
-              class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-500"
-            >
-              <i data-lucide="search" class="w-4 h-4"></i>
-            </div>
-            <input
-              type="text"
-              id="tx-search-input"
-              oninput="handleTxSearchInput(event)"
-              placeholder="Поиск по магазинам, комментариям или суммам..."
-              class="w-full bg-[#0E1016] border border-[#1E222D] focus:border-zinc-500 text-xs text-white placeholder-zinc-500 rounded-xl pl-9 pr-9 py-2 outline-none transition-all shadow-sm"
-            />
-            <button
-              type="button"
-              id="tx-search-clear-btn"
-              onclick="clearTxSearch()"
-              class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-zinc-500 hover:text-white transition-colors cursor-pointer"
-              title="Очистить поиск"
-            >
-              <i data-lucide="x" class="w-3.5 h-3.5"></i>
-            </button>
-          </div>
-
           <div id="transactions-list" class="space-y-3 pb-6"></div>
         </div>
       </div>
@@ -1344,8 +1348,8 @@
             class="bg-[#0E1016] p-3.5 rounded-2xl border border-white/[0.08] hover:border-white/20 transition-all cursor-pointer active:scale-[0.99] flex items-center justify-between select-none"
           >
             <div class="flex flex-col gap-1 min-w-0 flex-1 pr-2">
-              <span class="text-xs font-semibold text-white tracking-tight"
-                >Лучший вклад на текущий момент</span
+              <span class="text-xs font-semibold text-zinc-400 uppercase tracking-wider"
+                >Лучший вклад на сегодня</span
               >
               <div
                 id="market-best-deposit-val"
@@ -1396,12 +1400,30 @@
                 </button>
               </div>
 
-              <input
-                type="text"
-                id="dep-name"
-                placeholder="Название вклада (например: Сбер Накопительный)"
-                class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white rounded-xl p-3 outline-none mb-3 text-xs"
-              />
+              <div class="mb-3">
+                <label class="block text-[10px] text-zinc-400 uppercase font-bold mb-1">Банк</label>
+                <select
+                  id="dep-bank"
+                  onchange="handleDepositBankSelect(this, 'dep-name')"
+                  class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white rounded-xl p-3 outline-none text-xs cursor-pointer"
+                >
+                  <option value="" class="bg-[#12151C] text-zinc-400">
+                    Выберите банк (необязательно)
+                  </option>
+                </select>
+              </div>
+
+              <div class="mb-3">
+                <label class="block text-[10px] text-zinc-400 uppercase font-bold mb-1"
+                  >Название вклада</label
+                >
+                <input
+                  type="text"
+                  id="dep-name"
+                  placeholder="Наименование вклада (необязательно)"
+                  class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white placeholder-zinc-500 rounded-xl p-3 outline-none text-xs"
+                />
+              </div>
 
               <div class="flex space-x-2.5 mb-3">
                 <input
@@ -6412,6 +6434,20 @@
         <form id="edit-dep-form" onsubmit="submitEditDepModal(event)" class="space-y-3">
           <input type="hidden" id="edit-dep-id" value="" />
 
+          <!-- Выбор банка -->
+          <div>
+            <label class="block text-[10px] text-zinc-400 uppercase font-bold mb-1">Банк</label>
+            <select
+              id="edit-dep-bank"
+              onchange="handleDepositBankSelect(this, 'edit-dep-name')"
+              class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white rounded-xl p-3 outline-none text-xs cursor-pointer"
+            >
+              <option value="" class="bg-[#12151C] text-zinc-400">
+                Выберите банк (необязательно)
+              </option>
+            </select>
+          </div>
+
           <!-- Название вклада -->
           <div>
             <label class="block text-[10px] text-zinc-400 uppercase font-bold mb-1"
@@ -6420,9 +6456,8 @@
             <input
               type="text"
               id="edit-dep-name"
-              placeholder="Название вклада"
-              required
-              class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white rounded-xl p-3 outline-none text-xs"
+              placeholder="Наименование вклада (необязательно)"
+              class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white placeholder-zinc-500 rounded-xl p-3 outline-none text-xs"
             />
           </div>
 

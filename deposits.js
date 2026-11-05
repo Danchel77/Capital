@@ -67,6 +67,7 @@ function processDeposits(deposits) {
     return {
       id: dep.id,
       name: dep.name || 'Вклад',
+      bank: dep.bank || '',
       amount,
       rate,
       currentInterest,
@@ -86,6 +87,84 @@ function processDeposits(deposits) {
 // ==========================================
 // 2. Rendering
 // ==========================================
+const BANK_NAMES_LIST = [
+  'Сбербанк',
+  'ВТБ',
+  'Газпромбанк',
+  'Альфа-Банк',
+  'Т-Банк',
+  'Банк ДОМ.РФ',
+  'Совкомбанк',
+  'Промсвязьбанк',
+  'Московский кредитный банк',
+  'Россельхозбанк',
+  'Яндекс Банк',
+  'Ozon Банк',
+  'Банк Санкт-Петербург',
+  'Банк Уралсиб',
+  'МТС Банк',
+  'Локо-Банк',
+  'Экспобанк',
+  'Цифра Банк',
+  'Ак Барс',
+  'Банк Зенит',
+  'Новикомбанк',
+  'Почта Банк',
+  'РНКБ',
+  'Абсолют Банк',
+  'Фора-Банк',
+  'Свой Банк',
+  'Сургутнефтегазбанк',
+  'Банк Жилищного Финансирования',
+  'Примсоцбанк',
+  'Банк ТКБ',
+  'БыстроБанк',
+  'КАМКОМБАНК',
+  'МОРСКОЙ БАНК',
+  'Металлинвестбанк',
+  'Норвик Банк',
+  'Реалист Банк',
+  'Ренессанс Банк',
+  'СЕВЕРГАЗБАНК',
+  'Самолет Банк',
+  'ФИНСТАР БАНК',
+];
+
+function initDepositBankSelects() {
+  const selects = ['dep-bank', 'edit-dep-bank'];
+  selects.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el || el.options.length > 1) return;
+    BANK_NAMES_LIST.forEach(b => {
+      const opt = document.createElement('option');
+      opt.value = b;
+      opt.textContent = b;
+      opt.className = 'bg-[#12151C] text-white';
+      el.appendChild(opt);
+    });
+  });
+}
+window.initDepositBankSelects = initDepositBankSelects;
+
+function handleDepositBankSelect(selectEl, nameInputId) {
+  const bank = selectEl.value;
+  const nameInput = document.getElementById(nameInputId);
+  if (!nameInput) return;
+  const all = Cache?.deposits || [];
+  if (bank) {
+    const count =
+      all.filter(
+        d =>
+          (d.bank || '').toLowerCase() === bank.toLowerCase() ||
+          (d.name || '').toLowerCase().startsWith(bank.toLowerCase())
+      ).length + 1;
+    nameInput.placeholder = `${bank} ${count}`;
+  } else {
+    nameInput.placeholder = `Вклад ${all.length + 1}`;
+  }
+}
+window.handleDepositBankSelect = handleDepositBankSelect;
+
 function updateDepositsBadge() {
   const data = Cache?.deposits || [];
   const maturedCount = data.filter(d => !d.isClosed && d.isMatured).length;
@@ -126,6 +205,7 @@ function renderDeposits() {
   }
 
   updateDepositsBadge();
+  initDepositBankSelects();
   if (typeof updateCapitalSummaryHeader === 'function') updateCapitalSummaryHeader();
   if (typeof renderMarketRatesWidget === 'function') renderMarketRatesWidget();
 
@@ -172,15 +252,19 @@ function renderDeposits() {
           <span class="text-[10px] text-amber-400/80 font-medium">Срок завершен</span>
         </div>
         ${matured
-          .map(
-            dep => `
+          .map(dep => {
+            const logoSvg =
+              (typeof getBankLogoSvg === 'function' ? getBankLogoSvg(dep.bank || dep.name) : '') ||
+              '';
+            const logoHtml = logoSvg
+              ? `<div class="w-8 h-8 rounded-xl bg-white/[0.04] p-1 flex items-center justify-center flex-shrink-0 border border-amber-500/30 overflow-hidden">${logoSvg}</div>`
+              : `<div class="w-8 h-8 rounded-xl bg-amber-500/15 text-amber-300 flex items-center justify-center flex-shrink-0 border border-amber-500/25"><i data-lucide="vault" class="w-4 h-4"></i></div>`;
+            return `
           <div class="card bg-[#0E1016] border border-amber-500/30 rounded-2xl p-3.5 flex flex-col gap-2.5 transition-all cursor-pointer shadow-lg active:scale-[0.99]"
                onclick="openCloseDepositModal('${dep.id}')">
             <div class="flex items-start justify-between w-full gap-2">
               <div class="flex items-center gap-2.5 min-w-0">
-                <div class="w-8 h-8 rounded-xl bg-amber-500/15 text-amber-300 flex items-center justify-center flex-shrink-0 border border-amber-500/25">
-                  <i data-lucide="vault" class="w-4 h-4"></i>
-                </div>
+                ${logoHtml}
                 <div class="min-w-0">
                   <h4 class="text-sm font-semibold text-white truncate leading-tight">${escapeHtml(dep.name)}</h4>
                   <p class="text-[11px] text-amber-300/80 font-mono mt-0.5">Истёк ${dep.endDateStr} • ${dep.rate}%</p>
@@ -197,8 +281,8 @@ function renderDeposits() {
               <span class="text-zinc-400">Начислено: <b class="font-mono text-emerald-400 font-bold tabular-nums">+${formatMoney(dep.expectedInterest)}</b></span>
             </div>
           </div>
-        `
-          )
+        `;
+          })
           .join('')}
       </div>
     `;
@@ -225,8 +309,13 @@ function renderDeposits() {
 
   if (active.length > 0) {
     html += active
-      .map(
-        dep => `
+      .map(dep => {
+        const logoSvg =
+          (typeof getBankLogoSvg === 'function' ? getBankLogoSvg(dep.bank || dep.name) : '') || '';
+        const logoHtml = logoSvg
+          ? `<div class="w-7 h-7 rounded-lg bg-white/[0.04] p-1 flex items-center justify-center flex-shrink-0 border border-white/[0.06] overflow-hidden">${logoSvg}</div>`
+          : `<div class="w-7 h-7 rounded-lg bg-white/[0.05] text-zinc-300 flex items-center justify-center flex-shrink-0 border border-white/[0.06]"><i data-lucide="vault" class="w-3.5 h-3.5"></i></div>`;
+        return `
       <div
         class="card bg-[#0E1016] border border-white/[0.06] hover:border-white/15 rounded-2xl w-full mb-2.5 flex flex-col p-3.5 cursor-pointer overflow-hidden transition-all active:scale-[0.99]"
         data-id="${dep.id}"
@@ -238,9 +327,7 @@ function renderDeposits() {
         <!-- Этаж 1: Название, иконка и ставка -->
         <div class="flex justify-between items-center w-full">
           <div class="flex items-center gap-2.5 min-w-0 pr-2">
-            <div class="w-7 h-7 rounded-lg bg-white/[0.05] text-zinc-300 flex items-center justify-center flex-shrink-0 border border-white/[0.06]">
-              <i data-lucide="vault" class="w-3.5 h-3.5"></i>
-            </div>
+            ${logoHtml}
             <h4 class="text-sm font-semibold text-white truncate leading-tight">${escapeHtml(dep.name)}</h4>
           </div>
           <div class="text-right flex-shrink-0">
@@ -269,8 +356,8 @@ function renderDeposits() {
           <div class="bg-emerald-500 h-full rounded-full transition-all duration-300" style="width:${dep.progress}%"></div>
         </div>
       </div>
-    `
-      )
+    `;
+      })
       .join('');
   } else {
     html += `
@@ -292,8 +379,14 @@ function renderDeposits() {
           <span class="text-[10px] text-zinc-500">Архив</span>
         </div>
         ${closed
-          .map(
-            dep => `
+          .map(dep => {
+            const logoSvg =
+              (typeof getBankLogoSvg === 'function' ? getBankLogoSvg(dep.bank || dep.name) : '') ||
+              '';
+            const logoHtml = logoSvg
+              ? `<div class="w-7 h-7 rounded-lg bg-white/[0.03] p-1 flex items-center justify-center flex-shrink-0 border border-white/[0.04] opacity-70 overflow-hidden">${logoSvg}</div>`
+              : `<div class="w-7 h-7 rounded-lg bg-white/[0.03] text-zinc-500 flex items-center justify-center flex-shrink-0"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i></div>`;
+            return `
           <div
             class="card bg-[#0E1016]/60 border border-white/[0.04] rounded-2xl w-full p-3 flex items-center justify-between cursor-pointer transition-all hover:bg-[#0E1016] opacity-70 hover:opacity-100 active:scale-[0.99]"
             data-id="${dep.id}"
@@ -301,9 +394,7 @@ function renderDeposits() {
             onclick="openCardContextMenu(event, '${escapeHtml(dep.name)}', null, () => deleteRecord('Deposits', '${dep.id}'))"
           >
             <div class="flex items-center gap-2.5 min-w-0 pr-2">
-              <div class="w-7 h-7 rounded-lg bg-white/[0.03] text-zinc-500 flex items-center justify-center flex-shrink-0">
-                <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
-              </div>
+              ${logoHtml}
               <div class="min-w-0">
                 <h4 class="text-xs font-medium text-zinc-300 truncate">${escapeHtml(dep.name)}</h4>
                 <p class="text-[10px] text-zinc-500 mt-0.5">Закрыт ${dep.endDateStr} • ${dep.durationStr}</p>
@@ -314,8 +405,8 @@ function renderDeposits() {
               <p class="text-[10px] text-zinc-500 font-mono mt-0.5">+${formatMoney(dep.expectedInterest)}</p>
             </div>
           </div>
-        `
-          )
+        `;
+          })
           .join('')}
       </div>
     `;
@@ -339,9 +430,22 @@ function submitDeposit(e) {
   }
 
   const allDeposits = Cache?.deposits || [];
-  const nextNum = allDeposits.length + 1;
+  const selectedBank = document.getElementById('dep-bank')?.value?.trim() || '';
   const rawName = document.getElementById('dep-name')?.value?.trim();
-  const name = rawName || `Вклад ${nextNum}`;
+
+  let name = rawName;
+  if (!name) {
+    if (selectedBank) {
+      const sameBankDeposits = allDeposits.filter(
+        d =>
+          (d.bank || '').toLowerCase() === selectedBank.toLowerCase() ||
+          (d.name || '').toLowerCase().startsWith(selectedBank.toLowerCase())
+      );
+      name = `${selectedBank} ${sameBankDeposits.length + 1}`;
+    } else {
+      name = `Вклад ${allDeposits.length + 1}`;
+    }
+  }
 
   const parsedStart =
     typeof parseAnyDate === 'function' ? parseAnyDate(startRaw) : new Date(startRaw);
@@ -358,6 +462,7 @@ function submitDeposit(e) {
 
   addRecord('Deposits', {
     name,
+    bank: selectedBank,
     amount: getUnformattedVal(document.getElementById('dep-amount')),
     rate: getUnformattedVal(document.getElementById('dep-rate')),
     startDate,
@@ -382,7 +487,10 @@ function openEditDepModal(id) {
   const dlg = document.getElementById('dep-edit-modal');
   if (!dlg) return;
 
+  initDepositBankSelects();
   document.getElementById('edit-dep-id').value = dep.id;
+  const bankSelect = document.getElementById('edit-dep-bank');
+  if (bankSelect) bankSelect.value = dep.bank || '';
   document.getElementById('edit-dep-name').value = dep.name || '';
   setFormattedVal('edit-dep-amount', dep.amount);
   setFormattedVal('edit-dep-rate', dep.rate);
@@ -412,16 +520,18 @@ async function submitEditDepModal(e) {
   const id = document.getElementById('edit-dep-id').value;
   if (!id) return;
 
-  const name = document.getElementById('edit-dep-name').value.trim();
+  const selectedBank = document.getElementById('edit-dep-bank')?.value?.trim() || '';
+  const rawName = document.getElementById('edit-dep-name')?.value?.trim();
+  let name = rawName;
+  if (!name) {
+    name = selectedBank ? `${selectedBank} 1` : 'Вклад';
+  }
+
   const amount = getUnformattedVal(document.getElementById('edit-dep-amount'));
   const rate = getUnformattedVal(document.getElementById('edit-dep-rate'));
   const startRaw = document.getElementById('edit-dep-start').value;
   const endRaw = document.getElementById('edit-dep-end').value;
 
-  if (!name) {
-    showToast('Укажите название вклада', true);
-    return;
-  }
   if (!amount || amount <= 0) {
     showToast('Укажите сумму вклада', true);
     return;
@@ -437,6 +547,7 @@ async function submitEditDepModal(e) {
   try {
     await getUserCol('Deposits').doc(id).update({
       name,
+      bank: selectedBank,
       amount,
       rate,
       startDate,

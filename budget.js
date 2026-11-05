@@ -16,37 +16,62 @@ function getSelectedBudgetDate() {
 }
 
 function getBudgetStartMonthDate() {
+  let minDate = null;
+  const txs = Cache?.transactions || [];
+  for (const t of txs) {
+    if (t.date) {
+      const p = typeof parseAnyDate === 'function' ? parseAnyDate(t.date) : new Date(t.date);
+      if (p && !isNaN(p.getTime())) {
+        const m = new Date(p.getFullYear(), p.getMonth(), 1);
+        if (!minDate || m.getTime() < minDate.getTime()) {
+          minDate = m;
+        }
+      }
+    }
+  }
+
+  // Если есть план с датой начала, учитываем его
   const plan = Cache?.budgetPlan || {};
   if (plan.startMonth) {
     const parts = String(plan.startMonth).split('-');
     if (parts.length === 2) {
       const y = parseInt(parts[0], 10);
       const m = parseInt(parts[1], 10) - 1;
-      if (!isNaN(y) && !isNaN(m)) return new Date(y, m, 1);
+      if (!isNaN(y) && !isNaN(m)) {
+        const pDate = new Date(y, m, 1);
+        if (!minDate || pDate.getTime() < minDate.getTime()) minDate = pDate;
+      }
     }
   }
-  if (plan.createdAt) {
-    const d = new Date(plan.createdAt);
-    return new Date(d.getFullYear(), d.getMonth(), 1);
-  }
+
   const today = new Date();
-  return new Date(today.getFullYear(), today.getMonth(), 1);
+  const defaultPast = new Date(today.getFullYear() - 3, 0, 1); // По умолчанию до 3 лет назад
+  if (minDate && minDate.getTime() < defaultPast.getTime()) {
+    return minDate;
+  }
+  return minDate || defaultPast;
 }
 window.getSelectedBudgetDate = getSelectedBudgetDate;
 window.getBudgetStartMonthDate = getBudgetStartMonthDate;
 
 function getBudgetMaxMonthDate() {
   const today = new Date();
-  const currentMonthDate = new Date(today.getFullYear(), today.getMonth(), 1);
-  const plan = Cache?.budgetPlan || {};
-  const closedMonths = plan.closedMonths || {};
-  const currentMonthKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+  let maxDate = new Date(today.getFullYear(), today.getMonth(), 1);
 
-  // Если текущий месяц уже закрыт — разрешаем перейти на следующий вперед
-  if (closedMonths[currentMonthKey]) {
-    return new Date(today.getFullYear(), today.getMonth() + 1, 1);
+  // Если есть операции будущих месяцев, позволяем листать до них
+  const txs = Cache?.transactions || [];
+  for (const t of txs) {
+    if (t.date) {
+      const p = typeof parseAnyDate === 'function' ? parseAnyDate(t.date) : new Date(t.date);
+      if (p && !isNaN(p.getTime())) {
+        const m = new Date(p.getFullYear(), p.getMonth(), 1);
+        if (m.getTime() > maxDate.getTime()) {
+          maxDate = m;
+        }
+      }
+    }
   }
-  return currentMonthDate;
+  return maxDate;
 }
 
 function isBudgetMonthClosed(year, month) {
@@ -64,7 +89,7 @@ function navigateBudgetMonth(delta) {
   const newTarget = new Date(currentTarget.getFullYear(), currentTarget.getMonth() + delta, 1);
 
   if (newTarget.getTime() < minDate.getTime()) {
-    showToast('Нельзя переключиться на месяц до начала создания плана бюджета');
+    showToast('Достигнут самый ранний доступный месяц');
     return;
   }
   if (newTarget.getTime() > maxDate.getTime()) {

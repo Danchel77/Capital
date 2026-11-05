@@ -56,11 +56,24 @@ class MoexService {
 
   /**
    * Fetches latest market price and daily change for a single security.
+   * Prioritizes main exchange trading boards (TQBR, TQTF, TQCB, TQOB) over OTC/special boards (SPEQ).
    */
   async fetchSecurityPrice(ticker) {
     if (!ticker) return null;
 
-    const url = `${this.marketDataBaseUrl}/${encodeURIComponent(ticker)}.json?iss.meta=off&iss.only=marketdata,securities&marketdata.columns=SECID,LAST,PREVPRICE,LASTTOPREVPRICE&securities.columns=SECID,SHORTNAME,PREVPRICE,LOTSIZE`;
+    const url = `${this.marketDataBaseUrl}/${encodeURIComponent(ticker)}.json?iss.meta=off&iss.only=marketdata,securities&marketdata.columns=SECID,BOARDID,LAST,LASTTOPREVPRICE&securities.columns=SECID,BOARDID,SHORTNAME,PREVPRICE,LOTSIZE`;
+
+    const getBoardRank = boardId => {
+      if (!boardId) return 99;
+      const b = String(boardId).toUpperCase();
+      if (b === 'TQBR') return 1;
+      if (b === 'TQTF') return 2;
+      if (b === 'TQCB') return 3;
+      if (b === 'TQOB') return 4;
+      if (b === 'FQBR') return 5;
+      if (b === 'SPEQ') return 90;
+      return 10;
+    };
 
     try {
       const resp = await fetch(url);
@@ -70,12 +83,20 @@ class MoexService {
       const marketRows = json?.marketdata?.data || [];
       const secRows = json?.securities?.data || [];
 
-      // Prioritize row with valid LAST price (usually TQBR board)
+      // Sort rows by board priority so TQBR / TQTF take precedence
+      const sortedMarketRows = [...marketRows].sort(
+        (a, b) => getBoardRank(a?.[1]) - getBoardRank(b?.[1])
+      );
+      const sortedSecRows = [...secRows].sort(
+        (a, b) => getBoardRank(a?.[1]) - getBoardRank(b?.[1])
+      );
+
       let price = null;
       let changePct = 0;
 
-      for (const row of marketRows) {
-        const [_, lastPrice, change] = row;
+      // 1. Look for valid LAST trade price on preferred boards
+      for (const row of sortedMarketRows) {
+        const [_, _boardId, lastPrice, change] = row;
         if (typeof lastPrice === 'number' && lastPrice > 0) {
           price = lastPrice;
           changePct = typeof change === 'number' ? change : 0;
@@ -83,10 +104,10 @@ class MoexService {
         }
       }
 
-      // If LAST is null (market closed or weekend), use PREVPRICE from securities block
+      // 2. If LAST is null (market closed or weekend), use PREVPRICE from preferred boards
       if (price === null) {
-        for (const row of secRows) {
-          const [_, __, prevPrice] = row;
+        for (const row of sortedSecRows) {
+          const [_, _boardId, _shortName, prevPrice] = row;
           if (typeof prevPrice === 'number' && prevPrice > 0) {
             price = prevPrice;
             break;
@@ -94,8 +115,9 @@ class MoexService {
         }
       }
 
-      const shortName = secRows?.[0]?.[1] || ticker;
-      const lotSize = secRows?.[0]?.[3] || 1;
+      const bestSecRow = sortedSecRows[0] || [];
+      const shortName = bestSecRow[2] || ticker;
+      const lotSize = bestSecRow[4] || 1;
 
       return {
         ticker,

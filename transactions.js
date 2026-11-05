@@ -545,7 +545,7 @@ function renderTxRowHtml(tx, largeThreshold, hasDynamicThreshold) {
   let iconStr = catInfo && catInfo.icon ? catInfo.icon : 'tag';
   let iconBg = isExp
     ? 'bg-[#212430] text-[#9EA7B3] border border-[rgba(255,255,255,0.04)]'
-    : 'bg-[#30D158]/10 text-[#30D158] border border-[#30D158]/20';
+    : 'bg-[#13251E] text-[#34D399] border border-[#1E3E32]';
 
   if (isPending) {
     iconStr = 'arrow-left-right';

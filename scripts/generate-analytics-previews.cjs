@@ -82,16 +82,20 @@ function createPreviewHtml({ viewMode = 'numbers', openOthers = false, activeScr
               <p class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight my-1.5 font-mono">
                 +84 500 ₽
               </p>
-              <div class="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-white/[0.06] text-xs">
-                <div class="flex items-center gap-2 min-w-0">
-                  <span class="w-2 h-2 rounded-full bg-[#10B981] shrink-0"></span>
-                  <span class="text-xs text-zinc-400 shrink-0">Доходы</span>
-                  <span class="font-mono font-bold text-[#10B981] text-sm truncate">+240 000 ₽</span>
+              <div class="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-white/[0.06]">
+                <div class="flex flex-col gap-0.5 min-w-0">
+                  <div class="flex items-center gap-1.5 text-[11px] text-zinc-400">
+                    <span class="w-1.5 h-1.5 rounded-full bg-[#10B981] shrink-0"></span>
+                    <span>Доходы</span>
+                  </div>
+                  <span class="font-mono font-bold text-[#10B981] text-sm">+240 000 ₽</span>
                 </div>
-                <div class="flex items-center gap-2 min-w-0">
-                  <span class="w-2 h-2 rounded-full bg-[#F43F5E] shrink-0"></span>
-                  <span class="text-xs text-zinc-400 shrink-0">Расходы</span>
-                  <span class="font-mono font-bold text-zinc-200 text-sm truncate">-155 500 ₽</span>
+                <div class="flex flex-col gap-0.5 min-w-0">
+                  <div class="flex items-center gap-1.5 text-[11px] text-zinc-400">
+                    <span class="w-1.5 h-1.5 rounded-full bg-[#F43F5E] shrink-0"></span>
+                    <span>Расходы</span>
+                  </div>
+                  <span class="font-mono font-bold text-zinc-200 text-sm">-155 500 ₽</span>
                 </div>
               </div>
             </div>
@@ -242,12 +246,16 @@ function createPreviewHtml({ viewMode = 'numbers', openOthers = false, activeScr
         </div>
 
         <!-- Поисковая строка -->
-        <div class="relative">
-          <i data-lucide="search" class="w-4 h-4 text-zinc-500 absolute left-3 top-2.5"></i>
+        <div class="relative flex items-center">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-500">
+            <i data-lucide="search" class="w-4 h-4"></i>
+          </div>
           <input
             type="text"
-            placeholder="Поиск по операциям..."
-            class="w-full pl-9 pr-3 py-2 bg-[#0E1016] border border-white/[0.06] rounded-xl text-xs text-white placeholder-zinc-500 outline-none"
+            id="tx-search-input"
+            placeholder="Поиск по операциям или суммам..."
+            style="padding-left: 42px !important;"
+            class="w-full input-with-left-icon pr-3 py-2 bg-[#0E1016] border border-white/[0.06] rounded-xl text-xs text-white placeholder-zinc-500 outline-none"
           />
         </div>
 
@@ -301,7 +309,7 @@ function createPreviewHtml({ viewMode = 'numbers', openOthers = false, activeScr
 
           <div class="p-3 bg-[#0E1016] border border-white/[0.06] rounded-2xl flex items-center justify-between">
             <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+              <div class="w-8 h-8 rounded-xl bg-[#13251E] text-[#34D399] border border-[#1E3E32] flex items-center justify-center">
                 <i data-lucide="arrow-down-left" class="w-4 h-4"></i>
               </div>
               <div>
@@ -450,7 +458,7 @@ function createPreviewHtml({ viewMode = 'numbers', openOthers = false, activeScr
           scales: {
             x: {
               grid: { display: false },
-              ticks: { color: '#71717a', font: { size: 9 } }
+              ticks: { color: '#71717a', font: { size: 10, weight: '500', family: 'Inter, system-ui, sans-serif' } }
             },
             y: {
               grid: { color: 'rgba(255, 255, 255, 0.04)' },

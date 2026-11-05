@@ -69,6 +69,9 @@ const fullHtml = `<!DOCTYPE html>
     }));
   </script>
   <script>
+    ${fs.readFileSync('bank-logos.js', 'utf8')}
+  </script>
+  <script>
     ${fs.readFileSync('marketRates.js', 'utf8')}
   </script>
   <script>

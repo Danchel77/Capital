@@ -762,6 +762,8 @@ async function autoUpdateBrokerQuotesAndSnapshot(force = false) {
 
     const balEl = document.getElementById('broker-balance');
     if (balEl) balEl.innerText = formatMoney(roundedTotal);
+
+    renderBroker();
   } catch (err) {
     console.warn('Фоновое обновление котировок MOEX:', err);
   }
@@ -786,9 +788,9 @@ async function refreshMoexQuotes() {
     await autoUpdateBrokerQuotesAndSnapshot(true);
     if (typeof fetchCollection === 'function') {
       await fetchCollection('Broker');
-    } else {
-      renderBroker();
+      await fetchCollection('BrokerAssets');
     }
+    renderBroker();
     showToast('Котировки и оценка портфеля обновлены');
   } catch (err) {
     console.warn('Ошибка ручного обновления котировок MOEX:', err);

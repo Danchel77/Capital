@@ -595,6 +595,10 @@ async function fetchCollection(table) {
         Cache.broker = processBroker(data, Cache.goals);
         if (typeof renderBroker === 'function') renderBroker();
         break;
+      case 'BrokerAssets':
+        Cache.brokerAssets = data;
+        if (typeof renderBroker === 'function') renderBroker();
+        break;
       case 'CalendarBills':
         Cache.calendarBills = data;
         if (typeof renderBudgetTab === 'function') renderBudgetTab();
