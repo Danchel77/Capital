@@ -19,6 +19,9 @@ const targetTab = getArg('tab', 'capital'); // 'budget' | 'capital' | 'transacti
 const summaryMode = getArg('mode', 'numbers'); // 'numbers' | 'chart'
 const openDepForm = getArg('openDepositForm', false);
 const openBankDropdown = getArg('openBankDropdown', false);
+const openCalendarModal = getArg('openCalendarModal', false);
+const openBillDialog = getArg('openBillDialog', false);
+const emptyData = getArg('emptyData', false);
 const outPath = path.resolve(process.cwd(), getArg('out', 'scripts/preview-harness.png'));
 
 // Мок-данные для наполнения реального приложения
@@ -93,8 +96,8 @@ const mockCache = {
     }
   ],
   goals: [
-    { id: 'goal-1', name: 'Резервный фонд', targetAmount: 1000000, currentAmount: 850000, color: '#10B981', icon: 'shield-check' },
-    { id: 'goal-2', name: 'Отпуск на море', targetAmount: 350000, currentAmount: 195000, color: '#38BDF8', icon: 'plane' }
+    { id: 'goal-1', name: 'Резервный фонд', target: 1000000, saved: 850000, share: 50, color: '#10B981', icon: 'shield-check' },
+    { id: 'goal-2', name: 'Отпуск на море', target: 350000, saved: 195000, share: 50, color: '#38BDF8', icon: 'plane' }
   ],
   calendarBills: [
     { id: 'bill-1', name: 'Ипотека / аренда', amount: 45000, day: 12, category: 'Квартира и ЖКХ' },
@@ -180,6 +183,9 @@ const previewInjectionScript = `
           }
         }
       } else if ('${targetTab}' === 'budget') {
+        if ('${emptyData}' === 'true') {
+          window.Cache.transactions = [];
+        }
         if (typeof window.renderBudgetTab === 'function') {
           window.renderBudgetTab();
         }
@@ -188,6 +194,25 @@ const previewInjectionScript = `
         }
         if (typeof window.updateAnalyticsForMonth === 'function') {
           window.updateAnalyticsForMonth('2026-11');
+        }
+        if ('${openCalendarModal}' === 'true') {
+          if (typeof window.openBudgetCalendarModal === 'function') {
+            window.openBudgetCalendarModal();
+          } else {
+            const modal = document.getElementById('budget-calendar-modal');
+            if (modal) modal.classList.remove('hidden');
+          }
+          if (typeof window.renderCalendarGrid === 'function') {
+            window.renderCalendarGrid();
+          }
+        }
+        if ('${openBillDialog}' === 'true') {
+          if (typeof window.openAddBillModal === 'function') {
+            window.openAddBillModal(15);
+          } else {
+            const dlg = document.getElementById('calendar-bill-dialog');
+            if (dlg) dlg.classList.remove('hidden');
+          }
         }
       } else if ('${targetTab}' === 'transactions') {
         console.log('[Preview] transactions branch: calling renderTransactions');

@@ -48,6 +48,21 @@ function getActiveFilterMonth() {
       return `${y}-${m}`;
     }
   }
+  if (currentTab === 'transactions') {
+    if (typeof window.getCurrentFilterMonth === 'function') {
+      const m = window.getCurrentFilterMonth();
+      if (m) return m;
+    }
+    if (window.currentFilterMonth) return window.currentFilterMonth;
+  }
+  if (typeof window.getSelectedBudgetDate === 'function') {
+    const d = window.getSelectedBudgetDate();
+    if (d instanceof Date && !isNaN(d.getTime())) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      return `${y}-${m}`;
+    }
+  }
   if (typeof window.getCurrentFilterMonth === 'function') {
     const m = window.getCurrentFilterMonth();
     if (m) return m;
@@ -348,10 +363,7 @@ function switchStructureType(type) {
     }
   }
 
-  const targetMonthId =
-    (typeof window.getCurrentFilterMonth === 'function'
-      ? window.getCurrentFilterMonth()
-      : window.currentFilterMonth) || (Cache?.transactions || [])[0]?.id;
+  const targetMonthId = getActiveFilterMonth();
   if (targetMonthId) {
     updateAnalyticsForMonth(targetMonthId);
   }
@@ -363,6 +375,7 @@ function resetCategoryDonutCenter() {
   const totalEl = document.getElementById('category-total');
   const percentEl = document.getElementById('donut-center-percent');
   const defaultLabel = currentStructureType === 'Расход' ? 'Расходы' : 'Доходы';
+  const prefix = currentStructureType === 'Расход' ? '-' : '+';
 
   if (centerLabelEl) {
     centerLabelEl.textContent = defaultLabel;
@@ -370,7 +383,7 @@ function resetCategoryDonutCenter() {
     centerLabelEl.removeAttribute('title');
   }
   if (totalEl) {
-    totalEl.textContent = formatMoney(currentDonutTotal);
+    totalEl.textContent = `${prefix}${formatMoney(currentDonutTotal)}`;
   }
   if (percentEl) {
     percentEl.textContent = '';
@@ -413,7 +426,8 @@ function selectCategorySlice(idx) {
     centerLabelEl.title = catLabel;
   }
   if (totalEl) {
-    totalEl.textContent = formatMoney(catVal);
+    const prefix = currentStructureType === 'Расход' ? '-' : '+';
+    totalEl.textContent = `${prefix}${formatMoney(catVal)}`;
   }
   if (percentEl) {
     percentEl.textContent = `${pct}%`;
@@ -640,7 +654,8 @@ function updateAnalyticsForMonth(monthId) {
   const legendEl = document.getElementById('category-legend');
 
   const defaultLabel = currentStructureType === 'Расход' ? 'Расходы' : 'Доходы';
-  if (totalEl) totalEl.textContent = formatMoney(total);
+  const prefix = currentStructureType === 'Расход' ? '-' : '+';
+  if (totalEl) totalEl.textContent = `${prefix}${formatMoney(total)}`;
   if (centerLabelEl) {
     centerLabelEl.textContent = defaultLabel;
     centerLabelEl.style.color = '';
@@ -695,8 +710,17 @@ function updateAnalyticsForMonth(monthId) {
       ? chartColors
       : ['#1C202A'];
     categoryChartObj.options.cutout = '74%';
+    categoryChartObj.options.rotation = -90;
+    categoryChartObj.options.circumference = 0;
     categoryChartObj.resize();
-    categoryChartObj.update();
+    categoryChartObj.update('none');
+
+    requestAnimationFrame(() => {
+      if (categoryChartObj) {
+        categoryChartObj.options.circumference = 360;
+        categoryChartObj.update();
+      }
+    });
   } else {
     if (categoryChartObj) categoryChartObj.destroy();
 
@@ -721,9 +745,13 @@ function updateAnalyticsForMonth(monthId) {
         maintainAspectRatio: false,
         layout: { padding: 4 },
         cutout: '74%',
+        rotation: -90,
+        circumference: 0,
         animation: {
-          duration: 400,
-          animateRotate: true,
+          duration: 750,
+          easing: 'easeOutQuart',
+          animateRotate: false,
+          animateScale: false,
         },
         interaction: {
           mode: 'nearest',
@@ -756,6 +784,13 @@ function updateAnalyticsForMonth(monthId) {
           tooltip: { enabled: false },
         },
       },
+    });
+
+    requestAnimationFrame(() => {
+      if (categoryChartObj) {
+        categoryChartObj.options.circumference = 360;
+        categoryChartObj.update();
+      }
     });
   }
 

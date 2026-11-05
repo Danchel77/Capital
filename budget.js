@@ -240,19 +240,19 @@ function renderBudgetTab() {
   const billsValEl = document.getElementById('budget-month-bills-val');
 
   if (deltaValEl) {
+    const baseClasses =
+      'text-3xl sm:text-4xl font-bold tracking-tight leading-tight font-mono tabular-nums my-1.5';
     if (delta >= 0) {
       deltaValEl.innerText = `+${formatMoney(delta)}`;
-      deltaValEl.className =
-        'text-3xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight';
+      deltaValEl.className = `${baseClasses} text-white`;
     } else {
       deltaValEl.innerText = `-${formatMoney(Math.abs(delta))}`;
-      deltaValEl.className =
-        'text-3xl sm:text-4xl font-extrabold text-[#FF453A] tracking-tight leading-tight';
+      deltaValEl.className = `${baseClasses} text-[#F43F5E]`;
     }
   }
 
   if (deltaLabelEl) {
-    deltaLabelEl.innerText = delta >= 0 ? 'Свободный остаток месяца' : 'Дефицит месяца';
+    deltaLabelEl.innerText = delta >= 0 ? 'Свободный остаток' : 'Дефицит месяца';
   }
 
   if (deltaPillEl) {
@@ -260,8 +260,14 @@ function renderBudgetTab() {
     deltaPillEl.style.display = 'none';
   }
 
-  if (incomeValEl) incomeValEl.innerText = `+${formatMoney(monthlyIncome)}`;
-  if (expenseValEl) expenseValEl.innerText = `-${formatMoney(monthlySpent)}`;
+  if (incomeValEl) {
+    incomeValEl.innerText =
+      monthlyIncome > 0 ? `+${formatMoney(monthlyIncome)}` : `${formatMoney(0)}`;
+  }
+  if (expenseValEl) {
+    expenseValEl.innerText =
+      monthlySpent > 0 ? `-${formatMoney(monthlySpent)}` : `${formatMoney(0)}`;
+  }
   if (billsValEl) billsValEl.innerText = formatMoney(monthlyBillsSum);
 
   // Управление пустым состоянием и переключением режима сводки месяца
@@ -307,8 +313,15 @@ function renderBudgetTab() {
 function applyMonthSummaryViewMode(mode) {
   const numbersView = document.getElementById('month-summary-numbers-view');
   const chartView = document.getElementById('month-summary-chart-view');
+  const emptyStateEl = document.getElementById('budget-month-empty-state');
   const toggleIcon = document.getElementById('month-summary-toggle-icon');
   const isChart = mode === 'chart';
+
+  if (emptyStateEl && !emptyStateEl.classList.contains('hidden')) {
+    if (numbersView) numbersView.classList.add('hidden');
+    if (chartView) chartView.classList.add('hidden');
+    return;
+  }
 
   if (numbersView) numbersView.classList.toggle('hidden', isChart);
   if (chartView) chartView.classList.toggle('hidden', !isChart);

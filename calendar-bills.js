@@ -370,6 +370,8 @@ async function submitCalendarBill(e) {
     document.getElementById('calendar-bill-form')?.reset();
     if (document.getElementById('bill-edit-id')) document.getElementById('bill-edit-id').value = '';
 
+    if (typeof renderCalendarGrid === 'function') renderCalendarGrid();
+    if (typeof renderBudgetCalendar === 'function') renderBudgetCalendar();
     if (typeof renderBudgetTab === 'function') renderBudgetTab();
     closeBudgetModalDayTooltip();
 
@@ -414,15 +416,15 @@ function openDayBillsModal(day) {
         .map(b => {
           const info = getOneTimeBillMonthInfo(b, today);
           return `
-          <div class="flex items-center justify-between p-2.5 rounded-xl bg-[#12151C] border border-[rgba(255,255,255,0.04)] text-xs">
+          <div class="flex items-center justify-between p-2.5 rounded-xl bg-[#12151C] border border-white/[0.06] text-xs">
             <div>
               <div class="font-semibold text-white flex items-center gap-1.5">
                 ${escapeHtml(b.name)}
                 ${info.isSpread ? `<span class="text-[9px] text-amber-300 font-mono">(${info.currentStep}/${info.totalSteps})</span>` : ''}
               </div>
-              <div class="font-mono text-[11px] text-[#848D99]">-${formatMoney(b.amount)}</div>
+              <div class="font-mono text-[11px] text-zinc-400">-${formatMoney(b.amount)}</div>
             </div>
-            <button type="button" onclick="deleteCalendarBill('${b.id}')" class="text-gray-500 hover:text-[#FF453A] p-1.5 cursor-pointer">
+            <button type="button" onclick="deleteCalendarBill('${b.id}')" class="text-zinc-400 hover:text-[#F43F5E] p-1.5 rounded-lg hover:bg-white/10 cursor-pointer transition-colors">
               <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
             </button>
           </div>
@@ -470,6 +472,8 @@ async function deleteCalendarBill(billId) {
     }
   }
 
+  if (typeof renderCalendarGrid === 'function') renderCalendarGrid();
+  if (typeof renderBudgetCalendar === 'function') renderBudgetCalendar();
   if (typeof renderBudgetTab === 'function') renderBudgetTab();
 
   const modalCalendar = document.getElementById('budget-calendar-modal');
@@ -570,7 +574,7 @@ function showBudgetModalDayTooltip(day, bills, targetEl) {
     .map(b => {
       const info = getOneTimeBillMonthInfo(b, today);
       return `
-      <div class="flex items-center justify-between p-2 rounded-xl bg-[#12151C] border border-[rgba(255,255,255,0.06)] hover:border-[rgba(255,255,255,0.12)] transition-all">
+      <div class="flex items-center justify-between p-2 rounded-xl bg-[#0E1016] border border-white/[0.06] hover:border-white/15 transition-all">
         <div class="min-w-0 pr-2 cursor-pointer flex-1" onclick="openEditBillModal('${b.id}')">
           <div class="flex items-center gap-1.5 mb-0.5">
             <span class="text-xs font-semibold text-white truncate block">${escapeHtml(b.name)}</span>
@@ -579,19 +583,19 @@ function showBudgetModalDayTooltip(day, bills, targetEl) {
                 ? `<span class="text-[8px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-0.5 flex-shrink-0 font-medium font-mono"><i data-lucide="split" class="w-2.5 h-2.5"></i>${info.currentStep}/${info.totalSteps}</span>`
                 : info.isOneTime
                   ? `<span class="text-[8px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-0.5 flex-shrink-0 font-medium"><i data-lucide="zap" class="w-2.5 h-2.5"></i>Разовый</span>`
-                  : `<span class="text-[8px] px-1.5 py-0.2 rounded bg-[#6C5DD3]/20 text-[#a594fd] border border-[#6C5DD3]/30 flex items-center gap-0.5 flex-shrink-0 font-medium">Ежемесячно</span>`
+                  : `<span class="text-[8px] px-1.5 py-0.2 rounded bg-white/10 text-zinc-300 border border-white/15 flex items-center gap-0.5 flex-shrink-0 font-medium">Ежемесячно</span>`
             }
           </div>
           <div class="flex items-center gap-1.5">
-            <span class="text-[11px] font-mono font-bold text-gray-200">-${formatMoney(b.amount)}</span>
-            ${info.isSpread ? `<span class="text-[9px] text-[#848D99] font-mono">из ${formatMoney(b.totalAmount || b.amount * b.spreadMonths)}</span>` : ''}
+            <span class="text-[11px] font-mono font-bold text-zinc-200">-${formatMoney(b.amount)}</span>
+            ${info.isSpread ? `<span class="text-[9px] text-zinc-400 font-mono">из ${formatMoney(b.totalAmount || b.amount * b.spreadMonths)}</span>` : ''}
           </div>
         </div>
         <div class="flex items-center gap-1 flex-shrink-0">
-          <button type="button" onclick="openEditBillModal('${b.id}')" class="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-[#212430] cursor-pointer transition-colors" title="Редактировать">
+          <button type="button" onclick="openEditBillModal('${b.id}')" class="text-zinc-400 hover:text-white p-1 rounded-lg hover:bg-white/10 cursor-pointer transition-colors" title="Редактировать">
             <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
           </button>
-          <button type="button" onclick="deleteCalendarBill('${b.id}')" class="text-gray-400 hover:text-[#FF453A] p-1 rounded-lg hover:bg-[#212430] cursor-pointer transition-colors" title="Удалить">
+          <button type="button" onclick="deleteCalendarBill('${b.id}')" class="text-zinc-400 hover:text-[#F43F5E] p-1 rounded-lg hover:bg-white/10 cursor-pointer transition-colors" title="Удалить">
             <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
           </button>
         </div>

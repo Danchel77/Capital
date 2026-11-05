@@ -258,7 +258,6 @@ function openCustomBankDropdown(targetPrefix) {
   const searchInput = document.getElementById(`${targetPrefix}-search`);
   if (searchInput) {
     searchInput.value = '';
-    setTimeout(() => searchInput.focus(), 50);
   }
   renderCustomBankOptions(targetPrefix, '');
   bindCustomBankDropdownAutoClose(targetPrefix);
