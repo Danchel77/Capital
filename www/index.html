@@ -824,31 +824,6 @@
       </div>
     </header>
 
-    <!-- ПОДХЕДЕР: Закрепленная полоса переключателя «Список / Графики» (видна только на вкладке Аналитики) -->
-    <div
-      id="tx-view-subbar"
-      class="hidden sticky top-[52px] z-[9] bg-[#0E1016] border-b border-[#1E222D] px-4 py-2"
-    >
-      <div class="max-w-[760px] mx-auto">
-        <div class="view-switcher m-0">
-          <button
-            id="view-list-btn"
-            onclick="switchTransactionView('list')"
-            class="view-switcher__btn is-active"
-          >
-            Список
-          </button>
-          <button
-            id="view-chart-btn"
-            onclick="switchTransactionView('chart')"
-            class="view-switcher__btn"
-          >
-            Графики
-          </button>
-        </div>
-      </div>
-    </div>
-
     <!-- ПОДХЕДЕР: Закрепленная полоса переключателя «Вклады / Инвестиции» (видна только на вкладке Капитала) -->
     <div
       id="capital-view-subbar"
@@ -879,101 +854,173 @@
       <div id="budget-tab" class="tab-pane space-y-4">
         <!-- ДАШБОРД БЮДЖЕТА -->
         <div id="budget-dashboard" class="space-y-4">
-          <!-- Шапка экрана с переключением месяцев -->
+          <!-- Чистая шапка экрана с переключением месяцев -->
           <div class="flex items-center justify-between px-1">
-            <div>
-              <p class="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-0.5">
-                Планирование
-              </p>
-              <div class="flex items-center gap-1.5 mt-0.5">
-                <button
-                  type="button"
-                  id="budget-prev-month-btn"
-                  onclick="navigateBudgetMonth(-1)"
-                  class="w-7 h-7 rounded-lg bg-[#181C26] hover:bg-[#202634] border border-[#282E3E] text-zinc-300 hover:text-white flex items-center justify-center transition-all cursor-pointer active:scale-95 disabled:opacity-20 disabled:cursor-not-allowed disabled:pointer-events-none"
-                  title="Предыдущий месяц"
-                >
-                  <i data-lucide="chevron-left" class="w-4 h-4"></i>
-                </button>
-                <div class="flex items-center gap-1.5">
-                  <h2
-                    id="budget-month-label"
-                    class="text-base sm:text-lg font-bold text-white tracking-tight select-none"
-                  >
-                    Сентябрь 2026
-                  </h2>
-                  <span
-                    id="budget-month-status-badge"
-                    class="hidden text-[10px] font-semibold px-2 py-0.5 rounded-full border leading-tight"
-                  ></span>
-                </div>
-                <button
-                  type="button"
-                  id="budget-next-month-btn"
-                  onclick="navigateBudgetMonth(1)"
-                  class="w-7 h-7 rounded-lg bg-[#181C26] hover:bg-[#202634] border border-[#282E3E] text-zinc-300 hover:text-white flex items-center justify-center transition-all cursor-pointer active:scale-95 disabled:opacity-20 disabled:cursor-not-allowed disabled:pointer-events-none"
-                  title="Следующий месяц"
-                >
-                  <i data-lucide="chevron-right" class="w-4 h-4"></i>
-                </button>
-              </div>
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                id="budget-prev-month-btn"
+                onclick="navigateBudgetMonth(-1)"
+                class="w-7 h-7 rounded-lg bg-[#12151C] hover:bg-white/[0.06] border border-white/[0.08] text-zinc-300 hover:text-white flex items-center justify-center transition-all cursor-pointer active:scale-95 disabled:opacity-20 disabled:cursor-not-allowed disabled:pointer-events-none"
+                title="Предыдущий месяц"
+              >
+                <i data-lucide="chevron-left" class="w-4 h-4"></i>
+              </button>
+              <h2
+                id="budget-month-label"
+                class="text-base sm:text-lg font-bold text-white tracking-tight select-none"
+              >
+                Сентябрь 2026
+              </h2>
+              <button
+                type="button"
+                id="budget-next-month-btn"
+                onclick="navigateBudgetMonth(1)"
+                class="w-7 h-7 rounded-lg bg-[#12151C] hover:bg-white/[0.06] border border-white/[0.08] text-zinc-300 hover:text-white flex items-center justify-center transition-all cursor-pointer active:scale-95 disabled:opacity-20 disabled:cursor-not-allowed disabled:pointer-events-none"
+                title="Следующий месяц"
+              >
+                <i data-lucide="chevron-right" class="w-4 h-4"></i>
+              </button>
+              <span
+                id="budget-month-status-badge"
+                class="hidden text-[10px] font-semibold px-2 py-0.5 rounded-full border leading-tight"
+              ></span>
             </div>
-            <button
-              type="button"
-              onclick="openBudgetPlanModal()"
-              class="btn-secondary px-3 py-1.5 rounded-xl flex items-center gap-1.5 text-xs font-medium cursor-pointer shadow-sm active:scale-95"
-            >
-              <i data-lucide="sliders" class="w-3.5 h-3.5 text-zinc-400"></i>
-              <span>Настройки</span>
-            </button>
           </div>
 
-          <!-- 1. Сводная карточка финансового результата месяца -->
+          <!-- 1. Сводная карточка месяца (2 режима: Числа / Диаграмма) -->
           <div
-            class="bg-[#0E1016] border border-[#1E222D] rounded-2xl p-4 shadow-sm relative overflow-hidden"
+            id="budget-month-summary-card"
+            class="bg-[#0E1016] border border-white/[0.08] rounded-2xl p-4 shadow-sm relative overflow-hidden"
           >
-            <div class="flex items-center justify-between mb-1">
+            <!-- Верхняя строка карточки: Заголовок слева, кнопка переключения справа -->
+            <div class="flex items-center justify-between mb-2">
               <span
                 id="budget-month-delta-label"
-                class="text-xs font-medium text-zinc-400 uppercase tracking-wider"
-                >Свободный остаток месяца</span
+                class="text-xs font-semibold text-zinc-400 uppercase tracking-wider"
+                >Сводка месяца</span
               >
-              <span id="budget-month-status-pill" class="hidden" style="display: none !important"
-                >Профицит</span
-              >
+              <div class="flex items-center gap-1.5">
+                <span id="budget-month-status-pill" class="hidden">Профицит</span>
+                <button
+                  id="month-summary-toggle-btn"
+                  type="button"
+                  onclick="toggleMonthSummaryView()"
+                  class="w-7 h-7 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-zinc-300 hover:text-white flex items-center justify-center transition-all cursor-pointer active:scale-95"
+                  title="Переключить вид: диаграмма / числа"
+                >
+                  <i id="month-summary-toggle-icon" data-lucide="pie-chart" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
             </div>
 
-            <p
-              id="budget-month-delta-val"
-              class="text-3xl sm:text-4xl font-bold text-white tracking-tight leading-tight my-1.5 [font-variant-numeric:tabular-nums]"
+            <!-- Empty State (когда нет операций в месяце) -->
+            <div
+              id="budget-month-empty-state"
+              class="hidden py-4 text-center flex flex-col items-center justify-center gap-2"
             >
-              0 ₽
-            </p>
-
-            <!-- Фиксированная сетка 50/50: Доходы и Расходы -->
-            <div class="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-[#1E222D] text-xs">
-              <div class="flex items-center gap-2 min-w-0">
-                <span class="w-2 h-2 rounded-full bg-[#10B981] shrink-0"></span>
-                <span class="text-xs text-zinc-400 shrink-0">Доходы</span>
-                <span
-                  id="budget-month-income-val"
-                  class="font-mono font-bold text-[#10B981] text-sm truncate"
-                  >+0 ₽</span
+              <p class="text-xs text-zinc-400">В этом месяце пока нет операций</p>
+              <div class="flex items-center gap-2 mt-1">
+                <button
+                  type="button"
+                  onclick="switchTab('transactions'); toggleForm('tx-form-container', 'tx-submit-btn', 'Сохранить', 'tx-form', 'tx');"
+                  class="btn-primary px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-sm active:scale-95 cursor-pointer"
                 >
+                  <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                  <span>Операция</span>
+                </button>
+                <button
+                  type="button"
+                  onclick="switchTab('transactions'); openPdfInfoModal();"
+                  class="btn-secondary px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 active:scale-95 cursor-pointer"
+                >
+                  <i data-lucide="file-up" class="w-3.5 h-3.5 text-zinc-400"></i>
+                  <span>Импорт PDF</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Режим 1: Числа (Сальдо + Доходы/Расходы 50/50) -->
+            <div id="month-summary-numbers-view">
+              <p
+                id="budget-month-delta-val"
+                class="text-3xl sm:text-4xl font-bold text-white tracking-tight leading-tight my-1.5 [font-variant-numeric:tabular-nums]"
+              >
+                0 ₽
+              </p>
+
+              <!-- Фиксированная сетка 50/50: Доходы и Расходы -->
+              <div class="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-white/[0.06] text-xs">
+                <div class="flex items-center gap-2 min-w-0">
+                  <span class="w-2 h-2 rounded-full bg-[#10B981] shrink-0"></span>
+                  <span class="text-xs text-zinc-400 shrink-0">Доходы</span>
+                  <span
+                    id="budget-month-income-val"
+                    class="font-mono font-bold text-[#10B981] text-sm truncate"
+                    >+0 ₽</span
+                  >
+                </div>
+
+                <div class="flex items-center gap-2 min-w-0">
+                  <span class="w-2 h-2 rounded-full bg-[#F43F5E] shrink-0"></span>
+                  <span class="text-xs text-zinc-400 shrink-0">Расходы</span>
+                  <span
+                    id="budget-month-expense-val"
+                    class="font-mono font-bold text-zinc-200 text-sm truncate"
+                    >-0 ₽</span
+                  >
+                </div>
+
+                <!-- Скрытый элемент для совместимости с JS -->
+                <span id="budget-month-bills-val" class="hidden"></span>
+              </div>
+            </div>
+
+            <!-- Режим 2: Компактная диаграмма структуры (Donut + Топ-4 категории) -->
+            <div id="month-summary-chart-view" class="hidden pt-1">
+              <!-- Подпереключатель Расход / Доход -->
+              <div class="flex items-center justify-between pb-2 mb-2 border-b border-white/[0.06]">
+                <span
+                  id="structure-title"
+                  class="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider"
+                  >Структура расходов</span
+                >
+                <div class="flex bg-[#12151C] p-0.5 rounded-lg border border-white/[0.06]">
+                  <button
+                    type="button"
+                    id="struct-type-expense"
+                    onclick="switchStructureType('Расход')"
+                    class="px-2 py-0.5 text-[11px] font-semibold rounded-md bg-white/10 text-white transition-all cursor-pointer"
+                  >
+                    Расход
+                  </button>
+                  <button
+                    type="button"
+                    id="struct-type-income"
+                    onclick="switchStructureType('Доход')"
+                    class="px-2 py-0.5 text-[11px] font-semibold rounded-md text-zinc-400 hover:text-white transition-all cursor-pointer"
+                  >
+                    Доход
+                  </button>
+                </div>
               </div>
 
-              <div class="flex items-center gap-2 min-w-0">
-                <span class="w-2 h-2 rounded-full bg-[#F43F5E] shrink-0"></span>
-                <span class="text-xs text-zinc-400 shrink-0">Расходы</span>
-                <span
-                  id="budget-month-expense-val"
-                  class="font-mono font-bold text-zinc-200 text-sm truncate"
-                  >-0 ₽</span
-                >
+              <!-- Горизонтальная сетка: Donut слева, Топ-4 справа -->
+              <div class="flex items-center gap-3">
+                <div class="chart-canvas--donut-mini">
+                  <canvas id="categoryExpensesChart"></canvas>
+                  <div
+                    class="donut-center--mini"
+                    onclick="resetCategoryDonutCenter()"
+                    title="Нажмите, чтобы сбросить"
+                  >
+                    <span id="donut-center-label" class="donut-center__label">Расходы</span>
+                    <strong id="category-total" class="donut-center__total">0 ₽</strong>
+                    <span id="donut-center-percent" class="donut-center__percent hidden">0%</span>
+                  </div>
+                </div>
+                <div id="category-legend" class="flex-1 min-w-0 space-y-1"></div>
               </div>
-
-              <!-- Скрытый элемент для совместимости с JS -->
-              <span id="budget-month-bills-val" class="hidden"></span>
             </div>
           </div>
 
@@ -1025,7 +1072,36 @@
               </button>
             </div>
 
-            <div id="budget-goals-list" class="space-y-3 pb-6"></div>
+            <div id="budget-goals-list" class="space-y-3"></div>
+          </div>
+
+          <!-- 4. Динамика сальдо за текущий год (Obsidian Minimalist) -->
+          <div
+            id="budget-trend-section"
+            class="bg-[#0E1016] border border-white/[0.08] rounded-2xl p-4 shadow-sm pb-5 mb-4"
+          >
+            <div class="flex items-center justify-between gap-2 mb-3">
+              <div>
+                <span class="text-xs uppercase tracking-wider font-bold text-zinc-400 block">
+                  Динамика сальдо
+                </span>
+                <div class="text-[11px] text-zinc-500 font-medium mt-0.5">
+                  За <span id="trend-kpi-year">2026 год</span>
+                </div>
+              </div>
+              <div class="text-right">
+                <div class="text-[10px] text-zinc-500 uppercase font-semibold">
+                  Среднее в мес.
+                </div>
+                <div id="trend-kpi-avg" class="text-xs sm:text-sm font-bold font-mono text-white">
+                  0 ₽
+                </div>
+              </div>
+            </div>
+
+            <div class="w-full h-[180px] relative">
+              <canvas id="monthlyExpensesChart"></canvas>
+            </div>
           </div>
         </div>
       </div>
@@ -1066,10 +1142,10 @@
           />
         </div>
 
-        <!-- 2. Панель «Фильтры и Сводка» с разделительной линией снизу -->
-        <div class="space-y-2.5 pb-3 border-b border-white/[0.06]">
+        <!-- 2. Панель фильтров операций -->
+        <div class="pb-1 border-b border-white/[0.06]">
           <!-- Верхний ряд: Меню фильтрации + кнопка поиска -->
-          <div id="tx-filter-bar" class="flex gap-2 items-center">
+          <div id="tx-filter-bar" class="flex gap-2 items-center mb-2.5">
             <!-- Меню выбора месяца -->
             <div class="relative flex-1 min-w-0" id="wrap-filter-month">
               <button
@@ -1114,30 +1190,11 @@
             </button>
           </div>
 
-          <!-- Нижний ряд: Компактная справочная сводка (сетка 50/50, как на Главной: Доходы слева, Расходы справа) -->
-          <div class="grid grid-cols-2 gap-3 px-1 text-xs">
-            <div class="flex items-center gap-2 min-w-0">
-              <span class="w-2 h-2 rounded-full bg-[#10B981] shrink-0"></span>
-              <span id="month-income-label" class="text-xs text-zinc-400 shrink-0">Доходы</span>
-              <span
-                id="month-income"
-                class="font-mono font-bold text-[#10B981] text-sm truncate [font-variant-numeric:tabular-nums]"
-              >
-                0 ₽
-              </span>
-            </div>
-
-            <div class="flex items-center gap-2 min-w-0">
-              <span class="w-2 h-2 rounded-full bg-[#F43F5E] shrink-0"></span>
-              <span id="month-expense-label" class="text-xs text-zinc-400 shrink-0">Расходы</span>
-              <span
-                id="month-expense"
-                class="font-mono font-bold text-white text-sm truncate [font-variant-numeric:tabular-nums]"
-              >
-                0 ₽
-              </span>
-            </div>
-          </div>
+          <!-- Скрытые элементы для обратной совместимости со скриптами -->
+          <span id="month-income-label" class="hidden"></span>
+          <span id="month-income" class="hidden">0 ₽</span>
+          <span id="month-expense-label" class="hidden"></span>
+          <span id="month-expense" class="hidden">0 ₽</span>
         </div>
 
         <!-- 4. КОНТЕНТ ВКЛАДКИ «СПИСОК» -->
@@ -1241,138 +1298,6 @@
 
           <div id="transactions-list" class="space-y-3 pb-6"></div>
         </div>
-
-        <!-- 4. КОНТЕНТ ВКЛАДКИ «ГРАФИКИ» (АНАЛИТИКА) -->
-        <div id="transactions-chart" class="hidden chart-screen">
-          <!-- Заглушка при отсутствии операций для вкладки Графиков -->
-          <div id="transactions-chart-empty" class="hidden">
-            <div
-              class="card rounded-2xl p-6 text-center flex flex-col items-center justify-center gap-3 mt-2 border border-white/[0.08] bg-[#0E1016]"
-            >
-              <div
-                class="w-12 h-12 rounded-2xl bg-white/[0.05] border border-white/[0.08] text-zinc-400 flex items-center justify-center"
-              >
-                <i data-lucide="bar-chart-3" class="w-6 h-6 text-white"></i>
-              </div>
-              <div>
-                <p class="text-sm font-semibold text-white">Графикам нужны данные</p>
-                <p class="text-xs text-zinc-400 mt-1 max-w-[280px]">
-                  Внесите первые операции или импортируйте выписку, чтобы увидеть наглядную
-                  статистику
-                </p>
-              </div>
-              <div class="flex flex-col sm:flex-row gap-2 mt-2 w-full max-w-xs">
-                <button
-                  type="button"
-                  onclick="
-                    switchTransactionView('list');
-                    toggleForm('tx-form-container', 'tx-submit-btn', 'Сохранить', 'tx-form', 'tx');
-                  "
-                  class="flex-1 py-2.5 px-4 rounded-xl bg-white hover:bg-zinc-200 text-zinc-950 text-xs font-semibold transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
-                >
-                  <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-                  <span>Добавить операцию</span>
-                </button>
-                <button
-                  type="button"
-                  onclick="openPdfInfoModal()"
-                  class="py-2.5 px-4 rounded-xl bg-white/[0.05] hover:bg-white/10 text-zinc-300 text-xs font-semibold transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-1.5 border border-white/[0.08]"
-                >
-                  <i data-lucide="file-up" class="w-3.5 h-3.5 text-zinc-400"></i>
-                  <span>Импорт PDF</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Контейнер с графиками при наличии данных -->
-          <div id="transactions-chart-content" class="space-y-3">
-            <!-- 1. ДИАГРАММА СТРУКТУРЫ (ПЕРВАЯ) -->
-            <section
-              class="chart-card chart-card--structure bg-[#0E1016] border border-white/[0.08] rounded-2xl p-4"
-            >
-              <!-- Верхняя строка карточки: название и переключатель Расход/Доход -->
-              <div class="flex items-center justify-between gap-2 mb-3">
-                <span
-                  id="structure-title"
-                  class="text-xs uppercase tracking-wider font-bold text-zinc-400"
-                >
-                  Структура расходов
-                </span>
-
-                <!-- Переключатель Расходы / Доходы -->
-                <div class="flex bg-[#12151C] p-0.5 rounded-xl border border-white/[0.06]">
-                  <button
-                    type="button"
-                    id="struct-type-expense"
-                    onclick="switchStructureType('Расход')"
-                    class="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-white/10 text-white transition-all cursor-pointer"
-                  >
-                    Расходы
-                  </button>
-                  <button
-                    type="button"
-                    id="struct-type-income"
-                    onclick="switchStructureType('Доход')"
-                    class="px-2.5 py-1 text-[11px] font-semibold rounded-lg text-zinc-400 hover:text-white transition-all cursor-pointer"
-                  >
-                    Доходы
-                  </button>
-                </div>
-              </div>
-
-              <div class="category-chart-wrap">
-                <div class="chart-canvas chart-canvas--donut">
-                  <canvas id="categoryExpensesChart"></canvas>
-                  <div class="donut-center">
-                    <div
-                      class="donut-center__clickable"
-                      onclick="resetCategoryDonutCenter()"
-                      title="Нажмите, чтобы показать общую сумму"
-                    >
-                      <span id="donut-center-label" class="donut-center__label">Расходы</span>
-                      <strong
-                        id="category-total"
-                        class="donut-center__total font-mono font-bold text-white text-lg"
-                        >0 ₽</strong
-                      >
-                      <span id="donut-center-percent" class="donut-center__percent hidden">0%</span>
-                    </div>
-                  </div>
-                </div>
-                <div id="category-legend" class="category-legend space-y-1.5 mt-2"></div>
-              </div>
-            </section>
-
-            <!-- 2. ДИНАМИКА САЛЬДО ЗА ТЕКУЩИЙ ГОД (ВТОРАЯ) -->
-            <section
-              class="chart-card chart-card--trend bg-[#0E1016] border border-white/[0.08] rounded-2xl p-4"
-            >
-              <div class="flex items-center justify-between gap-2 mb-2.5">
-                <div>
-                  <span class="text-xs uppercase tracking-wider font-bold text-zinc-400 block">
-                    Динамика сальдо
-                  </span>
-                  <div class="text-[11px] text-zinc-500 font-medium mt-0.5">
-                    За <span id="trend-kpi-year">2026 год</span>
-                  </div>
-                </div>
-                <div class="text-right">
-                  <div class="text-[10px] text-zinc-500 uppercase font-semibold">
-                    Среднее в мес.
-                  </div>
-                  <div id="trend-kpi-avg" class="text-xs sm:text-sm font-bold font-mono text-white">
-                    0 ₽
-                  </div>
-                </div>
-              </div>
-
-              <div class="chart-canvas chart-canvas--trend h-[220px]">
-                <canvas id="monthlyExpensesChart"></canvas>
-              </div>
-            </section>
-          </div>
-        </div>
       </div>
 
       <!-- ЭКРАН КАПИТАЛА (АКТИВЫ: ВКЛАДЫ И ИНВЕСТИЦИИ) -->
@@ -1408,24 +1333,37 @@
             </div>
           </div>
 
-          <!-- Компактная плашка мониторинга ставок (Obsidian Minimalist) -->
+          <!-- Виджет лучшего вклада в две строки (Obsidian Minimalist) -->
           <div
             id="market-rates-summary-card"
             onclick="openMarketRatesModal()"
-            class="bg-[#0E1016] px-3.5 py-2.5 rounded-2xl border border-white/[0.08] hover:border-white/20 transition-all cursor-pointer active:scale-[0.99] flex items-center justify-between text-xs select-none"
+            class="bg-[#0E1016] p-3.5 rounded-2xl border border-white/[0.08] hover:border-white/20 transition-all cursor-pointer active:scale-[0.99] flex items-center justify-between select-none"
           >
-            <div class="flex items-center gap-2 min-w-0">
-              <span
-                class="text-zinc-500 font-semibold text-[11px] uppercase tracking-wider flex-shrink-0"
-                >Лучший вклад</span
+            <div class="flex flex-col gap-1 min-w-0 flex-1 pr-2">
+              <span class="text-xs font-semibold text-white tracking-tight"
+                >Лучший вклад на текущий момент</span
               >
-              <span
+              <div
                 id="market-best-deposit-val"
-                class="font-mono font-bold text-emerald-400 truncate text-xs"
-                >14,5% · Совкомбанк</span
+                class="flex items-center flex-wrap gap-x-1.5 gap-y-0.5 text-xs min-w-0"
               >
+                <div class="flex items-center gap-1.5 min-w-0 text-white font-medium">
+                  <div
+                    class="w-3.5 h-3.5 rounded flex-shrink-0 overflow-hidden flex items-center justify-center bg-white/[0.04]"
+                  >
+                    <svg viewBox="0 0 24 24" class="w-full h-full fill-current text-[#EA4335]">
+                      <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                    </svg>
+                  </div>
+                  <span class="truncate">Совкомбанк</span>
+                </div>
+                <span class="text-zinc-600 select-none">·</span>
+                <span class="font-mono font-bold text-emerald-400 whitespace-nowrap"
+                  >14,5% на 6 мес.</span
+                >
+              </div>
             </div>
-            <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-zinc-500 flex-shrink-0 ml-2"></i>
+            <i data-lucide="chevron-right" class="w-4 h-4 text-zinc-500 flex-shrink-0 ml-2"></i>
           </div>
 
           <!-- Инлайн-форма добавления нового вклада (Obsidian Minimalist) -->
@@ -1665,7 +1603,7 @@
       id="bottom-nav-bar"
       class="fixed bottom-0 left-0 right-0 w-full bg-[#0E1016]/95 border-t border-white/[0.06] flex items-center justify-around px-2 pt-1 pb-safe z-40 backdrop-blur-xl shadow-[0_-4px_20px_rgba(0,0,0,0.6)]"
     >
-      <!-- Главная -->
+      <!-- Аналитика -->
       <button
         type="button"
         onclick="switchTab('budget')"
@@ -1676,40 +1614,16 @@
           class="nav-icon-wrap w-10 h-6 rounded-lg flex items-center justify-center transition-all duration-200 bg-transparent text-white"
         >
           <i
-            data-lucide="layout-dashboard"
+            data-lucide="pie-chart"
             class="w-[19px] h-[19px] stroke-[2.2px] transition-transform duration-200 scale-105"
           ></i>
         </div>
         <span
           class="nav-label text-[10px] font-semibold tracking-tight transition-colors duration-200 text-white"
-          >Главная</span
-        >
-        <div
-          class="nav-indicator w-6 h-[2px] rounded-full bg-white transition-all duration-200 opacity-100 scale-100 shadow-[0_0_8px_rgba(255,255,255,0.35)]"
-        ></div>
-      </button>
-
-      <!-- Аналитика -->
-      <button
-        type="button"
-        onclick="switchTab('transactions')"
-        id="nav-transactions"
-        class="nav-tab-btn flex-1 py-0.5 px-1 flex flex-col items-center justify-center gap-0.5 transition-all duration-200 cursor-pointer text-zinc-500 hover:text-zinc-300"
-      >
-        <div
-          class="nav-icon-wrap w-10 h-6 rounded-lg flex items-center justify-center transition-all duration-200 bg-transparent text-inherit"
-        >
-          <i
-            data-lucide="bar-chart-3"
-            class="w-[19px] h-[19px] stroke-[2px] transition-transform duration-200"
-          ></i>
-        </div>
-        <span
-          class="nav-label text-[10px] font-medium tracking-tight transition-colors duration-200 text-zinc-500"
           >Аналитика</span
         >
         <div
-          class="nav-indicator w-6 h-[2px] rounded-full bg-white transition-all duration-200 opacity-0 scale-75 shadow-[0_0_8px_rgba(255,255,255,0.35)]"
+          class="nav-indicator w-6 h-[2px] rounded-full bg-white transition-all duration-200 opacity-100 scale-100 shadow-[0_0_8px_rgba(255,255,255,0.35)]"
         ></div>
       </button>
 
@@ -1735,6 +1649,30 @@
         <span
           class="nav-label text-[10px] font-medium tracking-tight transition-colors duration-200 text-zinc-500"
           >Капитал</span
+        >
+        <div
+          class="nav-indicator w-6 h-[2px] rounded-full bg-white transition-all duration-200 opacity-0 scale-75 shadow-[0_0_8px_rgba(255,255,255,0.35)]"
+        ></div>
+      </button>
+
+      <!-- Операции -->
+      <button
+        type="button"
+        onclick="switchTab('transactions')"
+        id="nav-transactions"
+        class="nav-tab-btn flex-1 py-0.5 px-1 flex flex-col items-center justify-center gap-0.5 transition-all duration-200 cursor-pointer text-zinc-500 hover:text-zinc-300"
+      >
+        <div
+          class="nav-icon-wrap w-10 h-6 rounded-lg flex items-center justify-center transition-all duration-200 bg-transparent text-inherit"
+        >
+          <i
+            data-lucide="receipt-text"
+            class="w-[19px] h-[19px] stroke-[2px] transition-transform duration-200"
+          ></i>
+        </div>
+        <span
+          class="nav-label text-[10px] font-medium tracking-tight transition-colors duration-200 text-zinc-500"
+          >Операции</span
         >
         <div
           class="nav-indicator w-6 h-[2px] rounded-full bg-white transition-all duration-200 opacity-0 scale-75 shadow-[0_0_8px_rgba(255,255,255,0.35)]"
@@ -4307,6 +4245,38 @@
           class="text-xs text-zinc-300 leading-relaxed max-h-44 overflow-y-auto overscroll-contain pr-1 pb-6 custom-scrollbar select-text"
         ></div>
         <div class="pointer-events-none absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-[#1A1E29] to-transparent rounded-b-xl"></div>
+      </div>
+    </div>
+
+    <!-- ВСПЛЫВАЮЩИЙ ПОПОВЕР: ОСТАЛЬНЫЕ КАТЕГОРИИ (Obsidian Minimalist - Floating Card) -->
+    <div
+      id="category-others-popover"
+      class="fixed z-[130] hidden bg-[#1A1E29] border border-white/15 rounded-2xl p-4 shadow-2xl backdrop-blur-md transition-all duration-150 animate-fade-in w-[calc(100%-32px)] max-w-sm"
+      style="left: 16px; right: 16px; margin: 0 auto"
+    >
+      <div class="flex items-center justify-between pb-2 mb-2.5 border-b border-white/[0.08]">
+        <div class="flex items-center gap-1.5 min-w-0">
+          <div class="w-2 h-2 rounded-full bg-zinc-400 flex-shrink-0"></div>
+          <span id="cop-title" class="text-xs font-bold text-white truncate">Остальные категории</span>
+        </div>
+        <button
+          type="button"
+          onclick="closeCategoryOthersPopover()"
+          class="w-6 h-6 rounded-full bg-white/[0.06] hover:bg-white/10 text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors text-xs font-semibold flex-shrink-0 ml-2"
+          title="Закрыть"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div class="relative">
+        <div
+          id="cop-list"
+          class="space-y-1.5 max-h-48 overflow-y-auto overscroll-contain pr-1 pb-4 select-text"
+        ></div>
+        <div
+          class="pointer-events-none absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-[#1A1E29] to-transparent rounded-b-xl"
+        ></div>
       </div>
     </div>
 

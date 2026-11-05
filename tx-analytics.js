@@ -38,6 +38,16 @@ function switchTransactionView(view) {
 window.switchTransactionView = switchTransactionView;
 
 function getActiveFilterMonth() {
+  const currentTab =
+    typeof window.getCurrentActiveTab === 'function' ? window.getCurrentActiveTab() : 'budget';
+  if (currentTab === 'budget' && typeof window.getSelectedBudgetDate === 'function') {
+    const d = window.getSelectedBudgetDate();
+    if (d instanceof Date && !isNaN(d.getTime())) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      return `${y}-${m}`;
+    }
+  }
   if (typeof window.getCurrentFilterMonth === 'function') {
     const m = window.getCurrentFilterMonth();
     if (m) return m;
@@ -59,18 +69,11 @@ function buildCharts() {
   const chartContentEl = document.getElementById('transactions-chart-content');
 
   const months = Cache && Cache.transactions ? Cache.transactions : [];
-  if (months.length === 0) {
-    if (chartEmptyEl) chartEmptyEl.classList.remove('hidden');
-    if (chartContentEl) chartContentEl.classList.add('hidden');
-    if (typeof lucide !== 'undefined') lucide.createIcons();
-    return;
-  }
+  if (chartEmptyEl) chartEmptyEl.classList.toggle('hidden', months.length > 0);
+  if (chartContentEl) chartContentEl.classList.toggle('hidden', months.length === 0);
+  if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
 
-  if (chartEmptyEl) chartEmptyEl.classList.add('hidden');
-  if (chartContentEl) chartContentEl.classList.remove('hidden');
-  if (typeof lucide !== 'undefined') lucide.createIcons();
-
-  // 1. СТРУКТУРА (DONUT): отображаем данные за период, выбранный в верхнем селекторе
+  // 1. СТРУКТУРА (DONUT): отображаем данные за период, выбранный в активном экране
   const targetMonthId = getActiveFilterMonth() || months[0]?.id;
   updateAnalyticsForMonth(targetMonthId);
 
@@ -424,6 +427,92 @@ function selectCategorySlice(idx) {
 }
 window.selectCategorySlice = selectCategorySlice;
 
+let currentOtherEntries = [];
+let isOthersPopoverOpen = false;
+let othersPopoverCleanup = null;
+
+function closeCategoryOthersPopover() {
+  const popover = document.getElementById('category-others-popover');
+  if (popover) {
+    popover.classList.add('hidden');
+  }
+  isOthersPopoverOpen = false;
+  if (typeof othersPopoverCleanup === 'function') {
+    othersPopoverCleanup();
+    othersPopoverCleanup = null;
+  }
+}
+window.closeCategoryOthersPopover = closeCategoryOthersPopover;
+
+function showCategoryOthersPopover(btnEl, event) {
+  if (event && event.stopPropagation) event.stopPropagation();
+
+  const popover = document.getElementById('category-others-popover');
+  const listEl = document.getElementById('cop-list');
+  const titleEl = document.getElementById('cop-title');
+  if (!popover || !listEl) return;
+
+  if (isOthersPopoverOpen) {
+    closeCategoryOthersPopover();
+    return;
+  }
+
+  if (titleEl) {
+    titleEl.textContent = `Остальные категории (${currentOtherEntries.length})`;
+  }
+
+  const total = currentDonutTotal || 1;
+  const safeEscape = typeof window.escapeHtml === 'function' ? window.escapeHtml : s => s;
+
+  listEl.innerHTML = currentOtherEntries
+    .map(([label, val]) => {
+      const pct = Math.round((val / total) * 100);
+      return `
+        <div class="flex items-center justify-between py-1 border-b border-white/[0.04] last:border-0 text-xs">
+          <span class="text-zinc-300 truncate pr-2">${safeEscape(label)}</span>
+          <div class="flex items-center gap-2 flex-shrink-0 font-mono">
+            <span class="text-white font-semibold">${formatMoney(val)}</span>
+            <span class="text-[10px] text-zinc-500 w-6 text-right">${pct}%</span>
+          </div>
+        </div>
+      `;
+    })
+    .join('');
+
+  popover.classList.remove('hidden');
+  isOthersPopoverOpen = true;
+
+  if (btnEl && typeof btnEl.getBoundingClientRect === 'function') {
+    const rect = btnEl.getBoundingClientRect();
+    const popoverHeight = popover.offsetHeight || 200;
+    const windowHeight = window.innerHeight;
+
+    if (rect.bottom + popoverHeight + 10 < windowHeight) {
+      popover.style.top = `${rect.bottom + 8}px`;
+      popover.style.bottom = 'auto';
+    } else {
+      popover.style.bottom = `${windowHeight - rect.top + 8}px`;
+      popover.style.top = 'auto';
+    }
+  }
+
+  const onScroll = () => closeCategoryOthersPopover();
+  const onPointerDown = e => {
+    if (!popover.contains(e.target) && (!btnEl || !btnEl.contains(e.target))) {
+      closeCategoryOthersPopover();
+    }
+  };
+
+  window.addEventListener('scroll', onScroll, { passive: true, capture: true });
+  document.addEventListener('pointerdown', onPointerDown, { capture: true });
+
+  othersPopoverCleanup = () => {
+    window.removeEventListener('scroll', onScroll, { capture: true });
+    document.removeEventListener('pointerdown', onPointerDown, { capture: true });
+  };
+}
+window.showCategoryOthersPopover = showCategoryOthersPopover;
+
 function updateAnalyticsForMonth(monthId) {
   const allMonths = Cache.transactions || [];
   let txItems = [];
@@ -495,17 +584,55 @@ function updateAnalyticsForMonth(monthId) {
     });
 
   const entries = Object.entries(catMap).sort((a, b) => b[1] - a[1]);
-  const labels = entries.map(([label]) => label);
-  const data = entries.map(([, value]) => value);
-  const colors =
+  const baseColors =
     currentStructureType === 'Расход'
       ? ['#38BDF8', '#F59E0B', '#F43F5E', '#A855F7', '#10B981', '#EC4899', '#6366F1']
-      : ['#10B981', '#06B6D4', '#F59E0B', '#38BDF8'];
-  const total = data.reduce((sum, value) => sum + value, 0);
+      : ['#10B981', '#06B6D4', '#F59E0B', '#38BDF8', '#8B5CF6'];
 
-  currentDonutEntries = entries;
+  const total = entries.reduce((sum, [, value]) => sum + value, 0);
+
+  let chartLabels = [];
+  let chartData = [];
+  let chartColors = [];
+  let displayEntries = [];
+  currentOtherEntries = [];
+
+  if (entries.length <= 5) {
+    chartLabels = entries.map(([l]) => l);
+    chartData = entries.map(([, v]) => v);
+    chartColors = entries.map((_, i) => baseColors[i % baseColors.length]);
+    displayEntries = entries.map(([l, v], i) => ({
+      label: l,
+      value: v,
+      color: chartColors[i],
+      isOthers: false,
+    }));
+  } else {
+    const top4 = entries.slice(0, 4);
+    currentOtherEntries = entries.slice(4);
+    const othersTotal = currentOtherEntries.reduce((s, [, v]) => s + v, 0);
+
+    chartLabels = [...top4.map(([l]) => l), 'Остальные'];
+    chartData = [...top4.map(([, v]) => v), othersTotal];
+    chartColors = [...top4.map((_, i) => baseColors[i % baseColors.length]), '#71717A'];
+
+    displayEntries = top4.map(([l, v], i) => ({
+      label: l,
+      value: v,
+      color: chartColors[i],
+      isOthers: false,
+    }));
+    displayEntries.push({
+      label: `Остальные (${currentOtherEntries.length}) ›`,
+      value: othersTotal,
+      color: '#71717A',
+      isOthers: true,
+    });
+  }
+
+  currentDonutEntries = chartLabels.map((l, i) => [l, chartData[i]]);
   currentDonutTotal = total;
-  currentDonutColors = colors;
+  currentDonutColors = chartColors;
 
   const totalEl = document.getElementById('category-total');
   const centerLabelEl = document.getElementById('donut-center-label');
@@ -524,26 +651,40 @@ function updateAnalyticsForMonth(monthId) {
     percentEl.classList.add('hidden');
   }
 
+  const safeEscape = typeof window.escapeHtml === 'function' ? window.escapeHtml : s => s;
+
   if (legendEl) {
-    legendEl.innerHTML = entries.length
-      ? entries
-          .map(([label, value], i) => {
-            const pct = total ? Math.round((value / total) * 100) : 0;
-            const col = colors[i % colors.length];
-            return `
-      <div class="category-legend__item flex items-center justify-between p-2 rounded-xl bg-[#12151C] border border-white/[0.04] hover:bg-white/[0.06] transition-colors cursor-pointer" onclick="selectCategorySlice(${i})">
-        <div class="flex items-center gap-2 min-w-0 pr-2">
-          <span class="category-legend__dot w-2.5 h-2.5 rounded-full flex-shrink-0" style="background:${col}"></span>
-          <span class="category-legend__name text-xs font-medium text-zinc-200 truncate">${escapeHtml(label)}</span>
+    legendEl.innerHTML = displayEntries.length
+      ? displayEntries
+          .map((item, i) => {
+            const pct = total ? Math.round((item.value / total) * 100) : 0;
+            if (item.isOthers) {
+              return `
+      <div class="category-legend__item flex items-center justify-between p-1.5 rounded-lg bg-[#12151C] border border-white/[0.04] hover:bg-white/[0.08] transition-colors cursor-pointer select-none" onclick="showCategoryOthersPopover(this, event)">
+        <div class="flex items-center gap-1.5 min-w-0 pr-1">
+          <span class="category-legend__dot w-2 h-2 rounded-full flex-shrink-0 bg-[#71717A]"></span>
+          <span class="category-legend__name text-xs font-medium text-zinc-300 truncate">${safeEscape(item.label)}</span>
         </div>
-        <div class="flex items-center gap-2.5 flex-shrink-0">
-          <span class="category-legend__value font-mono font-semibold text-xs text-white">${formatMoney(value)}</span>
-          <span class="category-legend__percent font-mono text-[11px] text-zinc-500 w-8 text-right">${pct}%</span>
+        <div class="flex items-center gap-2 flex-shrink-0">
+          <span class="category-legend__value font-mono font-semibold text-xs text-white">${formatMoney(item.value)}</span>
+          <span class="category-legend__percent font-mono text-[11px] text-zinc-400 w-7 text-right">${pct}%</span>
+        </div>
+      </div>`;
+            }
+            return `
+      <div class="category-legend__item flex items-center justify-between p-1.5 rounded-lg bg-[#12151C] border border-white/[0.04] hover:bg-white/[0.06] transition-colors cursor-pointer select-none" onclick="selectCategorySlice(${i})">
+        <div class="flex items-center gap-1.5 min-w-0 pr-1">
+          <span class="category-legend__dot w-2 h-2 rounded-full flex-shrink-0" style="background:${item.color}"></span>
+          <span class="category-legend__name text-xs font-medium text-zinc-200 truncate">${safeEscape(item.label)}</span>
+        </div>
+        <div class="flex items-center gap-2 flex-shrink-0">
+          <span class="category-legend__value font-mono font-semibold text-xs text-white">${formatMoney(item.value)}</span>
+          <span class="category-legend__percent font-mono text-[11px] text-zinc-500 w-7 text-right">${pct}%</span>
         </div>
       </div>`;
           })
           .join('')
-      : `<div class="p-4 text-center text-xs text-zinc-500">Нет ${currentStructureType === 'Расход' ? 'расходов' : 'доходов'} за этот месяц</div>`;
+      : `<div class="p-3 text-center text-xs text-zinc-500">Нет ${currentStructureType === 'Расход' ? 'расходов' : 'доходов'}</div>`;
   }
 
   const canvas = document.getElementById('categoryExpensesChart');
@@ -554,10 +695,10 @@ function updateAnalyticsForMonth(monthId) {
   if (categoryChartObj && categoryChartObj.ctx && categoryChartObj.ctx.canvas === canvas) {
     categoryChartObj._activeSliceIdx = -1;
     categoryChartObj.setActiveElements([]);
-    categoryChartObj.data.labels = data.length ? labels : ['Нет данных'];
-    categoryChartObj.data.datasets[0].data = data.length ? data : [1];
-    categoryChartObj.data.datasets[0].backgroundColor = data.length
-      ? colors.slice(0, data.length)
+    categoryChartObj.data.labels = chartData.length ? chartLabels : ['Нет данных'];
+    categoryChartObj.data.datasets[0].data = chartData.length ? chartData : [1];
+    categoryChartObj.data.datasets[0].backgroundColor = chartData.length
+      ? chartColors
       : ['#1C202A'];
     categoryChartObj.options.cutout = '74%';
     categoryChartObj.update();
@@ -567,14 +708,14 @@ function updateAnalyticsForMonth(monthId) {
     categoryChartObj = new Chart(ctx, {
       type: 'doughnut',
       data: {
-        labels: data.length ? labels : ['Нет данных'],
+        labels: chartData.length ? chartLabels : ['Нет данных'],
         datasets: [
           {
-            data: data.length ? data : [1],
-            backgroundColor: data.length ? colors.slice(0, data.length) : ['#1C202A'],
+            data: chartData.length ? chartData : [1],
+            backgroundColor: chartData.length ? chartColors : ['#1C202A'],
             borderColor: '#0E1016',
             borderWidth: 2,
-            hoverOffset: 6,
+            hoverOffset: 4,
             hoverBorderColor: 'rgba(255,255,255,0.92)',
             hoverBorderWidth: 1.5,
           },
@@ -583,10 +724,10 @@ function updateAnalyticsForMonth(monthId) {
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        layout: { padding: 10 },
+        layout: { padding: 4 },
         cutout: '74%',
         animation: {
-          duration: 600,
+          duration: 400,
           animateRotate: true,
         },
         interaction: {
@@ -608,6 +749,10 @@ function updateAnalyticsForMonth(monthId) {
             return;
           }
           const clickedIdx = clickedElements[0].index;
+          if (clickedIdx === 4 && currentOtherEntries.length > 0) {
+            const othersBtn = document.querySelector('.category-legend__item:last-child');
+            window.showCategoryOthersPopover(othersBtn, e);
+          }
           window.selectCategorySlice(clickedIdx);
         },
         plugins: {

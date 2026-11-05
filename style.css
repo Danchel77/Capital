@@ -552,32 +552,30 @@ button {
   display: none !important;
 }
 
-/* ---------- Элегантные скроллбары без нативных серых ползунков и стрелок ---------- */
+/* ---------- Полное сокрытие полос прокрутки (Scrollbar) во всем приложении ---------- */
+html,
+body,
 * {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.14) transparent;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
 }
 
-::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+::-webkit-scrollbar,
+*::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
 }
 
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.14);
-  border-radius: 9999px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.28);
-}
-
-::-webkit-scrollbar-corner {
-  background: transparent;
+::-webkit-scrollbar-thumb,
+*::-webkit-scrollbar-thumb,
+::-webkit-scrollbar-track,
+*::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner,
+*::-webkit-scrollbar-corner {
+  display: none !important;
+  background: transparent !important;
 }
 
 /* Гарантированное сокрытие скроллбаров основного окна браузера при открытых модальных окнах */
@@ -998,6 +996,64 @@ body.selection-mode .deposit-goal-tag {
   max-width: 280px;
   margin: 0 auto;
   position: relative;
+}
+/* Компактный Donut для сводной карточки месяца */
+.chart-canvas--donut-mini {
+  width: 120px !important;
+  height: 120px !important;
+  max-width: 120px !important;
+  max-height: 120px !important;
+  position: relative;
+  flex-shrink: 0;
+}
+.chart-canvas--donut-mini canvas {
+  width: 120px !important;
+  height: 120px !important;
+  display: block;
+}
+.donut-center--mini {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  user-select: none;
+  cursor: pointer;
+}
+.donut-center--mini .donut-center__label {
+  font-size: 9px;
+  line-height: 1.1;
+  color: #71717a;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  max-width: 68px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+}
+.donut-center--mini .donut-center__total {
+  font-size: 11px;
+  line-height: 1.1;
+  color: #ffffff;
+  font-family: monospace;
+  font-weight: 700;
+  margin-top: 2px;
+  max-width: 74px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+}
+.donut-center--mini .donut-center__percent {
+  font-size: 9px;
+  line-height: 1.1;
+  color: #a1a1aa;
+  font-family: monospace;
+  margin-top: 1px;
 }
 .donut-center {
   position: absolute;
@@ -2025,21 +2081,19 @@ body.selection-mode .selection-panel {
   }
 }
 
-/* Аккуратный скроллбар */
+/* Полное сокрытие скроллбара */
 .custom-scrollbar {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
 }
 .custom-scrollbar::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
+.custom-scrollbar::-webkit-scrollbar-track,
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 4px;
+  display: none !important;
 } /* Иконка банка в карточках импорта транзакций */
 #pdf-debug-output .card-parsed-row span[data-bank-icon] svg {
   padding-left: 0px !important;

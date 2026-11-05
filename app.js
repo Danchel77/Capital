@@ -316,8 +316,8 @@ document.addEventListener('mousedown', e => {
   document.addEventListener('mouseleave', onMouseUp, { once: true });
 });
 
-// Переключение основных экранов (Табов)
-const APP_MAIN_TABS = ['budget', 'transactions', 'capital'];
+// Переключение основных экранов (Табов: Аналитика, Капитал, Операции)
+const APP_MAIN_TABS = ['budget', 'capital', 'transactions'];
 
 function getCurrentActiveTab() {
   const active = APP_MAIN_TABS.find(t => {

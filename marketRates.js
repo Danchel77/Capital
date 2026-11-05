@@ -398,13 +398,27 @@ function renderMarketRatesWidget() {
     if (best) {
       const termDesc = formatTermMonths(best.termMonths);
       const termPart = termDesc ? ` на ${termDesc}` : '';
-      bestEl.innerText = `${formatRate(best.rate)}%${termPart} · ${best.bankName}`;
+      const bankLogoHtml =
+        typeof window.getBankLogoSvg === 'function'
+          ? `<div class="w-3.5 h-3.5 rounded flex-shrink-0 overflow-hidden flex items-center justify-center bg-white/[0.04]">${window.getBankLogoSvg(best.bankName)}</div>`
+          : '';
+      const safeBankName =
+        typeof window.escapeHtml === 'function' ? window.escapeHtml(best.bankName) : best.bankName;
+
+      bestEl.innerHTML = `
+        <div class="flex items-center gap-1.5 min-w-0 text-white font-medium">
+          ${bankLogoHtml}
+          <span class="truncate">${safeBankName}</span>
+        </div>
+        <span class="text-zinc-600 select-none">·</span>
+        <span class="font-mono font-bold text-emerald-400 whitespace-nowrap">${formatRate(best.rate)}%${termPart}</span>
+      `;
     } else if (marketRatesState.isLoading) {
-      bestEl.innerText = 'Загрузка...';
+      bestEl.innerHTML = '<span class="text-zinc-500 text-xs">Загрузка...</span>';
     } else if (marketRatesState.offers.length === 0) {
-      bestEl.innerText = 'Нажмите для обновления';
+      bestEl.innerHTML = '<span class="text-zinc-500 text-xs">Нажмите для обновления</span>';
     } else {
-      bestEl.innerText = 'Нет предложений по фильтру';
+      bestEl.innerHTML = '<span class="text-zinc-500 text-xs">Нет предложений по фильтру</span>';
     }
   }
 

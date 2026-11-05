@@ -239,6 +239,25 @@ function renderBudgetTab() {
   if (expenseValEl) expenseValEl.innerText = `-${formatMoney(monthlySpent)}`;
   if (billsValEl) billsValEl.innerText = formatMoney(monthlyBillsSum);
 
+  // Управление пустым состоянием и переключением режима сводки месяца
+  const emptyStateEl = document.getElementById('budget-month-empty-state');
+  const numbersViewEl = document.getElementById('month-summary-numbers-view');
+  const chartViewEl = document.getElementById('month-summary-chart-view');
+  const toggleBtnEl = document.getElementById('month-summary-toggle-btn');
+  const hasTx = monthlyIncome > 0 || monthlySpent > 0;
+
+  if (!hasTx) {
+    if (emptyStateEl) emptyStateEl.classList.remove('hidden');
+    if (numbersViewEl) numbersViewEl.classList.add('hidden');
+    if (chartViewEl) chartViewEl.classList.add('hidden');
+    if (toggleBtnEl) toggleBtnEl.classList.add('opacity-25', 'pointer-events-none');
+  } else {
+    if (emptyStateEl) emptyStateEl.classList.add('hidden');
+    if (toggleBtnEl) toggleBtnEl.classList.remove('opacity-25', 'pointer-events-none');
+    const currentMode = localStorage.getItem('budget_summary_mode') || 'numbers';
+    applyMonthSummaryViewMode(currentMode);
+  }
+
   // 2. Блок «Предстоящие платежи»
   if (typeof renderBudgetCalendar === 'function') {
     renderBudgetCalendar(bills, targetDate);
@@ -249,11 +268,50 @@ function renderBudgetTab() {
     renderBudgetGoals(goals);
   }
 
+  // 4. Обновление годового графика сальдо внизу экрана Аналитики
+  if (typeof window.buildCharts === 'function') {
+    requestAnimationFrame(() => window.buildCharts());
+  }
+
   if (typeof lucide !== 'undefined') lucide.createIcons();
   if (typeof window.syncWidgetData === 'function') {
     window.syncWidgetData();
   }
 }
+
+function applyMonthSummaryViewMode(mode) {
+  const numbersView = document.getElementById('month-summary-numbers-view');
+  const chartView = document.getElementById('month-summary-chart-view');
+  const toggleIcon = document.getElementById('month-summary-toggle-icon');
+  const isChart = mode === 'chart';
+
+  if (numbersView) numbersView.classList.toggle('hidden', isChart);
+  if (chartView) chartView.classList.toggle('hidden', !isChart);
+
+  if (toggleIcon) {
+    toggleIcon.setAttribute('data-lucide', isChart ? 'layout-list' : 'pie-chart');
+    if (typeof lucide !== 'undefined' && lucide.createIcons) {
+      lucide.createIcons();
+    }
+  }
+
+  if (isChart && typeof window.updateAnalyticsForMonth === 'function') {
+    requestAnimationFrame(() => {
+      const targetDate = getSelectedBudgetDate();
+      const mId = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}`;
+      window.updateAnalyticsForMonth(mId);
+    });
+  }
+}
+window.applyMonthSummaryViewMode = applyMonthSummaryViewMode;
+
+function toggleMonthSummaryView() {
+  const currentMode = localStorage.getItem('budget_summary_mode') || 'numbers';
+  const newMode = currentMode === 'numbers' ? 'chart' : 'numbers';
+  localStorage.setItem('budget_summary_mode', newMode);
+  applyMonthSummaryViewMode(newMode);
+}
+window.toggleMonthSummaryView = toggleMonthSummaryView;
 
 // Заглушка для совместимости
 function renderBudgetCategoryLimits() {}
