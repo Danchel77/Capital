@@ -34,12 +34,13 @@ Stack: Vanilla JS (ES6+), Tailwind CSS, Firebase Firestore. Mobile-only viewport
 - **When to Run Design Critique (Triggers):**
   - **RUN:** New screen, new modal dialog, or major card/list layout refactoring.
   - **SKIP:** Bug fixes, calculation logic, text/translation tweaks, or minor CSS color fixes.
-- **Design Critic Workflow:**
-  - Delegate screenshot audit to a fresh `subagent` using `prompts/visual-design-critic.md` as prompt template (avoids self-review bias).
-  - Focus is anti-slop: removing redundant numbers, obvious badges, nested cards, and button clutter.
+- **Direct Vision Critic Workflow (No Subagents):**
+  - Do NOT spawn subagents for visual design critique (they have filesystem access, read git/code, and develop reviewer bias).
+  - Call `vision_describe` directly on the screenshot, passing the prompt template from `prompts/visual-design-critic.md` in `question`.
+  - Direct vision calls are isolated, purely visual, have no access to the codebase, and return objective results in seconds.
 - **Anti-Loop Policy (Strict Budget = 1 Pass):**
   - Exactly ONE critic pass per task.
   - Apply the critic's simplifications to code.
-  - Present result directly to the user. Never run a second critic pass on the same task.
+  - Mandatory presentation: ALWAYS present the final screenshot to the user using `vision_present`. Never run a second critic pass on the same task.
 - **Delivery:**
-  - Push clean commits to `origin/main` when verified.
+  - Automatically commit and push clean commits to `origin/main` when verified and no open questions remain.

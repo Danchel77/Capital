@@ -454,8 +454,6 @@ function openGoalModal() {
   setFormattedVal('goal-saved-input', 0);
   document.getElementById('goal-delete-btn').classList.add('hidden');
   document.getElementById('budget-goal-dialog-title').innerText = 'Новая цель';
-  const subtitle = document.getElementById('budget-goal-dialog-subtitle');
-  if (subtitle) subtitle.innerText = 'Создание цели накопления';
 
   const submitBtn = document.getElementById('goal-submit-btn');
   if (submitBtn) submitBtn.innerText = 'Создать цель';
@@ -501,8 +499,6 @@ function openEditGoalModal(goalId) {
 
   document.getElementById('goal-delete-btn').classList.remove('hidden');
   document.getElementById('budget-goal-dialog-title').innerText = 'Редактировать цель';
-  const subtitle = document.getElementById('budget-goal-dialog-subtitle');
-  if (subtitle) subtitle.innerText = 'Параметры накопления';
 
   const submitBtn = document.getElementById('goal-submit-btn');
   if (submitBtn) submitBtn.innerText = 'Сохранить';

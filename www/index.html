@@ -370,7 +370,7 @@
       crossorigin="anonymous"
     ></script>
 
-    <link rel="stylesheet" href="style.css?v=141" />
+    <link rel="stylesheet" href="style.css?v=142" />
     <script defer src="iconsSVG.js?v=141"></script>
     <script defer src="bank-logos.js?v=141"></script>
     <script defer src="default-rules.js?v=141"></script>
@@ -2087,14 +2087,9 @@
         <div
           class="flex items-center justify-between mb-3.5 pb-2.5 border-b border-white/[0.06] flex-shrink-0"
         >
-          <div>
-            <h3 id="budget-goal-dialog-title" class="font-bold text-white text-base">
-              Редактирование цели
-            </h3>
-            <p id="budget-goal-dialog-subtitle" class="text-xs text-zinc-400 mt-0.5">
-              Параметры накопления
-            </p>
-          </div>
+          <h3 id="budget-goal-dialog-title" class="font-bold text-white text-base">
+            Редактирование цели
+          </h3>
           <button
             type="button"
             onclick="closeGoalModal()"
@@ -2104,11 +2099,7 @@
           </button>
         </div>
 
-        <form
-          id="budget-goal-form"
-          onsubmit="submitBudgetGoal(event)"
-          class="space-y-3"
-        >
+        <form id="budget-goal-form" onsubmit="submitBudgetGoal(event)" class="space-y-3">
           <input type="hidden" id="goal-edit-id" />
           <input type="hidden" id="goal-icon-input" value="target" />
 
@@ -2126,10 +2117,7 @@
                   class="w-10 h-10 rounded-xl bg-[#12151C] border border-white/[0.08] hover:border-white/20 flex items-center justify-center text-zinc-300 hover:text-white transition-colors cursor-pointer active:scale-95"
                   title="Выбрать иконку"
                 >
-                  <span
-                    id="goal-modal-icon-display"
-                    class="flex items-center justify-center"
-                  >
+                  <span id="goal-modal-icon-display" class="flex items-center justify-center">
                     <i data-lucide="target" class="w-4 h-4"></i>
                   </span>
                 </button>
@@ -2140,7 +2128,9 @@
                   class="hidden absolute top-full left-0 mt-2 z-[60] w-[270px] xs:w-[290px] p-3 bg-[#12151C] rounded-2xl border border-white/15 shadow-2xl backdrop-blur-xl animate-fade-in space-y-2"
                   onclick="event.stopPropagation()"
                 >
-                  <div class="flex items-center justify-between pb-1.5 border-b border-white/[0.06]">
+                  <div
+                    class="flex items-center justify-between pb-1.5 border-b border-white/[0.06]"
+                  >
                     <span class="text-[11px] font-bold text-zinc-300">Иконка цели</span>
                     <button
                       type="button"
@@ -2170,53 +2160,59 @@
             </div>
           </div>
 
-          <!-- Целевая сумма и Сумма в копилке (в 2 колонки, точно как в dep-edit-modal) -->
+          <!-- Целевая сумма и Сумма в копилке (в 2 колонки) -->
           <div class="grid grid-cols-2 gap-2.5">
             <div>
               <label class="block text-[10px] text-zinc-400 uppercase font-bold mb-1">
-                Целевая сумма (₽)
+                Целевая сумма
               </label>
-              <input
-                type="text"
-                inputmode="decimal"
-                oninput="formatSumInput(this)"
-                id="goal-target-input"
-                placeholder="0 ₽"
-                required
-                class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white placeholder-zinc-500 rounded-xl p-3 outline-none text-xs font-bold"
-              />
+              <div class="relative flex items-center">
+                <input
+                  type="text"
+                  inputmode="decimal"
+                  oninput="formatSumInput(this)"
+                  id="goal-target-input"
+                  placeholder="0"
+                  required
+                  class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white placeholder-zinc-500 rounded-xl p-3 pr-7 outline-none text-xs font-bold"
+                />
+                <span
+                  class="absolute right-3 text-zinc-500 font-mono text-xs font-semibold pointer-events-none select-none"
+                  >₽</span
+                >
+              </div>
             </div>
             <div>
               <label class="block text-[10px] text-zinc-400 uppercase font-bold mb-1">
-                В копилке (₽)
+                В копилке
               </label>
-              <input
-                type="text"
-                inputmode="decimal"
-                oninput="formatSumInput(this)"
-                id="goal-saved-input"
-                placeholder="0 ₽"
-                class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white placeholder-zinc-500 rounded-xl p-3 outline-none text-xs font-bold"
-              />
+              <div class="relative flex items-center">
+                <input
+                  type="text"
+                  inputmode="decimal"
+                  oninput="formatSumInput(this)"
+                  id="goal-saved-input"
+                  placeholder="0"
+                  class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white placeholder-zinc-500 rounded-xl p-3 pr-7 outline-none text-xs font-bold"
+                />
+                <span
+                  class="absolute right-3 text-zinc-500 font-mono text-xs font-semibold pointer-events-none select-none"
+                  >₽</span
+                >
+              </div>
             </div>
           </div>
 
           <!-- Блок распределения доли капитала -->
           <div id="goal-single-share-section" class="pt-2 border-t border-white/[0.06] space-y-1.5">
             <div class="flex items-center justify-between">
-              <label class="text-[10px] text-zinc-400 uppercase font-bold">
-                Доля в капитале
-              </label>
+              <label class="text-[10px] text-zinc-400 uppercase font-bold"> Доля в капитале </label>
               <div class="flex items-center gap-1.5 font-mono text-xs">
-                <span
-                  id="goal-single-share-rubles"
-                  class="text-white font-medium tabular-nums"
+                <span id="goal-single-share-rubles" class="text-white font-medium tabular-nums"
                   >0 ₽</span
                 >
                 <span class="text-zinc-500 font-normal select-none">·</span>
-                <span
-                  id="goal-single-share-pct"
-                  class="text-zinc-300 font-semibold tabular-nums"
+                <span id="goal-single-share-pct" class="text-zinc-300 font-semibold tabular-nums"
                   >0%</span
                 >
               </div>
@@ -2261,11 +2257,10 @@
               type="button"
               id="goal-delete-btn"
               onclick="deleteCurrentEditingGoal()"
-              class="w-full text-center py-2 text-xs font-medium text-rose-400 hover:text-rose-300 active:scale-95 flex items-center justify-center gap-1.5 transition-colors cursor-pointer mt-2"
+              class="w-full text-center py-2 text-xs font-medium text-rose-400 hover:text-rose-300 active:scale-95 transition-colors cursor-pointer mt-1"
               title="Удалить цель"
             >
-              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-              <span>Удалить цель</span>
+              Удалить цель
             </button>
           </div>
         </form>

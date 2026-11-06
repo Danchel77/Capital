@@ -1849,14 +1849,8 @@ body.keyboard-visible #bottom-nav-bar {
   -webkit-appearance: none;
   appearance: none;
   width: 100%;
-  height: 3px;
-  background: linear-gradient(
-    to right,
-    #ffffff 0%,
-    #ffffff var(--slider-fill, 0%),
-    rgba(255, 255, 255, 0.15) var(--slider-fill, 0%),
-    rgba(255, 255, 255, 0.15) 100%
-  ) !important;
+  height: 28px;
+  background: transparent !important;
   border-radius: 9999px;
   outline: none;
   margin: 0;
@@ -1866,22 +1860,29 @@ body.keyboard-visible #bottom-nav-bar {
 
 .goal-share-slider::-webkit-slider-runnable-track {
   width: 100%;
-  height: 3px;
-  background: transparent;
+  height: 4px;
+  background: linear-gradient(
+    to right,
+    #ffffff 0%,
+    #ffffff var(--slider-fill, 0%),
+    rgba(255, 255, 255, 0.15) var(--slider-fill, 0%),
+    rgba(255, 255, 255, 0.15) 100%
+  ) !important;
   border-radius: 9999px;
+  border: none;
 }
 
 .goal-share-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   background: #ffffff;
   cursor: pointer;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
   border: 2px solid #0e1016;
-  margin-top: -5.5px;
+  margin-top: -6px;
   transition: transform 0.15s ease;
 }
 
@@ -1892,21 +1893,21 @@ body.keyboard-visible #bottom-nav-bar {
 
 .goal-share-slider::-moz-range-track {
   width: 100%;
-  height: 3px;
+  height: 4px;
   background: rgba(255, 255, 255, 0.15);
   border-radius: 9999px;
   border: none;
 }
 
 .goal-share-slider::-moz-range-progress {
-  height: 3px;
+  height: 4px;
   background: #ffffff;
   border-radius: 9999px;
 }
 
 .goal-share-slider::-moz-range-thumb {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   background: #ffffff;
   cursor: pointer;
