@@ -223,9 +223,21 @@ function renderBudgetGoals(goals) {
         </div>
 
         <!-- Двухцветная шкала прогресса: Капитал (изумрудный) + Копилка (небесно-синий) -->
-        <div class="w-full bg-white/[0.06] h-2 rounded-full overflow-hidden flex my-2">
-          <div class="bg-emerald-500 h-full transition-all duration-500" style="width: ${g.capitalPct}%" title="Капитал: ${formatMoney(g.capitalAlloc)}"></div>
-          <div class="bg-sky-400 h-full transition-all duration-500" style="width: ${g.piggyPct}%" title="Копилка: ${formatMoney(g.piggyBank)}"></div>
+        <div class="w-full bg-white/[0.06] h-2 rounded-full overflow-hidden my-2">
+          ${(() => {
+            const cap = parseFloat(g.capitalPct) || 0;
+            const pig = parseFloat(g.piggyPct) || 0;
+            const total = Math.min(100, cap + pig);
+            if (total <= 0) return '';
+            const capShare = (cap / (cap + pig)) * 100;
+            const pigShare = (pig / (cap + pig)) * 100;
+            return `
+              <div class="h-full flex overflow-hidden rounded-full transition-all duration-500" style="width: ${total}%">
+                <div class="bg-emerald-500 h-full" style="width: ${capShare}%" title="Капитал: ${formatMoney(g.capitalAlloc)}"></div>
+                <div class="bg-sky-400 h-full" style="width: ${pigShare}%" title="Копилка: ${formatMoney(g.piggyBank)}"></div>
+              </div>
+            `;
+          })()}
         </div>
 
         <!-- Детализация источников средств -->
@@ -358,6 +370,7 @@ window.handleGoalNameInput = handleGoalNameInput;
    SINGLE-GOAL CAPITAL SHARE SLIDER (SLEEK DYNAMIC FILL)
    ======================================================== */
 let activeGoalEditingId = null;
+let maxAllowedForActiveGoal = 100;
 
 function setupGoalSingleShareSlider(goalId) {
   activeGoalEditingId = goalId || '__new__';
@@ -371,21 +384,33 @@ function setupGoalSingleShareSlider(goalId) {
 
   const otherGoalsSum = existingGoals
     .filter(g => g.id !== goalId)
-    .reduce((sum, g) => sum + (tempGoalShares[g.id] || 0), 0);
+    .reduce((sum, g) => sum + (parseFloat(g.share) || 0), 0);
 
   const availableShare = Math.max(0, 100 - otherGoalsSum);
 
   let currentShare = 0;
   if (goalId && tempGoalShares[goalId] !== undefined) {
     currentShare = tempGoalShares[goalId];
+    maxAllowedForActiveGoal = Math.min(100, currentShare + availableShare);
   } else {
-    currentShare = Math.min(availableShare, availableShare > 0 ? availableShare : 0);
+    currentShare = 0;
+    maxAllowedForActiveGoal = availableShare;
     tempGoalShares['__new__'] = currentShare;
   }
 
   const slider = document.getElementById('goal-single-share-slider');
   if (slider) {
+    slider.max = maxAllowedForActiveGoal;
     slider.value = currentShare;
+    if (maxAllowedForActiveGoal <= 0) {
+      slider.disabled = true;
+      slider.classList.add('opacity-40', 'cursor-not-allowed');
+      slider.classList.remove('cursor-pointer');
+    } else {
+      slider.disabled = false;
+      slider.classList.remove('opacity-40', 'cursor-not-allowed');
+      slider.classList.add('cursor-pointer');
+    }
   }
 
   const capitalHint = document.getElementById('goal-total-capital-hint');
@@ -399,35 +424,24 @@ window.setupGoalSingleShareSlider = setupGoalSingleShareSlider;
 
 function handleGoalSingleShareSlider(val) {
   const targetId = activeGoalEditingId || '__new__';
-  const clampedVal = Math.max(0, Math.min(100, Math.round(parseFloat(val) || 0)));
+  const clampedVal = Math.max(
+    0,
+    Math.min(maxAllowedForActiveGoal, Math.round(parseFloat(val) || 0))
+  );
   tempGoalShares[targetId] = clampedVal;
 
   const totalCapital = getTotalCapitalValue();
   const existingGoals = (Cache?.goals || []).filter(g => g.status !== 'Архив');
-  const otherIds = existingGoals.map(g => g.id).filter(id => id !== targetId);
-  const otherSum = otherIds.reduce((sum, id) => sum + (tempGoalShares[id] || 0), 0);
+  const otherGoalsSum = existingGoals
+    .filter(g => g.id !== (activeGoalEditingId === '__new__' ? null : activeGoalEditingId))
+    .reduce((sum, g) => sum + (parseFloat(g.share) || 0), 0);
 
-  if (clampedVal + otherSum > 100) {
-    const overflow = clampedVal + otherSum - 100;
-    if (otherSum > 0) {
-      let reduced = 0;
-      otherIds.forEach((id, idx) => {
-        if (idx === otherIds.length - 1) {
-          tempGoalShares[id] = Math.max(0, tempGoalShares[id] - (overflow - reduced));
-        } else {
-          const shareOfOverflow = Math.round((tempGoalShares[id] / otherSum) * overflow);
-          tempGoalShares[id] = Math.max(0, tempGoalShares[id] - shareOfOverflow);
-          reduced += shareOfOverflow;
-        }
-      });
-    }
-  }
-
-  const newOtherSum = otherIds.reduce((sum, id) => sum + (tempGoalShares[id] || 0), 0);
-  const freePct = Math.max(0, 100 - (clampedVal + newOtherSum));
+  const freePct = Math.max(0, 100 - (otherGoalsSum + clampedVal));
 
   const slider = document.getElementById('goal-single-share-slider');
   if (slider) {
+    slider.value = clampedVal;
+    // Градиент прогресса слайдера считается от 0 до 100% шкалы для визуальной консистентности
     slider.style.setProperty('--slider-fill', `${clampedVal}%`);
   }
 
@@ -442,7 +456,11 @@ function handleGoalSingleShareSlider(val) {
 
   const freeHint = document.getElementById('goal-single-share-free-hint');
   if (freeHint) {
-    freeHint.innerText = `Свободно: ${freePct}%`;
+    if (maxAllowedForActiveGoal <= 0) {
+      freeHint.innerText = 'Свободно: 0% (распределено 100%)';
+    } else {
+      freeHint.innerText = `Свободно: ${freePct}%`;
+    }
   }
 }
 window.handleGoalSingleShareSlider = handleGoalSingleShareSlider;
@@ -539,12 +557,17 @@ async function submitBudgetGoal(e) {
   const isCreatingNew = !editId;
 
   const targetKey = editId || '__new__';
-  const finalShare =
+  const otherGoalsSum = existingGoals
+    .filter(g => g.id !== editId)
+    .reduce((sum, g) => sum + (parseFloat(g.share) || 0), 0);
+  const maxAllowed = Math.max(0, 100 - otherGoalsSum);
+  const rawShare =
     tempGoalShares[targetKey] !== undefined
       ? tempGoalShares[targetKey]
       : isCreatingNew
         ? 0
         : parseFloat(existingGoals.find(g => g.id === editId)?.share) || 0;
+  const finalShare = Math.min(maxAllowed, Math.max(0, rawShare));
 
   const totalCapital = getTotalCapitalValue();
   const capitalAlloc = Math.round(totalCapital * (finalShare / 100));
@@ -575,13 +598,6 @@ async function submitBudgetGoal(e) {
     Cache.goals.push(targetGoal);
   }
 
-  // Обновляем доли других целей в памяти Cache
-  existingGoals.forEach(g => {
-    if (g.id !== editId && tempGoalShares[g.id] !== undefined) {
-      g.share = tempGoalShares[g.id];
-    }
-  });
-
   // Мгновенный перерендер целей
   if (typeof processGoals === 'function') processGoals();
   if (typeof renderBudgetGoals === 'function') renderBudgetGoals();
@@ -590,26 +606,12 @@ async function submitBudgetGoal(e) {
   (async () => {
     try {
       const col = getUserCol('Goals');
-      const batch = db.batch();
-
       if (editId) {
-        batch.update(col.doc(editId), goalData);
+        await col.doc(editId).update(goalData);
       } else {
-        const newDocRef = col.doc();
-        batch.set(newDocRef, { ...goalData, createdAt: Date.now() });
+        const newDocRef = await col.add({ ...goalData, createdAt: Date.now() });
         targetGoal.id = newDocRef.id;
       }
-
-      existingGoals.forEach(g => {
-        if (g.id !== editId && tempGoalShares[g.id] !== undefined) {
-          batch.update(col.doc(g.id), {
-            share: tempGoalShares[g.id],
-            updatedAt: Date.now(),
-          });
-        }
-      });
-
-      await batch.commit();
       fetchAllData(true).catch(() => {});
     } catch (err) {
       console.error('Ошибка сохранения цели:', err);

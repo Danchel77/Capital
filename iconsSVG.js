@@ -113,8 +113,8 @@ const AVATAR_PRESETS = {
     id: 'user',
     icon: 'user',
     label: 'Классика',
-    bg: 'bg-gradient-to-tr from-blue-600 to-indigo-600',
-    color: '#4F46E5',
+    bg: 'bg-white/[0.08] border border-white/10 text-white',
+    color: '#FFFFFF',
   },
   cat: {
     id: 'cat',

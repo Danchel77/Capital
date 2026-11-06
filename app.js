@@ -91,11 +91,6 @@ if (!isPreviewMockActive && currentAuth && typeof currentAuth.onAuthStateChanged
         document.getElementById('loading-screen')?.classList.add('hidden');
       }
 
-      // Проверяем и запускаем онбординг для новых пользователей
-      if (typeof window.checkAndShowOnboarding === 'function') {
-        window.checkAndShowOnboarding();
-      }
-
       // Инициализируем умный совет дня
       if (typeof window.initDailyInsight === 'function') {
         setTimeout(() => window.initDailyInsight(), 800);
@@ -118,8 +113,6 @@ if (!isPreviewMockActive && currentAuth && typeof currentAuth.onAuthStateChanged
       // Шторка предложения виджетов скоординирована и покажется либо после закрытия окна пушей, либо штатно при наличии разрешений.
       if (typeof window.checkAndPromptBankPushPermission === 'function') {
         window.checkAndPromptBankPushPermission(2500);
-      } else if (typeof window.checkAndShowWidgetPrompt === 'function') {
-        window.checkAndShowWidgetPrompt(3500);
       }
     } else {
       isAppInitialized = false;
@@ -1120,49 +1113,6 @@ setInterval(
   },
   15 * 60 * 1000
 );
-
-// ==========================================
-// Онбординг (Знакомство с Капиталом)
-// ==========================================
-function openOnboardingModal() {
-  const dlg = document.getElementById('onboarding-modal');
-  if (dlg) {
-    if (typeof lockBodyScroll === 'function') lockBodyScroll();
-    dlg.classList.remove('hidden');
-    if (typeof lucide !== 'undefined') lucide.createIcons();
-  }
-}
-window.openOnboardingModal = openOnboardingModal;
-
-function closeOnboardingModal() {
-  const dlg = document.getElementById('onboarding-modal');
-  if (dlg) {
-    dlg.classList.add('hidden');
-    if (typeof unlockBodyScroll === 'function') unlockBodyScroll();
-  }
-  try {
-    localStorage.setItem('capital_onboarding_shown', 'true');
-  } catch (_e) {
-    /* ignore */
-  }
-}
-window.closeOnboardingModal = closeOnboardingModal;
-
-function checkAndShowOnboarding() {
-  let shown = false;
-  try {
-    shown = localStorage.getItem('capital_onboarding_shown') === 'true';
-  } catch (_e) {
-    /* ignore */
-  }
-
-  if (!shown) {
-    setTimeout(() => {
-      openOnboardingModal();
-    }, 600);
-  }
-}
-window.checkAndShowOnboarding = checkAndShowOnboarding;
 
 // ==========================================
 // Умный финансовый совет дня (Gemini Insight)

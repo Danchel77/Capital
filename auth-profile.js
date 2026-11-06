@@ -500,7 +500,7 @@ function updateHeaderProfileUI() {
 
 // Открытие модального окна профиля
 function openProfileModal() {
-  const user = auth.currentUser;
+  const user = auth?.currentUser || window.currentUser;
   if (!user) return;
 
   if (typeof lockBodyScroll === 'function') lockBodyScroll();
@@ -541,7 +541,7 @@ function openProfileModal() {
       profile.avatarId,
       'w-14 h-14',
       'w-7 h-7',
-      'ring-2 ring-white/10 shadow-lg cursor-pointer hover:ring-[#6C5DD3]/50 transition-all active:scale-95'
+      'border border-white/10 shadow-lg cursor-pointer hover:border-white/30 transition-all active:scale-95'
     );
   }
 
@@ -558,10 +558,10 @@ function openProfileModal() {
     typeof window.isNativeAppPlatform === 'function' ? window.isNativeAppPlatform() : false;
   const isPwa = typeof window.isPwaStandalone === 'function' ? window.isPwaStandalone() : false;
 
-  // Пункт уведомлений о счетах и вкладах отображается только внутри APK приложения
-  const notifItem = document.getElementById('profile-notifications-setting-item');
-  if (notifItem) {
-    notifItem.classList.toggle('hidden', !isNative);
+  // Группа 2 (Автоматизация и уведомления) доступна ТОЛЬКО внутри нативного APK
+  const apkGroup = document.getElementById('profile-apk-settings-group');
+  if (apkGroup) {
+    apkGroup.classList.toggle('hidden', !isNative);
   }
 
   // Обновляем состояние чекбокса уведомлений (для APK)
@@ -573,42 +573,31 @@ function openProfileModal() {
   if (timeRow) timeRow.classList.toggle('hidden', !notifEnabled);
   if (timeInput) timeInput.value = Cache?.settings?.notificationTime || '10:00';
 
-  // Обновляем состояние чекбокса брокера
-  const toggle = document.getElementById('toggle-broker-setting');
-  if (toggle) {
-    toggle.checked = !!Cache?.settings?.showBroker;
+  // Секция установки приложения отображается только в обычном браузере или PWA
+  const installSection = document.getElementById('profile-install-section');
+  if (installSection) {
+    installSection.classList.toggle('hidden', isNative);
   }
 
-  // Обновляем видимость пунктов установки, виджетов и пушей
   const pwaBtn = document.getElementById('profile-install-app-btn');
-  const widgetsBtn = document.getElementById('profile-widgets-btn');
   const bankPushBtn = document.getElementById('profile-bank-push-btn');
-  const checkUpdatesBtn = document.getElementById('profile-check-updates-btn');
 
   if (isNative) {
-    // В нативном APK: пункта установки нет, но доступны виджеты и авто-пуши
-    if (pwaBtn) pwaBtn.classList.add('hidden');
-    if (widgetsBtn) widgetsBtn.classList.remove('hidden');
-
     if (bankPushBtn) {
-      bankPushBtn.classList.remove('hidden');
       const autoPushEnabled =
         typeof window.isBankPushAutoExpenseEnabled === 'function'
           ? window.isBankPushAutoExpenseEnabled()
           : true;
       const badgeEl = document.getElementById('profile-bank-push-badge');
       if (badgeEl) {
-        badgeEl.textContent = autoPushEnabled ? 'Включен' : 'Выключен';
+        badgeEl.textContent = autoPushEnabled ? 'Вкл' : 'Выкл';
         badgeEl.className = autoPushEnabled
-          ? 'text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full'
-          : 'text-[10px] font-bold text-gray-400 bg-white/5 px-2 py-0.5 rounded-full';
+          ? 'text-[10px] font-mono font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full'
+          : 'text-[10px] font-mono font-bold text-zinc-500 bg-white/5 border border-white/10 px-2 py-0.5 rounded-full';
       }
     }
   } else if (isPwa) {
-    // В ярлыке (PWA): доступно скачивание приложения для Android
-    if (bankPushBtn) bankPushBtn.classList.add('hidden');
     if (pwaBtn) {
-      pwaBtn.classList.remove('hidden');
       const titleSpan = pwaBtn.querySelector('.profile-install-title');
       if (titleSpan) titleSpan.textContent = 'Установить приложение';
       const pwaSub =
@@ -616,22 +605,15 @@ function openProfileModal() {
         pwaBtn.querySelector('.text-\\[11px\\]');
       if (pwaSub) pwaSub.textContent = 'Скачать приложение для Android';
     }
-    if (checkUpdatesBtn) checkUpdatesBtn.classList.add('hidden');
-    if (widgetsBtn) widgetsBtn.classList.add('hidden');
   } else {
-    // В обычном браузере: пункт установки
-    if (bankPushBtn) bankPushBtn.classList.add('hidden');
     if (pwaBtn) {
-      pwaBtn.classList.remove('hidden');
       const titleSpan = pwaBtn.querySelector('.profile-install-title');
       if (titleSpan) titleSpan.textContent = 'Установить приложение';
-      const pwaSub =
+      const browserSub =
         pwaBtn.querySelector('.profile-install-subtitle') ||
         pwaBtn.querySelector('.text-\\[11px\\]');
-      if (pwaSub) pwaSub.textContent = 'Скачать или добавить на главный экран';
+      if (browserSub) browserSub.textContent = 'Скачать APK или добавить на экран';
     }
-    if (checkUpdatesBtn) checkUpdatesBtn.classList.add('hidden');
-    if (widgetsBtn) widgetsBtn.classList.add('hidden');
   }
 
   // Обновляем блок семейного доступа
@@ -1024,18 +1006,18 @@ function renderFamilySettingsUI() {
       const isMe = m.uid === user.uid;
       const isMemOwner = m.role === 'owner' || m.uid === family.ownerUid;
       membersHtml += `
-        <div class="flex items-center justify-between p-2.5 rounded-xl bg-[#12151C] border border-[rgba(255,255,255,0.04)]">
+        <div class="flex items-center justify-between p-2.5 rounded-xl bg-[#0E1016] border border-white/[0.04]">
           <div class="flex items-center gap-3 min-w-0">
             ${getAvatarHtml(m.avatarId || 'user', 'w-8 h-8', 'w-4 h-4')}
             <div class="min-w-0">
               <span class="text-sm font-medium text-white flex items-center gap-1.5 truncate">
                 ${escapeHtml(m.name || 'Пользователь')}
-                ${isMe ? '<span class="text-[10px] text-[#8C7DFF] font-semibold bg-[#6C5DD3]/15 px-1.5 py-0.2 rounded">Вы</span>' : ''}
+                ${isMe ? '<span class="text-[10px] text-zinc-300 font-semibold bg-white/10 px-1.5 py-0.5 rounded">Вы</span>' : ''}
               </span>
-              <span class="text-[11px] text-gray-400 block truncate">${isMemOwner ? 'Владелец бюджета' : 'Участник семьи'}</span>
+              <span class="text-[11px] text-zinc-500 block truncate">${isMemOwner ? 'Владелец бюджета' : 'Участник семьи'}</span>
             </div>
           </div>
-          <span class="text-xs px-2 py-0.5 rounded-full ${isMemOwner ? 'bg-amber-500/15 text-amber-300 border border-amber-500/25' : 'bg-gray-700/50 text-gray-300'} font-medium whitespace-nowrap flex-shrink-0">
+          <span class="text-xs px-2 py-0.5 rounded-full ${isMemOwner ? 'bg-white/10 text-white border border-white/10' : 'bg-white/5 text-zinc-400 border border-white/[0.06]'} font-medium whitespace-nowrap flex-shrink-0">
             ${isMemOwner ? 'Создатель' : 'Доступ'}
           </span>
         </div>
@@ -1043,29 +1025,29 @@ function renderFamilySettingsUI() {
     });
 
     container.innerHTML = `
-      <div class="p-4 rounded-2xl bg-[#181B24] border border-[rgba(255,255,255,0.06)] space-y-4">
+      <div class="p-4 rounded-2xl bg-[#12151C] border border-white/[0.06] space-y-3.5">
         <div class="flex items-center justify-between gap-3">
           <div class="flex items-center gap-2.5 min-w-0 flex-1">
-            <div class="w-8 h-8 rounded-xl bg-[#6C5DD3]/15 text-[#8C7DFF] flex items-center justify-center flex-shrink-0">
+            <div class="w-8 h-8 rounded-xl bg-white/[0.04] border border-white/[0.06] text-white flex items-center justify-center flex-shrink-0">
               <i data-lucide="users" class="w-4 h-4"></i>
             </div>
             <div class="min-w-0 flex-1">
               <h4 class="text-sm font-bold text-white truncate">${escapeHtml(family.name || 'Семейный бюджет')}</h4>
-              <p class="text-[11px] text-[#848D99] truncate">Общие транзакции, бюджет и накопления</p>
+              <p class="text-[11px] text-zinc-500 truncate">Общие транзакции, бюджет и накопления</p>
             </div>
           </div>
-          <span class="px-2.5 py-0.5 rounded-full bg-[#6C5DD3]/20 text-[#8C7DFF] text-[11px] font-semibold border border-[#6C5DD3]/30 whitespace-nowrap flex-shrink-0 select-none inline-flex items-center justify-center">
+          <span class="px-2 py-0.5 rounded-full bg-white/[0.04] text-zinc-300 text-[11px] font-mono border border-white/[0.06] whitespace-nowrap flex-shrink-0 select-none inline-flex items-center justify-center">
             ${members.length}&nbsp;уч.
           </span>
         </div>
 
         <!-- Код приглашения -->
-        <div class="p-3 rounded-xl bg-[#12151C] border border-[rgba(255,255,255,0.05)] flex items-center justify-between gap-3">
+        <div class="p-3 rounded-xl bg-[#0E1016] border border-white/[0.06] flex items-center justify-between gap-3">
           <div>
-            <span class="text-[10px] text-[#848D99] uppercase font-bold tracking-wider block mb-0.5">Код для подключения члена семьи</span>
-            <span class="text-base font-mono font-bold text-[#8C7DFF] tracking-wider select-all">${escapeHtml(family.code || '')}</span>
+            <span class="text-[10px] text-zinc-500 uppercase font-bold tracking-wider block mb-0.5">Код для подключения</span>
+            <span class="text-sm font-mono font-bold text-white tracking-widest select-all">${escapeHtml(family.code || '')}</span>
           </div>
-          <button type="button" onclick="copyFamilyInviteCode('${family.code}')" class="px-3 py-2 rounded-xl bg-[#6C5DD3]/20 hover:bg-[#6C5DD3]/30 text-[#8C7DFF] text-xs font-semibold border border-[#6C5DD3]/30 flex items-center gap-1.5 cursor-pointer transition-colors active:scale-95">
+          <button type="button" onclick="copyFamilyInviteCode('${family.code}')" class="px-3 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-white text-xs font-semibold border border-white/[0.08] flex items-center gap-1.5 cursor-pointer transition-colors active:scale-95">
             <i data-lucide="copy" class="w-3.5 h-3.5"></i>
             <span>Скопировать</span>
           </button>
@@ -1073,50 +1055,50 @@ function renderFamilySettingsUI() {
 
         <!-- Список участников -->
         <div class="space-y-1.5">
-          <span class="text-[11px] text-gray-400 font-semibold px-1">Участники с доступом:</span>
+          <span class="text-[11px] text-zinc-500 font-semibold px-1">Участники с доступом:</span>
           ${membersHtml}
         </div>
 
         <!-- Действия -->
-        <div class="pt-2 border-t border-[rgba(255,255,255,0.04)] flex justify-between items-center">
+        <div class="pt-2 border-t border-white/[0.04] flex justify-between items-center">
           ${
             isOwner
               ? `
-            <button type="button" onclick="deleteFamilyGroup()" class="text-xs text-red-400 hover:text-red-300 transition-colors cursor-pointer flex items-center gap-1">
+            <button type="button" onclick="deleteFamilyGroup()" class="text-xs text-rose-400/80 hover:text-rose-400 transition-colors cursor-pointer flex items-center gap-1">
               <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Удалить группу
             </button>
           `
               : `
-            <button type="button" onclick="leaveFamilyGroup()" class="text-xs text-red-400 hover:text-red-300 transition-colors cursor-pointer flex items-center gap-1">
+            <button type="button" onclick="leaveFamilyGroup()" class="text-xs text-rose-400/80 hover:text-rose-400 transition-colors cursor-pointer flex items-center gap-1">
               <i data-lucide="log-out" class="w-3.5 h-3.5"></i> Выйти из семьи
             </button>
           `
           }
-          <span class="text-[11px] text-gray-500">Синхронизация вкл.</span>
+          <span class="text-[11px] text-zinc-600 font-mono">Синхронизация вкл.</span>
         </div>
       </div>
     `;
   } else {
     // Пользователь пока ведет личный бюджет
     container.innerHTML = `
-      <div class="p-4 rounded-2xl bg-[#181B24] border border-[rgba(255,255,255,0.06)]">
+      <div class="p-4 rounded-2xl bg-[#12151C] border border-white/[0.06]">
         <div class="flex items-center gap-3 mb-3">
-          <div class="w-10 h-10 rounded-2xl bg-[#6C5DD3]/15 text-[#8C7DFF] flex items-center justify-center flex-shrink-0">
-            <i data-lucide="users-round" class="w-5 h-5"></i>
+          <div class="w-9 h-9 rounded-xl bg-white/[0.04] border border-white/[0.06] text-white flex items-center justify-center flex-shrink-0">
+            <i data-lucide="users-round" class="w-4 h-4"></i>
           </div>
           <div>
             <h4 class="text-sm font-bold text-white">Семейный доступ к бюджету</h4>
-            <p class="text-xs text-[#848D99] mt-0.5">Ведите общий учет расходов и накоплений с членами семьи в реальном времени</p>
+            <p class="text-xs text-zinc-500 mt-0.5">Ведите общий учет расходов и накоплений с членами семьи в реальном времени</p>
           </div>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4">
-          <button type="button" onclick="openCreateFamilyModal()" class="w-full py-2.5 px-3 rounded-xl bg-[#6C5DD3] hover:bg-[#5E4FC9] text-white text-xs font-semibold transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-1.5 shadow-md shadow-[#6C5DD3]/25">
+          <button type="button" onclick="openCreateFamilyModal()" class="w-full py-2.5 px-3 rounded-xl bg-white hover:bg-zinc-200 text-zinc-950 text-xs font-semibold transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-1.5 shadow-sm">
             <i data-lucide="plus-circle" class="w-4 h-4"></i>
             <span>Создать семью</span>
           </button>
-          <button type="button" onclick="openJoinFamilyModal()" class="w-full py-2.5 px-3 rounded-xl bg-[#212430] hover:bg-[#2A2D3C] text-gray-200 hover:text-white text-xs font-semibold border border-[rgba(255,255,255,0.08)] transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-1.5">
-            <i data-lucide="key-round" class="w-4 h-4 text-[#8C7DFF]"></i>
+          <button type="button" onclick="openJoinFamilyModal()" class="w-full py-2.5 px-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-white text-xs font-semibold border border-white/[0.08] transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-1.5">
+            <i data-lucide="key-round" class="w-4 h-4 text-zinc-400"></i>
             <span>Ввести код семьи</span>
           </button>
         </div>
@@ -1966,15 +1948,11 @@ async function changeNotificationTimeSetting(time) {
   }
 }
 
-function applyBrokerVisibility(show) {
+function applyBrokerVisibility(_show) {
+  // Брокерский счет всегда доступен
   const navBroker = document.getElementById('nav-broker');
   if (navBroker) {
-    navBroker.classList.toggle('hidden', !show);
-  }
-
-  const brokerTab = document.getElementById('broker-tab');
-  if (!show && brokerTab && !brokerTab.classList.contains('hidden')) {
-    switchTab('transactions');
+    navBroker.classList.remove('hidden');
   }
 }
 
@@ -2026,7 +2004,7 @@ function renderGeminiSettingsUI() {
     if (savedKey && savedKey.trim().length > 10) {
       descEl.textContent = 'Персональный ключ Google AI Studio';
     } else {
-      descEl.textContent = 'Укажите API-ключ для очистки выписок и дедупликации';
+      descEl.textContent = 'Очистка выписок и дедупликация';
     }
   }
 }
