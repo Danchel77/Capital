@@ -108,118 +108,92 @@ window.renderBankIcons = renderBankIcons;
 // ==========================================
 // Vector Avatar Presets Library
 // ==========================================
+// AVATAR PRESETS — Благородные минеральные тона
+// ==========================================
 const AVATAR_PRESETS = {
   user: {
     id: 'user',
     icon: 'user',
-    label: 'Классика',
-    bg: 'bg-white/[0.08] border border-white/10 text-white',
-    color: '#FFFFFF',
-  },
-  cat: {
-    id: 'cat',
-    icon: 'cat',
-    label: 'Кот',
-    bg: 'bg-gradient-to-tr from-amber-500 to-orange-600',
-    color: '#EA580C',
-  },
-  dog: {
-    id: 'dog',
-    icon: 'dog',
-    label: 'Пёс',
-    bg: 'bg-gradient-to-tr from-yellow-500 to-amber-600',
-    color: '#D97706',
-  },
-  rocket: {
-    id: 'rocket',
-    icon: 'rocket',
-    label: 'Ракета',
-    bg: 'bg-gradient-to-tr from-purple-600 to-pink-600',
-    color: '#C026D3',
-  },
-  flame: {
-    id: 'flame',
-    icon: 'flame',
-    label: 'Огонь',
-    bg: 'bg-gradient-to-tr from-red-500 to-rose-600',
-    color: '#E11D48',
-  },
-  crown: {
-    id: 'crown',
-    icon: 'crown',
-    label: 'Корона',
-    bg: 'bg-gradient-to-tr from-amber-400 to-yellow-600',
-    color: '#CA8A04',
-  },
-  heart: {
-    id: 'heart',
-    icon: 'heart',
-    label: 'Сердце',
-    bg: 'bg-gradient-to-tr from-rose-500 to-pink-600',
-    color: '#E11D48',
-  },
-  shield: {
-    id: 'shield',
-    icon: 'shield',
-    label: 'Щит',
-    bg: 'bg-gradient-to-tr from-emerald-500 to-teal-600',
-    color: '#0D9488',
-  },
-  star: {
-    id: 'star',
-    icon: 'star',
-    label: 'Звезда',
-    bg: 'bg-gradient-to-tr from-cyan-500 to-blue-600',
-    color: '#0284C7',
-  },
-  sparkles: {
-    id: 'sparkles',
-    icon: 'sparkles',
-    label: 'Магия',
-    bg: 'bg-gradient-to-tr from-violet-500 to-purple-600',
-    color: '#7C3AED',
-  },
-  coffee: {
-    id: 'coffee',
-    icon: 'coffee',
-    label: 'Кофе',
-    bg: 'bg-gradient-to-tr from-amber-700 to-yellow-900',
-    color: '#78350F',
+    label: 'Обсидиан',
+    bg: 'bg-[#181B22] border border-white/10 text-zinc-200',
+    color: '#9CA3AF',
   },
   wallet: {
     id: 'wallet',
     icon: 'wallet',
-    label: 'Кошелек',
-    bg: 'bg-gradient-to-tr from-green-500 to-emerald-600',
-    color: '#16A34A',
+    label: 'Изумруд',
+    bg: 'bg-[#0E241B] border border-emerald-500/25 text-emerald-400',
+    color: '#34D399',
+  },
+  shield: {
+    id: 'shield',
+    icon: 'shield-check',
+    label: 'Сапфир',
+    bg: 'bg-[#0F1E33] border border-sky-500/25 text-sky-400',
+    color: '#38BDF8',
+  },
+  crown: {
+    id: 'crown',
+    icon: 'crown',
+    label: 'Янтарь',
+    bg: 'bg-[#291E0D] border border-amber-500/25 text-amber-400',
+    color: '#FBBF24',
   },
   gem: {
     id: 'gem',
     icon: 'gem',
-    label: 'Алмаз',
-    bg: 'bg-gradient-to-tr from-blue-500 to-cyan-600',
-    color: '#2563EB',
+    label: 'Аметист',
+    bg: 'bg-[#1E122A] border border-purple-500/25 text-purple-400',
+    color: '#C084FC',
   },
-  gamepad: {
-    id: 'gamepad',
-    icon: 'gamepad-2',
-    label: 'Геймер',
-    bg: 'bg-gradient-to-tr from-indigo-500 to-purple-600',
-    color: '#6366F1',
+  trending: {
+    id: 'trending',
+    icon: 'trending-up',
+    label: 'Нефрит',
+    bg: 'bg-[#0D2622] border border-teal-500/25 text-teal-400',
+    color: '#2DD4BF',
   },
-  music: {
-    id: 'music',
-    icon: 'music',
-    label: 'Музыка',
-    bg: 'bg-gradient-to-tr from-fuchsia-500 to-pink-600',
-    color: '#C026D3',
+  landmark: {
+    id: 'landmark',
+    icon: 'landmark',
+    label: 'Индиго',
+    bg: 'bg-[#16172E] border border-indigo-500/25 text-indigo-400',
+    color: '#818CF8',
+  },
+  briefcase: {
+    id: 'briefcase',
+    icon: 'briefcase',
+    label: 'Рубин',
+    bg: 'bg-[#261519] border border-rose-500/25 text-rose-400',
+    color: '#FB7185',
   },
   compass: {
     id: 'compass',
     icon: 'compass',
-    label: 'Компас',
-    bg: 'bg-gradient-to-tr from-sky-500 to-blue-600',
-    color: '#0284C7',
+    label: 'Лазурь',
+    bg: 'bg-[#0A2228] border border-cyan-500/25 text-cyan-400',
+    color: '#22D3EE',
+  },
+  sparkles: {
+    id: 'sparkles',
+    icon: 'sparkles',
+    label: 'Золото',
+    bg: 'bg-[#262110] border border-yellow-500/25 text-yellow-400',
+    color: '#FACC15',
+  },
+  lock: {
+    id: 'lock',
+    icon: 'lock',
+    label: 'Сталь',
+    bg: 'bg-[#191D26] border border-slate-500/25 text-slate-300',
+    color: '#94A3B8',
+  },
+  coffee: {
+    id: 'coffee',
+    icon: 'coffee',
+    label: 'Медь',
+    bg: 'bg-[#261A14] border border-orange-500/25 text-orange-400',
+    color: '#FB923C',
   },
 };
 
@@ -232,15 +206,15 @@ function getAvatarHtml(
   customClass = ''
 ) {
   if (!avatarId || avatarId === 'none' || avatarId === 'placeholder') {
-    return `<div class="${sizeClass} rounded-full bg-[#212430] border-2 border-dashed border-gray-500/50 text-gray-400 flex flex-col items-center justify-center flex-shrink-0 shadow-sm ${customClass} select-none" data-avatar-id="placeholder" title="Нажмите, чтобы выбрать аватарку"><i data-lucide="camera" class="${iconSizeClass} stroke-[2]"></i></div>`;
+    return `<div class="${sizeClass} rounded-full bg-[#181B22] border border-white/10 text-zinc-400 flex flex-col items-center justify-center flex-shrink-0 shadow-sm ${customClass} select-none" data-avatar-id="placeholder" title="Нажмите, чтобы выбрать аватарку"><i data-lucide="user" class="${iconSizeClass}"></i></div>`;
   }
   const preset = (window.AVATAR_PRESETS && window.AVATAR_PRESETS[avatarId]) ||
     window.AVATAR_PRESETS?.user || {
       id: 'user',
       icon: 'user',
-      bg: 'bg-gradient-to-tr from-blue-600 to-indigo-600',
+      bg: 'bg-[#181B22] border border-white/10 text-zinc-200',
     };
-  return `<div class="${sizeClass} rounded-full ${preset.bg} text-white flex items-center justify-center flex-shrink-0 shadow-sm ${customClass} select-none" data-avatar-id="${preset.id}"><i data-lucide="${preset.icon}" class="${iconSizeClass} stroke-[2.2]"></i></div>`;
+  return `<div class="${sizeClass} rounded-full ${preset.bg} flex items-center justify-center flex-shrink-0 shadow-sm ${customClass} select-none" data-avatar-id="${preset.id}"><i data-lucide="${preset.icon}" class="${iconSizeClass}"></i></div>`;
 }
 
 window.getAvatarHtml = getAvatarHtml;

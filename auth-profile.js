@@ -674,11 +674,11 @@ function openAvatarPickerModal() {
     html += `
       <button type="button" 
               onclick="selectAvatarPreset('${p.id}')"
-              class="avatar-preset-btn p-2.5 rounded-2xl flex items-center justify-center border transition-all cursor-pointer ${isSelected ? 'border-[#6C5DD3] bg-[#6C5DD3]/25 scale-105 shadow-lg ring-2 ring-[#6C5DD3]/40' : 'border-white/5 bg-[#181B24] hover:bg-[#212430] hover:border-white/15'}"
+              class="avatar-preset-btn p-2 rounded-2xl flex items-center justify-center border transition-all cursor-pointer ${isSelected ? 'border-white/50 bg-white/10 scale-105 shadow-lg ring-2 ring-white/20' : 'border-white/5 bg-[#0E1016] hover:bg-white/[0.04] hover:border-white/15'}"
               data-preset-id="${p.id}"
               title="${escapeHtml(p.label)}">
-        <div class="w-12 h-12 rounded-full ${p.bg} text-white flex items-center justify-center shadow-md select-none pointer-events-none">
-          <i data-lucide="${p.icon}" class="w-6 h-6 stroke-[2.2]"></i>
+        <div class="w-12 h-12 rounded-full ${p.bg} flex items-center justify-center shadow-md select-none pointer-events-none">
+          <i data-lucide="${p.icon}" class="w-6 h-6 stroke-[2]"></i>
         </div>
       </button>
     `;
@@ -701,7 +701,7 @@ function selectAvatarPreset(avatarId) {
   if (grid) {
     grid.querySelectorAll('.avatar-preset-btn').forEach(btn => {
       const isSelected = btn.dataset.presetId === avatarId;
-      btn.className = `avatar-preset-btn p-2.5 rounded-2xl flex items-center justify-center border transition-all cursor-pointer ${isSelected ? 'border-[#6C5DD3] bg-[#6C5DD3]/25 scale-105 shadow-lg ring-2 ring-[#6C5DD3]/40' : 'border-white/5 bg-[#181B24] hover:bg-[#212430] hover:border-white/15'}`;
+      btn.className = `avatar-preset-btn p-2 rounded-2xl flex items-center justify-center border transition-all cursor-pointer ${isSelected ? 'border-white/50 bg-white/10 scale-105 shadow-lg ring-2 ring-white/20' : 'border-white/5 bg-[#0E1016] hover:bg-white/[0.04] hover:border-white/15'}`;
     });
   }
 }
@@ -2214,6 +2214,23 @@ function toggleStatementAiInfoTooltip(event) {
   }
 }
 
+function openGeminiSetupModal() {
+  const dialog = document.getElementById('gemini-setup-dialog');
+  if (dialog) {
+    dialog.classList.remove('hidden');
+    renderGeminiSettingsUI();
+  }
+}
+
+function closeGeminiSetupModal() {
+  const dialog = document.getElementById('gemini-setup-dialog');
+  if (dialog) {
+    dialog.classList.add('hidden');
+  }
+}
+
+window.openGeminiSetupModal = openGeminiSetupModal;
+window.closeGeminiSetupModal = closeGeminiSetupModal;
 window.renderGeminiSettingsUI = renderGeminiSettingsUI;
 window.testAndSaveGeminiKey = testAndSaveGeminiKey;
 window.saveGeminiApiKey = testAndSaveGeminiKey;

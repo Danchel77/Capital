@@ -1,0 +1,86 @@
+<!-- МОДАЛЬНОЕ ОКНО: НАСТРОЙКА GEMINI AI -->
+<div
+  id="gemini-setup-dialog"
+  class="fixed inset-0 bg-black/90 z-[160] hidden flex flex-col justify-center items-center p-4 backdrop-blur-md animate-fade-in"
+  onclick="if (event.target === this) closeGeminiSetupModal();"
+>
+  <div
+    class="bg-[#0E1016] border border-white/[0.06] w-full max-w-sm rounded-3xl p-5 shadow-2xl flex flex-col"
+  >
+    <div class="flex items-center justify-between mb-4 pb-3 border-b border-white/[0.06]">
+      <div class="flex items-center gap-2.5">
+        <div
+          class="w-8 h-8 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center flex-shrink-0"
+        >
+          <i data-lucide="bot" class="w-4 h-4"></i>
+        </div>
+        <div>
+          <h3 class="text-base font-bold text-white">Помощник Gemini</h3>
+          <p class="text-xs text-zinc-500 mt-0.5">Очистка и распознавание выписок</p>
+        </div>
+      </div>
+      <button
+        type="button"
+        onclick="closeGeminiSetupModal()"
+        class="w-8 h-8 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] active:scale-95 text-zinc-400 hover:text-white border border-white/[0.06] flex items-center justify-center cursor-pointer transition-all"
+        title="Закрыть"
+      >
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+
+    <div class="space-y-3.5">
+      <div class="space-y-1.5">
+        <label class="text-[11px] text-zinc-400 block font-medium">API-ключ Google AI Studio</label>
+        <input
+          type="text"
+          id="gemini-api-key-input"
+          placeholder="AIzaSy..."
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="off"
+          spellcheck="false"
+          onkeydown="if (event.key === 'Enter') testAndSaveGeminiKey();"
+          class="w-full bg-[#000000] border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-zinc-600 focus:border-white/30 outline-none font-mono transition-colors"
+        />
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button
+          type="button"
+          id="gemini-test-btn"
+          onclick="testAndSaveGeminiKey()"
+          class="flex-1 py-2 px-3 rounded-xl bg-white text-zinc-950 hover:bg-zinc-200 active:scale-95 text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
+        >
+          <span id="gemini-test-btn-text">Сохранить ключ</span>
+        </button>
+        <button
+          type="button"
+          id="gemini-clear-btn"
+          onclick="deleteGeminiApiKey()"
+          class="p-2 rounded-xl bg-white/[0.04] hover:bg-rose-500/15 border border-white/[0.06] hover:border-rose-500/30 text-zinc-400 hover:text-rose-400 active:scale-95 transition-all cursor-pointer flex-shrink-0"
+          title="Удалить ключ"
+        >
+          <i data-lucide="trash-2" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Результат проверки соединения -->
+      <div
+        id="gemini-test-result"
+        class="hidden text-[11px] px-3 py-2 rounded-xl border leading-normal"
+      ></div>
+
+      <p class="text-[10px] text-zinc-500 leading-normal">
+        Ключ хранится локально на вашем устройстве. Получить бесплатный ключ можно в
+        <a
+          href="https://aistudio.google.com/app/apikey"
+          target="_blank"
+          rel="noopener"
+          class="text-zinc-300 underline hover:text-white"
+          >Google AI Studio</a
+        >.
+      </p>
+    </div>
+  </div>
+</div>
