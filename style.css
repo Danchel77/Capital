@@ -498,10 +498,7 @@ nav button:active,
 }
 
 #tx-form-container:not(.hidden),
-#deposit-form-container:not(.hidden),
-#broker-form-container:not(.hidden),
-#broker-goal-container:not(.hidden),
-#goal-form-container:not(.hidden) {
+#deposit-form-container:not(.hidden) {
   animation: form-expand-in 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
 }
 
@@ -523,33 +520,6 @@ nav button:active,
     max-height 0.65s cubic-bezier(0.2, 0.9, 0.35, 1),
     padding 0.65s ease,
     margin 0.65s ease !important;
-}
-
-/* Плавная физика кругового прогресс-бара */
-#budget-week-circle-bar {
-  transition:
-    stroke-dashoffset 1s cubic-bezier(0.16, 1, 0.3, 1),
-    stroke 0.4s ease;
-}
-
-* {
-  -webkit-tap-highlight-color: transparent;
-  box-sizing: border-box;
-}
-html {
-  background: var(--bg);
-  color-scheme: dark;
-}
-button,
-input,
-select {
-  font: inherit;
-}
-button {
-  -webkit-appearance: none;
-}
-.hidden {
-  display: none !important;
 }
 
 /* ---------- Полное сокрытие полос прокрутки (Scrollbar) во всем приложении ---------- */
@@ -576,58 +546,6 @@ body,
 *::-webkit-scrollbar-corner {
   display: none !important;
   background: transparent !important;
-}
-
-/* Гарантированное сокрытие скроллбаров основного окна браузера при открытых модальных окнах */
-html.modal-open,
-html.modal-open body,
-body.modal-open {
-  scrollbar-width: none !important;
-}
-html.modal-open::-webkit-scrollbar,
-html.modal-open body::-webkit-scrollbar,
-body.modal-open::-webkit-scrollbar,
-html.modal-open::-webkit-scrollbar-thumb,
-html.modal-open body::-webkit-scrollbar-thumb,
-body.modal-open::-webkit-scrollbar-thumb,
-html.modal-open::-webkit-scrollbar-track,
-html.modal-open body::-webkit-scrollbar-track,
-body.modal-open::-webkit-scrollbar-track,
-html.modal-open::-webkit-scrollbar-corner,
-body.modal-open::-webkit-scrollbar-corner {
-  display: none !important;
-  width: 0 !important;
-  height: 0 !important;
-  min-width: 0 !important;
-  min-height: 0 !important;
-  max-width: 0 !important;
-  max-height: 0 !important;
-  background: transparent !important;
-  border: none !important;
-  opacity: 0 !important;
-  visibility: hidden !important;
-}
-
-/* Полное снятие мобильной задержки тапа 300 мс без блокировки аппаратного скролла */
-html,
-body {
-  touch-action: pan-x pan-y;
-}
-button,
-a,
-input,
-select,
-textarea,
-[role='button'],
-.card,
-nav button,
-.btn-press,
-.nav-tab-btn,
-.view-switcher__btn,
-.custom-dropdown-btn,
-.custom-dropdown-item,
-.interactive-tap {
-  touch-action: manipulation;
 }
 
 /* ---------- app shell ---------- */
@@ -700,11 +618,6 @@ header button:hover {
   padding-top: 4px;
 }
 
-.tx-day-group {
-  content-visibility: auto;
-  contain-intrinsic-size: 0 110px;
-}
-
 #transactions-list .card,
 .card[data-table='Transactions'] {
   contain: layout paint style;
@@ -764,39 +677,6 @@ body.selection-mode .card[data-table='Transactions'] .select-checkbox {
   transform: translate3d(0, 0, 0);
   will-change: transform;
   transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-/* Бейдж автора транзакции: по умолчанию в правом верхнем углу карточки */
-.tx-author-badge {
-  position: absolute;
-  top: 8px;
-  right: 12px;
-  transform: translate3d(0, 0, 0);
-  will-change: transform;
-  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-/* Если на карточке есть бейдж автора (в режиме семьи), базовый отступ */
-.card:has(.tx-author-badge) .tx-row-right,
-.card.tx-has-author .tx-row-right {
-  margin-right: 20px;
-}
-
-/* При мультивыборе без автора: быстрый GPU сдвиг ровно под чекбокс */
-body.selection-mode .card[data-table='Transactions'] .tx-row-right,
-body.selection-mode #transactions-list .card .tx-row-right {
-  transform: translate3d(-24px, 0, 0);
-}
-
-/* При мультивыборе: аватар плавно перемещается на одну строку с суммой через GPU translate */
-body.selection-mode .tx-author-badge {
-  transform: translate3d(-24px, 12px, 0);
-}
-
-/* При мультивыборе транзакций с автором: сдвиг под аватар + чекбокс */
-body.selection-mode .card:has(.tx-author-badge) .tx-row-right,
-body.selection-mode .card.tx-has-author .tx-row-right {
-  transform: translate3d(-48px, 0, 0);
 }
 
 /* При мультивыборе бейдж цели плавно сдвигается левее через GPU */
@@ -1069,7 +949,6 @@ textarea {
     box-shadow 0.15s ease;
 }
 
-.input-with-left-icon,
 #tx-search-input {
   padding-left: 42px !important;
   padding-right: 36px !important;
@@ -1103,10 +982,7 @@ select option {
 }
 
 #tx-form-container,
-#deposit-form-container,
-#broker-form-container,
-#broker-goal-container,
-#goal-form-container {
+#deposit-form-container {
   background: var(--surface) !important;
   border-color: var(--line) !important;
   border-radius: 20px !important;
@@ -1231,24 +1107,6 @@ nav button {
   font-size: 11px !important;
   padding: 4px 0 !important;
 }
-nav button.text-[#8C7DFF],
-nav button.text-[#8C7DFF] {
-  color: #8c7dff !important;
-}
-nav button.text-[#8C7DFF]::before,
-nav button.text-[#8C7DFF]::before {
-  content: '';
-  position: absolute;
-  top: 0px;
-  left: 50%;
-  width: 32px;
-  height: 3px;
-  transform: translateX(-50%);
-  border-radius: 999px;
-  background: #8c7dff;
-  box-shadow: 0 0 10px rgba(140, 125, 255, 0.45);
-}
-
 /* ---------- dialogs / toast ---------- */
 .toast-container {
   position: fixed !important;
@@ -1576,24 +1434,6 @@ body.selection-mode .selection-panel {
   transform: scale(1.08);
 }
 
-/* Скрываем серый ползунок в меню, сохраняя плавный скролл пальцем */
-#menu-filter-month,
-#menu-filter-cat,
-.custom-dropdown-menu,
-.tx-category-menu {
-  scrollbar-width: none !important; /* Firefox */
-  -ms-overflow-style: none !important;
-}
-
-#menu-filter-month::-webkit-scrollbar,
-#menu-filter-cat::-webkit-scrollbar,
-.custom-dropdown-menu::-webkit-scrollbar,
-.tx-category-menu::-webkit-scrollbar {
-  display: none !important; /* Chrome, Safari, Android */
-  width: 0 !important;
-  height: 0 !important;
-}
-
 /* ---------- Стили Мастера Бюджета (Neobank UI) ---------- */
 .wiz-day-cell {
   min-height: 54px;
@@ -1642,10 +1482,6 @@ body.selection-mode .selection-panel {
 }
 
 .wiz-day-cell.is-selected .wiz-day-num {
-  color: #ffffff;
-}
-
-.wiz-day-cell.has-bills .wiz-day-num {
   color: #ffffff;
 }
 
