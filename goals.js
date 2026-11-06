@@ -447,7 +447,7 @@ function renderGoalSharesManagerList(currentEditingId = null) {
             <span class="text-[11px] font-mono text-zinc-400" id="goal-share-amount-${item.id}">
               ${formatMoney(capitalAmount)}
             </span>
-            <span class="font-mono font-semibold text-xs text-emerald-400 tabular-nums min-w-[32px] text-right" id="goal-share-val-${item.id}">
+            <span class="font-mono font-medium text-xs text-zinc-400 tabular-nums min-w-[32px] text-right" id="goal-share-val-${item.id}">
               ${shareVal}%
             </span>
           </div>
@@ -646,13 +646,13 @@ function setGoalPiggyInlineMode(mode) {
         'flex-1 py-1 rounded-md text-[11px] font-semibold bg-white/10 text-white transition-all cursor-pointer';
       subBtn.className =
         'flex-1 py-1 rounded-md text-[11px] font-medium text-zinc-400 hover:text-white transition-all cursor-pointer';
-      if (applyBtn) applyBtn.innerText = 'Внести';
+      if (applyBtn) applyBtn.innerText = 'Применить';
     } else {
       subBtn.className =
         'flex-1 py-1 rounded-md text-[11px] font-semibold bg-white/10 text-white transition-all cursor-pointer';
       addBtn.className =
         'flex-1 py-1 rounded-md text-[11px] font-medium text-zinc-400 hover:text-white transition-all cursor-pointer';
-      if (applyBtn) applyBtn.innerText = 'Снять';
+      if (applyBtn) applyBtn.innerText = 'Применить';
     }
   }
   handleGoalPiggyDeltaInput();
