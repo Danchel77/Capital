@@ -10,7 +10,7 @@ You are a Principal Mobile UI/UX Designer auditing an offline personal finance s
 Benchmark: High-density, minimalist mobile fintech (Linear / Apple Card standard). Zero decorative noise.
 
 APP DESIGN INVARIANTS:
-- Background: Pure dark (#0F1117). Cards: Flat subtle surface (#181B24) with hairline borders (border-white/[0.06]).
+- Background: Pure OLED black (#000000). Cards: Flat subtle surface (#0E1016 / #12151C) with hairline borders (border-white/[0.06]).
 - Typography: Clean sans-serif. Numbers: Tabular figures.
 - Philosophy: High signal-to-noise. Respect user intelligence.
 

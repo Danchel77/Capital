@@ -68,9 +68,9 @@ You operate as a **Principal Mobile Engineer & Lead Product Architect**, not a p
   - **RUN:** New screen, new modal dialog, or major card/list layout refactoring.
   - **SKIP:** Bug fixes, calculation logic, text/translation tweaks, or minor CSS color fixes.
 - **Direct Vision Critic Workflow (No Subagents):**
-  - Do NOT spawn subagents for visual design critique (they have filesystem access, read git/code, and develop reviewer bias).
-  - Call `vision_describe` directly on the screenshot, passing the prompt template from `prompts/visual-design-critic.md` in `question`.
-  - Direct vision calls are isolated, purely visual, have no access to the codebase, and return objective results in seconds.
+  - Do NOT spawn subagents for visual design critique (they have filesystem access and develop reviewer bias).
+  - Call `vision_describe` directly on the screenshot.
+  - **Mandatory Verbatim Prompting:** Pass the exact text of `prompts/visual-design-critic.md` in the `question` argument. Never edit the template, summarize it, or append leading questions (asking if recent changes look good creates false-positive passes). Direct vision calls are isolated, purely visual, have no access to the codebase, and return objective results in seconds.
 - **Anti-Loop Policy (Strict Budget = 1 Pass):**
   - Exactly ONE critic pass per task.
   - Apply the critic's simplifications to code.
