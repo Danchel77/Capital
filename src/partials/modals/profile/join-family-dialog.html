@@ -1,41 +1,55 @@
 <!-- МОДАЛЬНОЕ ОКНО: ПОДКЛЮЧЕНИЕ К СЕМЬЕ ПО КОДУ -->
 <div
   id="join-family-dialog"
-  class="fixed inset-0 bg-black/80 z-[160] hidden flex flex-col justify-center items-center p-4 backdrop-blur-sm animate-fade-in"
+  class="fixed inset-0 bg-black/90 z-[160] hidden flex flex-col justify-center items-center p-4 backdrop-blur-md animate-fade-in"
   onclick="if (event.target === this) closeJoinFamilyModal();"
 >
   <div
-    class="bg-[#181B24] border border-[rgba(255,255,255,0.08)] w-full max-w-sm rounded-3xl p-6 shadow-2xl"
+    class="bg-[#0E1016] border border-white/[0.06] w-full max-w-sm rounded-3xl p-5 shadow-2xl flex flex-col"
   >
-    <div
-      class="w-12 h-12 rounded-2xl bg-[#6C5DD3]/15 text-[#8C7DFF] flex items-center justify-center mx-auto mb-3"
-    >
-      <i data-lucide="key-round" class="w-6 h-6"></i>
+    <div class="flex items-center justify-between mb-4 pb-3 border-b border-white/[0.06]">
+      <div class="flex items-center gap-2.5">
+        <div
+          class="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.06] text-white flex items-center justify-center flex-shrink-0"
+        >
+          <i data-lucide="key-round" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h3 class="text-base font-bold text-white">Ввести код семьи</h3>
+          <p class="text-xs text-zinc-500 mt-0.5">Присоединение по приглашению</p>
+        </div>
+      </div>
+      <button
+        type="button"
+        onclick="closeJoinFamilyModal()"
+        class="w-8 h-8 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] active:scale-95 text-zinc-400 hover:text-white border border-white/[0.06] flex items-center justify-center cursor-pointer transition-all"
+        title="Закрыть"
+      >
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
     </div>
-    <h3 class="text-lg font-bold text-white text-center mb-1">Присоединиться к семье</h3>
-    <p class="text-xs text-gray-400 text-center mb-5">
-      Введите код приглашения, полученный от члена семьи.
-    </p>
 
     <div class="space-y-3.5">
-      <div>
-        <label class="block text-[11px] text-[#848D99] uppercase font-bold mb-1.5"
-          >Код приглашения (например 7K9X2M)</label
-        >
+      <div class="space-y-1.5">
+        <label class="block text-[11px] text-zinc-400 font-medium">Код приглашения</label>
         <input
           type="text"
           id="join-family-code"
           placeholder="XXXXXX"
           maxlength="12"
-          class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-white/30 text-white rounded-xl p-3 outline-none text-sm uppercase tracking-wider font-mono transition-colors"
+          class="w-full bg-[#000000] border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-zinc-600 focus:border-white/30 outline-none uppercase tracking-widest font-mono transition-colors"
         />
       </div>
 
-      <div class="flex gap-2.5 pt-2">
+      <p class="text-[11px] text-zinc-500 leading-normal">
+        Введите 6-значный код, который отображается в профиле создателя семейного бюджета.
+      </p>
+
+      <div class="flex gap-2 pt-2">
         <button
           type="button"
           onclick="closeJoinFamilyModal()"
-          class="flex-1 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 py-3 rounded-xl text-xs font-semibold cursor-pointer transition-colors"
+          class="flex-1 py-2 px-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border border-white/[0.06] text-xs font-semibold cursor-pointer transition-colors"
         >
           Отмена
         </button>
@@ -43,9 +57,9 @@
           type="button"
           id="join-family-submit-btn"
           onclick="submitJoinFamily()"
-          class="flex-1 bg-[#6C5DD3] hover:bg-[#5E4FC9] text-white py-3 rounded-xl text-xs font-semibold shadow-md shadow-[#6C5DD3]/25 active:scale-95 cursor-pointer transition-all flex items-center justify-center gap-1.5"
+          class="flex-1 py-2 px-3 rounded-xl bg-white text-zinc-950 hover:bg-zinc-200 active:scale-95 text-xs font-semibold shadow-sm cursor-pointer transition-all flex items-center justify-center gap-1.5"
         >
-          <i data-lucide="link-2" class="w-4 h-4"></i>
+          <i data-lucide="link-2" class="w-3.5 h-3.5"></i>
           <span>Присоединиться</span>
         </button>
       </div>

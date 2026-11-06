@@ -551,7 +551,9 @@ function openProfileModal() {
       user.providerData.some(p => p && p.providerId === 'google.com');
     typeEl.textContent = isGoogle
       ? `Google (${user.email})`
-      : `Логин: ${user.email?.includes('@budget.local') ? user.email.replace('@budget.local', '') : user.email}`;
+      : user.email?.includes('@budget.local')
+        ? user.email.replace('@budget.local', '')
+        : user.email;
   }
 
   const isNative =
@@ -1009,36 +1011,32 @@ function renderFamilySettingsUI() {
         <div class="flex items-center justify-between p-2.5 rounded-xl bg-[#0E1016] border border-white/[0.04]">
           <div class="flex items-center gap-3 min-w-0">
             ${getAvatarHtml(m.avatarId || 'user', 'w-8 h-8', 'w-4 h-4')}
-            <div class="min-w-0">
-              <span class="text-sm font-medium text-white flex items-center gap-1.5 truncate">
-                ${escapeHtml(m.name || 'Пользователь')}
-                ${isMe ? '<span class="text-[10px] text-zinc-300 font-semibold bg-white/10 px-1.5 py-0.5 rounded">Вы</span>' : ''}
-              </span>
-              <span class="text-[11px] text-zinc-500 block truncate">${isMemOwner ? 'Владелец бюджета' : 'Участник семьи'}</span>
-            </div>
+            <span class="text-sm font-medium text-white flex items-center gap-1.5 truncate">
+              ${escapeHtml(m.name || 'Пользователь')}
+              ${isMe ? '<span class="text-[9px] text-zinc-400 font-medium bg-white/[0.06] border border-white/[0.06] px-1.5 py-[1px] rounded leading-none inline-flex items-center">Вы</span>' : ''}
+            </span>
           </div>
-          <span class="text-xs px-2 py-0.5 rounded-full ${isMemOwner ? 'bg-white/10 text-white border border-white/10' : 'bg-white/5 text-zinc-400 border border-white/[0.06]'} font-medium whitespace-nowrap flex-shrink-0">
-            ${isMemOwner ? 'Создатель' : 'Доступ'}
-          </span>
+          ${
+            isMemOwner
+              ? `<span class="text-xs px-2 py-0.5 rounded-full bg-white/10 text-white border border-white/10 font-medium whitespace-nowrap flex-shrink-0">
+            Создатель
+          </span>`
+              : ''
+          }
         </div>
       `;
     });
 
     container.innerHTML = `
       <div class="p-4 rounded-2xl bg-[#12151C] border border-white/[0.06] space-y-3.5">
-        <div class="flex items-center justify-between gap-3">
-          <div class="flex items-center gap-2.5 min-w-0 flex-1">
-            <div class="w-8 h-8 rounded-xl bg-white/[0.04] border border-white/[0.06] text-white flex items-center justify-center flex-shrink-0">
-              <i data-lucide="users" class="w-4 h-4"></i>
-            </div>
-            <div class="min-w-0 flex-1">
-              <h4 class="text-sm font-bold text-white truncate">${escapeHtml(family.name || 'Семейный бюджет')}</h4>
-              <p class="text-[11px] text-zinc-500 truncate">Общие транзакции, бюджет и накопления</p>
-            </div>
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.06] text-white flex items-center justify-center flex-shrink-0">
+            <i data-lucide="users" class="w-5 h-5"></i>
           </div>
-          <span class="px-2 py-0.5 rounded-full bg-white/[0.04] text-zinc-300 text-[11px] font-mono border border-white/[0.06] whitespace-nowrap flex-shrink-0 select-none inline-flex items-center justify-center">
-            ${members.length}&nbsp;уч.
-          </span>
+          <div class="min-w-0 flex-1">
+            <h4 class="text-sm font-bold text-white truncate">${escapeHtml(family.name || 'Семейный бюджет')}</h4>
+            <p class="text-[11px] text-zinc-500 truncate">Общие транзакции, бюджет и накопления</p>
+          </div>
         </div>
 
         <!-- Код приглашения -->
@@ -1055,7 +1053,7 @@ function renderFamilySettingsUI() {
 
         <!-- Список участников -->
         <div class="space-y-1.5">
-          <span class="text-[11px] text-zinc-500 font-semibold px-1">Участники с доступом:</span>
+          <span class="text-[11px] text-zinc-500 font-semibold px-1">Участники (${members.length})</span>
           ${membersHtml}
         </div>
 
@@ -1074,7 +1072,6 @@ function renderFamilySettingsUI() {
             </button>
           `
           }
-          <span class="text-[11px] text-zinc-600 font-mono">Синхронизация вкл.</span>
         </div>
       </div>
     `;

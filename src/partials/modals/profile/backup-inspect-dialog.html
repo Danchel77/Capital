@@ -1,28 +1,26 @@
 <!-- МОДАЛЬНОЕ ОКНО: ДЕТАЛЬНЫЙ ПРОСМОТР И ВЫБОР ЭЛЕМЕНТОВ ДЛЯ ИМПОРТА -->
 <div
   id="backup-inspect-dialog"
-  class="fixed inset-0 bg-black/80 z-[170] hidden flex flex-col items-center justify-center p-3 sm:p-4 backdrop-blur-md animate-fade-in"
+  class="fixed inset-0 bg-black/90 z-[170] hidden flex flex-col items-center justify-center p-3 sm:p-4 backdrop-blur-md animate-fade-in"
   onclick="if (event.target === this) closeBackupInspectModal();"
 >
   <div
-    class="w-full max-w-lg bg-[#181B24] border border-[rgba(255,255,255,0.08)] rounded-3xl p-4 sm:p-5 shadow-2xl flex flex-col max-h-[85vh] my-auto"
+    class="w-full max-w-lg bg-[#0E1016] border border-white/[0.06] rounded-3xl p-5 shadow-2xl flex flex-col max-h-[85vh] my-auto"
   >
     <!-- Заголовок -->
-    <div
-      class="flex items-center justify-between mb-3 px-1 pb-2 border-b border-[rgba(255,255,255,0.06)]"
-    >
+    <div class="flex items-center justify-between mb-4 pb-3 border-b border-white/[0.06]">
       <div class="flex items-center gap-2.5 min-w-0">
         <div
           id="backup-inspect-icon-wrap"
-          class="w-9 h-9 rounded-2xl bg-[#6C5DD3]/15 text-[#8C7DFF] flex items-center justify-center flex-shrink-0"
+          class="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.06] text-white flex items-center justify-center flex-shrink-0"
         >
           <i id="backup-inspect-icon" data-lucide="arrow-left-right" class="w-5 h-5"></i>
         </div>
         <div class="min-w-0">
-          <h3 id="backup-inspect-title" class="text-base sm:text-lg font-bold text-white truncate">
+          <h3 id="backup-inspect-title" class="text-base font-bold text-white truncate">
             Просмотр операций
           </h3>
-          <p id="backup-inspect-subtitle" class="text-xs text-[#848D99] truncate">
+          <p id="backup-inspect-subtitle" class="text-xs text-zinc-500 truncate mt-0.5">
             Отметьте записи для добавления в базу
           </p>
         </div>
@@ -30,7 +28,7 @@
       <button
         type="button"
         onclick="closeBackupInspectModal()"
-        class="w-8 h-8 rounded-full bg-[#212430] hover:bg-[#2A2D3C] text-gray-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors"
+        class="w-8 h-8 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] active:scale-95 text-zinc-400 hover:text-white border border-white/[0.06] flex items-center justify-center cursor-pointer transition-all flex-shrink-0"
         title="Закрыть"
       >
         <i data-lucide="x" class="w-4 h-4"></i>
@@ -38,14 +36,14 @@
     </div>
 
     <!-- Панель фильтрации и переключения выбора -->
-    <div class="flex items-center justify-between gap-2 mb-3 px-1 flex-wrap">
+    <div class="flex items-center justify-between gap-2 mb-3 flex-wrap">
       <!-- Табы фильтрации -->
-      <div class="flex bg-[#12151C] p-1 rounded-xl border border-[rgba(255,255,255,0.06)] text-xs">
+      <div class="flex bg-[#000000] p-1 rounded-xl border border-white/[0.06] text-xs font-medium">
         <button
           id="backup-inspect-filter-all"
           type="button"
           onclick="setBackupInspectFilter('all')"
-          class="px-2.5 py-1 rounded-lg font-medium transition-colors bg-white/10 text-white cursor-pointer"
+          class="px-2.5 py-1 rounded-lg transition-colors bg-white/10 text-white cursor-pointer"
         >
           Все (<span id="inspect-count-all">0</span>)
         </button>
@@ -53,7 +51,7 @@
           id="backup-inspect-filter-new"
           type="button"
           onclick="setBackupInspectFilter('new')"
-          class="px-2.5 py-1 rounded-lg font-medium transition-colors text-gray-400 hover:text-gray-200 cursor-pointer"
+          class="px-2.5 py-1 rounded-lg transition-colors text-zinc-400 hover:text-white cursor-pointer"
         >
           Новые (<span id="inspect-count-new">0</span>)
         </button>
@@ -61,7 +59,7 @@
           id="backup-inspect-filter-dup"
           type="button"
           onclick="setBackupInspectFilter('dup')"
-          class="px-2.5 py-1 rounded-lg font-medium transition-colors text-gray-400 hover:text-gray-200 cursor-pointer"
+          class="px-2.5 py-1 rounded-lg transition-colors text-zinc-400 hover:text-white cursor-pointer"
         >
           Дубликаты (<span id="inspect-count-dup">0</span>)
         </button>
@@ -72,15 +70,15 @@
         type="button"
         id="backup-inspect-toggle-all-btn"
         onclick="toggleBackupInspectAll()"
-        class="h-7 bg-[#12151C] hover:bg-[#212430] text-gray-200 hover:text-white border border-[rgba(255,255,255,0.08)] hover:border-[#727cff]/40 text-[11px] font-medium rounded-xl px-2.5 flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-sm"
+        class="h-7 bg-[#000000] hover:bg-white/[0.04] text-zinc-300 hover:text-white border border-white/[0.08] text-[11px] font-medium rounded-xl px-2.5 flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95"
         title="Выбрать все / Снять выделение"
       >
         <i
           id="backup-inspect-toggle-all-icon"
           data-lucide="check-check"
-          class="w-3.5 h-3.5 text-[#727cff] flex-shrink-0"
+          class="w-3.5 h-3.5 text-zinc-400 flex-shrink-0"
         ></i>
-        <span id="backup-inspect-toggle-all-label" class="font-medium">Все</span>
+        <span id="backup-inspect-toggle-all-label">Все</span>
       </button>
     </div>
 
@@ -93,11 +91,9 @@
     </div>
 
     <!-- Нижняя панель действий -->
-    <div
-      class="pt-3 mt-2 border-t border-[rgba(255,255,255,0.06)] flex items-center justify-between gap-3"
-    >
-      <div class="text-xs text-[#848D99]">
-        Выбрано для импорта:
+    <div class="pt-3 mt-2 border-t border-white/[0.06] flex items-center justify-between gap-3">
+      <div class="text-xs text-zinc-400">
+        Выбрано:
         <strong id="backup-inspect-selected-summary" class="text-emerald-400 font-semibold"
           >0</strong
         >
@@ -105,7 +101,7 @@
       <button
         type="button"
         onclick="closeBackupInspectModal()"
-        class="py-2 px-4 rounded-xl bg-[#6C5DD3] hover:bg-[#5E4FC9] text-white font-semibold text-xs sm:text-sm cursor-pointer transition-all active:scale-95 shadow-md shadow-[#6C5DD3]/25 flex items-center gap-1.5"
+        class="py-2 px-4 rounded-xl bg-white text-zinc-950 hover:bg-zinc-200 font-semibold text-xs cursor-pointer transition-all active:scale-95 shadow-sm flex items-center gap-1.5"
       >
         <i data-lucide="check" class="w-4 h-4"></i>
         <span>Готово</span>

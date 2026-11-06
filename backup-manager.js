@@ -48,19 +48,19 @@ function switchBackupTab(tab) {
   if (tab === 'export') {
     exportPane?.classList.remove('hidden');
     importPane?.classList.add('hidden');
-    exportTabBtn?.classList.add('bg-[#6C5DD3]', 'text-white', 'shadow-sm');
-    exportTabBtn?.classList.remove('text-gray-400', 'hover:text-gray-200');
-    importTabBtn?.classList.remove('bg-[#6C5DD3]', 'text-white', 'shadow-sm');
-    importTabBtn?.classList.add('text-gray-400', 'hover:text-gray-200');
+    exportTabBtn?.classList.add('bg-white', 'text-zinc-950', 'shadow-sm');
+    exportTabBtn?.classList.remove('text-zinc-400', 'hover:text-white');
+    importTabBtn?.classList.remove('bg-white', 'text-zinc-950', 'shadow-sm');
+    importTabBtn?.classList.add('text-zinc-400', 'hover:text-white');
     updateExportCounters();
     updateBackupExportToggleAllButton();
   } else {
     exportPane?.classList.add('hidden');
     importPane?.classList.remove('hidden');
-    importTabBtn?.classList.add('bg-[#6C5DD3]', 'text-white', 'shadow-sm');
-    importTabBtn?.classList.remove('text-gray-400', 'hover:text-gray-200');
-    exportTabBtn?.classList.remove('bg-[#6C5DD3]', 'text-white', 'shadow-sm');
-    exportTabBtn?.classList.add('text-gray-400', 'hover:text-gray-200');
+    importTabBtn?.classList.add('bg-white', 'text-zinc-950', 'shadow-sm');
+    importTabBtn?.classList.remove('text-zinc-400', 'hover:text-white');
+    exportTabBtn?.classList.remove('bg-white', 'text-zinc-950', 'shadow-sm');
+    exportTabBtn?.classList.add('text-zinc-400', 'hover:text-white');
 
     if (currentParsedBackup) {
       updateImportAnalysis();
@@ -376,7 +376,7 @@ function handleBackupFileDrop(event) {
   event.stopPropagation();
 
   const zone = document.getElementById('backup-dropzone');
-  if (zone) zone.classList.remove('border-[#6C5DD3]', 'bg-[#6C5DD3]/10');
+  if (zone) zone.classList.remove('border-white/50', 'bg-white/[0.04]');
 
   if (event.dataTransfer?.files?.length > 0) {
     processSelectedBackupFile(event.dataTransfer.files[0]);
@@ -387,14 +387,14 @@ function handleBackupDragOver(event) {
   event.preventDefault();
   event.stopPropagation();
   const zone = document.getElementById('backup-dropzone');
-  if (zone) zone.classList.add('border-[#6C5DD3]', 'bg-[#6C5DD3]/10');
+  if (zone) zone.classList.add('border-white/50', 'bg-white/[0.04]');
 }
 
 function handleBackupDragLeave(event) {
   event.preventDefault();
   event.stopPropagation();
   const zone = document.getElementById('backup-dropzone');
-  if (zone) zone.classList.remove('border-[#6C5DD3]', 'bg-[#6C5DD3]/10');
+  if (zone) zone.classList.remove('border-white/50', 'bg-white/[0.04]');
 }
 
 /**
@@ -727,7 +727,7 @@ const SECTION_CONFIGS = {
     title: 'Просмотр операций',
     subtitle: 'Выберите транзакции для импорта в историю',
     icon: 'arrow-left-right',
-    iconWrapClass: 'bg-[#6C5DD3]/15 text-[#8C7DFF]',
+    iconWrapClass: 'bg-sky-500/10 text-sky-400 border border-sky-500/20',
   },
   dep: {
     title: 'Просмотр вкладов и счетов',
@@ -1016,7 +1016,7 @@ function renderInspectItemRow(secKey, item, actualIndex) {
 
     case 'rules': {
       topRowLeft = `<span class="text-xs font-semibold text-gray-200 break-words">«${escapeHtml(raw.pattern || '')}»</span>`;
-      topRowRight = `<span class="text-[11px] font-medium text-[#8C7DFF] bg-[#6C5DD3]/15 border border-[#6C5DD3]/25 px-2 py-0.5 rounded-lg flex-shrink-0">${escapeHtml(raw.category || 'Категория')}</span>`;
+      topRowRight = `<span class="text-[11px] font-medium text-zinc-300 bg-white/[0.06] border border-white/[0.08] px-2 py-0.5 rounded-lg flex-shrink-0">${escapeHtml(raw.category || 'Категория')}</span>`;
       bottomRowLeft = `<span class="text-[11px] text-[#848D99]">Правило автокатегоризации</span>`;
       break;
     }
@@ -1028,11 +1028,11 @@ function renderInspectItemRow(secKey, item, actualIndex) {
   }
 
   return `
-    <div class="flex items-center gap-3 p-3 rounded-2xl bg-[#12151C] border ${item.selected ? 'border-[#6C5DD3]/30 bg-[#6C5DD3]/[0.04]' : 'border-[rgba(255,255,255,0.05)]'} hover:border-white/10 transition-colors">
+    <div class="flex items-center gap-3 p-3 rounded-2xl bg-[#0E1016] border ${item.selected ? 'border-white/20 bg-white/[0.02]' : 'border-white/[0.04]'} hover:border-white/10 transition-colors">
       <input type="checkbox" 
              ${isChecked} 
              onchange="onInspectItemCheckboxChange(${actualIndex}, this.checked)" 
-             class="w-4 h-4 rounded border-gray-600 accent-[#6C5DD3] bg-[#212430] cursor-pointer flex-shrink-0">
+             class="w-4 h-4 rounded border-zinc-700 accent-white bg-[#000000] cursor-pointer flex-shrink-0">
       <div class="flex-1 min-w-0 flex flex-col gap-1 cursor-pointer" onclick="toggleInspectItemByRowClick(${actualIndex})">
         <div class="flex items-center justify-between gap-2 min-w-0">
           <div class="min-w-0 flex-1 pr-1">${topRowLeft}</div>

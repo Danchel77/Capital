@@ -382,43 +382,43 @@ function openAppInstallOptionsModal() {
         window.navigator.standalone === true;
 
   modal.innerHTML = `
-    <div class="relative bg-[#161822] border border-white/10 rounded-[28px] p-5 sm:p-6 max-w-sm w-full shadow-2xl space-y-3.5 animate-in fade-in zoom-in duration-200">
+    <div class="relative bg-[#0E1016] border border-white/[0.06] rounded-3xl p-5 sm:p-6 max-w-sm w-full shadow-2xl space-y-3.5 animate-in fade-in zoom-in duration-200">
       <!-- Шапка -->
-      <div class="flex items-center justify-between pb-2.5 border-b border-white/5">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-2xl bg-white/[0.05] border border-white/10 flex items-center justify-center text-[#8C7DFF]">
+      <div class="flex items-center justify-between pb-3 border-b border-white/[0.06]">
+        <div class="flex items-center gap-2.5">
+          <div class="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-white flex-shrink-0">
             <i data-lucide="smartphone" class="w-5 h-5"></i>
           </div>
           <div>
             <h3 class="text-base font-bold text-white leading-tight">Установка приложения</h3>
-            <span class="text-xs text-gray-400">Выберите способ установки</span>
+            <span class="text-xs text-zinc-500 mt-0.5 block">Выберите способ установки</span>
           </div>
         </div>
-        <button type="button" onclick="closeAppInstallOptionsModal()" class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-all cursor-pointer">
+        <button type="button" onclick="closeAppInstallOptionsModal()" class="w-8 h-8 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] active:scale-95 text-zinc-400 hover:text-white border border-white/[0.06] flex items-center justify-center transition-all cursor-pointer">
           <i data-lucide="x" class="w-4 h-4"></i>
         </button>
       </div>
 
       <div class="space-y-2.5 pt-0.5">
         <!-- Вариант 1: Скачать приложение -->
-        <div class="bg-[#1B1E2B] border border-white/[0.08] rounded-2xl p-4 transition-colors">
+        <div class="bg-[#000000] border border-white/[0.06] rounded-2xl p-4 transition-colors">
           <div class="flex items-start gap-3">
-            <div class="w-8 h-8 rounded-xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center text-[#8C7DFF] flex-shrink-0 mt-0.5">
+            <div class="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 flex-shrink-0 mt-0.5">
               <i data-lucide="download" class="w-4 h-4"></i>
             </div>
             <div class="flex-1 min-w-0">
-              <div class="flex items-center gap-1.5">
+              <div class="flex items-center gap-2">
                 <h4 class="text-sm font-semibold text-white">Скачать приложение</h4>
-                <span class="text-[9px] font-bold bg-[#6C5DD3]/25 text-[#A594FD] border border-[#6C5DD3]/40 px-1.5 py-0.2 rounded-full">Android</span>
+                <span class="text-[10px] font-semibold bg-white/[0.06] text-zinc-300 border border-white/[0.08] px-2 py-0.5 rounded-md">Android</span>
               </div>
-              <p class="text-xs text-gray-300 leading-relaxed mt-1">
-                Полнофункциональная версия: <strong class="text-white">авто-внесение трат по банковским пушам</strong> прямо после оплаты и живые <strong class="text-white">виджеты на рабочем столе</strong>
+              <p class="text-xs text-zinc-400 leading-relaxed mt-1">
+                Полнофункциональная версия: <strong class="text-white">авто-внесение трат по банковским пушам</strong> прямо после оплаты
               </p>
             </div>
           </div>
 
           <div id="apk-action-container" class="mt-3.5">
-            <button type="button" onclick="startApkDownloadWithHelp()" class="w-full py-2.5 px-4 rounded-xl bg-[#6C5DD3] hover:bg-[#5b4ec2] active:scale-[0.98] text-white text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm">
+            <button type="button" onclick="startApkDownloadWithHelp()" class="w-full py-2.5 px-4 rounded-xl bg-white text-zinc-950 hover:bg-zinc-200 active:scale-[0.98] text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm">
               <i data-lucide="download" class="w-4 h-4"></i>
               <span>Скачать</span>
             </button>
@@ -429,21 +429,21 @@ function openAppInstallOptionsModal() {
           !isPwa && !isNative
             ? `
         <!-- Вариант 2: Добавить на главный экран -->
-        <div class="bg-[#1B1E2B] border border-white/[0.08] rounded-2xl p-4 transition-colors">
+        <div class="bg-[#000000] border border-white/[0.06] rounded-2xl p-4 transition-colors">
           <div class="flex items-start gap-3">
-            <div class="w-8 h-8 rounded-xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center text-sky-400 flex-shrink-0 mt-0.5">
+            <div class="w-8 h-8 rounded-lg bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 flex-shrink-0 mt-0.5">
               <i data-lucide="layout-grid" class="w-4 h-4"></i>
             </div>
             <div class="flex-1 min-w-0">
               <h4 class="text-sm font-semibold text-white">Добавить на главный экран</h4>
-              <p class="text-xs text-gray-400 leading-relaxed mt-0.5">
-                Быстрый запуск прямо с рабочего стола телефона без загрузки установочного файла
+              <p class="text-xs text-zinc-400 leading-relaxed mt-0.5">
+                Быстрый запуск прямо с экрана телефона без отдельного установочного файла
               </p>
             </div>
           </div>
 
           <div class="mt-3.5">
-            <button type="button" onclick="triggerPwaInstall();" class="w-full py-2.5 px-4 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] active:scale-[0.98] text-white text-xs font-semibold border border-white/[0.08] flex items-center justify-center gap-2 transition-all cursor-pointer">
+            <button type="button" onclick="triggerPwaInstall();" class="w-full py-2.5 px-4 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] active:scale-[0.98] text-white text-xs font-semibold border border-white/[0.06] flex items-center justify-center gap-2 transition-all cursor-pointer">
               <i data-lucide="plus" class="w-4 h-4"></i>
               <span>Добавить на экран</span>
             </button>
@@ -455,7 +455,7 @@ function openAppInstallOptionsModal() {
       </div>
 
       <div class="pt-1">
-        <button type="button" onclick="closeAppInstallOptionsModal()" class="w-full py-1 text-gray-400 hover:text-white font-medium text-xs text-center transition-colors cursor-pointer">
+        <button type="button" onclick="closeAppInstallOptionsModal()" class="w-full py-2 px-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-zinc-400 hover:text-white border border-white/[0.06] text-xs font-medium active:scale-95 transition-colors cursor-pointer text-center">
           Закрыть
         </button>
       </div>
