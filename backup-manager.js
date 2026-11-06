@@ -48,19 +48,19 @@ function switchBackupTab(tab) {
   if (tab === 'export') {
     exportPane?.classList.remove('hidden');
     importPane?.classList.add('hidden');
-    exportTabBtn?.classList.add('bg-white', 'text-zinc-950', 'shadow-sm');
-    exportTabBtn?.classList.remove('text-zinc-400', 'hover:text-white');
-    importTabBtn?.classList.remove('bg-white', 'text-zinc-950', 'shadow-sm');
-    importTabBtn?.classList.add('text-zinc-400', 'hover:text-white');
+    exportTabBtn?.classList.add('bg-white/10', 'text-white', 'border-white/[0.08]', 'shadow-sm');
+    exportTabBtn?.classList.remove('text-zinc-400', 'hover:text-white', 'border-transparent');
+    importTabBtn?.classList.remove('bg-white/10', 'text-white', 'border-white/[0.08]', 'shadow-sm');
+    importTabBtn?.classList.add('text-zinc-400', 'hover:text-white', 'border-transparent');
     updateExportCounters();
     updateBackupExportToggleAllButton();
   } else {
     exportPane?.classList.add('hidden');
     importPane?.classList.remove('hidden');
-    importTabBtn?.classList.add('bg-white', 'text-zinc-950', 'shadow-sm');
-    importTabBtn?.classList.remove('text-zinc-400', 'hover:text-white');
-    exportTabBtn?.classList.remove('bg-white', 'text-zinc-950', 'shadow-sm');
-    exportTabBtn?.classList.add('text-zinc-400', 'hover:text-white');
+    importTabBtn?.classList.add('bg-white/10', 'text-white', 'border-white/[0.08]', 'shadow-sm');
+    importTabBtn?.classList.remove('text-zinc-400', 'hover:text-white', 'border-transparent');
+    exportTabBtn?.classList.remove('bg-white/10', 'text-white', 'border-white/[0.08]', 'shadow-sm');
+    exportTabBtn?.classList.add('text-zinc-400', 'hover:text-white', 'border-transparent');
 
     if (currentParsedBackup) {
       updateImportAnalysis();
@@ -88,17 +88,47 @@ function updateExportCounters() {
   const billsCount = Cache?.calendarBills?.length || 0;
   const rulesCount = (Cache?.categoryRules || []).filter(r => !r.isSystem).length;
 
-  const setCounter = (id, count, text) => {
+  const setCounter = (id, count, one, few, many, chkId) => {
     const el = document.getElementById(id);
-    if (el) el.textContent = `${count} ${text}`;
+    if (el) {
+      const fullText =
+        typeof formatPlural === 'function'
+          ? formatPlural(count, one, few, many)
+          : `${count} ${many}`;
+      const word = fullText.slice(String(count).length).trim();
+      el.innerHTML = `<span class="font-mono tabular-nums text-zinc-300" style="font-family: 'JetBrains Mono', monospace;">${count}</span> <span class="text-zinc-500 font-sans">${word}</span>`;
+    }
+    if (chkId) {
+      const chk = document.getElementById(chkId);
+      const row = chk?.closest('label');
+      if (chk) {
+        if (count === 0) {
+          chk.checked = false;
+          chk.disabled = true;
+          row?.classList.add('opacity-40', 'pointer-events-none');
+          row?.classList.remove('cursor-pointer', 'hover:bg-white/[0.02]');
+        } else {
+          chk.disabled = false;
+          row?.classList.remove('opacity-40', 'pointer-events-none');
+          row?.classList.add('cursor-pointer', 'hover:bg-white/[0.02]');
+        }
+      }
+    }
   };
 
-  setCounter('export-count-tx', txCount, 'записей');
-  setCounter('export-count-dep', depCount, 'счетов');
-  setCounter('export-count-broker', brokerCount, 'операций');
-  setCounter('export-count-goals', goalsCount, 'целей');
-  setCounter('export-count-bills', billsCount, 'платежей');
-  setCounter('export-count-rules', rulesCount, 'пользовательских правил');
+  setCounter('export-count-tx', txCount, 'запись', 'записи', 'записей', 'chk-exp-tx');
+  setCounter('export-count-dep', depCount, 'счет', 'счета', 'счетов', 'chk-exp-dep');
+  setCounter(
+    'export-count-broker',
+    brokerCount,
+    'операция',
+    'операции',
+    'операций',
+    'chk-exp-broker'
+  );
+  setCounter('export-count-goals', goalsCount, 'цель', 'цели', 'целей', 'chk-exp-goals');
+  setCounter('export-count-bills', billsCount, 'платеж', 'платежа', 'платежей', 'chk-exp-bills');
+  setCounter('export-count-rules', rulesCount, 'правило', 'правила', 'правил', 'chk-exp-rules');
 }
 
 /**
@@ -137,16 +167,16 @@ function updateBackupExportToggleAllButton() {
 
   const allSelected = checkboxes.every(chk => chk.checked);
   if (allSelected) {
-    label.innerText = 'Снять';
+    label.innerText = 'Снять все';
     if (icon) {
       icon.setAttribute('data-lucide', 'square');
-      icon.className = 'w-3.5 h-3.5 text-gray-400 flex-shrink-0';
+      icon.className = 'w-3.5 h-3.5 text-zinc-400 flex-shrink-0';
     }
   } else {
-    label.innerText = 'Все';
+    label.innerText = 'Выбрать все';
     if (icon) {
       icon.setAttribute('data-lucide', 'check-check');
-      icon.className = 'w-3.5 h-3.5 text-[#727cff] flex-shrink-0';
+      icon.className = 'w-3.5 h-3.5 text-white flex-shrink-0';
     }
   }
 

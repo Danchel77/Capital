@@ -814,7 +814,7 @@ async function saveProfileInfo(showToastSuccess = true) {
 // ==========================================
 
 function openChangeLoginModal() {
-  const user = auth.currentUser;
+  const user = auth?.currentUser || window.currentUser;
   if (!user) return;
 
   if (typeof lockBodyScroll === 'function') lockBodyScroll();
@@ -994,7 +994,7 @@ function renderFamilySettingsUI() {
   const container = document.getElementById('family-section-container');
   if (!container) return;
 
-  const user = auth.currentUser;
+  const user = auth?.currentUser || window.currentUser;
   if (!user) return;
 
   const family = Cache?.family;
@@ -1008,17 +1008,17 @@ function renderFamilySettingsUI() {
       const isMe = m.uid === user.uid;
       const isMemOwner = m.role === 'owner' || m.uid === family.ownerUid;
       membersHtml += `
-        <div class="flex items-center justify-between p-2.5 rounded-xl bg-[#0E1016] border border-white/[0.04]">
-          <div class="flex items-center gap-3 min-w-0">
+        <div class="flex items-center justify-between py-2.5">
+          <div class="flex items-center gap-2.5 min-w-0">
             ${getAvatarHtml(m.avatarId || 'user', 'w-8 h-8', 'w-4 h-4')}
-            <span class="text-sm font-medium text-white flex items-center gap-1.5 truncate">
+            <span class="text-xs font-medium text-white truncate flex items-center gap-1.5">
               ${escapeHtml(m.name || 'Пользователь')}
               ${isMe ? '<span class="text-[9px] text-zinc-400 font-medium bg-white/[0.06] border border-white/[0.06] px-1.5 py-[1px] rounded leading-none inline-flex items-center">Вы</span>' : ''}
             </span>
           </div>
           ${
             isMemOwner
-              ? `<span class="text-xs px-2 py-0.5 rounded-full bg-white/10 text-white border border-white/10 font-medium whitespace-nowrap flex-shrink-0">
+              ? `<span class="text-[11px] text-zinc-400 font-medium whitespace-nowrap flex-shrink-0">
             Создатель
           </span>`
               : ''
@@ -1028,33 +1028,28 @@ function renderFamilySettingsUI() {
     });
 
     container.innerHTML = `
-      <div class="p-4 rounded-2xl bg-[#12151C] border border-white/[0.06] space-y-3.5">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.06] text-white flex items-center justify-center flex-shrink-0">
-            <i data-lucide="users" class="w-5 h-5"></i>
+      <div class="p-4 rounded-2xl bg-[#0E1016] border border-white/[0.06] space-y-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <div class="w-8 h-8 rounded-xl bg-white/[0.04] border border-white/[0.06] text-white flex items-center justify-center flex-shrink-0">
+              <i data-lucide="users" class="w-4 h-4"></i>
+            </div>
+            <h4 class="text-xs font-bold text-white truncate">${escapeHtml(family.name || 'Семейный бюджет')}</h4>
           </div>
-          <div class="min-w-0 flex-1">
-            <h4 class="text-sm font-bold text-white truncate">${escapeHtml(family.name || 'Семейный бюджет')}</h4>
-            <p class="text-[11px] text-zinc-500 truncate">Общие транзакции, бюджет и накопления</p>
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <span class="text-xs font-mono font-medium text-white tracking-wider select-all">${escapeHtml(family.code || '')}</span>
+            <button type="button" onclick="copyFamilyInviteCode('${family.code}')" class="w-7 h-7 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-400 hover:text-white border border-white/[0.06] flex items-center justify-center cursor-pointer transition-colors active:scale-95" title="Скопировать код">
+              <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+            </button>
           </div>
-        </div>
-
-        <!-- Код приглашения -->
-        <div class="p-3 rounded-xl bg-[#0E1016] border border-white/[0.06] flex items-center justify-between gap-3">
-          <div>
-            <span class="text-[10px] text-zinc-500 uppercase font-bold tracking-wider block mb-0.5">Код для подключения</span>
-            <span class="text-sm font-mono font-bold text-white tracking-widest select-all">${escapeHtml(family.code || '')}</span>
-          </div>
-          <button type="button" onclick="copyFamilyInviteCode('${family.code}')" class="px-3 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-white text-xs font-semibold border border-white/[0.08] flex items-center gap-1.5 cursor-pointer transition-colors active:scale-95">
-            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
-            <span>Скопировать</span>
-          </button>
         </div>
 
         <!-- Список участников -->
-        <div class="space-y-1.5">
-          <span class="text-[11px] text-zinc-500 font-semibold px-1">Участники (${members.length})</span>
-          ${membersHtml}
+        <div class="border-t border-white/[0.06] pt-1">
+          <div class="text-[11px] text-zinc-500 font-medium py-1">Участники (${members.length})</div>
+          <div class="divide-y divide-white/[0.04]">
+            ${membersHtml}
+          </div>
         </div>
 
         <!-- Действия -->
@@ -1062,13 +1057,13 @@ function renderFamilySettingsUI() {
           ${
             isOwner
               ? `
-            <button type="button" onclick="deleteFamilyGroup()" class="text-xs text-rose-400/80 hover:text-rose-400 transition-colors cursor-pointer flex items-center gap-1">
-              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Удалить группу
+            <button type="button" onclick="deleteFamilyGroup()" class="text-xs text-rose-400/80 hover:text-rose-400 transition-colors cursor-pointer">
+              Удалить группу
             </button>
           `
               : `
-            <button type="button" onclick="leaveFamilyGroup()" class="text-xs text-rose-400/80 hover:text-rose-400 transition-colors cursor-pointer flex items-center gap-1">
-              <i data-lucide="log-out" class="w-3.5 h-3.5"></i> Выйти из семьи
+            <button type="button" onclick="leaveFamilyGroup()" class="text-xs text-rose-400/80 hover:text-rose-400 transition-colors cursor-pointer">
+              Выйти из семьи
             </button>
           `
           }
@@ -1646,7 +1641,7 @@ function deleteFamilyGroup() {
 // ==========================================
 
 function openDeleteAccountModal() {
-  const user = auth.currentUser;
+  const user = auth?.currentUser || window.currentUser;
   if (!user) return;
 
   const isGoogle =

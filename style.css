@@ -42,6 +42,12 @@ body {
   font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
 }
+.font-mono {
+  font-family:
+    'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono', ui-monospace, monospace !important;
+  font-variant-numeric: tabular-nums !important;
+  font-feature-settings: 'tnum' 1 !important;
+}
 html.modal-open {
   overflow: hidden !important;
   overflow-y: hidden !important;

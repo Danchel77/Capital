@@ -212,6 +212,20 @@
       },
       { id: 'bill-2', name: 'Интернет и связь', amount: 2500, day: 18, category: 'Связь' },
     ],
+    family: {
+      id: 'mock-family-1',
+      name: 'Семья Волковых',
+      code: 'CAP-789X',
+      ownerUid: 'mock-user-preview-123',
+      members: [
+        { uid: 'mock-user-preview-123', name: 'Алексей', avatarId: 'user', role: 'owner' },
+        { uid: 'mock-user-preview-456', name: 'Мария', avatarId: 'user', role: 'member' },
+      ],
+    },
+    userProfile: {
+      displayName: 'Алексей',
+      avatarId: 'user',
+    },
     broker: [],
     brokerAssets: [],
     budgetPlan: {
@@ -314,6 +328,44 @@
       }
     } else if (targetTab === 'transactions') {
       if (typeof window.renderTransactionsTab === 'function') window.renderTransactionsTab();
+    }
+
+    // Modal triggers for automated testing & screenshot previews
+    if (urlParams.get('openProfile') === '1' && typeof window.openProfileModal === 'function') {
+      window.openProfileModal();
+    }
+    if (urlParams.get('openBackup') === '1' && typeof window.openDataBackupModal === 'function') {
+      window.openDataBackupModal();
+    }
+    if (
+      urlParams.get('openChangePassword') === '1' &&
+      typeof window.openChangePasswordModal === 'function'
+    ) {
+      window.openChangePasswordModal();
+    }
+    if (
+      urlParams.get('openChangeLogin') === '1' &&
+      typeof window.openChangeLoginModal === 'function'
+    ) {
+      window.openChangeLoginModal();
+    }
+    if (
+      urlParams.get('openCreateFamily') === '1' &&
+      typeof window.openCreateFamilyModal === 'function'
+    ) {
+      window.openCreateFamilyModal();
+    }
+    if (
+      urlParams.get('openDeleteAccount') === '1' &&
+      typeof window.openDeleteAccountModal === 'function'
+    ) {
+      window.openDeleteAccountModal();
+    }
+    if (
+      urlParams.get('openAppInstall') === '1' &&
+      typeof window.openAppInstallOptionsModal === 'function'
+    ) {
+      window.openAppInstallOptionsModal();
     }
 
     // Refresh Lucide icons if available
