@@ -1,0 +1,39 @@
+<!-- Модальное окно добавления категории -->
+<div
+  id="category-dialog"
+  class="fixed inset-0 bg-black/70 z-[190] hidden flex flex-col justify-center items-center p-6 animate-fade-in"
+  onclick="if (event.target === this) closeAddCategoryDialog();"
+>
+  <div
+    class="bg-[#181B24] p-6 rounded-3xl border border-[rgba(255,255,255,0.08)] w-full max-w-xs shadow-2xl"
+  >
+    <h3 class="text-lg font-bold text-white mb-4" id="category-dialog-title">Новая категория</h3>
+    <input
+      type="text"
+      id="category-name-input"
+      placeholder="Название категории"
+      onkeydown="if (event.key === 'Enter') submitAddCategoryDialog();"
+      class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] text-white rounded-xl p-3 outline-none mb-4 text-sm focus:border-white/30 transition-colors"
+    />
+    <p class="text-xs text-gray-400 mb-2">Выберите иконку:</p>
+    <div id="category-icon-grid" class="grid grid-cols-6 gap-2 mb-4"></div>
+    <div class="flex gap-2">
+      <button
+        type="button"
+        id="category-cancel-btn"
+        onclick="closeAddCategoryDialog()"
+        class="flex-1 bg-[#212430] hover:bg-[#2A2D3C] text-white py-3 rounded-xl font-medium transition-colors cursor-pointer"
+      >
+        Отмена
+      </button>
+      <button
+        type="button"
+        id="category-save-btn"
+        onclick="submitAddCategoryDialog()"
+        class="flex-1 bg-[#6C5DD3] hover:bg-[#5E4FC9] text-white py-3 rounded-xl font-medium shadow-md shadow-[#6C5DD3]/25 transition-all active:scale-95 cursor-pointer"
+      >
+        Сохранить
+      </button>
+    </div>
+  </div>
+</div>

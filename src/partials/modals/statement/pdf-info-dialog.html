@@ -1,0 +1,141 @@
+<!-- НОВОЕ МОДАЛЬНОЕ ОКНО ИМПОРТА И СТЕЙДЖИНГА ВЫПИСОК (OBSIDIAN MINIMALIST) -->
+<div
+  id="pdf-info-dialog"
+  class="fixed inset-0 bg-black/85 z-[140] hidden flex flex-col justify-center items-center p-3.5 sm:p-4 backdrop-blur-sm animate-fade-in"
+  onclick="if (event.target === this) closePdfInfoModal();"
+>
+  <div
+    class="bg-[#0E1016] border border-white/[0.08] w-full max-w-sm sm:max-w-md rounded-3xl p-4 sm:p-5 shadow-2xl flex flex-col overflow-hidden relative max-h-[92vh]"
+  >
+    <!-- Шапка -->
+    <div
+      class="flex items-center justify-between pb-3 mb-2.5 border-b border-white/[0.06] flex-shrink-0"
+    >
+      <div class="flex items-center gap-2.5 min-w-0">
+        <div
+          class="w-8 h-8 rounded-xl bg-white/[0.05] border border-white/[0.08] text-white flex items-center justify-center flex-shrink-0"
+        >
+          <i data-lucide="file-text" class="w-4 h-4"></i>
+        </div>
+        <h3 class="font-bold text-white text-base truncate">Импорт выписки</h3>
+      </div>
+      <div class="flex items-center gap-1.5 flex-shrink-0">
+        <button
+          type="button"
+          onclick="openStatementHelpModal()"
+          class="text-xs text-zinc-400 hover:text-white flex items-center gap-1 transition-colors px-2 py-1 rounded-lg hover:bg-white/[0.05] cursor-pointer"
+          title="Инструкция как получить выписку"
+        >
+          <i data-lucide="help-circle" class="w-3.5 h-3.5 text-zinc-400"></i>
+          <span>Где взять?</span>
+        </button>
+        <button
+          type="button"
+          onclick="closePdfInfoModal()"
+          class="w-7 h-7 rounded-full bg-white/[0.05] border border-white/[0.08] text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors active:scale-95"
+          title="Закрыть"
+        >
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Описание процесса без нейрослопа -->
+    <p class="text-xs text-zinc-400 leading-snug px-0.5 mb-2.5 flex-shrink-0">
+      Выписки считываются локально на вашем устройстве.
+    </p>
+
+    <!-- Настройка: Использовать ИИ -->
+    <div
+      class="py-2 px-3 rounded-2xl bg-[#12151C] border border-white/[0.06] mb-3 flex items-center justify-between gap-3 flex-shrink-0"
+    >
+      <div class="flex items-center gap-1.5 min-w-0">
+        <span class="text-xs font-medium text-zinc-200">Использовать ИИ</span>
+        <button
+          type="button"
+          onclick="toggleStatementAiInfoTooltip(event)"
+          class="text-zinc-500 hover:text-zinc-300 transition-colors cursor-pointer p-0.5 rounded"
+          title="Зачем нужен ИИ?"
+        >
+          <i data-lucide="help-circle" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+      <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+        <input
+          type="checkbox"
+          id="statement-use-ai-toggle"
+          onchange="toggleStatementAiSetting(this.checked)"
+          class="sr-only peer"
+        />
+        <div
+          class="w-9 h-5 bg-[#2A2D3C] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-4 peer-checked:bg-[#30D158] after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all"
+        ></div>
+      </label>
+    </div>
+
+    <!-- Пояснение про ИИ (раскрывающееся по клику на ?) -->
+    <div
+      id="statement-ai-info-box"
+      class="hidden text-[11px] text-zinc-400 bg-black/50 border border-white/[0.08] rounded-xl p-2.5 mb-3 leading-relaxed flex-shrink-0 animate-fade-in"
+    >
+      ИИ очищает технические коды терминалов (например,
+      <span class="text-zinc-200 font-mono text-[10px]">T-PAY*SURF 4201</span> →
+      <span class="text-white font-medium">Surf Coffee</span>) и помогает точнее распределить
+      категории трат. Требуется API-ключ в Настройках.
+    </div>
+
+    <!-- Фаза А: Файлы еще не выбраны (пустое состояние) -->
+    <div
+      id="statement-staging-empty"
+      class="flex flex-col items-center justify-center py-7 px-4 rounded-2xl bg-[#12151C] border border-dashed border-white/15 hover:border-white/30 transition-all text-center cursor-pointer active:scale-[0.99] mb-3 group"
+      onclick="triggerPdfFileInput()"
+    >
+      <div
+        class="w-12 h-12 rounded-2xl bg-white/[0.05] border border-white/[0.08] text-zinc-300 group-hover:text-white flex items-center justify-center transition-transform group-hover:scale-105 mb-2.5"
+      >
+        <i data-lucide="files" class="w-6 h-6"></i>
+      </div>
+      <span class="text-sm font-semibold text-white mb-0.5">Выбрать PDF-выписки</span>
+      <span class="text-xs text-zinc-400 max-w-[240px]"
+        >Нажмите для выбора одного или нескольких файлов</span
+      >
+    </div>
+
+    <!-- Фаза Б: Список выбранных файлов (3-колоночная сетка) -->
+    <div id="statement-staging-wrap" class="hidden flex-col min-h-0 flex-1 overflow-hidden mb-3">
+      <div class="flex items-center justify-between px-1 mb-2 flex-shrink-0">
+        <span class="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">
+          Выбранные файлы (<span id="statement-staging-count">0</span>)
+        </span>
+        <button
+          type="button"
+          onclick="clearAllStagedFiles()"
+          class="text-[11px] text-zinc-400 hover:text-rose-400 transition-colors cursor-pointer"
+        >
+          Очистить все
+        </button>
+      </div>
+
+      <!-- Контейнер 3-колоночной сетки с прокруткой -->
+      <div
+        id="statement-staging-grid"
+        class="grid grid-cols-3 gap-2 overflow-y-auto max-h-[46vh] pr-0.5 py-0.5"
+      >
+        <!-- Карточки генерируются динамически через renderStagedFilesUI() -->
+      </div>
+    </div>
+
+    <!-- Нижняя панель действий -->
+    <div class="pt-2 border-t border-white/[0.06] flex-shrink-0">
+      <button
+        type="button"
+        id="statement-start-parse-btn"
+        onclick="startProcessingStagedFiles()"
+        class="w-full h-11 btn-primary rounded-xl text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer shadow-sm transition-all active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none"
+        disabled
+      >
+        <span id="statement-parse-btn-text">Распознать операции</span>
+      </button>
+    </div>
+  </div>
+</div>

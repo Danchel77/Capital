@@ -24,13 +24,19 @@ You operate as a **Principal Mobile Engineer & Lead Product Architect**, not a p
 
 ## 1. Commands
 
-- Run dev server: `npm run dev`
-- Verification suite: `npm run check` (runs full `eslint .` and `prettier --check .`)
+- Run dev server: `npm run dev` (starts server with auto-rebuild of `index.html` on `src/` changes)
+- Build HTML: `npm run build:html` (reassembles `index.html` from `src/` in < 15ms)
+- Verification suite: `npm run check` (runs `build:html:check`, `eslint .`, and `prettier --check .`)
 - Build & sync to Android: `npm run cap:sync` (runs `npm run build:www` and `npx cap sync android`)
 - Never manually edit or copy to `www/` (`www/` is an ephemeral build artifact ignored by git).
 
 ## 2. Hard Architectural Invariants
 
+- **HTML Architecture & Partials:** Root `index.html` is a compiled artifact. NEVER edit `index.html` directly:
+  - Source template lives in `src/index.html`.
+  - Main tab panes live in `src/partials/screens/` (`budget-tab.html`, `transactions-tab.html`, `capital-tab.html`).
+  - Modals and popovers live in `src/partials/modals/` grouped by domain (`common/`, `analytics/`, `capital/`, `transactions/`, `statement/`, `profile/`).
+  - Run `npm run build:html` to compile changes into root `index.html`.
 - **window.Cache integrity:** NEVER overwrite `window.Cache` directly (breaks UI subscriptions). Mutate inner properties.
 - **Transactions cache structure:** `Cache.transactions` is an array of month objects `[{ id: 'YYYY-MM', items: [...] }]`, NOT a flat list.
 - **Database queries:** Always use `getUserCol(tableName)` from `core.js`.

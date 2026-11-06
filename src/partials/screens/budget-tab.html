@@ -1,0 +1,277 @@
+<!-- ЭКРАН БЮДЖЕТА (ГЛАВНЫЙ ЭКРАН УПРАВЛЕНИЯ ФИНАНСАМИ) -->
+<div id="budget-tab" class="tab-pane flex flex-col gap-3.5">
+  <!-- ДАШБОРД БЮДЖЕТА -->
+  <div id="budget-dashboard" class="flex flex-col gap-3.5">
+    <!-- Чистая шапка экрана с переключением месяцев -->
+    <div class="flex items-center justify-between px-1">
+      <div class="flex items-center gap-2">
+        <button
+          type="button"
+          id="budget-prev-month-btn"
+          onclick="navigateBudgetMonth(-1)"
+          class="w-7 h-7 rounded-lg bg-[#12151C] hover:bg-white/[0.06] border border-white/[0.08] text-zinc-300 hover:text-white flex items-center justify-center transition-all cursor-pointer active:scale-95 disabled:opacity-20 disabled:cursor-not-allowed disabled:pointer-events-none"
+          title="Предыдущий месяц"
+        >
+          <i data-lucide="chevron-left" class="w-4 h-4"></i>
+        </button>
+        <h2
+          id="budget-month-label"
+          class="text-base sm:text-lg font-bold text-white tracking-tight select-none"
+        >
+          Сентябрь 2026
+        </h2>
+        <button
+          type="button"
+          id="budget-next-month-btn"
+          onclick="navigateBudgetMonth(1)"
+          class="w-7 h-7 rounded-lg bg-[#12151C] hover:bg-white/[0.06] border border-white/[0.08] text-zinc-300 hover:text-white flex items-center justify-center transition-all cursor-pointer active:scale-95 disabled:opacity-20 disabled:cursor-not-allowed disabled:pointer-events-none"
+          title="Следующий месяц"
+        >
+          <i data-lucide="chevron-right" class="w-4 h-4"></i>
+        </button>
+        <span
+          id="budget-month-status-badge"
+          class="hidden text-[10px] font-semibold px-2 py-0.5 rounded-full border leading-tight"
+        ></span>
+      </div>
+    </div>
+
+    <!-- 1. Сводная карточка месяца (2 режима: Числа / Диаграмма) -->
+    <div
+      id="budget-month-summary-card"
+      class="bg-[#0E1016] border border-white/10 rounded-2xl p-4 sm:p-5 shadow-sm relative overflow-hidden"
+    >
+      <!-- Шапка для режима Числа -->
+      <div id="month-summary-numbers-header" class="flex items-center justify-between mb-1">
+        <span
+          id="budget-month-delta-label"
+          class="text-[11px] text-zinc-400 uppercase tracking-wider font-semibold"
+          >Свободный остаток</span
+        >
+        <div class="flex items-center gap-1.5">
+          <span id="budget-month-status-pill" class="hidden">Профицит</span>
+          <button
+            id="month-summary-toggle-btn"
+            type="button"
+            onclick="toggleMonthSummaryView()"
+            class="w-7 h-7 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-zinc-300 hover:text-white flex items-center justify-center transition-all cursor-pointer active:scale-95"
+            title="Переключить вид: диаграмма / числа"
+          >
+            <i id="month-summary-toggle-icon" data-lucide="pie-chart" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Шапка для режима Диаграмма: единая строка без дублирования даты -->
+      <div
+        id="month-summary-chart-header"
+        class="hidden flex items-center justify-between pb-2 mb-2 border-b border-white/[0.06]"
+      >
+        <span
+          id="structure-title"
+          class="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider"
+          >Структура</span
+        >
+        <div class="flex items-center gap-2">
+          <div class="flex bg-[#12151C] p-0.5 rounded-lg border border-white/[0.06]">
+            <button
+              type="button"
+              id="struct-type-expense"
+              onclick="switchStructureType('Расход')"
+              class="px-2 py-0.5 text-[11px] font-semibold rounded-md bg-white/10 text-white transition-all cursor-pointer"
+            >
+              Расход
+            </button>
+            <button
+              type="button"
+              id="struct-type-income"
+              onclick="switchStructureType('Доход')"
+              class="px-2 py-0.5 text-[11px] font-medium rounded-md text-zinc-400 hover:text-white transition-all cursor-pointer"
+            >
+              Доход
+            </button>
+          </div>
+          <button
+            type="button"
+            onclick="toggleMonthSummaryView()"
+            class="w-7 h-7 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-zinc-300 hover:text-white flex items-center justify-center transition-all cursor-pointer active:scale-95"
+            title="Переключить вид: диаграмма / числа"
+          >
+            <i data-lucide="layout-list" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Empty State (когда нет операций в месяце) -->
+      <div
+        id="budget-month-empty-state"
+        class="hidden h-[96px] text-center flex flex-col items-center justify-center gap-2"
+      >
+        <p class="text-xs text-zinc-400">В этом месяце пока нет операций</p>
+        <div class="flex items-center gap-2 mt-1">
+          <button
+            type="button"
+            onclick="
+              switchTab('transactions');
+              toggleForm('tx-form-container', 'tx-submit-btn', 'Сохранить', 'tx-form', 'tx');
+            "
+            class="btn-primary px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-sm active:scale-95 cursor-pointer"
+          >
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+            <span>Операция</span>
+          </button>
+          <button
+            type="button"
+            onclick="
+              switchTab('transactions');
+              openPdfInfoModal();
+            "
+            class="btn-secondary px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 active:scale-95 cursor-pointer"
+          >
+            <i data-lucide="file-up" class="w-3.5 h-3.5 text-zinc-400"></i>
+            <span>Импорт PDF</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Режим 1: Числа (Сальдо + Доходы/Расходы 50/50) -->
+      <div id="month-summary-numbers-view">
+        <p
+          id="budget-month-delta-val"
+          class="text-3xl sm:text-4xl font-bold text-white tracking-tight leading-tight font-mono tabular-nums my-1.5"
+        >
+          0 ₽
+        </p>
+
+        <!-- Фиксированная сетка 50/50: Доходы и Расходы -->
+        <div class="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-white/[0.06]">
+          <div class="flex flex-col gap-0.5 min-w-0">
+            <div class="flex items-center gap-1.5 text-[11px] text-zinc-400">
+              <span class="w-1.5 h-1.5 rounded-full bg-[#10B981] shrink-0"></span>
+              <span>Доходы</span>
+            </div>
+            <span
+              id="budget-month-income-val"
+              class="font-mono font-bold text-[#10B981] text-sm truncate"
+              >+0 ₽</span
+            >
+          </div>
+
+          <div class="flex flex-col gap-0.5 min-w-0">
+            <div class="flex items-center gap-1.5 text-[11px] text-zinc-400">
+              <span class="w-1.5 h-1.5 rounded-full bg-[#F43F5E] shrink-0"></span>
+              <span>Расходы</span>
+            </div>
+            <span
+              id="budget-month-expense-val"
+              class="font-mono font-bold text-zinc-200 text-sm truncate"
+              >-0 ₽</span
+            >
+          </div>
+
+          <!-- Скрытый элемент для совместимости с JS -->
+          <span id="budget-month-bills-val" class="hidden"></span>
+        </div>
+      </div>
+
+      <!-- Режим 2: Компактная диаграмма структуры (Donut + Топ-4 категории) -->
+      <div id="month-summary-chart-view" class="hidden pt-1">
+        <!-- Горизонтальная сетка: Donut слева, Топ-4 справа -->
+        <div class="flex items-center gap-3">
+          <div class="chart-canvas--donut-mini">
+            <canvas id="categoryExpensesChart"></canvas>
+            <div
+              class="donut-center--mini"
+              onclick="resetCategoryDonutCenter()"
+              title="Нажмите, чтобы сбросить"
+            >
+              <span id="donut-center-label" class="donut-center__label">Расходы</span>
+              <strong id="category-total" class="donut-center__total">0 ₽</strong>
+              <span id="donut-center-percent" class="donut-center__percent hidden">0%</span>
+            </div>
+          </div>
+          <div id="category-legend" class="flex-1 min-w-0 space-y-1"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Скрытый блок инсайта (не отображается на главной) -->
+    <div id="budget-insight-card" class="hidden" style="display: none !important">
+      <p id="budget-insight-text"></p>
+    </div>
+
+    <!-- 2. Предстоящие платежи -->
+    <div class="space-y-1.5">
+      <div class="flex items-center justify-between px-1">
+        <div>
+          <p class="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
+            Предстоящие платежи
+          </p>
+          <p id="budget-bills-total" class="hidden"></p>
+        </div>
+        <button
+          type="button"
+          onclick="openBudgetCalendarModal()"
+          class="bg-white/[0.05] hover:bg-white/10 active:scale-95 text-zinc-400 hover:text-white px-2.5 py-1 rounded-xl border border-white/[0.08] flex items-center gap-1.5 text-xs font-medium cursor-pointer transition-all"
+          title="Открыть календарь счетов"
+        >
+          <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
+          <span>Календарь</span>
+        </button>
+      </div>
+
+      <!-- Список ближайших списаний -->
+      <div id="budget-calendar-list"></div>
+    </div>
+
+    <!-- 3. Цели накопления -->
+    <div class="space-y-1.5 relative z-20">
+      <div class="flex items-center justify-between px-1">
+        <div>
+          <p class="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
+            Цели накопления
+          </p>
+          <p id="budget-goals-surplus" class="hidden"></p>
+        </div>
+        <button
+          type="button"
+          onclick="openGoalModal()"
+          class="bg-white/[0.05] hover:bg-white/10 active:scale-95 text-zinc-400 hover:text-white px-2.5 py-1 rounded-xl border border-white/[0.08] flex items-center gap-1.5 text-xs font-medium cursor-pointer transition-all"
+          title="Новая цель"
+        >
+          <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+          <span>Цель</span>
+        </button>
+      </div>
+
+      <div id="budget-goals-list" class="space-y-3"></div>
+    </div>
+
+    <!-- 4. Динамика сальдо за текущий год (Obsidian Minimalist) -->
+    <div
+      id="budget-trend-section"
+      class="bg-[#0E1016] border border-white/[0.08] rounded-2xl p-4 shadow-sm"
+    >
+      <div class="flex items-center justify-between gap-2 mb-3">
+        <div>
+          <span class="text-xs uppercase tracking-wider font-bold text-zinc-400 block">
+            Динамика сальдо
+          </span>
+          <div class="text-[11px] text-zinc-500 font-medium mt-0.5">
+            За <span id="trend-kpi-year">2026 год</span>
+          </div>
+        </div>
+        <div class="text-right">
+          <div class="text-[10px] text-zinc-500 uppercase font-semibold">Среднее в мес.</div>
+          <div id="trend-kpi-avg" class="text-xs sm:text-sm font-bold font-mono text-white">
+            0 ₽
+          </div>
+        </div>
+      </div>
+
+      <div class="w-full h-[180px] relative">
+        <canvas id="monthlyExpensesChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>

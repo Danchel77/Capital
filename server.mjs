@@ -65,6 +65,30 @@ const server = http.createServer((req, res) => {
   });
 });
 
-server.listen(PORT, '0.0.0.0', () => {
+server.listen(PORT, '0.0.0.0', async () => {
   console.log(`Server is running at http://0.0.0.0:${PORT}`);
+
+  // Auto-rebuild index.html from src/ and watch for partial changes
+  const srcDir = path.join(__dirname, 'src');
+  if (fs.existsSync(srcDir)) {
+    try {
+      const { createRequire } = await import('node:module');
+      const require = createRequire(import.meta.url);
+      const { buildHtml } = require('./scripts/build-html.cjs');
+      buildHtml({ silent: true });
+
+      fs.watch(srcDir, { recursive: true }, (eventType, filename) => {
+        if (filename && (filename.endsWith('.html') || filename.endsWith('.htm'))) {
+          try {
+            buildHtml({ silent: false });
+          } catch (e) {
+            console.error('[build:html] Error:', e.message);
+          }
+        }
+      });
+      console.log('[server] Auto-rebuilding index.html on src/ changes enabled');
+    } catch (err) {
+      console.warn('[server] Failed to initialize html watcher:', err.message);
+    }
+  }
 });

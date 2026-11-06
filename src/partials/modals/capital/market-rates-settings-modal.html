@@ -1,0 +1,115 @@
+<!-- МОДАЛКА: НАСТРОЙКИ СТАВОК И БАНКОВ (Obsidian Minimalist - На весь экран на мобильных) -->
+<div
+  id="market-rates-settings-modal"
+  class="fixed inset-0 bg-black/85 z-[130] hidden flex flex-col justify-end sm:justify-center items-center p-0 sm:p-4 backdrop-blur-sm animate-fade-in overscroll-contain select-none"
+  onclick="if (event.target === this) closeMarketRatesSettingsModal();"
+>
+  <div
+    class="bg-[#0E1016] border-0 sm:border sm:border-white/10 w-full sm:max-w-lg rounded-none sm:rounded-2xl p-4 sm:p-5 shadow-2xl relative flex flex-col h-[100dvh] sm:h-[86vh] overflow-hidden overscroll-contain pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]"
+    onclick="event.stopPropagation()"
+  >
+    <!-- Шапка окна настроек -->
+    <div class="flex items-center justify-between mb-4 flex-shrink-0">
+      <h3 class="text-base font-bold text-white leading-tight">Настройки фильтров</h3>
+      <button
+        type="button"
+        onclick="closeMarketRatesSettingsModal()"
+        class="w-8 h-8 rounded-full bg-white/[0.06] hover:bg-white/10 text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors text-xs font-semibold"
+        title="Закрыть"
+      >
+        ✕
+      </button>
+    </div>
+
+    <!-- Скроллируемое тело настроек -->
+    <div
+      class="flex-1 overflow-y-auto space-y-4 pr-1 -mr-1 pb-4 text-xs overscroll-contain touch-pan-y"
+    >
+      <!-- 1. Максимальный срок вклада в виджете -->
+      <div class="space-y-2 pb-4 border-b border-white/[0.06]">
+        <label class="block text-zinc-300 font-semibold text-xs">
+          Максимальный срок вклада в виджете
+        </label>
+        <div class="pt-1.5">
+          <input
+            type="range"
+            id="mr-settings-max-months-slider"
+            min="0"
+            max="3"
+            step="1"
+            class="discrete-range-slider"
+            oninput="handleMaxMonthsSliderChange(this.value)"
+          />
+          <input type="hidden" id="mr-settings-max-months" value="12" />
+          <div
+            class="flex justify-between text-[11px] text-zinc-400 font-mono mt-2 px-1 select-none"
+          >
+            <span>1 мес.</span>
+            <span>3 мес.</span>
+            <span>6 мес.</span>
+            <span>1 год</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Условия предложений -->
+      <div class="space-y-1.5 pb-4 border-b border-white/[0.06]">
+        <span class="block text-zinc-300 font-semibold text-xs mb-1"> Условия предложений </span>
+        <div id="mr-settings-tags-list" class="space-y-0.5"></div>
+      </div>
+
+      <!-- 3. Список отслеживаемых банков -->
+      <div class="space-y-2.5 pt-1">
+        <span class="block text-zinc-300 font-semibold text-xs"> Отслеживаемые банки </span>
+
+        <!-- Быстрые кнопки выбора -->
+        <div
+          class="grid grid-cols-3 gap-1 p-1 bg-white/[0.04] border border-white/[0.06] rounded-xl"
+        >
+          <button
+            type="button"
+            onclick="selectBanksPreset('top10')"
+            class="py-1 rounded-lg text-center text-[11px] font-medium text-zinc-300 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
+          >
+            ТОП-10
+          </button>
+          <button
+            type="button"
+            onclick="selectBanksPreset('all')"
+            class="py-1 rounded-lg text-center text-[11px] font-medium text-zinc-300 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
+          >
+            Все банки
+          </button>
+          <button
+            type="button"
+            onclick="selectBanksPreset('none')"
+            class="py-1 rounded-lg text-center text-[11px] font-medium text-zinc-400 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
+          >
+            Сбросить
+          </button>
+        </div>
+
+        <!-- Список чекбоксов банков во всю ширину -->
+        <div id="mr-settings-banks-list" class="pt-1"></div>
+      </div>
+    </div>
+
+    <!-- Кнопки действий -->
+    <div class="flex gap-2 pt-3 flex-shrink-0 border-t border-white/[0.06] mt-2">
+      <button
+        type="button"
+        onclick="closeMarketRatesSettingsModal()"
+        class="flex-1 py-2.5 px-3 rounded-xl bg-white/[0.06] hover:bg-white/10 active:scale-95 text-zinc-300 text-xs font-semibold transition-all cursor-pointer"
+      >
+        Отмена
+      </button>
+      <button
+        type="button"
+        onclick="saveAndApplyMarketRatesSettings()"
+        class="flex-1 py-2.5 px-3 rounded-xl bg-white hover:bg-zinc-200 active:scale-95 text-zinc-950 text-xs font-semibold transition-all shadow-sm cursor-pointer"
+      >
+        Сохранить
+      </button>
+    </div>
+  </div>
+</div>

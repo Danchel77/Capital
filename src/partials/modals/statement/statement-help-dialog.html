@@ -1,0 +1,72 @@
+<!-- УНИВЕРСАЛЬНАЯ ПАМЯТКА: ГДЕ ВЗЯТЬ ВЫПИСКУ БАНКА -->
+<div
+  id="statement-help-dialog"
+  class="fixed inset-0 bg-black/85 z-[150] hidden flex flex-col justify-center items-center p-4 backdrop-blur-sm animate-fade-in"
+  onclick="if (event.target === this) closeStatementHelpModal();"
+>
+  <div
+    class="bg-[#0E1016] border border-white/[0.08] w-full max-w-sm rounded-3xl p-5 shadow-2xl flex flex-col relative"
+  >
+    <div class="flex items-center justify-between pb-3 mb-3 border-b border-white/[0.06]">
+      <div class="flex items-center gap-2.5">
+        <div
+          class="w-7 h-7 rounded-lg bg-white/[0.05] border border-white/[0.08] text-white flex items-center justify-center"
+        >
+          <i data-lucide="help-circle" class="w-4 h-4"></i>
+        </div>
+        <h3 class="font-bold text-white text-base">Где взять выписку</h3>
+      </div>
+      <button
+        type="button"
+        onclick="closeStatementHelpModal()"
+        class="w-7 h-7 rounded-full bg-white/[0.05] border border-white/[0.08] text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors active:scale-95"
+      >
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+
+    <div class="space-y-2.5 mb-4 text-xs">
+      <div
+        class="flex items-start gap-2.5 p-2.5 rounded-xl bg-[#12151C] border border-white/[0.05]"
+      >
+        <span
+          class="w-5 h-5 rounded-full bg-white/10 text-white text-[11px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5"
+          >1</span
+        >
+        <span class="text-zinc-300 leading-snug"
+          >Откройте мобильное приложение вашего банка и перейдите в нужную карту или счет.</span
+        >
+      </div>
+      <div
+        class="flex items-start gap-2.5 p-2.5 rounded-xl bg-[#12151C] border border-white/[0.05]"
+      >
+        <span
+          class="w-5 h-5 rounded-full bg-white/10 text-white text-[11px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5"
+          >2</span
+        >
+        <span class="text-zinc-300 leading-snug"
+          >Найдите раздел <b>«Выписки и справки»</b> (обычно в меню карты или внизу истории).</span
+        >
+      </div>
+      <div
+        class="flex items-start gap-2.5 p-2.5 rounded-xl bg-[#12151C] border border-white/[0.05]"
+      >
+        <span
+          class="w-5 h-5 rounded-full bg-white/10 text-white text-[11px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5"
+          >3</span
+        >
+        <span class="text-zinc-300 leading-snug"
+          >Выберите выписку по операциям за нужный период и сохраните в формате <b>PDF</b>.</span
+        >
+      </div>
+    </div>
+
+    <button
+      type="button"
+      onclick="closeStatementHelpModal()"
+      class="w-full btn-secondary py-2.5 rounded-xl text-xs font-semibold"
+    >
+      Понятно
+    </button>
+  </div>
+</div>

@@ -1,4 +1,5 @@
 {
+  "src/**/*.{html,htm}": ["prettier --write", "node scripts/build-html.cjs"],
   "*.{js,mjs,ts,tsx}": ["eslint", "prettier --write"],
-  "*.{json,css,html,md}": ["prettier --write"]
+  "*.{json,css,md}": ["prettier --write"]
 }

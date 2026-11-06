@@ -1,0 +1,191 @@
+<!-- ЭКРАН ТРАНЗАКЦИЙ -->
+<div id="transactions-tab" class="tab-pane space-y-3 hidden">
+  <!-- 1. Равносильные кнопки добавления операций и импорта выписки (50/50) -->
+  <div id="tx-top-actions" class="grid grid-cols-2 gap-2">
+    <!-- Кнопка добавления операций вручную -->
+    <button
+      type="button"
+      onclick="toggleForm('tx-form-container', 'tx-submit-btn', 'Сохранить', 'tx-form', 'tx')"
+      class="btn-secondary py-2.5 px-3 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] cursor-pointer shadow-sm text-white"
+      title="Добавить операцию вручную"
+    >
+      <i data-lucide="plus" class="w-4 h-4 text-white"></i>
+      <span>Операция</span>
+    </button>
+
+    <!-- Кнопка вызова окна импорта выписки -->
+    <button
+      type="button"
+      onclick="openPdfInfoModal()"
+      class="btn-secondary py-2.5 px-3 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] cursor-pointer shadow-sm text-white"
+    >
+      <i data-lucide="file-up" class="w-4 h-4 text-white"></i>
+      <span>Импорт PDF</span>
+    </button>
+
+    <!-- Скрытый инпут для выбора PDF -->
+    <input
+      type="file"
+      id="pdf-file-input"
+      accept="application/pdf"
+      multiple
+      class="hidden"
+      onchange="handleStatementFilesSelected(event)"
+    />
+  </div>
+
+  <!-- 2. Панель фильтров операций -->
+  <div class="pb-2 border-b border-white/[0.06] flex flex-col gap-2">
+    <!-- Верхний ряд: Меню фильтрации + кнопка поиска -->
+    <div id="tx-filter-bar" class="flex gap-2 items-center">
+      <!-- Меню выбора месяца -->
+      <div class="relative flex-1 min-w-0" id="wrap-filter-month">
+        <button
+          type="button"
+          onclick="toggleCustomFilterMenu('month')"
+          class="w-full bg-[#0E1016] border border-white/[0.08] hover:border-white/20 text-xs text-zinc-200 rounded-xl px-3 py-2 flex items-center justify-between outline-none cursor-pointer transition-colors"
+        >
+          <span id="label-filter-month" class="truncate font-medium">Все месяцы</span>
+          <span class="text-zinc-500 text-[9px] ml-1 flex-shrink-0">▼</span>
+        </button>
+        <div
+          id="menu-filter-month"
+          class="hidden absolute left-0 top-full mt-1.5 w-[176px] bg-[#0E1016] border border-white/10 rounded-2xl shadow-[0_16px_40px_rgba(0,0,0,0.85)] z-40 p-1.5 backdrop-blur-xl"
+        ></div>
+      </div>
+
+      <!-- Меню выбора категории -->
+      <div class="relative flex-1 min-w-0" id="wrap-filter-cat">
+        <button
+          type="button"
+          onclick="toggleCustomFilterMenu('cat')"
+          class="w-full bg-[#0E1016] border border-white/[0.08] hover:border-white/20 text-xs text-zinc-200 rounded-xl px-3 py-2 flex items-center justify-between outline-none cursor-pointer transition-colors"
+        >
+          <span id="label-filter-cat" class="truncate font-medium">Все категории</span>
+          <span class="text-zinc-500 text-[9px] ml-1 flex-shrink-0">▼</span>
+        </button>
+        <div
+          id="menu-filter-cat"
+          class="hidden absolute right-0 top-full mt-1.5 w-[220px] sm:w-[250px] max-h-72 overflow-y-auto bg-[#0E1016] border border-white/10 rounded-2xl shadow-[0_16px_40px_rgba(0,0,0,0.85)] z-40 p-1.5 space-y-0.5 backdrop-blur-xl"
+        ></div>
+      </div>
+
+      <!-- Кнопка вызова поиска -->
+      <button
+        type="button"
+        id="tx-search-toggle-btn"
+        onclick="toggleTxSearchBar()"
+        class="h-[34px] w-[34px] bg-[#0E1016] hover:bg-white/[0.06] border border-white/[0.08] hover:border-white/20 text-zinc-400 hover:text-white rounded-xl flex items-center justify-center transition-all cursor-pointer flex-shrink-0 active:scale-95"
+        title="Поиск по операциям"
+      >
+        <i data-lucide="search" class="w-3.5 h-3.5"></i>
+      </button>
+    </div>
+
+    <!-- Выдвижная строка поиска -->
+    <div id="tx-search-bar-container" class="hidden animate-fade-in relative w-full">
+      <div
+        class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-500"
+      >
+        <i data-lucide="search" class="w-4 h-4"></i>
+      </div>
+      <input
+        type="text"
+        id="tx-search-input"
+        oninput="handleTxSearchInput(event)"
+        placeholder="Поиск по операциям или суммам..."
+        class="w-full bg-[#0E1016] border border-white/[0.08] focus:border-white/20 text-xs text-white placeholder-zinc-500 rounded-xl pl-10 pr-9 py-2 outline-none transition-all shadow-sm"
+      />
+      <button
+        type="button"
+        id="tx-search-clear-btn"
+        onclick="clearTxSearch()"
+        class="hidden absolute inset-y-0 right-0 pr-2.5 flex items-center text-zinc-500 hover:text-white transition-colors cursor-pointer"
+        title="Очистить поиск"
+      >
+        <i data-lucide="x" class="w-3.5 h-3.5"></i>
+      </button>
+    </div>
+
+    <!-- Скрытые элементы для обратной совместимости со скриптами -->
+    <span id="month-income-label" class="hidden"></span>
+    <span id="month-income" class="hidden">0 ₽</span>
+    <span id="month-expense-label" class="hidden"></span>
+    <span id="month-expense" class="hidden">0 ₽</span>
+  </div>
+
+  <!-- 4. КОНТЕНТ ВКЛАДКИ «СПИСОК» -->
+  <div id="transactions-list-wrap" class="space-y-2.5">
+    <!-- Форма добавления транзакций -->
+    <div
+      id="tx-form-container"
+      class="hidden relative z-30 bg-[#0E1016] p-3 rounded-2xl border border-white/[0.08] shadow-xl animate-fade-in"
+    >
+      <form id="tx-form" onsubmit="submitTransactions(event)">
+        <div id="tx-items-list" class="space-y-2 mb-2"></div>
+        <button
+          type="button"
+          id="add-tx-row-btn"
+          onclick="addTxRow()"
+          class="w-full mb-2.5 py-2 border border-dashed border-white/10 hover:border-white/20 rounded-xl text-zinc-400 hover:text-zinc-200 text-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 active:scale-[0.99] outline-none select-none bg-transparent hover:bg-white/[0.02]"
+        >
+          + Добавить еще транзакцию
+        </button>
+        <div class="flex gap-2 h-[38px]">
+          <button
+            type="button"
+            onclick="closeForm('tx-form-container', 'tx-submit-btn', 'Сохранить', 'tx-form')"
+            class="w-1/3 h-full btn-secondary rounded-xl text-xs font-semibold flex items-center justify-center cursor-pointer transition-all active:scale-95 leading-none"
+          >
+            Отмена
+          </button>
+          <button
+            type="submit"
+            id="tx-submit-btn"
+            class="w-2/3 h-full btn-primary rounded-xl text-xs font-semibold flex items-center justify-center cursor-pointer shadow-sm transition-all active:scale-95 leading-none"
+          >
+            Сохранить
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Баннер переводов на подтверждении -->
+    <div id="tx-pending-transfers-banner" class="hidden">
+      <div
+        class="bg-[#151B26] border border-[#232D3E] rounded-2xl p-3 flex items-center justify-between gap-2.5 shadow-sm"
+      >
+        <div class="flex items-center gap-2.5 min-w-0 flex-1">
+          <div
+            class="w-8 h-8 rounded-xl bg-[#1E2738] flex items-center justify-center text-[#93C5FD] flex-shrink-0"
+          >
+            <i data-lucide="arrow-left-right" class="w-4 h-4"></i>
+          </div>
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center gap-1.5">
+              <span class="text-xs font-bold text-white truncate">Переводы на подтверждении</span>
+              <span
+                id="tx-pending-count-badge"
+                class="px-1.5 py-0.2 rounded-full bg-[#3B82F6] text-white text-[10px] font-black font-mono flex-shrink-0"
+                >0</span
+              >
+            </div>
+            <span class="text-[11px] text-zinc-400 block truncate mt-0.5"
+              >Требуют подтверждения для учета в бюджете</span
+            >
+          </div>
+        </div>
+        <button
+          type="button"
+          id="tx-pending-filter-btn"
+          onclick="togglePendingTransfersFilter()"
+          class="px-3 py-1.5 rounded-xl btn-primary text-xs font-bold transition-all flex items-center gap-1 flex-shrink-0 cursor-pointer shadow-sm active:scale-95"
+        >
+          <span id="tx-pending-filter-btn-text">Показать</span>
+        </button>
+      </div>
+    </div>
+
+    <div id="transactions-list" class="space-y-3 pb-6"></div>
+  </div>
+</div>

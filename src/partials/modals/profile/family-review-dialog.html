@@ -1,0 +1,99 @@
+<!-- МОДАЛЬНОЕ ОКНО: ПРЕДЛОЖЕНИЕ ПЕРЕСМОТРА БЮДЖЕТА ПРИ ПОДКЛЮЧЕНИИ НОВОГО ЧЛЕНА СЕМЬИ -->
+<div
+  id="family-review-dialog"
+  class="fixed inset-0 bg-black/80 z-[165] hidden flex flex-col justify-center items-center p-4 backdrop-blur-md animate-fade-in"
+  onclick="if (event.target === this) closeFamilyReviewDialog(false);"
+>
+  <div
+    class="bg-[#181B24] border border-[rgba(255,255,255,0.08)] w-full max-w-sm rounded-3xl p-6 shadow-2xl relative overflow-hidden"
+  >
+    <!-- Верхний декоративный градиентный блик -->
+    <div
+      class="absolute -top-10 -left-10 w-36 h-36 bg-[#6C5DD3]/20 rounded-full blur-2xl pointer-events-none"
+    ></div>
+
+    <!-- Иконка шапки с акцентом -->
+    <div
+      class="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#6C5DD3]/25 to-[#8E59FF]/10 border border-[#6C5DD3]/30 text-[#A594FD] flex items-center justify-center mx-auto mb-3 shadow-lg shadow-[#6C5DD3]/15"
+    >
+      <i data-lucide="sparkles" class="w-7 h-7"></i>
+    </div>
+
+    <!-- Заголовок и подзаголовок -->
+    <h3 class="text-lg font-bold text-white text-center tracking-tight mb-1">
+      Новый участник в семье
+    </h3>
+    <div class="flex items-center justify-center gap-1.5 mb-4">
+      <span class="text-[11px] font-semibold text-[#848D99]">К группе присоединился:</span>
+      <span
+        id="family-review-member-name"
+        class="text-xs font-bold text-[#A594FD] bg-[#6C5DD3]/15 px-2 py-0.5 rounded-lg border border-[#6C5DD3]/25 truncate max-w-[140px]"
+        >Участник</span
+      >
+    </div>
+
+    <!-- Карточки возможностей настройки -->
+    <div class="space-y-2 mb-5">
+      <div
+        class="flex items-center gap-3 p-2.5 rounded-xl bg-[#12151C] border border-[rgba(255,255,255,0.04)]"
+      >
+        <div
+          class="w-8 h-8 rounded-lg bg-[#6C5DD3]/15 text-[#A594FD] flex items-center justify-center flex-shrink-0"
+        >
+          <i data-lucide="wallet" class="w-4 h-4"></i>
+        </div>
+        <div class="min-w-0">
+          <div class="text-xs font-bold text-gray-200">Доходы семьи</div>
+          <div class="text-[10px] text-gray-400">Объедините доход и источники заработка</div>
+        </div>
+      </div>
+
+      <div
+        class="flex items-center gap-3 p-2.5 rounded-xl bg-[#12151C] border border-[rgba(255,255,255,0.04)]"
+      >
+        <div
+          class="w-8 h-8 rounded-lg bg-emerald-500/15 text-emerald-400 flex items-center justify-center flex-shrink-0"
+        >
+          <i data-lucide="shopping-cart" class="w-4 h-4"></i>
+        </div>
+        <div class="min-w-0">
+          <div class="text-xs font-bold text-gray-200">Лимиты расходов</div>
+          <div class="text-[10px] text-gray-400">Скорректируйте траты на продукты, дом и кафе</div>
+        </div>
+      </div>
+
+      <div
+        class="flex items-center gap-3 p-2.5 rounded-xl bg-[#12151C] border border-[rgba(255,255,255,0.04)]"
+      >
+        <div
+          class="w-8 h-8 rounded-lg bg-amber-500/15 text-amber-400 flex items-center justify-center flex-shrink-0"
+        >
+          <i data-lucide="target" class="w-4 h-4"></i>
+        </div>
+        <div class="min-w-0">
+          <div class="text-xs font-bold text-gray-200">Семейные цели</div>
+          <div class="text-[10px] text-gray-400">Настройте общие цели и накопления</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Кнопки действий -->
+    <div class="space-y-2">
+      <button
+        type="button"
+        onclick="confirmFamilyBudgetReview()"
+        class="w-full bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white py-3 rounded-xl font-bold text-xs shadow-lg shadow-[#6C5DD3]/25 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+      >
+        <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
+        <span>Настроить семейный бюджет</span>
+      </button>
+      <button
+        type="button"
+        onclick="closeFamilyReviewDialog(false)"
+        class="w-full bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 py-3 rounded-xl font-semibold text-xs active:scale-95 transition-colors cursor-pointer text-center"
+      >
+        Оставить как есть
+      </button>
+    </div>
+  </div>
+</div>

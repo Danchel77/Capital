@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "node server.mjs",
-    "build": "node --check server.mjs",
+    "build:html": "node scripts/build-html.cjs",
+    "build:html:check": "node scripts/build-html.cjs --check",
+    "build": "node scripts/build-html.cjs && node --check server.mjs",
     "build:www": "node scripts/build-www.cjs",
     "cap:sync": "npm run build:www && npx cap sync android",
     "start": "node server.mjs",
@@ -13,7 +15,7 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "check": "npm run lint && npm run format:check",
+    "check": "npm run build:html:check && npm run lint && npm run format:check",
     "update:rates": "node scripts/update-market-rates.cjs",
     "clean": "rm -rf .next dist build",
     "prepare": "husky"

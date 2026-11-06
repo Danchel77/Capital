@@ -1,0 +1,78 @@
+<!-- МОДАЛКА: СТАВКИ И ПРЕДЛОЖЕНИЯ БАНКОВ (Obsidian Minimalist - На весь экран на мобильных) -->
+<div
+  id="market-rates-modal"
+  class="fixed inset-0 bg-black/80 z-[120] hidden flex flex-col justify-end sm:justify-center items-center p-0 sm:p-4 backdrop-blur-sm animate-fade-in overscroll-contain select-none"
+  onclick="if (event.target === this) closeMarketRatesModal();"
+>
+  <div
+    class="bg-[#0E1016] border-0 sm:border sm:border-white/10 w-full sm:max-w-lg rounded-none sm:rounded-2xl p-4 sm:p-5 shadow-2xl relative flex flex-col h-[100dvh] sm:h-[86vh] overflow-hidden overscroll-contain pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]"
+    onclick="event.stopPropagation()"
+  >
+    <!-- Шапка модалки -->
+    <div class="flex items-center justify-between mb-3 flex-shrink-0">
+      <div class="flex items-center gap-2">
+        <div
+          class="w-8 h-8 rounded-xl bg-white/[0.06] text-white flex items-center justify-center border border-white/10"
+        >
+          <i data-lucide="percent" class="w-4 h-4"></i>
+        </div>
+        <div>
+          <h3 class="text-base font-bold text-white leading-tight">Ставки и предложения</h3>
+          <p class="text-[11px] text-zinc-400">
+            Ставка ЦБ:
+            <span id="market-modal-cbr-rate" class="font-mono font-medium text-zinc-200"
+              >14,0%</span
+            >
+          </p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button
+          type="button"
+          id="btn-market-rates-settings"
+          onclick="openMarketRatesSettingsModal()"
+          class="w-8 h-8 rounded-full bg-white/[0.06] hover:bg-white/10 text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors"
+          title="Настройки фильтра"
+        >
+          <i data-lucide="settings" class="w-4 h-4"></i>
+        </button>
+        <button
+          type="button"
+          onclick="closeMarketRatesModal()"
+          class="w-8 h-8 rounded-full bg-white/[0.06] hover:bg-white/10 text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors text-xs font-semibold"
+          title="Закрыть"
+        >
+          ✕
+        </button>
+      </div>
+    </div>
+
+    <!-- Переключатель вкладок: Вклады / Накопительные счета -->
+    <div
+      class="view-switcher flex p-1 bg-[#0E1016] border border-white/[0.06] rounded-2xl gap-1 mb-2.5 flex-shrink-0"
+    >
+      <button
+        type="button"
+        id="mr-tab-deposits"
+        onclick="switchMarketRatesTab('deposits')"
+        class="flex-1 py-1.5 text-center text-xs font-semibold rounded-xl bg-[#181c26] text-white border border-[#282e3e] shadow-sm transition-all cursor-pointer is-active"
+      >
+        Вклады
+      </button>
+      <button
+        type="button"
+        id="mr-tab-accounts"
+        onclick="switchMarketRatesTab('accounts')"
+        class="flex-1 py-1.5 text-center text-xs font-medium rounded-xl text-zinc-400 hover:text-white transition-all cursor-pointer"
+      >
+        Накопительные счета
+      </button>
+    </div>
+
+    <!-- Скроллируемый список предложений (на всю оставшуюся высоту) -->
+    <div
+      id="market-rates-offers-list"
+      class="flex-1 overflow-y-auto space-y-2 pr-1 -mr-1 min-h-0 pb-8 custom-scrollbar"
+    ></div>
+  </div>
+</div>

@@ -1,0 +1,517 @@
+<!-- Модальное окно Личного кабинета -->
+<div
+  id="profile-dialog"
+  class="fixed inset-0 bg-[#0F1117]/95 sm:bg-black/80 z-[150] hidden flex flex-col items-center justify-start overflow-y-auto overscroll-contain custom-scrollbar animate-fade-in p-0 sm:py-6 sm:px-4"
+  onclick="if (event.target === this) closeProfileModal();"
+>
+  <div
+    class="w-full max-w-[760px] mx-auto min-h-full sm:min-h-0 bg-[#0F1117] sm:bg-[#181B24] sm:border sm:border-[rgba(255,255,255,0.08)] sm:rounded-3xl sm:shadow-2xl flex flex-col relative pb-safe"
+  >
+    <!-- Закрепленная верхняя панель (Sticky Header) -->
+    <div
+      class="modal-sticky-header bg-[#0F1117] sm:bg-[#181B24] px-4 sm:px-6 pb-3 sm:pb-3.5 border-b border-[rgba(255,255,255,0.08)] sm:rounded-t-3xl flex items-center justify-between shadow-sm"
+    >
+      <div class="flex items-center gap-2.5">
+        <div
+          class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#6C5DD3]/15 text-[#8C7DFF] flex items-center justify-center flex-shrink-0"
+        >
+          <i data-lucide="user" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+        </div>
+        <h2 class="text-lg sm:text-xl font-bold tracking-tight text-white">Личный кабинет</h2>
+      </div>
+      <button
+        type="button"
+        onclick="closeProfileModal()"
+        class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#212430] hover:bg-[#2A2D3C] active:scale-95 text-gray-400 hover:text-white flex items-center justify-center cursor-pointer transition-all flex-shrink-0 shadow-sm"
+        title="Закрыть"
+      >
+        <i data-lucide="x" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+      </button>
+    </div>
+
+    <div class="flex-1 p-4 sm:p-6 space-y-3 sm:space-y-3.5">
+      <!-- Компактная карточка профиля с вектором аватара и редактированием -->
+      <div
+        class="p-3 sm:p-3.5 rounded-2xl bg-[#181B24] sm:bg-[#12151C] border border-[rgba(255,255,255,0.06)] flex items-center gap-3"
+      >
+        <!-- Аватарка с кнопкой палитры в нижнем правом углу -->
+        <div class="relative flex-shrink-0">
+          <div
+            id="profile-avatar-container"
+            onclick="openAvatarPickerModal()"
+            class="cursor-pointer active:scale-95 transition-transform"
+            title="Нажмите, чтобы выбрать значок"
+          >
+            <!-- Rendered avatar circle or placeholder -->
+          </div>
+          <button
+            type="button"
+            onclick="openAvatarPickerModal()"
+            class="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-[#181B24] sm:bg-[#12151C] hover:bg-[#212430] active:scale-90 border border-white/15 text-[#8C7DFF] flex items-center justify-center cursor-pointer transition-all shadow-md z-10"
+            title="Сменить значок аватарки"
+          >
+            <i data-lucide="palette" class="w-3.5 h-3.5 stroke-[2.2]"></i>
+          </button>
+        </div>
+
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-1.5 min-w-0">
+            <h3
+              id="profile-username-display"
+              class="text-base sm:text-lg font-bold text-white truncate"
+            >
+              Пользователь
+            </h3>
+            <button
+              type="button"
+              onclick="toggleProfileNameEdit()"
+              class="p-1 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer active:scale-95 flex-shrink-0"
+              title="Редактировать имя"
+            >
+              <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+          <p id="profile-auth-type" class="text-xs text-gray-400 mt-0.5 truncate">
+            user@budget.local
+          </p>
+
+          <!-- Раскрывающееся поле изменения имени (открывается по кнопке редактирования) -->
+          <div id="profile-edit-name-row" class="mt-2 hidden flex items-center gap-2">
+            <div class="relative flex-1 min-w-0">
+              <input
+                type="text"
+                id="profile-edit-name-input"
+                placeholder="Ваше имя"
+                maxlength="30"
+                onkeydown="if (event.key === 'Enter') saveProfileInfo(true);"
+                class="w-full bg-[#12151C] sm:bg-[#181B24] border border-white/10 focus:border-white/30 text-white rounded-xl px-3 py-1.5 text-xs outline-none transition-colors"
+              />
+            </div>
+            <button
+              type="button"
+              onclick="saveProfileInfo(true)"
+              class="px-3 py-1.5 bg-white text-zinc-950 text-xs font-semibold rounded-xl cursor-pointer transition-all active:scale-95 shadow-sm flex items-center gap-1 flex-shrink-0"
+            >
+              <i data-lucide="check" class="w-3.5 h-3.5"></i>
+              <span>Готово</span>
+            </button>
+            <button
+              type="button"
+              onclick="toggleProfileNameEdit(false)"
+              class="p-1.5 text-gray-400 hover:text-gray-200 bg-[#12151C] sm:bg-[#181B24] border border-white/10 rounded-xl cursor-pointer transition-colors flex-shrink-0"
+              title="Отмена"
+            >
+              <i data-lucide="x" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- СЕКЦИЯ 2: СЕМЕЙНЫЙ БЮДЖЕТ (СВЯЗКА АККАУНТОВ) -->
+      <div id="family-section-container">
+        <!-- Динамически рендерится функцией renderFamilySettingsUI() -->
+      </div>
+
+      <!-- СЕКЦИЯ 3: БЕЗОПАСНОСТЬ И УЧЕТНАЯ ЗАПИСЬ -->
+      <div
+        class="bg-[#181B24] sm:bg-[#12151C] border border-[rgba(255,255,255,0.06)] rounded-2xl overflow-hidden divide-y divide-[rgba(255,255,255,0.03)]"
+      >
+        <div class="py-2.5 px-3.5 bg-white/[0.01]">
+          <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider block"
+            >Безопасность и аккаунт</span
+          >
+        </div>
+
+        <button
+          type="button"
+          onclick="openChangeLoginModal()"
+          class="w-full flex items-center justify-between p-3 sm:p-3.5 hover:bg-white/[0.01] transition-colors cursor-pointer"
+        >
+          <div class="flex items-center gap-3">
+            <div class="p-2 rounded-xl bg-sky-500/15 text-sky-400">
+              <i data-lucide="user-pen" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+            </div>
+            <div class="text-left">
+              <span class="text-[14px] sm:text-[15px] font-medium text-gray-200 block"
+                >Сменить логин</span
+              >
+              <span class="text-[11px] text-[#848D99]">Изменить логин для входа</span>
+            </div>
+          </div>
+          <i data-lucide="chevron-right" class="w-4 h-4 sm:w-5 sm:h-5 text-gray-600"></i>
+        </button>
+
+        <button
+          type="button"
+          onclick="openChangePasswordModal()"
+          class="w-full flex items-center justify-between p-3 sm:p-3.5 hover:bg-white/[0.01] transition-colors cursor-pointer"
+        >
+          <div class="flex items-center gap-3">
+            <div class="p-2 rounded-xl bg-emerald-500/15 text-emerald-400">
+              <i data-lucide="key" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+            </div>
+            <div class="text-left">
+              <span class="text-[14px] sm:text-[15px] font-medium text-gray-200 block"
+                >Сменить пароль</span
+              >
+              <span class="text-[11px] text-[#848D99]">Обновить пароль учетной записи</span>
+            </div>
+          </div>
+          <i data-lucide="chevron-right" class="w-4 h-4 sm:w-5 sm:h-5 text-gray-600"></i>
+        </button>
+      </div>
+
+      <!-- СЕКЦИЯ 4: НАСТРОЙКИ ПРИЛОЖЕНИЯ -->
+      <div
+        class="bg-[#181B24] sm:bg-[#12151C] border border-[rgba(255,255,255,0.06)] rounded-2xl overflow-hidden divide-y divide-[rgba(255,255,255,0.03)]"
+      >
+        <div class="py-2.5 px-3.5 bg-white/[0.01]">
+          <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider block"
+            >Настройки приложения</span
+          >
+        </div>
+
+        <!-- Уведомления о счетах и вкладах (только для APK приложения) -->
+        <div
+          id="profile-notifications-setting-item"
+          class="hidden p-3 sm:p-3.5 hover:bg-white/[0.01] transition-colors space-y-2.5"
+        >
+          <label class="flex items-center justify-between cursor-pointer">
+            <div class="flex items-center gap-3">
+              <div class="p-2 rounded-xl bg-violet-500/15 text-violet-400">
+                <i data-lucide="bell" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+              </div>
+              <div class="text-left">
+                <span class="text-[14px] sm:text-[15px] font-medium text-gray-200 block"
+                  >Уведомления о счетах и вкладах</span
+                >
+                <span class="text-[11px] text-[#848D99] leading-tight block mt-0.5"
+                  >Напоминания в день оплаты счетов и закрытия вкладов</span
+                >
+              </div>
+            </div>
+            <div class="relative inline-flex items-center flex-shrink-0">
+              <input
+                type="checkbox"
+                id="toggle-notifications-setting"
+                onchange="toggleNotificationsSetting(this.checked)"
+                class="sr-only peer"
+              />
+              <div
+                class="w-11 h-6 bg-[#2A2D3C] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-[#30D158] after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"
+              ></div>
+            </div>
+          </label>
+          <div
+            id="notifications-time-row"
+            class="hidden flex items-center justify-between pt-2 border-t border-[rgba(255,255,255,0.04)] text-xs text-gray-300"
+          >
+            <span class="text-[12px] text-[#848D99] flex items-center gap-1.5">
+              <i data-lucide="clock" class="w-3.5 h-3.5 text-gray-400"></i> Время напоминаний:
+            </span>
+            <input
+              type="time"
+              id="notifications-time-input"
+              value="10:00"
+              onchange="changeNotificationTimeSetting(this.value)"
+              class="bg-[#12151C] border border-[rgba(255,255,255,0.08)] hover:border-gray-500 focus:border-white/30 text-white rounded-xl px-2.5 py-1 text-xs outline-none cursor-pointer transition-colors font-mono"
+            />
+          </div>
+        </div>
+
+        <!-- Брокерский счет -->
+        <label
+          class="flex items-center justify-between p-3 sm:p-3.5 cursor-pointer hover:bg-white/[0.01] transition-colors"
+        >
+          <div class="flex items-center gap-3">
+            <div class="p-2 rounded-xl bg-cyan-500/15 text-cyan-400">
+              <i data-lucide="trending-up" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+            </div>
+            <div class="text-left">
+              <span class="text-[14px] sm:text-[15px] font-medium text-gray-200 block"
+                >Брокерский счёт</span
+              >
+              <span class="text-[11px] text-[#848D99] leading-tight block mt-0.5"
+                >Учет инвестиций, доходности и капитала</span
+              >
+            </div>
+          </div>
+          <div class="relative inline-flex items-center flex-shrink-0">
+            <input
+              type="checkbox"
+              id="toggle-broker-setting"
+              onchange="toggleBrokerSetting(this.checked)"
+              class="sr-only peer"
+            />
+            <div
+              class="w-11 h-6 bg-[#2A2D3C] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-[#30D158] after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"
+            ></div>
+          </div>
+        </label>
+
+        <!-- Интеллектуальный помощник (Google Gemini) -->
+        <div
+          id="profile-gemini-card"
+          class="p-3 sm:p-3.5 hover:bg-white/[0.01] transition-colors space-y-3"
+        >
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div
+                class="w-9 h-9 rounded-xl bg-white/[0.05] border border-white/[0.08] text-white flex items-center justify-center flex-shrink-0"
+              >
+                <i data-lucide="bot" class="w-4 h-4"></i>
+              </div>
+              <div class="text-left">
+                <div class="flex items-center gap-2">
+                  <span class="text-[14px] sm:text-[15px] font-medium text-gray-200 block"
+                    >Помощник Gemini AI</span
+                  >
+                  <span
+                    id="gemini-status-badge"
+                    class="text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap bg-white/5 text-zinc-500 border border-white/10"
+                    >Не подключено</span
+                  >
+                </div>
+                <span
+                  id="gemini-status-desc"
+                  class="text-[11px] text-[#848D99] leading-tight block mt-0.5"
+                  >Укажите API-ключ для очистки выписок и дедупликации</span
+                >
+              </div>
+            </div>
+          </div>
+
+          <!-- Поле ввода API-ключа (без type="password" для исключения автозаполнения менеджеров паролей) -->
+          <div class="pt-2 border-t border-white/[0.04] space-y-2.5">
+            <div class="space-y-1.5">
+              <label class="text-[11px] text-zinc-400 block font-medium"
+                >API-ключ Google AI Studio</label
+              >
+              <div class="flex items-center gap-2">
+                <input
+                  type="text"
+                  id="gemini-api-key-input"
+                  placeholder="AIzaSy..."
+                  autocomplete="off"
+                  autocorrect="off"
+                  autocapitalize="off"
+                  spellcheck="false"
+                  onkeydown="if (event.key === 'Enter') testAndSaveGeminiKey();"
+                  class="flex-1 bg-[#12151C] border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-zinc-500 focus:border-white/30 outline-none font-mono"
+                />
+                <button
+                  type="button"
+                  id="gemini-test-btn"
+                  onclick="testAndSaveGeminiKey()"
+                  class="px-3 py-2 rounded-xl bg-white text-zinc-950 hover:bg-zinc-200 active:scale-95 text-xs font-semibold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5"
+                >
+                  <span id="gemini-test-btn-text">Проверить</span>
+                </button>
+                <button
+                  type="button"
+                  id="gemini-clear-btn"
+                  onclick="deleteGeminiApiKey()"
+                  class="p-2 rounded-xl bg-white/[0.05] hover:bg-rose-500/15 border border-white/[0.08] hover:border-rose-500/30 text-zinc-400 hover:text-rose-400 active:scale-95 transition-all cursor-pointer"
+                  title="Удалить ключ"
+                >
+                  <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Результат проверки соединения (успех/ошибка) -->
+            <div
+              id="gemini-test-result"
+              class="hidden text-[11px] px-3 py-2 rounded-xl border leading-normal"
+            ></div>
+
+            <p class="text-[10px] text-zinc-500 leading-normal">
+              Ключ хранится локально на вашем устройстве. Получить бесплатный персональный ключ
+              можно в
+              <a
+                href="https://aistudio.google.com/app/apikey"
+                target="_blank"
+                rel="noopener"
+                class="text-zinc-300 underline hover:text-white"
+                >Google AI Studio</a
+              >.
+            </p>
+          </div>
+        </div>
+
+        <!-- Словарь категорий -->
+        <button
+          type="button"
+          onclick="openSubModalFromProfile('rules')"
+          class="w-full flex items-center justify-between p-3 sm:p-3.5 hover:bg-white/[0.01] transition-colors cursor-pointer"
+        >
+          <div class="flex items-center gap-3">
+            <div class="p-2 rounded-xl bg-fuchsia-500/15 text-fuchsia-400">
+              <i data-lucide="book-open-check" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+            </div>
+            <div class="text-left">
+              <span class="text-[14px] sm:text-[15px] font-medium text-gray-200 block"
+                >Словарь категорий</span
+              >
+              <span class="text-[11px] text-[#848D99] leading-tight block mt-0.5"
+                >Автоматическое распознавание расходов</span
+              >
+            </div>
+          </div>
+          <i data-lucide="chevron-right" class="w-4 h-4 sm:w-5 sm:h-5 text-gray-600"></i>
+        </button>
+
+        <!-- Резервное копирование и JSON -->
+        <button
+          type="button"
+          onclick="openDataBackupModal()"
+          class="w-full flex items-center justify-between p-3 sm:p-3.5 hover:bg-white/[0.01] transition-colors cursor-pointer"
+        >
+          <div class="flex items-center gap-3">
+            <div class="p-2 rounded-xl bg-[#6C5DD3]/15 text-[#8C7DFF]">
+              <i data-lucide="database" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+            </div>
+            <div class="text-left">
+              <span class="text-[14px] sm:text-[15px] font-medium text-gray-200 block"
+                >Резервное копирование (JSON)</span
+              >
+              <span class="text-[11px] text-[#848D99] leading-tight block mt-0.5"
+                >Экспорт и импорт операций, вкладов и целей</span
+              >
+            </div>
+          </div>
+          <i data-lucide="chevron-right" class="w-4 h-4 sm:w-5 sm:h-5 text-gray-600"></i>
+        </button>
+
+        <!-- Кнопка авто-учета по банковским пушам -->
+        <button
+          id="profile-bank-push-btn"
+          type="button"
+          onclick="openBankPushModal()"
+          class="w-full flex items-center justify-between p-3 sm:p-3.5 hover:bg-white/[0.01] transition-colors cursor-pointer"
+        >
+          <div class="flex items-center gap-3">
+            <div
+              class="p-2 rounded-xl bg-gradient-to-br from-[#6C5DD3]/20 to-[#8C7DFF]/20 text-[#8C7DFF] border border-[#6C5DD3]/30"
+            >
+              <i data-lucide="bell-ring" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+            </div>
+            <div class="text-left">
+              <div class="flex items-center gap-2">
+                <span class="text-[14px] sm:text-[15px] font-medium text-gray-200 block"
+                  >Авто-учет по пушам</span
+                >
+                <span
+                  id="profile-bank-push-badge"
+                  class="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full"
+                  >Включен</span
+                >
+              </div>
+              <span class="text-[11px] text-[#848D99] leading-tight block mt-0.5"
+                >Внесение расходов сразу при оплате картой</span
+              >
+            </div>
+          </div>
+          <i data-lucide="chevron-right" class="w-4 h-4 sm:w-5 sm:h-5 text-gray-600"></i>
+        </button>
+
+        <!-- Кнопка установки приложения на телефон / скачивания APK -->
+        <button
+          id="profile-install-app-btn"
+          type="button"
+          onclick="openAppInstallOptionsModal()"
+          class="w-full flex items-center justify-between p-3 sm:p-3.5 hover:bg-white/[0.01] transition-colors cursor-pointer"
+        >
+          <div class="flex items-center gap-3">
+            <div class="p-2 rounded-xl bg-emerald-500/15 text-emerald-400">
+              <i data-lucide="smartphone" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+            </div>
+            <div class="text-left">
+              <span
+                class="profile-install-title text-[14px] sm:text-[15px] font-medium text-gray-200 block"
+                >Установить приложение</span
+              >
+              <span
+                class="profile-install-subtitle text-[11px] text-[#848D99] leading-tight block mt-0.5"
+                >Скачать или добавить на главный экран</span
+              >
+            </div>
+          </div>
+          <i data-lucide="chevron-right" class="w-4 h-4 sm:w-5 sm:h-5 text-gray-600"></i>
+        </button>
+
+        <!-- Кнопка настройки виджетов для смартфона (только для нативного APK приложения) -->
+        <button
+          id="profile-widgets-btn"
+          type="button"
+          onclick="openWidgetHubModal()"
+          class="w-full flex items-center justify-between p-3 sm:p-3.5 hover:bg-white/[0.01] transition-colors cursor-pointer hidden"
+        >
+          <div class="flex items-center gap-3">
+            <div class="p-2 rounded-xl bg-[#6C5DD3]/15 text-[#8C7DFF]">
+              <i data-lucide="layout-grid" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+            </div>
+            <div class="text-left">
+              <span class="text-[14px] sm:text-[15px] font-medium text-gray-200 block"
+                >Виджеты на рабочий стол</span
+              >
+              <span class="text-[11px] text-[#848D99] leading-tight block mt-0.5"
+                >Круговые графики остатка недели и месяца</span
+              >
+            </div>
+          </div>
+          <i data-lucide="chevron-right" class="w-4 h-4 sm:w-5 sm:h-5 text-gray-600"></i>
+        </button>
+
+        <!-- Обучение и знакомство с приложением -->
+        <button
+          type="button"
+          onclick="
+            closeProfileModal();
+            openOnboardingModal();
+          "
+          class="w-full flex items-center justify-between p-2.5 sm:p-3 hover:bg-[#212430] active:scale-[0.99] transition-all rounded-xl cursor-pointer"
+        >
+          <div class="flex items-center gap-3">
+            <div class="p-2 rounded-xl bg-[#6C5DD3]/15 text-[#8C7DFF]">
+              <i data-lucide="help-circle" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+            </div>
+            <div class="text-left">
+              <span class="text-[14px] sm:text-[15px] font-medium text-gray-200 block"
+                >Обучение и знакомство</span
+              >
+              <span class="text-[11px] text-[#848D99] leading-tight block mt-0.5"
+                >Как устроен семейный капитал</span
+              >
+            </div>
+          </div>
+          <i data-lucide="chevron-right" class="w-4 h-4 sm:w-5 sm:h-5 text-gray-600"></i>
+        </button>
+      </div>
+
+      <!-- Деструктивные действия вынесены отдельно с компактными отступами -->
+      <div class="mt-3.5 pt-1 space-y-0.5">
+        <button
+          type="button"
+          onclick="
+            closeProfileModal();
+            logoutUser();
+          "
+          class="w-full flex justify-center items-center gap-2 py-2 px-3 text-xs sm:text-sm text-[#848D99] hover:text-white font-medium cursor-pointer transition-colors"
+        >
+          <i data-lucide="log-out" class="w-4 h-4"></i> Выйти из приложения
+        </button>
+        <button
+          type="button"
+          onclick="
+            closeProfileModal();
+            openDeleteAccountModal();
+          "
+          class="w-full flex justify-center items-center gap-2 py-2 px-3 text-[#FF453A]/80 hover:text-[#FF453A] font-medium text-xs sm:text-sm cursor-pointer transition-colors"
+        >
+          Удалить аккаунт навсегда
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,77 @@
+<!-- МОДАЛЬНОЕ ОКНО: ДОБАВЛЕНИЕ ПЛАТЕЖА В КАЛЕНДАРЬ (Obsidian Minimalist) -->
+<div
+  id="calendar-bill-dialog"
+  class="fixed inset-0 bg-black/80 z-[180] hidden flex flex-col justify-center items-center p-4 backdrop-blur-sm animate-fade-in"
+  onclick="if (event.target === this) closeAddBillModal();"
+>
+  <div
+    class="bg-[#0E1016] border border-white/10 w-full max-w-sm rounded-2xl p-5 shadow-2xl relative"
+  >
+    <div class="flex items-center justify-between pb-3 mb-4 border-b border-white/[0.06]">
+      <h3 id="calendar-bill-dialog-title" class="font-bold text-white text-base tracking-tight">
+        Платеж в календарь
+      </h3>
+      <button
+        type="button"
+        onclick="closeAddBillModal()"
+        class="w-7 h-7 rounded-lg bg-white/[0.05] hover:bg-white/10 text-zinc-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+      >
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+
+    <form id="calendar-bill-form" onsubmit="submitCalendarBill(event)" class="space-y-3">
+      <input type="hidden" id="bill-edit-id" />
+      <div>
+        <label class="block text-[10px] text-zinc-400 uppercase font-bold mb-1">Название</label>
+        <input
+          type="text"
+          id="bill-name"
+          placeholder="ЖКХ, интернет, аренда..."
+          required
+          class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white placeholder-zinc-500 rounded-xl p-3 outline-none text-xs"
+        />
+      </div>
+      <div>
+        <label class="block text-[10px] text-zinc-400 uppercase font-bold mb-1">Сумма (₽)</label>
+        <input
+          type="text"
+          inputmode="decimal"
+          oninput="formatSumInput(this)"
+          id="bill-amount"
+          placeholder="0 ₽"
+          required
+          class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white placeholder-zinc-500 font-mono font-bold rounded-xl p-3 outline-none text-sm"
+        />
+      </div>
+
+      <!-- Скрытый инпут дня месяца (задается кликом по ячейке в календаре) -->
+      <input type="number" id="bill-day" min="1" max="31" value="1" required class="hidden" />
+      <input type="hidden" id="bill-type" value="recurring" />
+
+      <div id="bill-dialog-actions" class="flex gap-2 pt-2">
+        <button
+          type="button"
+          onclick="closeAddBillModal()"
+          class="flex-1 bg-white/[0.05] hover:bg-white/10 text-zinc-300 border border-white/[0.08] py-3 rounded-xl text-xs font-semibold cursor-pointer transition-colors active:scale-95"
+        >
+          Отмена
+        </button>
+        <button
+          type="submit"
+          class="flex-1 bg-white hover:bg-zinc-100 text-zinc-950 py-3 rounded-xl text-xs font-semibold shadow-sm active:scale-95 transition-all cursor-pointer"
+        >
+          Сохранить
+        </button>
+      </div>
+      <button
+        type="button"
+        id="bill-delete-btn"
+        onclick="deleteCurrentEditingBill()"
+        class="hidden w-full text-center text-xs text-[#F43F5E] hover:bg-[#F43F5E]/10 py-2.5 rounded-xl transition-colors cursor-pointer mt-1 font-medium"
+      >
+        Удалить платеж
+      </button>
+    </form>
+  </div>
+</div>

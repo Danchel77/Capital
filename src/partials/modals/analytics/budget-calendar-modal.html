@@ -1,0 +1,87 @@
+<!-- МОДАЛЬНОЕ ОКНО: КАЛЕНДАРЬ ПЛАТЕЖЕЙ БЮДЖЕТА (СЕТКА 1..31) (Obsidian Minimalist) -->
+<div
+  id="budget-calendar-modal"
+  class="fixed inset-0 bg-black/80 z-[160] hidden flex flex-col justify-center items-center p-4 backdrop-blur-sm animate-fade-in"
+  onclick="if (event.target === this) closeBudgetCalendarModal();"
+>
+  <div
+    class="bg-[#0E1016] border border-white/10 w-full max-w-md rounded-2xl p-4 sm:p-5 shadow-2xl relative max-h-[92vh] overflow-y-auto"
+  >
+    <div class="flex items-center justify-between pb-3 mb-3 border-b border-white/[0.06]">
+      <div class="flex items-center gap-2.5">
+        <div
+          class="w-8 h-8 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white flex items-center justify-center flex-shrink-0"
+        >
+          <i data-lucide="calendar" class="w-4 h-4 text-zinc-300"></i>
+        </div>
+        <div>
+          <h3 class="font-bold text-white text-base tracking-tight">Календарь счетов</h3>
+          <p class="text-[11px] text-zinc-400">Нажмите на день, чтобы добавить или изменить счет</p>
+        </div>
+      </div>
+      <button
+        type="button"
+        onclick="closeBudgetCalendarModal()"
+        class="w-7 h-7 rounded-lg bg-white/[0.05] hover:bg-white/10 text-zinc-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+      >
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+
+    <!-- Сетка чисел месяца 1..31 -->
+    <div
+      id="budget-modal-calendar-wrapper"
+      class="bg-[#0A0C10] p-3 rounded-2xl border border-white/[0.06] relative mb-3"
+    >
+      <div
+        id="budget-modal-calendar-grid"
+        class="grid grid-cols-7 gap-1 text-center text-xs font-mono"
+      ></div>
+
+      <!-- Всплывающий аккуратный тултип платежей дня прямо рядом с ячейкой -->
+      <div
+        id="budget-modal-day-tooltip"
+        class="hidden absolute z-40 w-[260px] sm:w-[280px] bg-[#12151C] border border-white/15 p-3 rounded-2xl shadow-2xl space-y-2.5 transition-all duration-150"
+      >
+        <div class="flex items-center justify-between pb-2 border-b border-white/[0.08]">
+          <div class="flex items-center gap-1.5 min-w-0">
+            <div
+              id="budget-modal-tooltip-day-badge"
+              class="w-6 h-6 rounded-lg bg-white/10 border border-white/15 text-white font-bold text-xs flex items-center justify-center font-mono"
+            >
+              10
+            </div>
+            <span id="budget-modal-tooltip-title" class="text-xs font-bold text-white truncate"
+              >Платежи</span
+            >
+          </div>
+          <button
+            type="button"
+            onclick="closeBudgetModalDayTooltip()"
+            class="w-6 h-6 rounded-lg bg-white/[0.05] hover:bg-white/10 text-zinc-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+          >
+            <i data-lucide="x" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+        <div
+          id="budget-modal-tooltip-bills-list"
+          class="space-y-1.5 max-h-44 overflow-y-auto pr-0.5"
+        ></div>
+        <button
+          type="button"
+          onclick="addAnotherBillFromBudgetModalTooltip()"
+          class="w-full bg-white hover:bg-zinc-100 text-zinc-950 py-2.5 rounded-xl text-xs font-semibold active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
+        >
+          <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+          <span id="budget-modal-tooltip-add-label">Добавить платеж на этот день</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Общая сумма счетов -->
+    <div class="flex items-center justify-between px-1 text-xs text-zinc-400">
+      <span>Сумма счетов в месяц:</span>
+      <b id="budget-modal-bills-total" class="text-white font-mono font-bold text-sm">0 ₽</b>
+    </div>
+  </div>
+</div>

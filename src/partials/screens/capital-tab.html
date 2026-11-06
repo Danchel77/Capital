@@ -1,0 +1,331 @@
+<!-- ЭКРАН КАПИТАЛА (АКТИВЫ: ВКЛАДЫ И ИНВЕСТИЦИИ) -->
+<div id="capital-tab" class="tab-pane hidden flex flex-col gap-3.5">
+  <!-- Скрытые элементы для совместимости со старыми скриптами -->
+  <span id="capital-total-amount" class="hidden" hidden style="display: none">0 ₽</span>
+  <span id="capital-summary-deposits" class="hidden" hidden style="display: none">0 ₽</span>
+  <span id="capital-summary-broker" class="hidden" hidden style="display: none">0 ₽</span>
+
+  <!-- Подвкладка: Вклады -->
+  <div id="capital-deposits-view" class="flex flex-col gap-3">
+    <!-- Сводная карточка вкладов (Obsidian Minimalist) -->
+    <div
+      class="bg-[#0E1016] p-4 sm:p-5 rounded-2xl border border-white/10 shadow-sm relative overflow-hidden"
+    >
+      <div class="flex items-center justify-between mb-1">
+        <span class="text-[11px] text-zinc-400 uppercase tracking-wider font-semibold"
+          >Суммарно на вкладах</span
+        >
+      </div>
+      <div class="flex items-baseline justify-between gap-2 flex-wrap">
+        <p
+          id="deposits-total-amount"
+          class="text-3xl sm:text-4xl font-bold text-white tracking-tight leading-tight font-mono tabular-nums"
+        >
+          0 ₽
+        </p>
+        <span
+          id="deposits-monthly-interest"
+          class="font-mono text-xs sm:text-sm font-semibold text-emerald-400 tabular-nums px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20"
+          >+0 ₽/мес</span
+        >
+      </div>
+    </div>
+
+    <!-- Виджет лучшего вклада в две строки (Obsidian Minimalist) -->
+    <div
+      id="market-rates-summary-card"
+      onclick="openMarketRatesModal()"
+      class="bg-[#0E1016] p-3.5 rounded-2xl border border-white/[0.08] hover:border-white/20 transition-all cursor-pointer active:scale-[0.99] flex items-center justify-between select-none"
+    >
+      <div class="flex flex-col gap-1 min-w-0 flex-1 pr-2">
+        <span class="text-xs font-semibold text-zinc-400 uppercase tracking-wider"
+          >Лучший вклад на сегодня</span
+        >
+        <div
+          id="market-best-deposit-val"
+          class="flex items-center flex-wrap gap-x-1.5 gap-y-0.5 text-xs min-w-0"
+        >
+          <div class="flex items-center gap-1.5 min-w-0 text-white font-medium">
+            <div
+              class="w-3.5 h-3.5 rounded flex-shrink-0 overflow-hidden flex items-center justify-center bg-white/[0.04]"
+            >
+              <svg viewBox="0 0 24 24" class="w-full h-full fill-current text-[#EA4335]">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+              </svg>
+            </div>
+            <span class="truncate">Совкомбанк</span>
+          </div>
+          <span class="text-zinc-600 select-none">·</span>
+          <span class="font-mono font-bold text-emerald-400 whitespace-nowrap"
+            >14,5% на 6 мес.</span
+          >
+        </div>
+      </div>
+      <i data-lucide="chevron-right" class="w-4 h-4 text-zinc-500 flex-shrink-0 ml-2"></i>
+    </div>
+
+    <!-- Инлайн-форма добавления нового вклада (Obsidian Minimalist) -->
+    <div
+      id="deposit-form-container"
+      class="hidden bg-[#0E1016] p-4 rounded-2xl border border-white/[0.08] shadow-xl animate-fade-in"
+    >
+      <form id="deposit-form" onsubmit="submitDeposit(event)">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-bold text-white uppercase tracking-wider">Новый вклад</span>
+          <button
+            type="button"
+            onclick="
+              closeForm('deposit-form-container', 'dep-submit-btn', 'Сохранить', 'deposit-form')
+            "
+            class="w-6 h-6 rounded-lg bg-white/[0.05] hover:bg-white/10 text-zinc-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+          >
+            <i data-lucide="x" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+
+        <div class="mb-3">
+          <label class="block text-[10px] text-zinc-400 uppercase font-bold mb-1">Банк</label>
+          <div class="relative" id="dep-bank-select-container">
+            <input type="hidden" id="dep-bank" value="" />
+            <button
+              type="button"
+              id="dep-bank-select-btn"
+              onclick="toggleCustomBankDropdown('dep-bank')"
+              class="w-full bg-[#12151C] border border-white/[0.08] hover:border-white/15 focus:border-white/25 text-white rounded-xl p-3 outline-none text-xs flex items-center justify-between transition-colors cursor-pointer select-none"
+            >
+              <div class="flex items-center gap-2 min-w-0" id="dep-bank-selected-display">
+                <span class="text-zinc-500">Выберите банк (необязательно)</span>
+              </div>
+              <i
+                data-lucide="chevron-down"
+                id="dep-bank-chevron"
+                class="w-4 h-4 text-zinc-500 flex-shrink-0 transition-transform duration-200"
+              ></i>
+            </button>
+
+            <div
+              id="dep-bank-dropdown"
+              class="hidden absolute left-0 right-0 top-full mt-1.5 z-50 bg-[#12151C] border border-white/15 rounded-2xl shadow-2xl overflow-hidden max-h-60 flex flex-col"
+            >
+              <div class="p-2 border-b border-white/[0.06] bg-[#0E1016]">
+                <input
+                  type="text"
+                  id="dep-bank-search"
+                  placeholder="Поиск банка..."
+                  oninput="filterCustomBankDropdown('dep-bank', this.value)"
+                  class="w-full bg-[#181C26] border border-white/[0.08] text-white placeholder-zinc-500 text-xs rounded-lg px-2.5 py-1.5 outline-none"
+                />
+              </div>
+              <div
+                id="dep-bank-options-list"
+                class="overflow-y-auto divide-y divide-white/[0.04]"
+              ></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="block text-[10px] text-zinc-400 uppercase font-bold mb-1"
+            >Название вклада</label
+          >
+          <input
+            type="text"
+            id="dep-name"
+            placeholder="Наименование вклада (необязательно)"
+            class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white placeholder-zinc-500 rounded-xl p-3 outline-none text-xs"
+          />
+        </div>
+
+        <div class="flex space-x-2.5 mb-3">
+          <input
+            type="text"
+            inputmode="decimal"
+            oninput="formatSumInput(this)"
+            id="dep-amount"
+            placeholder="Сумма (₽)"
+            required
+            class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white placeholder-zinc-500 rounded-xl p-3 outline-none flex-1 text-xs font-bold"
+          />
+          <input
+            type="text"
+            inputmode="decimal"
+            oninput="formatSumInput(this)"
+            id="dep-rate"
+            placeholder="Ставка %"
+            required
+            class="w-1/3 bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white placeholder-zinc-500 rounded-xl p-3 outline-none text-xs font-bold"
+          />
+        </div>
+
+        <!-- Даты открытия и закрытия -->
+        <div class="grid grid-cols-2 gap-2.5 mb-4">
+          <div>
+            <label class="block text-[10px] text-zinc-400 uppercase font-bold mb-1"
+              >Дата открытия</label
+            >
+            <input
+              type="text"
+              id="dep-start"
+              data-datepicker="true"
+              readonly
+              placeholder="ДД.ММ.ГГГГ"
+              required
+              class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white placeholder-zinc-500 rounded-xl p-3 outline-none text-xs cursor-pointer"
+            />
+          </div>
+          <div>
+            <label class="block text-[10px] text-zinc-400 uppercase font-bold mb-1"
+              >Дата закрытия</label
+            >
+            <input
+              type="text"
+              id="dep-end"
+              data-datepicker="true"
+              readonly
+              placeholder="ДД.ММ.ГГГГ"
+              required
+              class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white placeholder-zinc-500 rounded-xl p-3 outline-none text-xs cursor-pointer"
+            />
+          </div>
+        </div>
+
+        <!-- Кнопки действий -->
+        <div class="flex gap-2 h-[42px]">
+          <button
+            type="button"
+            onclick="
+              closeForm('deposit-form-container', 'dep-submit-btn', 'Сохранить', 'deposit-form')
+            "
+            class="w-1/3 h-full bg-white/[0.05] hover:bg-white/10 text-zinc-300 font-medium rounded-xl text-xs flex items-center justify-center cursor-pointer transition-colors active:scale-95 leading-none border border-white/[0.08]"
+          >
+            Отмена
+          </button>
+          <button
+            type="submit"
+            id="dep-submit-btn"
+            class="w-2/3 h-full bg-white hover:bg-zinc-100 text-zinc-950 font-semibold rounded-xl text-xs flex items-center justify-center cursor-pointer shadow-sm transition-all active:scale-95 leading-none"
+          >
+            Сохранить
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <div id="deposits-list" class="space-y-3 pb-6"></div>
+  </div>
+
+  <!-- Подвкладка: Брокер -->
+  <div id="capital-broker-view" class="hidden flex flex-col gap-3.5">
+    <!-- Лаконичное пустое состояние -->
+    <div
+      id="broker-empty-state"
+      class="hidden card bg-[#0E1016] rounded-2xl p-6 text-center flex flex-col items-center justify-center gap-3 border border-white/10 shadow-sm"
+    >
+      <div
+        class="w-12 h-12 rounded-2xl bg-white/[0.06] text-white flex items-center justify-center"
+      >
+        <i data-lucide="trending-up" class="w-6 h-6"></i>
+      </div>
+      <div>
+        <h3 class="text-base font-bold text-white">Портфель пуст</h3>
+        <p class="text-xs text-zinc-400 mt-1">Добавьте акции, фонды или рубли</p>
+      </div>
+      <button
+        type="button"
+        onclick="openAddMoexAssetModal()"
+        class="py-2.5 px-5 rounded-xl bg-white text-zinc-950 hover:bg-zinc-200 active:scale-95 text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer mt-1"
+      >
+        <i data-lucide="plus" class="w-4 h-4"></i>
+        <span>Добавить актив</span>
+      </button>
+    </div>
+
+    <!-- Главная карточка портфеля (Obsidian Minimalist) -->
+    <div
+      id="broker-main-card"
+      class="bg-[#0E1016] p-4 sm:p-5 rounded-2xl border border-white/10 shadow-sm relative select-none"
+    >
+      <!-- Скрытые элементы для совместимости со старыми вызовами -->
+      <span id="broker-assets-sum" class="hidden">0 ₽</span>
+      <span id="broker-cash-sum" class="hidden">0 ₽</span>
+      <span id="broker-yield-badge" class="hidden"></span>
+
+      <div class="flex items-center justify-between">
+        <span class="text-[11px] text-zinc-400 uppercase tracking-wider font-semibold"
+          >Инвестиционный портфель</span
+        >
+        <button
+          type="button"
+          id="btn-refresh-moex-quotes"
+          onclick="refreshMoexQuotes()"
+          class="p-2 rounded-xl bg-white/[0.05] hover:bg-white/10 text-zinc-400 hover:text-white transition-all cursor-pointer active:scale-95 border border-white/10"
+          title="Обновить котировки Мосбиржи"
+        >
+          <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+
+      <!-- Основной баланс портфеля -->
+      <p
+        id="broker-balance"
+        class="text-3xl sm:text-4xl font-bold text-white tracking-tight leading-tight font-mono tabular-nums mt-1"
+      >
+        0 ₽
+      </p>
+
+      <!-- Переключатель таймфреймов -->
+      <div
+        class="flex items-center justify-between bg-[#12151C] p-0.5 rounded-xl border border-white/[0.06] mt-3 mb-2 text-xs font-medium text-zinc-400"
+      >
+        <button
+          type="button"
+          onclick="setBrokerTimeframe('1M')"
+          class="broker-tf-btn flex-1 py-1 text-center rounded-lg transition-all cursor-pointer"
+          data-tf="1M"
+        >
+          1М
+        </button>
+        <button
+          type="button"
+          onclick="setBrokerTimeframe('3M')"
+          class="broker-tf-btn flex-1 py-1 text-center rounded-lg transition-all cursor-pointer"
+          data-tf="3M"
+        >
+          3М
+        </button>
+        <button
+          type="button"
+          onclick="setBrokerTimeframe('6M')"
+          class="broker-tf-btn flex-1 py-1 text-center rounded-lg transition-all cursor-pointer"
+          data-tf="6M"
+        >
+          6М
+        </button>
+        <button
+          type="button"
+          onclick="setBrokerTimeframe('1Y')"
+          class="broker-tf-btn flex-1 py-1 text-center rounded-lg transition-all cursor-pointer"
+          data-tf="1Y"
+        >
+          1Г
+        </button>
+        <button
+          type="button"
+          onclick="setBrokerTimeframe('ALL')"
+          class="broker-tf-btn flex-1 py-1 text-center rounded-lg bg-white text-zinc-950 font-semibold transition-all cursor-pointer"
+          data-tf="ALL"
+        >
+          Всё
+        </button>
+      </div>
+
+      <!-- Холст графика -->
+      <div class="w-full h-44 relative">
+        <canvas id="brokerChart"></canvas>
+      </div>
+    </div>
+
+    <!-- СЕКЦИЯ: СОСТАВ ПОРТФЕЛЯ (МОСКОВСКАЯ БИРЖА + РУБЛИ) -->
+    <div id="moex-portfolio-container" class="space-y-3 pb-6"></div>
+  </div>
+</div>

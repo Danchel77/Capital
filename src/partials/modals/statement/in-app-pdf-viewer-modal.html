@@ -1,0 +1,114 @@
+<!-- МОДАЛЬНОЕ ОКНО: ВСТРОЕННЫЙ ПРОСМОТРЩИК PDF (КАНВАС PDF.JS ДЛЯ APK И БРАУЗЕРА) -->
+<div
+  id="in-app-pdf-viewer-modal"
+  class="fixed inset-0 bg-black/95 z-[200] hidden flex flex-col items-center justify-between backdrop-blur-md animate-fade-in select-none"
+>
+  <!-- Шапка просмотрщика -->
+  <div
+    class="w-full bg-[#0E1016] border-b border-white/[0.06] px-3.5 sm:px-5 py-2.5 flex items-center justify-between z-10 shadow-lg flex-shrink-0"
+  >
+    <div class="flex items-center gap-2.5 min-w-0 pr-2">
+      <div
+        class="w-8 h-8 rounded-xl bg-white/[0.05] text-white flex items-center justify-center flex-shrink-0 border border-white/[0.08]"
+      >
+        <i data-lucide="file-text" class="w-4 h-4"></i>
+      </div>
+      <div class="min-w-0">
+        <h4
+          id="pdf-viewer-title"
+          class="text-xs sm:text-sm font-bold text-white truncate max-w-[160px] sm:max-w-md"
+        >
+          Выписка.pdf
+        </h4>
+        <p id="pdf-viewer-pages-label" class="text-[10px] text-zinc-400 font-mono">
+          Страница 1 из 1
+        </p>
+      </div>
+    </div>
+
+    <!-- Панель управления: зум + пагинация + закрыть -->
+    <div class="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+      <!-- Кнопки зума -->
+      <div class="flex items-center bg-[#12151C] rounded-xl border border-white/10 p-0.5">
+        <button
+          type="button"
+          onclick="changePdfViewerZoom(-0.25)"
+          class="w-7 h-7 rounded-lg text-zinc-300 hover:text-white flex items-center justify-center font-bold text-sm active:scale-90 cursor-pointer"
+          title="Уменьшить"
+        >
+          -
+        </button>
+        <span
+          id="pdf-viewer-zoom-label"
+          class="text-[10px] font-mono font-semibold text-zinc-200 px-1.5 min-w-[38px] text-center"
+          >100%</span
+        >
+        <button
+          type="button"
+          onclick="changePdfViewerZoom(0.25)"
+          class="w-7 h-7 rounded-lg text-zinc-300 hover:text-white flex items-center justify-center font-bold text-sm active:scale-90 cursor-pointer"
+          title="Увеличить"
+        >
+          +
+        </button>
+      </div>
+
+      <!-- Кнопка перехода на внешнюю вкладку браузера -->
+      <button
+        type="button"
+        id="pdf-viewer-external-btn"
+        onclick="openCurrentPdfInExternalTab()"
+        class="hidden sm:flex h-8 px-2.5 bg-white/[0.05] hover:bg-white/10 border border-white/[0.08] text-zinc-300 hover:text-white rounded-xl text-xs font-medium items-center gap-1 active:scale-95 cursor-pointer"
+        title="Открыть в новой вкладке браузера"
+      >
+        <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+        <span>Вкладка</span>
+      </button>
+
+      <button
+        type="button"
+        onclick="closeInAppPdfViewer()"
+        class="w-8 h-8 rounded-xl bg-white/[0.05] hover:bg-white/10 border border-white/[0.08] text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer active:scale-95 transition-all"
+        title="Закрыть"
+      >
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Область холста PDF (скроллируемая) -->
+  <div
+    id="pdf-viewer-canvas-wrap"
+    class="flex-1 w-full overflow-auto flex items-start justify-center p-2 sm:p-4 bg-[#000000] custom-scrollbar"
+  >
+    <canvas
+      id="pdf-viewer-canvas"
+      class="shadow-2xl rounded-lg bg-white transition-transform duration-150 origin-top"
+    ></canvas>
+  </div>
+
+  <!-- Нижняя плавающая панель перелистывания страниц -->
+  <div
+    class="w-full bg-[#0E1016]/95 backdrop-blur-md border-t border-white/[0.06] py-2 px-4 flex items-center justify-center gap-4 z-10 flex-shrink-0"
+  >
+    <button
+      type="button"
+      id="pdf-prev-page-btn"
+      onclick="changePdfViewerPage(-1)"
+      class="px-3.5 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/10 border border-white/[0.08] text-zinc-300 text-xs font-semibold flex items-center gap-1.5 disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 transition-all cursor-pointer"
+    >
+      <i data-lucide="chevron-left" class="w-4 h-4"></i>
+      <span>Назад</span>
+    </button>
+    <span id="pdf-page-indicator" class="text-xs font-mono font-semibold text-zinc-300">1 / 1</span>
+    <button
+      type="button"
+      id="pdf-next-page-btn"
+      onclick="changePdfViewerPage(1)"
+      class="px-3.5 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/10 border border-white/[0.08] text-zinc-300 text-xs font-semibold flex items-center gap-1.5 disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 transition-all cursor-pointer"
+    >
+      <span>Вперед</span>
+      <i data-lucide="chevron-right" class="w-4 h-4"></i>
+    </button>
+  </div>
+</div>

@@ -1,0 +1,1008 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=overlays-content"
+    />
+    <title>Бюджет</title>
+    <meta
+      name="description"
+      content="PWA веб-приложение для учета личных финансов, бюджета, инвестиций и целей."
+    />
+    <meta property="og:title" content="Бюджет" />
+    <meta
+      property="og:description"
+      content="PWA веб-приложение для учета личных финансов, бюджета, инвестиций и целей."
+    />
+
+    <!-- Иконки и PWA настройки -->
+    <link rel="icon" type="image/svg+xml" href="favicon.svg?v=6" />
+    <link rel="alternate icon" type="image/svg+xml" href="icon-pwa.svg?v=6" />
+    <link rel="apple-touch-icon" href="icon-pwa.svg?v=6" />
+    <link rel="manifest" href="manifest.json?v=6" />
+    <meta name="theme-color" content="#0F1117" />
+
+    <style>
+      /* ============================================================
+       GOOGLE MATERIAL DIAMOND & WAVE DOTS - SPLASH SCREEN
+       Цвета: Фирменная палитра (#0F1117, #181B24, #6C5DD3, #38BDF8)
+       ============================================================ */
+      html,
+      body {
+        background-color: #0f1117;
+        margin: 0;
+        padding: 0;
+        overflow-x: hidden;
+      }
+
+      .loading-screen {
+        position: fixed;
+        inset: 0;
+        width: 100vw;
+        height: 100vh;
+        height: 100dvh;
+        z-index: 99999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: radial-gradient(circle at 50% 45%, #181b24 0%, #0f1117 70%, #090b0f 100%);
+        color: #f2f4f7;
+        opacity: 1;
+        visibility: visible;
+        overflow: hidden;
+        user-select: none;
+        -webkit-user-select: none;
+        touch-action: none;
+        padding-top: max(24px, env(safe-area-inset-top));
+        padding-bottom: max(28px, env(safe-area-inset-bottom));
+        padding-left: max(20px, env(safe-area-inset-left));
+        padding-right: max(20px, env(safe-area-inset-right));
+        box-sizing: border-box;
+        transition:
+          opacity 0.38s cubic-bezier(0.2, 0, 0, 1),
+          transform 0.38s cubic-bezier(0.2, 0, 0, 1),
+          visibility 0.38s ease;
+        will-change: opacity, transform;
+      }
+
+      .loading-screen.loading-screen--exit {
+        opacity: 0 !important;
+        transform: scale(0.96) !important;
+        pointer-events: none !important;
+      }
+
+      .loading-screen.hidden {
+        display: none !important;
+        opacity: 0 !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+      }
+
+      /* Мягкий фирменный индиго-ореол (Accent glow) */
+      .loading-glow-halo {
+        position: absolute;
+        top: 42%;
+        left: 50%;
+        width: 260px;
+        height: 260px;
+        transform: translate3d(-50%, -50%, 0);
+        background: radial-gradient(
+          circle,
+          rgba(108, 93, 211, 0.28) 0%,
+          rgba(56, 189, 248, 0.12) 42%,
+          transparent 70%
+        );
+        border-radius: 50%;
+        filter: blur(44px);
+        pointer-events: none;
+        animation: material-halo-breathe 3.6s ease-in-out infinite alternate;
+        will-change: transform, opacity;
+      }
+
+      /* Центральный контейнер */
+      .loading-container {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+      }
+
+      /* Сцена лазерного ромба */
+      .laser-diamond-stage {
+        position: relative;
+        width: 112px;
+        height: 112px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 22px;
+      }
+
+      .laser-diamond-svg {
+        width: 88px;
+        height: 88px;
+        overflow: visible;
+      }
+
+      /* ЕДИНСТВЕННЫЙ ромб с острыми углами: вычерчивание лазером */
+      .laser-drawing-path {
+        stroke-dasharray: 215;
+        stroke-dashoffset: 215;
+        will-change: stroke-dashoffset, opacity, filter;
+        animation: laser-draw-diamond 2.8s cubic-bezier(0.2, 0, 0.2, 1) infinite;
+      }
+
+      @keyframes laser-draw-diamond {
+        0% {
+          stroke-dashoffset: 215;
+          opacity: 0;
+        }
+        3% {
+          opacity: 1;
+        }
+        45% {
+          stroke-dashoffset: 0;
+          opacity: 1;
+          filter: drop-shadow(0 0 5px #38bdf8) drop-shadow(0 0 10px #6c5dd3);
+        }
+        48% {
+          /* Вспышка в момент смыкания контура на вершине */
+          stroke-dashoffset: 0;
+          opacity: 1;
+          filter: drop-shadow(0 0 12px #ffffff) drop-shadow(0 0 22px #38bdf8)
+            drop-shadow(0 0 32px #6c5dd3);
+        }
+        72% {
+          stroke-dashoffset: 0;
+          opacity: 0.9;
+          filter: drop-shadow(0 0 6px #38bdf8);
+        }
+        92%,
+        100% {
+          stroke-dashoffset: 0;
+          opacity: 0;
+          filter: none;
+        }
+      }
+
+      /* Резкие контурные волны («круги на воде» с абсолютно острыми углами) */
+      .laser-wave-group {
+        transform-origin: 50px 50px;
+        pointer-events: none;
+        will-change: transform, opacity;
+      }
+
+      .laser-wave-1 {
+        animation: laser-sharp-ripple-1 2.8s cubic-bezier(0.14, 0.7, 0.25, 1) infinite;
+      }
+
+      .laser-wave-2 {
+        animation: laser-sharp-ripple-2 2.8s cubic-bezier(0.14, 0.7, 0.25, 1) infinite;
+      }
+
+      @keyframes laser-sharp-ripple-1 {
+        0%,
+        46% {
+          transform: scale(1);
+          opacity: 0;
+        }
+        48% {
+          transform: scale(1);
+          opacity: 0.9;
+        }
+        60% {
+          opacity: 0.55;
+        }
+        88%,
+        100% {
+          transform: scale(2.2);
+          opacity: 0;
+        }
+      }
+
+      @keyframes laser-sharp-ripple-2 {
+        0%,
+        54% {
+          transform: scale(1);
+          opacity: 0;
+        }
+        56% {
+          transform: scale(1);
+          opacity: 0.75;
+        }
+        68% {
+          opacity: 0.4;
+        }
+        94%,
+        100% {
+          transform: scale(2);
+          opacity: 0;
+        }
+      }
+
+      /* Название бренда: чистое, минималистичное */
+      .loading-brand-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        margin: 0;
+      }
+
+      .loading-title-symbol {
+        color: #38bdf8;
+        font-size: 16px;
+        line-height: 1;
+        filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.7));
+        animation: kinetic-symbol-glow 2.8s ease-in-out infinite alternate;
+      }
+
+      .loading-title-text {
+        margin: 0;
+        font-family:
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          'Segoe UI',
+          sans-serif;
+        font-size: 21px;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        color: #f2f4f7;
+      }
+
+      @keyframes kinetic-symbol-glow {
+        0% {
+          color: #38bdf8;
+          filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.6));
+        }
+        100% {
+          color: #818cf8;
+          filter: drop-shadow(0 0 10px rgba(129, 140, 248, 0.8));
+        }
+      }
+
+      /* Микроиндикатор загрузки: три минималистичные деликатные точки */
+      .kinetic-status-dots {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        margin-top: 22px;
+        height: 16px;
+      }
+
+      .kinetic-status-dot {
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background: #848d99;
+        opacity: 0.35;
+        will-change: transform, opacity, background-color, box-shadow;
+        animation: kinetic-dot-fade 1.8s ease-in-out infinite;
+      }
+
+      .kinetic-status-dot:nth-child(1) {
+        animation-delay: 0s;
+      }
+
+      .kinetic-status-dot:nth-child(2) {
+        animation-delay: 0.25s;
+      }
+
+      .kinetic-status-dot:nth-child(3) {
+        animation-delay: 0.5s;
+      }
+
+      @keyframes kinetic-dot-fade {
+        0%,
+        100% {
+          transform: scale(0.9);
+          opacity: 0.25;
+          background-color: #848d99;
+          box-shadow: none;
+        }
+        50% {
+          transform: scale(1.4);
+          opacity: 0.95;
+          background-color: #38bdf8;
+          box-shadow: 0 0 8px rgba(56, 189, 248, 0.8);
+        }
+      }
+    </style>
+
+    <!-- Предварительный прогрев сетевых соединений (ускорение загрузки скриптов) -->
+    <link rel="preconnect" href="https://cdn.tailwindcss.com" crossorigin />
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link rel="dns-prefetch" href="https://cdn.tailwindcss.com" />
+    <link rel="dns-prefetch" href="https://www.gstatic.com" />
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net" />
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/chart.js" crossorigin="anonymous"></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1"
+      crossorigin="anonymous"
+    ></script>
+    <script defer src="https://unpkg.com/lucide@latest" crossorigin="anonymous"></script>
+
+    <!-- Firebase -->
+    <script
+      defer
+      src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      defer
+      src="https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore-compat.js"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      defer
+      src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth-compat.js"
+      crossorigin="anonymous"
+    ></script>
+
+    <!-- PDF.js для чтения выписок в браузере (отложенная загрузка, не блокирует старт) -->
+    <script
+      defer
+      src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"
+      crossorigin="anonymous"
+    ></script>
+
+    <link rel="stylesheet" href="style.css?v=142" />
+    <script defer src="iconsSVG.js?v=141"></script>
+    <script defer src="bank-logos.js?v=141"></script>
+    <script defer src="default-rules.js?v=141"></script>
+    <script defer src="gemini-service.js?v=141"></script>
+    <script defer src="banks/sber.js?v=141"></script>
+    <script defer src="banks/tbank.js?v=141"></script>
+    <script defer src="banks/alfa.js?v=141"></script>
+    <script defer src="banks/vtb.js?v=141"></script>
+    <script defer src="banks/ozon.js?v=141"></script>
+    <script defer src="banks/gpb.js?v=141"></script>
+    <script defer src="banks/yandex.js?v=141"></script>
+    <script defer src="statement-parser.js?v=141"></script>
+
+    <!-- Модули приложения -->
+    <script defer src="core.js?v=141"></script>
+    <script defer src="auth-profile.js?v=141"></script>
+    <script defer src="backup-manager.js?v=141"></script>
+    <script defer src="ui-tools.js?v=141"></script>
+    <script defer src="app-updater.js?v=141"></script>
+    <script defer src="apk-features.js?v=141"></script>
+    <script defer src="tx-categories.js?v=141"></script>
+    <script defer src="tx-analytics.js?v=141"></script>
+    <script defer src="tx-modal.js?v=141"></script>
+    <script defer src="transactions.js?v=141"></script>
+    <script defer src="moex-service.js?v=141"></script>
+    <script defer src="deposits.js?v=141"></script>
+    <script defer src="marketRates.js?v=141"></script>
+    <script defer src="broker.js?v=141"></script>
+    <script defer src="goals.js?v=141"></script>
+    <script defer src="calendar-bills.js?v=141"></script>
+    <script defer src="budget.js?v=141"></script>
+    <script defer src="mock-mode.js?v=141"></script>
+    <script defer src="app.js?v=141"></script>
+  </head>
+  <body class="bg-[#0F1117] text-[#F2F4F7]" ontouchstart="">
+    <!-- ============================================================
+       SPLASH / LOADING SCREEN: SHARP LASER DIAMOND & WATER RIPPLES
+       ============================================================ -->
+    <div id="loading-screen" class="loading-screen" role="status" aria-label="Загрузка приложения">
+      <!-- Мягкий рассеянный индиго-ореол (акцент бренда #6C5DD3) -->
+      <div class="loading-glow-halo"></div>
+
+      <!-- Основной центрированный контейнер -->
+      <div class="loading-container">
+        <!-- Сцена: ОДИН лазерный ромб с острыми углами и рождением волн («кругов на воде») -->
+        <div class="laser-diamond-stage">
+          <svg
+            class="laser-diamond-svg"
+            viewBox="0 0 100 100"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <defs>
+              <!-- Градиент лазерного луча: ослепительный белый во фронте вычерчивания -> циан -> индиго -->
+              <linearGradient id="laser-line-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#FFFFFF" />
+                <stop offset="25%" stop-color="#38BDF8" />
+                <stop offset="70%" stop-color="#818CF8" />
+                <stop offset="100%" stop-color="#6C5DD3" />
+              </linearGradient>
+
+              <!-- Неоновое свечение лазера -->
+              <filter id="laser-line-glow" x="-40%" y="-40%" width="180%" height="180%">
+                <feGaussianBlur in="SourceGraphic" stdDeviation="1.8" result="glow1" />
+                <feGaussianBlur in="SourceGraphic" stdDeviation="4.5" result="glow2" />
+                <feMerge>
+                  <feMergeNode in="glow2" />
+                  <feMergeNode in="glow1" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
+
+            <!-- 1. Тонкий фоновый контур-направляющая (едва уловимый след с острыми углами) -->
+            <polygon
+              points="50,12 88,50 50,88 12,50"
+              stroke="rgba(255, 255, 255, 0.08)"
+              stroke-width="1.2"
+              stroke-linejoin="miter"
+              stroke-miterlimit="10"
+              fill="none"
+            />
+
+            <!-- 2. Расходящиеся контурные волны («круги на воде» с острыми углами) -->
+            <g class="laser-wave-group laser-wave-1">
+              <polygon
+                points="50,12 88,50 50,88 12,50"
+                stroke="#38BDF8"
+                stroke-width="1.2"
+                stroke-linejoin="miter"
+                stroke-miterlimit="10"
+                fill="none"
+              />
+            </g>
+            <g class="laser-wave-group laser-wave-2">
+              <polygon
+                points="50,12 88,50 50,88 12,50"
+                stroke="#6C5DD3"
+                stroke-width="1"
+                stroke-linejoin="miter"
+                stroke-miterlimit="10"
+                fill="none"
+              />
+            </g>
+
+            <!-- 3. ЕДИНСТВЕННЫЙ ромб с острыми углами, вычерчиваемый лазером -->
+            <path
+              d="M 50,12 L 88,50 L 50,88 L 12,50 Z"
+              stroke="url(#laser-line-grad)"
+              stroke-width="2"
+              stroke-linejoin="miter"
+              stroke-miterlimit="10"
+              fill="none"
+              filter="url(#laser-line-glow)"
+              class="laser-drawing-path"
+            />
+          </svg>
+        </div>
+
+        <!-- Название бренда в точности в стиле приложения -->
+        <div class="loading-brand-row">
+          <span class="loading-title-symbol">◇</span>
+          <h1 class="loading-title-text">Бюджет</h1>
+        </div>
+
+        <!-- Микроиндикатор загрузки: три деликатные ритмичные точки -->
+        <div class="kinetic-status-dots" aria-label="Загрузка">
+          <span class="kinetic-status-dot"></span>
+          <span class="kinetic-status-dot"></span>
+          <span class="kinetic-status-dot"></span>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      /* Мгновенная инициализация контроллера экрана загрузки */
+      (function () {
+        window.hideLoadingScreen = function () {
+          var ls = document.getElementById('loading-screen');
+          if (!ls || ls.dataset.hiding === 'true') return;
+          ls.dataset.hiding = 'true';
+          ls.classList.add('loading-screen--exit');
+
+          var cleanedUp = false;
+          var cleanup = function () {
+            if (cleanedUp) return;
+            cleanedUp = true;
+            window._loadingScreenElement = ls;
+            if (ls.parentNode) {
+              ls.parentNode.removeChild(ls);
+            }
+          };
+
+          ls.addEventListener('transitionend', cleanup, { once: true });
+          setTimeout(cleanup, 360);
+        };
+
+        window.showLoadingScreen = function () {
+          var ls = document.getElementById('loading-screen');
+          if (!ls && window._loadingScreenElement) {
+            ls = window._loadingScreenElement;
+            document.body.prepend(ls);
+          }
+          if (!ls) return;
+          ls.dataset.hiding = 'false';
+          ls.classList.remove('loading-screen--exit', 'hidden');
+          ls.style.opacity = '1';
+          ls.style.transform = 'scale(1)';
+          ls.style.pointerEvents = 'auto';
+        };
+      })();
+    </script>
+
+    <div
+      id="login-screen"
+      class="fixed inset-0 bg-gray-900 z-[200] hidden flex flex-col justify-center items-center p-6 animate-fade-in"
+    >
+      <div class="bg-gray-800 p-6 rounded-3xl border border-gray-700 w-full max-w-sm shadow-2xl">
+        <div class="text-center mb-6">
+          <h2
+            class="text-2xl font-bold text-white tracking-tight flex items-center justify-center gap-2"
+          >
+            <span class="text-[#8C7DFF]">◇</span> Бюджет
+          </h2>
+          <p class="text-xs text-gray-400 mt-1">Учёт личных финансов</p>
+        </div>
+
+        <!-- Кнопка входа через Google в 1 клик -->
+        <button
+          type="button"
+          id="google-auth-btn"
+          onclick="loginWithGoogle()"
+          class="w-full bg-gray-700 hover:bg-gray-600 border border-gray-600 text-white font-semibold rounded-2xl px-4 py-3.5 flex items-center justify-center gap-3 transition-all active:scale-95 shadow-md cursor-pointer mb-5"
+        >
+          <svg class="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24">
+            <path
+              fill="#4285F4"
+              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+            />
+            <path
+              fill="#34A853"
+              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+            />
+            <path
+              fill="#FBBC05"
+              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+            />
+            <path
+              fill="#EA4335"
+              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+            />
+          </svg>
+          <span class="text-sm">Войти через Google</span>
+        </button>
+
+        <!-- Разделитель -->
+        <div id="auth-divider" class="flex items-center gap-3 mb-5">
+          <div class="h-px bg-gray-700 flex-1"></div>
+          <span class="text-[11px] uppercase tracking-wider text-gray-500 font-semibold"
+            >или по логину</span
+          >
+          <div class="h-px bg-gray-700 flex-1"></div>
+        </div>
+
+        <!-- Переключатель: Вход / Регистрация -->
+        <div class="flex bg-gray-900/80 p-1 rounded-2xl border border-gray-700/80 mb-4">
+          <button
+            type="button"
+            id="tab-auth-login"
+            onclick="setAuthMode('login')"
+            class="flex-1 py-2 text-xs font-semibold rounded-xl bg-[#6C5DD3] text-white transition-all cursor-pointer"
+          >
+            Вход
+          </button>
+          <button
+            type="button"
+            id="tab-auth-register"
+            onclick="setAuthMode('register')"
+            class="flex-1 py-2 text-xs font-semibold rounded-xl text-gray-400 hover:text-white transition-all cursor-pointer"
+          >
+            Регистрация
+          </button>
+        </div>
+
+        <!-- Форма ввода учетных данных -->
+        <form id="auth-form" onsubmit="handleAuthSubmit(event)">
+          <div class="mb-3">
+            <label class="block text-xs text-gray-400 mb-1">Никнейм</label>
+            <input
+              type="text"
+              id="auth-username"
+              placeholder="Например: alex"
+              required
+              class="w-full bg-gray-700 border border-gray-600 text-white rounded-xl p-3 outline-none text-sm focus:border-white/30 transition-colors"
+            />
+          </div>
+
+          <div class="mb-5">
+            <label class="block text-xs text-gray-400 mb-1">Пароль</label>
+            <input
+              type="password"
+              id="auth-password"
+              placeholder="От 6 символов"
+              required
+              minlength="6"
+              class="w-full bg-gray-700 border border-gray-600 text-white rounded-xl p-3 outline-none text-sm focus:border-white/30 transition-colors"
+            />
+          </div>
+
+          <button
+            type="submit"
+            id="auth-submit-btn"
+            class="w-full bg-[#6C5DD3] hover:bg-[#5E4FC9] text-white font-semibold rounded-xl py-3.5 shadow-md shadow-[#6C5DD3]/25 transition-all active:scale-95 text-sm cursor-pointer"
+          >
+            Войти
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- @include "partials/modals/common/custom-dialog.html" -->
+    <!-- @include "partials/modals/transactions/category-dialog.html" -->
+    <!-- @include "partials/modals/transactions/manage-categories-dialog.html" -->
+    <!-- ПЛАВАЮЩИЙ УВЕДОМИТЕЛЬНЫЙ ОСТРОВОК (НЕ СДВИГАЕТ ИНТЕРФЕЙС) -->
+    <div id="toast-container" class="toast-container hidden">
+      <div id="toast-content" class="toast-capsule">
+        <div id="toast-icon-wrap" class="toast-icon-wrap">
+          <div id="toast-spinner" class="toast-spinner"></div>
+          <i
+            id="toast-icon-success"
+            data-lucide="check"
+            class="w-3.5 h-3.5 text-[#30D158] hidden"
+          ></i>
+          <i
+            id="toast-icon-error"
+            data-lucide="alert-circle"
+            class="w-3.5 h-3.5 text-[#FF453A] hidden"
+          ></i>
+        </div>
+        <span id="toast-text" class="toast-text">Синхронизация...</span>
+      </div>
+    </div>
+
+    <header
+      class="bg-gray-900 border-b border-gray-800 text-white px-3.5 py-2 sm:px-4 sm:py-2.5 sticky top-0 z-10 flex justify-between items-center shadow-md"
+    >
+      <div class="flex items-center gap-2 min-w-0">
+        <h1 class="text-base sm:text-lg font-bold flex items-center gap-1.5">
+          <span class="text-[#38BDF8]">◇</span> Бюджет
+        </h1>
+
+        <!-- Компактный индикатор офлайн-режима -->
+        <span
+          id="offline-badge"
+          class="hidden items-center gap-1.5 text-[10px] font-semibold text-amber-300 bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 rounded-full shadow-sm select-none"
+          title="Офлайн-режим. Данные сохраняются локально"
+        >
+          <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+          <span>Офлайн</span>
+        </span>
+      </div>
+
+      <div class="flex items-center gap-2 sm:gap-3 text-xs">
+        <span class="text-gray-400 hidden sm:inline"
+          >Обновлено: <span id="last-sync">...</span></span
+        >
+
+        <!-- Кнопка скрытия сумм (Режим приватности) -->
+        <button
+          type="button"
+          id="privacy-toggle-btn"
+          onclick="togglePrivacyMode()"
+          class="w-8 h-8 rounded-full text-zinc-400 hover:text-white hover:bg-white/[0.06] active:scale-95 flex items-center justify-center transition-all cursor-pointer"
+          title="Скрыть / показать суммы"
+        >
+          <span
+            id="privacy-icon-container"
+            class="flex items-center justify-center pointer-events-none"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="w-4 h-4"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path
+                d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0z"
+              />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+          </span>
+        </button>
+
+        <!-- Кнопка Личного кабинета -->
+        <button
+          type="button"
+          onclick="openProfileModal()"
+          class="flex items-center gap-2 py-1 px-1.5 rounded-full hover:bg-white/[0.06] active:scale-95 transition-all text-xs font-medium text-zinc-200 hover:text-white cursor-pointer"
+        >
+          <span
+            id="header-user-avatar"
+            class="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 select-none overflow-hidden"
+          >
+            <i data-lucide="user" class="w-3.5 h-3.5"></i>
+          </span>
+          <span
+            id="header-user-name"
+            class="truncate max-w-[90px] sm:max-w-[130px] font-medium text-zinc-200"
+            >Профиль</span
+          >
+        </button>
+      </div>
+    </header>
+
+    <!-- ПОДХЕДЕР: Закрепленная полоса переключателя «Вклады / Инвестиции» (видна только на вкладке Капитала) -->
+    <div
+      id="capital-view-subbar"
+      class="hidden sticky top-[52px] z-[9] bg-[#0E1016] border-b border-[#1E222D] px-4 py-2"
+    >
+      <div class="max-w-[760px] mx-auto">
+        <div class="view-switcher m-0">
+          <button
+            id="cap-subtab-deposits"
+            onclick="switchCapitalSubtab('deposits')"
+            class="view-switcher__btn is-active"
+          >
+            Вклады
+          </button>
+          <button
+            id="cap-subtab-broker"
+            onclick="switchCapitalSubtab('broker')"
+            class="view-switcher__btn"
+          >
+            Инвестиции
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <main id="app-content" class="p-3.5 sm:p-4 pb-20 sm:pb-16">
+      <!-- @include "partials/screens/budget-tab.html" -->
+      <!-- @include "partials/screens/transactions-tab.html" -->
+      <!-- @include "partials/screens/capital-tab.html" -->
+    </main>
+
+    <nav
+      id="bottom-nav-bar"
+      class="fixed bottom-0 left-0 right-0 w-full bg-[#0E1016]/95 border-t border-white/[0.06] flex items-center justify-around px-2 pt-1 pb-safe z-40 backdrop-blur-xl shadow-[0_-4px_20px_rgba(0,0,0,0.6)]"
+    >
+      <!-- Аналитика -->
+      <button
+        type="button"
+        onclick="switchTab('budget')"
+        id="nav-budget"
+        class="nav-tab-btn flex-1 py-0.5 px-1 flex flex-col items-center justify-center gap-0.5 transition-all duration-200 cursor-pointer text-white"
+      >
+        <div
+          class="nav-icon-wrap w-10 h-6 rounded-lg flex items-center justify-center transition-all duration-200 bg-transparent text-white"
+        >
+          <i
+            data-lucide="pie-chart"
+            class="w-[19px] h-[19px] stroke-[2.2px] transition-transform duration-200 scale-105"
+          ></i>
+        </div>
+        <span
+          class="nav-label text-[10px] font-semibold tracking-tight transition-colors duration-200 text-white"
+          >Аналитика</span
+        >
+        <div
+          class="nav-indicator w-6 h-[2px] rounded-full bg-white transition-all duration-200 opacity-100 scale-100 shadow-[0_0_8px_rgba(255,255,255,0.35)]"
+        ></div>
+      </button>
+
+      <!-- Капитал -->
+      <button
+        type="button"
+        onclick="switchTab('capital')"
+        id="nav-capital"
+        class="nav-tab-btn flex-1 py-0.5 px-1 flex flex-col items-center justify-center gap-0.5 transition-all duration-200 cursor-pointer text-zinc-500 hover:text-zinc-300 relative"
+      >
+        <div
+          class="nav-icon-wrap w-10 h-6 rounded-lg flex items-center justify-center transition-all duration-200 bg-transparent text-inherit relative"
+        >
+          <i
+            data-lucide="landmark"
+            class="w-[19px] h-[19px] stroke-[2px] transition-transform duration-200"
+          ></i>
+          <span
+            id="nav-capital-badge"
+            class="hidden absolute -top-1 -right-1 min-w-[15px] h-[15px] px-1 rounded-full bg-amber-500 text-zinc-950 font-bold text-[9px] font-mono leading-none flex items-center justify-center ring-2 ring-[#0E1016]"
+          ></span>
+        </div>
+        <span
+          class="nav-label text-[10px] font-medium tracking-tight transition-colors duration-200 text-zinc-500"
+          >Капитал</span
+        >
+        <div
+          class="nav-indicator w-6 h-[2px] rounded-full bg-white transition-all duration-200 opacity-0 scale-75 shadow-[0_0_8px_rgba(255,255,255,0.35)]"
+        ></div>
+      </button>
+
+      <!-- Операции -->
+      <button
+        type="button"
+        onclick="switchTab('transactions')"
+        id="nav-transactions"
+        class="nav-tab-btn flex-1 py-0.5 px-1 flex flex-col items-center justify-center gap-0.5 transition-all duration-200 cursor-pointer text-zinc-500 hover:text-zinc-300"
+      >
+        <div
+          class="nav-icon-wrap w-10 h-6 rounded-lg flex items-center justify-center transition-all duration-200 bg-transparent text-inherit"
+        >
+          <i
+            data-lucide="receipt-text"
+            class="w-[19px] h-[19px] stroke-[2px] transition-transform duration-200"
+          ></i>
+        </div>
+        <span
+          class="nav-label text-[10px] font-medium tracking-tight transition-colors duration-200 text-zinc-500"
+          >Операции</span
+        >
+        <div
+          class="nav-indicator w-6 h-[2px] rounded-full bg-white transition-all duration-200 opacity-0 scale-75 shadow-[0_0_8px_rgba(255,255,255,0.35)]"
+        ></div>
+      </button>
+    </nav>
+
+    <!-- ШАБЛОН СТРОКИ ТРАНЗАКЦИИ -->
+    <template id="tx-row-template">
+      <div class="tx-item bg-[#12151C] p-3 rounded-xl border border-white/[0.06] relative mb-2">
+        <div class="flex items-center justify-between gap-2 mb-2">
+          <div
+            class="flex bg-[#0E1016] p-0.5 rounded-lg w-full max-w-[170px] border border-white/[0.06]"
+          >
+            <label class="flex-1 text-center cursor-pointer">
+              <input type="radio" value="Расход" class="tx-type peer hidden" checked />
+              <div
+                class="peer-checked:bg-white/10 peer-checked:text-white py-1 rounded-md text-[11px] font-semibold text-zinc-400 transition-all select-none"
+              >
+                Расход
+              </div>
+            </label>
+            <label class="flex-1 text-center cursor-pointer">
+              <input type="radio" value="Доход" class="tx-type peer hidden" />
+              <div
+                class="peer-checked:bg-emerald-500/15 peer-checked:text-emerald-400 peer-checked:border peer-checked:border-emerald-500/25 py-1 rounded-md text-[11px] font-semibold text-zinc-400 transition-all select-none"
+              >
+                Доход
+              </div>
+            </label>
+          </div>
+
+          <button
+            type="button"
+            class="tx-remove-row-btn hidden text-zinc-400 hover:text-rose-400 p-1 rounded-lg transition-colors cursor-pointer"
+            onclick="removeTxRow(this)"
+            title="Удалить операцию"
+          >
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <div class="mb-2">
+          <input
+            type="text"
+            inputmode="decimal"
+            oninput="
+              formatSumInput(this);
+              handleInlineTxAmountChange(this);
+            "
+            required
+            class="tx-amount w-full text-lg font-bold bg-[#0E1016] border border-white/10 focus:border-white/30 text-white rounded-lg px-3 py-1.5 outline-none placeholder-zinc-500 transition-colors"
+            placeholder="0 ₽"
+          />
+        </div>
+
+        <div class="grid grid-cols-[142px_1fr] gap-2 mb-2">
+          <input
+            type="date"
+            required
+            class="tx-date h-9 w-full min-w-0 bg-[#0E1016] border border-white/10 focus:border-white/30 text-white rounded-lg px-2 text-xs outline-none"
+          />
+
+          <!-- Кастомный селектор категории на всю ширину -->
+          <div class="relative w-full min-w-0 custom-dropdown-wrap">
+            <input type="hidden" class="tx-category" required />
+
+            <button
+              type="button"
+              class="tx-category-btn h-9 w-full bg-[#0E1016] border border-white/10 text-white rounded-lg px-2.5 text-xs flex items-center justify-between outline-none cursor-pointer hover:border-white/20 transition-colors"
+            >
+              <span class="tx-category-label truncate text-zinc-300 text-xs font-normal"
+                >Категория...</span
+              >
+              <span class="text-zinc-500 text-[8px] ml-1 flex-shrink-0">▼</span>
+            </button>
+
+            <div
+              class="tx-category-menu custom-dropdown-menu hidden absolute left-0 w-full max-h-56 overflow-y-auto bg-[#0E1016] border border-white/10 rounded-xl shadow-2xl z-50 p-1 space-y-0.5"
+            ></div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 mb-1.5">
+          <input
+            type="text"
+            placeholder="Магазин или назначение платежа"
+            oninput="handleTxRowCommentInput(this)"
+            class="tx-comment flex-1 min-w-0 bg-[#0E1016] border border-white/10 text-white placeholder-zinc-500 rounded-lg px-2.5 py-1.5 outline-none text-xs focus:border-white/30 transition-colors"
+          />
+          <!-- Кнопка булавка для добавления в словарь -->
+          <button
+            type="button"
+            onclick="openRememberRuleForTxRow(this)"
+            class="w-8 h-8 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] active:scale-90 text-zinc-400 hover:text-white border border-white/[0.06] flex items-center justify-center flex-shrink-0 cursor-pointer transition-all shadow-sm group"
+            title="Запомнить в словарь категорий"
+          >
+            <i
+              data-lucide="pin"
+              class="w-3.5 h-3.5 -rotate-45 transition-transform group-hover:scale-110 pointer-events-none"
+            ></i>
+          </button>
+        </div>
+
+        <!-- Скрытые технические поля для совместимости -->
+        <div class="inline-tx-amortize-wrap hidden" style="display: none !important">
+          <input type="checkbox" class="tx-exclude-budget" />
+          <input type="hidden" class="tx-goal-id" value="" />
+        </div>
+      </div>
+    </template>
+
+    <!-- @include "partials/modals/statement/pdf-info-dialog.html" -->
+    <!-- @include "partials/modals/statement/statement-help-dialog.html" -->
+    <!-- @include "partials/modals/analytics/budget-goal-dialog.html" -->
+    <!-- @include "partials/modals/analytics/budget-plan-dialog.html" -->
+    <!-- @include "partials/modals/analytics/calendar-bill-dialog.html" -->
+    <!-- @include "partials/modals/analytics/budget-calendar-modal.html" -->
+    <!-- @include "partials/modals/analytics/day-bills-dialog.html" -->
+    <!-- @include "partials/modals/analytics/category-limit-dialog.html" -->
+    <!-- @include "partials/modals/analytics/category-limits-manager-dialog.html" -->
+    <!-- @include "partials/modals/analytics/wiz-category-picker-dialog.html" -->
+    <!-- @include "partials/modals/analytics/wiz-avg-details-dialog.html" -->
+    <!-- @include "partials/modals/statement/pdf-debug-dialog.html" -->
+    <!-- @include "partials/modals/statement/in-app-pdf-viewer-modal.html" -->
+    <!-- @include "partials/modals/transactions/raw-tx-tooltip.html" -->
+    <!-- @include "partials/modals/statement/remember-rule-dialog.html" -->
+    <!-- @include "partials/modals/statement/rules-editor-dialog.html" -->
+    <!-- @include "partials/modals/capital/moex-asset-modal.html" -->
+    <!-- @include "partials/modals/capital/market-rates-modal.html" -->
+    <!-- @include "partials/modals/capital/market-rates-settings-modal.html" -->
+    <!-- @include "partials/modals/capital/rate-conditions-popover.html" -->
+    <!-- @include "partials/modals/transactions/category-others-popover.html" -->
+    <!-- @include "partials/modals/profile/profile-dialog.html" -->
+    <!-- @include "partials/modals/profile/data-backup-dialog.html" -->
+    <!-- @include "partials/modals/profile/backup-inspect-dialog.html" -->
+    <!-- @include "partials/modals/profile/avatar-picker-dialog.html" -->
+    <!-- @include "partials/modals/profile/change-login-dialog.html" -->
+    <!-- @include "partials/modals/profile/change-password-dialog.html" -->
+    <!-- @include "partials/modals/profile/create-family-dialog.html" -->
+    <!-- @include "partials/modals/profile/family-review-dialog.html" -->
+    <!-- @include "partials/modals/profile/join-family-dialog.html" -->
+    <!-- @include "partials/modals/profile/delete-account-dialog.html" -->
+    <!-- @include "partials/modals/transactions/card-context-menu.html" -->
+    <!-- @include "partials/modals/transactions/tx-edit-modal.html" -->
+    <!-- @include "partials/modals/capital/dep-edit-modal.html" -->
+    <!-- @include "partials/modals/capital/deposit-close-dialog.html" -->
+    <!-- @include "partials/modals/common/custom-datepicker-modal.html" -->
+    <!-- @include "partials/modals/common/pwa-install-banner.html" -->
+    <!-- @include "partials/modals/common/onboarding-modal.html" -->
+  </body>
+</html>

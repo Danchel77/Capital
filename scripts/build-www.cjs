@@ -1,8 +1,12 @@
 const fs = require('fs');
 const path = require('path');
+const { buildHtml } = require('./build-html.cjs');
 
 const rootDir = path.resolve(__dirname, '..');
 const wwwDir = path.join(rootDir, 'www');
+
+// Reassemble index.html from src/ before sync
+buildHtml({ silent: true });
 
 // Clean and recreate www/
 if (fs.existsSync(wwwDir)) {

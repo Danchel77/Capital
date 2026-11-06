@@ -1,0 +1,21 @@
+<!-- Модальное окно управления категориями -->
+<div
+  id="manage-categories-dialog"
+  class="fixed inset-0 bg-black/70 z-[175] hidden flex flex-col justify-center items-center p-6 animate-fade-in"
+  onclick="if (event.target === this) closeManageCategoriesDialog();"
+>
+  <div
+    class="bg-[#181B24] p-6 rounded-3xl border border-[rgba(255,255,255,0.08)] w-full max-w-xs shadow-2xl"
+  >
+    <h3 class="text-lg font-bold text-white mb-4">Категории</h3>
+    <div id="categories-list-container" class="max-h-80 overflow-y-auto mb-4"></div>
+    <button
+      type="button"
+      id="close-manage-categories"
+      onclick="closeManageCategoriesDialog()"
+      class="w-full bg-[#212430] hover:bg-[#2A2D3C] text-white py-3 rounded-xl font-medium transition-colors cursor-pointer"
+    >
+      Закрыть
+    </button>
+  </div>
+</div>

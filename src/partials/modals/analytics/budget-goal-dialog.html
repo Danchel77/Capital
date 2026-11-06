@@ -1,0 +1,190 @@
+<!-- МОДАЛЬНОЕ ОКНО: СОЗДАНИЕ И РЕДАКТИРОВАНИЕ ЦЕЛИ БЮДЖЕТА (Obsidian Minimalist) -->
+<div
+  id="budget-goal-dialog"
+  class="fixed inset-0 bg-black/85 z-[150] hidden flex flex-col justify-center items-center p-3.5 sm:p-4 backdrop-blur-sm animate-fade-in"
+  onclick="if (event.target === this) closeGoalModal();"
+>
+  <div
+    class="bg-[#0E1016] border border-white/10 w-full max-w-sm rounded-3xl p-5 shadow-2xl flex flex-col"
+  >
+    <!-- Заголовок и крестик -->
+    <div
+      class="flex items-center justify-between mb-3.5 pb-2.5 border-b border-white/[0.06] flex-shrink-0"
+    >
+      <h3 id="budget-goal-dialog-title" class="font-bold text-white text-base">
+        Редактирование цели
+      </h3>
+      <button
+        type="button"
+        onclick="closeGoalModal()"
+        class="w-8 h-8 rounded-xl bg-white/[0.05] hover:bg-white/10 text-zinc-400 hover:text-white border border-white/[0.08] flex items-center justify-center cursor-pointer transition-colors active:scale-95"
+      >
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+
+    <form id="budget-goal-form" onsubmit="submitBudgetGoal(event)" class="space-y-3">
+      <input type="hidden" id="goal-edit-id" />
+      <input type="hidden" id="goal-icon-input" value="target" />
+
+      <!-- Название цели и выбор иконки -->
+      <div>
+        <label class="block text-[10px] text-zinc-400 uppercase font-bold mb-1">
+          Название цели
+        </label>
+        <div class="flex items-center gap-2">
+          <div class="relative flex-shrink-0" id="goal-modal-icon-container">
+            <button
+              type="button"
+              onclick="toggleBudgetGoalIconPicker(event)"
+              id="goal-modal-icon-btn"
+              class="w-10 h-10 rounded-xl bg-[#12151C] border border-white/[0.08] hover:border-white/20 flex items-center justify-center text-zinc-300 hover:text-white transition-colors cursor-pointer active:scale-95"
+              title="Выбрать иконку"
+            >
+              <span id="goal-modal-icon-display" class="flex items-center justify-center">
+                <i data-lucide="target" class="w-4 h-4"></i>
+              </span>
+            </button>
+
+            <!-- Всплывающий выбор иконки -->
+            <div
+              id="goal-modal-icon-picker"
+              class="hidden absolute top-full left-0 mt-2 z-[60] w-[270px] xs:w-[290px] p-3 bg-[#12151C] rounded-2xl border border-white/15 shadow-2xl backdrop-blur-xl animate-fade-in space-y-2"
+              onclick="event.stopPropagation()"
+            >
+              <div class="flex items-center justify-between pb-1.5 border-b border-white/[0.06]">
+                <span class="text-[11px] font-bold text-zinc-300">Иконка цели</span>
+                <button
+                  type="button"
+                  onclick="closeBudgetGoalIconPicker()"
+                  class="w-5 h-5 rounded-md hover:bg-white/10 text-zinc-400 hover:text-white flex items-center justify-center text-xs cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+              <div
+                id="goal-modal-icon-grid"
+                class="grid grid-cols-6 gap-1.5 max-h-44 overflow-y-auto pr-0.5"
+              >
+                <!-- Иконки генерируются динамически -->
+              </div>
+            </div>
+          </div>
+
+          <input
+            type="text"
+            id="goal-name-input"
+            placeholder="Наименование цели"
+            required
+            oninput="handleGoalNameInput(this.value)"
+            class="flex-1 min-w-0 bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white placeholder-zinc-500 rounded-xl p-3 outline-none text-xs font-semibold"
+          />
+        </div>
+      </div>
+
+      <!-- Целевая сумма и Сумма в копилке (в 2 колонки) -->
+      <div class="grid grid-cols-2 gap-2.5">
+        <div>
+          <label class="block text-[10px] text-zinc-400 uppercase font-bold mb-1">
+            Целевая сумма
+          </label>
+          <div class="relative flex items-center">
+            <input
+              type="text"
+              inputmode="decimal"
+              oninput="formatSumInput(this)"
+              id="goal-target-input"
+              placeholder="0"
+              required
+              class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white placeholder-zinc-500 rounded-xl p-3 pr-7 outline-none text-xs font-bold"
+            />
+            <span
+              class="absolute right-3 text-zinc-500 font-mono text-xs font-semibold pointer-events-none select-none"
+              >₽</span
+            >
+          </div>
+        </div>
+        <div>
+          <label class="block text-[10px] text-zinc-400 uppercase font-bold mb-1">
+            В копилке
+          </label>
+          <div class="relative flex items-center">
+            <input
+              type="text"
+              inputmode="decimal"
+              oninput="formatSumInput(this)"
+              id="goal-saved-input"
+              placeholder="0"
+              class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white placeholder-zinc-500 rounded-xl p-3 pr-7 outline-none text-xs font-bold"
+            />
+            <span
+              class="absolute right-3 text-zinc-500 font-mono text-xs font-semibold pointer-events-none select-none"
+              >₽</span
+            >
+          </div>
+        </div>
+      </div>
+
+      <!-- Блок распределения доли капитала -->
+      <div id="goal-single-share-section" class="pt-2 border-t border-white/[0.06] space-y-1.5">
+        <div class="flex items-center justify-between">
+          <label class="text-[10px] text-zinc-400 uppercase font-bold"> Доля в капитале </label>
+          <div class="flex items-center gap-1.5 font-mono text-xs">
+            <span id="goal-single-share-rubles" class="text-white font-medium tabular-nums"
+              >0 ₽</span
+            >
+            <span class="text-zinc-500 font-normal select-none">·</span>
+            <span id="goal-single-share-pct" class="text-zinc-300 font-semibold tabular-nums"
+              >0%</span
+            >
+          </div>
+        </div>
+        <div class="py-1">
+          <input
+            type="range"
+            id="goal-single-share-slider"
+            min="0"
+            max="100"
+            step="1"
+            value="0"
+            oninput="handleGoalSingleShareSlider(this.value)"
+            class="goal-share-slider w-full cursor-pointer"
+          />
+        </div>
+        <div class="flex items-center justify-between text-[11px] text-zinc-500 font-mono">
+          <span id="goal-single-share-free-hint">Свободно: 100%</span>
+          <span id="goal-total-capital-hint" class="text-zinc-600">Капитал: 0 ₽</span>
+        </div>
+      </div>
+
+      <!-- Кнопки в футере: Отмена | Сохранить + ссылка Удалить цель -->
+      <div class="pt-2">
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            onclick="closeGoalModal()"
+            class="flex-1 bg-white/[0.05] hover:bg-white/10 text-zinc-300 py-2.5 rounded-xl text-xs font-medium border border-white/[0.08] transition-colors cursor-pointer"
+          >
+            Отмена
+          </button>
+          <button
+            type="submit"
+            id="goal-submit-btn"
+            class="flex-1 bg-white hover:bg-zinc-100 active:scale-95 text-zinc-950 py-2.5 rounded-xl text-xs font-semibold shadow-sm transition-all cursor-pointer"
+          >
+            Сохранить
+          </button>
+        </div>
+        <button
+          type="button"
+          id="goal-delete-btn"
+          onclick="deleteCurrentEditingGoal()"
+          class="w-full text-center py-2 text-xs font-medium text-rose-400 hover:text-rose-300 active:scale-95 transition-colors cursor-pointer mt-1"
+          title="Удалить цель"
+        >
+          Удалить цель
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

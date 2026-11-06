@@ -1,0 +1,129 @@
+<!-- МОДАЛЬНОЕ ОКНО: НАСТРОЙКА ПЛАНА БЮДЖЕТА -->
+<div
+  id="budget-plan-dialog"
+  class="fixed inset-0 bg-black/80 z-[150] hidden flex flex-col justify-center items-center p-4 backdrop-blur-sm animate-fade-in"
+>
+  <div
+    class="bg-[#181B24] border border-[rgba(255,255,255,0.08)] w-full max-w-sm rounded-3xl p-5 shadow-2xl flex flex-col max-h-[90vh] overflow-y-auto"
+  >
+    <div
+      class="flex items-center justify-between pb-3 mb-4 border-b border-[rgba(255,255,255,0.06)]"
+    >
+      <div class="flex items-center gap-2">
+        <i data-lucide="sliders" class="w-4 h-4 text-[#6C5DD3]"></i>
+        <h3 class="font-bold text-white text-base">План бюджета</h3>
+      </div>
+      <button
+        type="button"
+        onclick="closeBudgetPlanModal()"
+        class="w-7 h-7 rounded-full bg-[#212430] text-gray-400 hover:text-white flex items-center justify-center cursor-pointer text-sm"
+      >
+        ✕
+      </button>
+    </div>
+
+    <!-- Справка: Исторический расчет среднего дохода -->
+    <div class="bg-[#12151C] border border-[rgba(255,255,255,0.04)] rounded-2xl p-3.5 mb-4">
+      <div class="flex items-center justify-between text-xs mb-1">
+        <span class="text-[#848D99]">Средний доход за 3 мес.</span>
+        <span id="plan-avg-income" class="font-bold text-[#30D158]">0 ₽</span>
+      </div>
+      <p class="text-[10px] text-gray-500 leading-tight">
+        На основе регулярных доходов из загруженных выписок
+      </p>
+    </div>
+
+    <form id="budget-plan-form" onsubmit="submitBudgetPlan(event)" class="space-y-3.5">
+      <div>
+        <label class="block text-[11px] text-[#848D99] uppercase font-bold mb-1"
+          >Плановый доход в месяц (₽)</label
+        >
+        <input
+          type="text"
+          inputmode="decimal"
+          oninput="
+            formatSumInput(this);
+            updatePlanForecast();
+          "
+          id="plan-income-input"
+          placeholder="0 ₽"
+          required
+          class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] text-white font-bold rounded-xl p-3 outline-none text-sm"
+        />
+      </div>
+
+      <!-- Плановые расходы в месяц (автоматически рассчитывается из лимитов категорий и счетов) -->
+      <div class="bg-[#12151C] border border-[rgba(255,255,255,0.06)] rounded-2xl p-3.5 space-y-3">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] text-[#848D99] uppercase font-bold"
+            >Плановые расходы в месяц</span
+          >
+          <b id="plan-total-expenses-display" class="text-white font-mono font-bold text-base"
+            >0 ₽</b
+          >
+        </div>
+
+        <div class="space-y-2 pt-2.5 border-t border-[rgba(255,255,255,0.04)]">
+          <!-- Строка: Лимиты по категориям -->
+          <div class="flex items-center justify-between py-0.5">
+            <div class="flex items-center gap-1.5 text-xs text-gray-300 min-w-0">
+              <span class="text-[#848D99]">Лимиты по категориям:</span>
+              <b id="plan-categories-sum" class="text-white font-mono font-bold">0 ₽</b>
+            </div>
+            <button
+              type="button"
+              onclick="openCategoryLimitsManagerModal()"
+              class="w-7 h-7 rounded-xl bg-[#181B24] hover:bg-[#212430] border border-[rgba(255,255,255,0.06)] text-[#8C7DFF] hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-sm active:scale-95 flex-shrink-0"
+              title="Настроить лимиты категорий"
+            >
+              <i data-lucide="sliders" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+
+          <!-- Строка: Ежемесячные траты -->
+          <div class="flex items-center justify-between py-0.5">
+            <div class="flex items-center gap-1.5 text-xs text-gray-300 min-w-0">
+              <span class="text-[#848D99]">Ежемесячные траты:</span>
+              <b id="plan-monthly-bills-sum" class="text-white font-mono font-bold">0 ₽</b>
+            </div>
+            <button
+              type="button"
+              onclick="openBudgetCalendarModal()"
+              class="w-7 h-7 rounded-xl bg-[#181B24] hover:bg-[#212430] border border-[rgba(255,255,255,0.06)] text-[#6C5DD3] hover:text-[#8275e0] flex items-center justify-center transition-all cursor-pointer shadow-sm active:scale-95 flex-shrink-0"
+              title="Календарь ежемесячных трат"
+            >
+              <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Авторасчет свободного остатка на цели -->
+      <div class="bg-[#12151C] border border-[rgba(255,255,255,0.04)] rounded-2xl p-3.5">
+        <div class="flex items-center justify-between text-xs">
+          <span class="text-[#848D99]">Накопления в цели:</span>
+          <b id="plan-forecast-surplus" class="text-[#30D158] font-bold text-sm font-mono"
+            >+0 ₽/мес</b
+          >
+        </div>
+        <p class="text-[10px] text-gray-500 mt-1">Доходы минус плановые расходы месяца</p>
+      </div>
+
+      <div class="flex gap-2 pt-2">
+        <button
+          type="button"
+          onclick="closeBudgetPlanModal()"
+          class="flex-1 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 py-3 rounded-xl text-xs font-semibold cursor-pointer"
+        >
+          Отмена
+        </button>
+        <button
+          type="submit"
+          class="flex-1 bg-[#6C5DD3] hover:bg-[#5b4ec2] text-white py-3 rounded-xl text-xs font-semibold shadow-md active:scale-95 cursor-pointer"
+        >
+          Сохранить
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,59 @@
+<!-- Всплывающий компактный тултип сырого описания операции (при удержании карточки) -->
+<div
+  id="raw-tx-tooltip"
+  class="fixed z-[160] hidden max-w-[92vw] sm:max-w-md w-full p-3 bg-[#161922] border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.85)] backdrop-blur-xl select-none"
+  style="
+    touch-action: pan-y;
+    will-change: transform;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    transform: translate3d(0, 0, 0);
+  "
+>
+  <!-- Шапка тултипа с датой, кнопкой копирования и крестиком закрытия -->
+  <div class="flex items-center justify-between pb-2 border-b border-white/[0.08] mb-2">
+    <div class="flex items-center gap-2 min-w-0 flex-1">
+      <span
+        class="w-6 h-6 rounded-lg bg-white/[0.06] text-zinc-300 flex items-center justify-center flex-shrink-0 border border-white/[0.08]"
+      >
+        <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+      </span>
+      <span class="text-xs font-semibold text-white whitespace-nowrap">Данные из выписки</span>
+      <span id="raw-tooltip-date" class="text-[11px] font-mono text-zinc-400 ml-1 truncate"></span>
+    </div>
+    <div class="flex items-center gap-1.5 flex-shrink-0 ml-2">
+      <button
+        type="button"
+        id="btn-copy-raw-tooltip"
+        onclick="
+          event.stopPropagation();
+          copyRawTooltipText();
+        "
+        class="w-7 h-7 rounded-xl bg-white/[0.05] hover:bg-white/[0.12] active:scale-95 text-zinc-400 hover:text-white border border-white/[0.08] flex items-center justify-center cursor-pointer transition-all shadow-sm"
+        title="Скопировать текст выписки"
+      >
+        <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+      </button>
+      <button
+        type="button"
+        onclick="
+          event.stopPropagation();
+          hideRawTxTooltip();
+        "
+        class="w-7 h-7 rounded-xl bg-white/[0.05] hover:bg-white/[0.12] active:scale-95 text-zinc-400 hover:text-white border border-white/[0.08] flex items-center justify-center cursor-pointer transition-all shadow-sm"
+        title="Закрыть"
+      >
+        <i data-lucide="x" class="w-3.5 h-3.5"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Содержимое: скроллируемый текст операции (вертикальный скролл) -->
+  <div class="space-y-1 text-xs">
+    <div
+      id="raw-tooltip-text"
+      class="bg-[#0A0C10] p-2.5 rounded-xl border border-white/[0.06] font-mono text-[11px] sm:text-xs text-zinc-300 leading-relaxed max-h-36 sm:max-h-44 overflow-y-auto whitespace-pre-wrap break-words custom-scrollbar select-text overscroll-contain"
+      style="touch-action: pan-y"
+    ></div>
+  </div>
+</div>

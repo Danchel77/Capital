@@ -1,0 +1,259 @@
+<!-- Модальное окно предпросмотра сырых данных PDF -->
+<div
+  id="pdf-debug-dialog"
+  class="fixed inset-0 bg-black/85 z-[130] hidden flex flex-col justify-end sm:justify-center items-center p-0 sm:p-4 backdrop-blur-sm animate-fade-in"
+>
+  <div
+    class="bg-[#0E1016] border border-white/[0.08] w-full max-w-2xl rounded-t-[28px] sm:rounded-3xl shadow-2xl flex flex-col h-[92vh] max-h-[92vh] sm:h-[88vh] overflow-hidden"
+  >
+    <!-- Фиксированная только верхняя шапка выписки (заголовок, информация и кнопки) -->
+    <div class="p-3.5 sm:p-4 border-b border-white/[0.06] bg-[#0E1016] z-20 flex-shrink-0">
+      <div class="flex items-center justify-between w-full min-w-0">
+        <div class="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1 relative">
+          <!-- Кнопка-иконка выписки в левом верхнем углу (высота строго соответствует высоте 2 строк справа) -->
+          <button
+            type="button"
+            id="btn-open-statement-file"
+            onclick="
+              event.stopPropagation();
+              handleOpenStatementFileClick(event);
+            "
+            class="h-10 w-10 sm:h-11 sm:w-11 rounded-2xl bg-white/[0.05] hover:bg-white/[0.08] active:scale-95 text-white flex items-center justify-center flex-shrink-0 border border-white/[0.08] transition-all cursor-pointer shadow-sm group"
+            title="Просмотреть файл выписки"
+          >
+            <i
+              data-lucide="file-spreadsheet"
+              class="w-5 h-5 transition-transform group-hover:scale-110"
+            ></i>
+          </button>
+
+          <!-- Всплывающий список файлов выписок (если загружено несколько) -->
+          <div
+            id="statement-file-picker-popup"
+            class="hidden absolute left-0 top-full mt-2 w-72 max-w-[85vw] bg-[#12151C] border border-white/10 rounded-2xl shadow-[0_16px_50px_rgba(0,0,0,0.85)] z-50 p-2 space-y-1 backdrop-blur-xl"
+          >
+            <div
+              class="text-[11px] font-semibold text-zinc-400 px-2 py-1 flex items-center justify-between border-b border-white/[0.06]"
+            >
+              <span>Выберите выписку</span>
+              <span
+                id="statement-file-picker-count"
+                class="font-mono text-[10px] text-zinc-300"
+              ></span>
+            </div>
+            <div
+              id="statement-file-picker-list"
+              class="max-h-60 overflow-y-auto custom-scrollbar space-y-1 pt-1"
+            ></div>
+          </div>
+
+          <div class="min-w-0 flex-1 flex flex-col justify-center">
+            <h3 class="font-bold text-white text-sm sm:text-base leading-tight truncate">
+              Импорт выписки
+            </h3>
+            <div
+              id="pdf-debug-info"
+              class="flex items-center gap-1.5 min-w-0 truncate text-xs text-zinc-400 mt-0.5"
+            ></div>
+          </div>
+        </div>
+        <div class="flex items-center gap-1.5 flex-shrink-0 ml-2 relative">
+          <button
+            type="button"
+            id="btn-statement-settings-menu"
+            onclick="toggleStatementSettingsMenu(event)"
+            class="text-zinc-400 hover:text-white bg-white/[0.05] hover:bg-white/10 border border-white/[0.08] p-2 rounded-xl text-xs transition-colors cursor-pointer flex items-center justify-center active:scale-95"
+            title="Опции и экспорт"
+          >
+            <i data-lucide="settings" class="w-4 h-4"></i>
+          </button>
+
+          <!-- Выпадающее меню настроек и экспорта JSON -->
+          <div
+            id="statement-settings-popup"
+            class="hidden absolute right-0 top-full mt-2 w-52 bg-[#12151C] border border-white/10 rounded-2xl shadow-2xl z-50 p-1.5 space-y-0.5 backdrop-blur-xl"
+          >
+            <button
+              type="button"
+              onclick="
+                closeStatementSettingsPopup();
+                openRulesEditorModal();
+              "
+              class="w-full text-left px-3 py-2 text-xs font-medium text-zinc-300 hover:text-white hover:bg-white/[0.06] rounded-xl flex items-center gap-2 transition-colors cursor-pointer"
+            >
+              <i data-lucide="book-open" class="w-3.5 h-3.5 text-zinc-400"></i>
+              <span>Словарь категорий</span>
+            </button>
+            <button
+              type="button"
+              onclick="
+                closeStatementSettingsPopup();
+                downloadParsedJSON();
+              "
+              class="w-full text-left px-3 py-2 text-xs font-medium text-zinc-300 hover:text-white hover:bg-white/[0.06] rounded-xl flex items-center gap-2 transition-colors cursor-pointer"
+            >
+              <i data-lucide="download" class="w-3.5 h-3.5 text-zinc-400"></i>
+              <span>Экспорт в JSON</span>
+            </button>
+          </div>
+
+          <button
+            type="button"
+            onclick="document.getElementById('pdf-debug-dialog').classList.add('hidden')"
+            class="w-8 h-8 rounded-xl bg-white/[0.05] hover:bg-white/10 border border-white/[0.08] text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer text-xs active:scale-95 transition-colors"
+            title="Закрыть"
+          >
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Скроллируемая область всего содержимого окна импорта -->
+    <div
+      id="pdf-debug-scroll-container"
+      class="flex-1 overflow-y-auto p-3.5 sm:p-4 space-y-3 select-text bg-[#000000] custom-scrollbar"
+    >
+      <!-- Сводная информационная панель со статистикой -->
+      <div
+        id="pdf-stats-row"
+        class="bg-[#12151C] border border-white/[0.06] px-3.5 py-2.5 rounded-2xl grid grid-cols-3 text-center gap-2"
+      >
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-1 text-[11px]">
+          <span class="text-zinc-400">К импорту:</span>
+          <b id="pdf-stat-count" class="text-white font-semibold font-mono">0 из 0</b>
+        </div>
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-1 text-[11px]">
+          <span class="text-zinc-400">Расход:</span>
+          <b id="pdf-stat-exp" class="text-white font-semibold font-mono">0 ₽</b>
+        </div>
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-1 text-[11px]">
+          <span class="text-emerald-400">Доход:</span>
+          <b id="pdf-stat-inc" class="text-emerald-400 font-semibold font-mono">0 ₽</b>
+        </div>
+      </div>
+
+      <!-- Фильтр по банкам (горизонтальный скролл-ряд) -->
+      <div
+        id="pdf-bank-filter-container"
+        class="hidden flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 w-full"
+      ></div>
+
+      <!-- Панель фильтров по категориям операций (на всю ширину) -->
+      <div
+        class="w-full grid grid-cols-4 bg-[#12151C] p-1 rounded-2xl border border-white/[0.06] gap-1"
+      >
+        <button
+          type="button"
+          id="tab-import-new"
+          onclick="setImportFilter('new')"
+          class="py-1.5 px-1.5 rounded-xl font-semibold bg-white/[0.12] text-white text-xs transition-all cursor-pointer flex flex-col items-center justify-center leading-tight text-center shadow-sm"
+        >
+          <span class="text-[11px] sm:text-xs">Новые</span>
+          <span
+            id="tab-count-new"
+            class="opacity-75 font-mono font-normal text-[10px] sm:text-[11px]"
+            >0</span
+          >
+        </button>
+        <button
+          type="button"
+          id="tab-import-transfers"
+          onclick="setImportFilter('transfers')"
+          class="py-1.5 px-1.5 rounded-xl font-medium text-zinc-400 hover:text-white text-xs transition-all cursor-pointer flex flex-col items-center justify-center leading-tight text-center"
+        >
+          <span class="text-[11px] sm:text-xs">Переводы</span>
+          <span
+            id="tab-count-transfers"
+            class="opacity-75 font-mono font-normal text-[10px] sm:text-[11px]"
+            >0</span
+          >
+        </button>
+        <button
+          type="button"
+          id="tab-import-dupes"
+          onclick="setImportFilter('dupes')"
+          class="py-1.5 px-1.5 rounded-xl font-medium text-zinc-400 hover:text-white text-xs transition-all cursor-pointer flex flex-col items-center justify-center leading-tight text-center"
+        >
+          <span class="text-[11px] sm:text-xs">В базе</span>
+          <span
+            id="tab-count-dupes"
+            class="opacity-75 font-mono font-normal text-[10px] sm:text-[11px]"
+            >0</span
+          >
+        </button>
+        <button
+          type="button"
+          id="tab-import-all"
+          onclick="setImportFilter('all')"
+          class="py-1.5 px-1.5 rounded-xl font-medium text-zinc-400 hover:text-white text-xs transition-all cursor-pointer flex flex-col items-center justify-center leading-tight text-center"
+        >
+          <span class="text-[11px] sm:text-xs">Все</span>
+          <span
+            id="tab-count-all"
+            class="opacity-75 font-mono font-normal text-[10px] sm:text-[11px]"
+            >0</span
+          >
+        </button>
+      </div>
+
+      <!-- Строка контекстного массового выбора прямо над списком транзакций (Вариант Б) -->
+      <div
+        id="statement-select-all-bar"
+        onclick="toggleSelectCurrentFilter()"
+        class="flex items-center justify-between px-3 py-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.04] transition-all cursor-pointer select-none group"
+      >
+        <div class="flex items-center gap-2.5 min-w-0">
+          <input
+            type="checkbox"
+            id="chk-select-all-filter"
+            class="w-4 h-4 rounded bg-white/[0.05] border-white/20 accent-white text-zinc-950 flex-shrink-0 cursor-pointer pointer-events-auto"
+            onclick="event.stopPropagation()"
+            onchange="toggleSelectCurrentFilter()"
+          />
+          <span
+            id="label-select-all-filter"
+            class="text-xs font-medium text-zinc-300 group-hover:text-white transition-colors truncate"
+          >
+            Выбрать все (0)
+          </span>
+        </div>
+        <span
+          id="selected-summary-filter"
+          class="text-[11px] font-mono text-zinc-500 flex-shrink-0"
+        >
+          0 выбрано
+        </span>
+      </div>
+
+      <!-- Контейнер карточек сверки сомнительных дублей от нейросети (Level 3 AI Review) -->
+      <div id="pdf-ai-duplicates-container" class="hidden space-y-2"></div>
+
+      <!-- Уплотненный список строк -->
+      <div id="pdf-debug-output" class="space-y-1.5 select-text pb-2">
+        <!-- Сюда динамически выводятся компактные строки высотой ~52px -->
+      </div>
+    </div>
+
+    <!-- Фиксированная нижняя панель действий (вне скроллируемой области) -->
+    <div
+      class="p-3.5 sm:p-4 border-t border-white/[0.06] bg-[#0E1016] z-20 flex justify-end items-center gap-2.5 flex-shrink-0"
+    >
+      <button
+        type="button"
+        onclick="document.getElementById('pdf-debug-dialog').classList.add('hidden')"
+        class="bg-white/[0.05] hover:bg-white/10 border border-white/[0.08] text-zinc-300 px-4 py-2.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer active:scale-95"
+      >
+        Отмена
+      </button>
+      <button
+        type="button"
+        id="btn-import-transactions"
+        onclick="importSelectedTransactions()"
+        class="bg-white text-zinc-950 font-semibold px-5 py-2.5 rounded-xl text-xs shadow-md transition-all active:scale-95 cursor-pointer disabled:bg-white/[0.05] disabled:text-zinc-600 disabled:border disabled:border-white/[0.06] disabled:pointer-events-none"
+      >
+        Импортировать
+      </button>
+    </div>
+  </div>
+</div>

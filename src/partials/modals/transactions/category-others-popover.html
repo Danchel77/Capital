@@ -1,0 +1,31 @@
+<!-- ВСПЛЫВАЮЩИЙ ПОПОВЕР: ОСТАЛЬНЫЕ КАТЕГОРИИ (Obsidian Minimalist - Floating Card) -->
+<div
+  id="category-others-popover"
+  class="fixed z-[130] hidden bg-[#1A1E29] border border-white/15 rounded-2xl p-4 shadow-2xl backdrop-blur-md transition-all duration-150 animate-fade-in w-[calc(100%-32px)] max-w-sm"
+  style="left: 16px; right: 16px; margin: 0 auto"
+>
+  <div class="flex items-center justify-between pb-2 mb-2.5 border-b border-white/[0.08]">
+    <div class="flex items-center gap-1.5 min-w-0">
+      <div class="w-2 h-2 rounded-full bg-zinc-400 flex-shrink-0"></div>
+      <span id="cop-title" class="text-xs font-bold text-white truncate">Остальные категории</span>
+    </div>
+    <button
+      type="button"
+      onclick="closeCategoryOthersPopover()"
+      class="w-6 h-6 rounded-full bg-white/[0.06] hover:bg-white/10 text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors text-xs font-semibold flex-shrink-0 ml-2"
+      title="Закрыть"
+    >
+      ✕
+    </button>
+  </div>
+
+  <div class="relative">
+    <div
+      id="cop-list"
+      class="space-y-1.5 max-h-48 overflow-y-auto overscroll-contain pr-1 pb-4 select-text"
+    ></div>
+    <div
+      class="pointer-events-none absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-[#1A1E29] to-transparent rounded-b-xl"
+    ></div>
+  </div>
+</div>

@@ -1,0 +1,178 @@
+<!-- МОДАЛЬНОЕ ОКНО РЕДАКТИРОВАНИЯ ВКЛАДА -->
+<!-- МОДАЛЬНОЕ ОКНО РЕДАКТИРОВАНИЯ ВКЛАДА (Obsidian Minimalist) -->
+<div
+  id="dep-edit-modal"
+  onclick="if (event.target === this) closeEditDepModal();"
+  class="fixed inset-0 bg-black/85 z-[150] hidden flex flex-col justify-center items-center p-3.5 sm:p-4 backdrop-blur-sm animate-fade-in"
+>
+  <div
+    class="bg-[#0E1016] border border-white/10 w-full max-w-sm rounded-3xl p-5 shadow-2xl flex flex-col"
+  >
+    <div
+      class="flex items-center justify-between mb-3.5 pb-2.5 border-b border-white/[0.06] flex-shrink-0"
+    >
+      <div>
+        <h3 class="font-bold text-white text-base">Редактирование вклада</h3>
+        <p class="text-xs text-zinc-400 mt-0.5">Изменение параметров депозита</p>
+      </div>
+      <button
+        type="button"
+        id="dep-edit-modal-close-btn"
+        onclick="closeEditDepModal()"
+        class="w-8 h-8 rounded-xl bg-white/[0.05] hover:bg-white/10 text-zinc-400 hover:text-white border border-white/[0.08] flex items-center justify-center cursor-pointer transition-colors active:scale-95"
+      >
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+
+    <form id="edit-dep-form" onsubmit="submitEditDepModal(event)" class="space-y-3">
+      <input type="hidden" id="edit-dep-id" value="" />
+
+      <!-- Выбор банка -->
+      <div>
+        <label class="block text-[10px] text-zinc-400 uppercase font-bold mb-1">Банк</label>
+        <div class="relative" id="edit-dep-bank-select-container">
+          <input type="hidden" id="edit-dep-bank" value="" />
+          <button
+            type="button"
+            id="edit-dep-bank-select-btn"
+            onclick="toggleCustomBankDropdown('edit-dep-bank')"
+            class="w-full bg-[#12151C] border border-white/[0.08] hover:border-white/15 focus:border-white/25 text-white rounded-xl p-3 outline-none text-xs flex items-center justify-between transition-colors cursor-pointer select-none"
+          >
+            <div class="flex items-center gap-2 min-w-0" id="edit-dep-bank-selected-display">
+              <span class="text-zinc-500">Выберите банк (необязательно)</span>
+            </div>
+            <i
+              data-lucide="chevron-down"
+              id="edit-dep-bank-chevron"
+              class="w-4 h-4 text-zinc-500 flex-shrink-0 transition-transform duration-200"
+            ></i>
+          </button>
+
+          <div
+            id="edit-dep-bank-dropdown"
+            class="hidden absolute left-0 right-0 top-full mt-1.5 z-50 bg-[#12151C] border border-white/15 rounded-2xl shadow-2xl overflow-hidden max-h-60 flex flex-col"
+          >
+            <div class="p-2 border-b border-white/[0.06] bg-[#0E1016]">
+              <input
+                type="text"
+                id="edit-dep-bank-search"
+                placeholder="Поиск банка..."
+                oninput="filterCustomBankDropdown('edit-dep-bank', this.value)"
+                class="w-full bg-[#181C26] border border-white/[0.08] text-white placeholder-zinc-500 text-xs rounded-lg px-2.5 py-1.5 outline-none"
+              />
+            </div>
+            <div
+              id="edit-dep-bank-options-list"
+              class="overflow-y-auto divide-y divide-white/[0.04]"
+            ></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Название вклада -->
+      <div>
+        <label class="block text-[10px] text-zinc-400 uppercase font-bold mb-1"
+          >Название вклада</label
+        >
+        <input
+          type="text"
+          id="edit-dep-name"
+          placeholder="Наименование вклада (необязательно)"
+          class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white placeholder-zinc-500 rounded-xl p-3 outline-none text-xs"
+        />
+      </div>
+
+      <!-- Сумма и Ставка -->
+      <div class="flex space-x-2.5">
+        <div class="flex-1">
+          <label class="block text-[10px] text-zinc-400 uppercase font-bold mb-1">Сумма (₽)</label>
+          <input
+            type="text"
+            inputmode="decimal"
+            oninput="formatSumInput(this)"
+            id="edit-dep-amount"
+            placeholder="0 ₽"
+            required
+            class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white placeholder-zinc-500 rounded-xl p-3 outline-none text-xs font-bold"
+          />
+        </div>
+        <div class="w-1/3">
+          <label class="block text-[10px] text-zinc-400 uppercase font-bold mb-1">Ставка %</label>
+          <input
+            type="text"
+            inputmode="decimal"
+            oninput="formatSumInput(this)"
+            id="edit-dep-rate"
+            placeholder="0%"
+            required
+            class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white placeholder-zinc-500 rounded-xl p-3 outline-none text-xs font-bold"
+          />
+        </div>
+      </div>
+
+      <!-- Даты открытия и закрытия -->
+      <div class="grid grid-cols-2 gap-2.5">
+        <div>
+          <label class="block text-[10px] text-zinc-400 uppercase font-bold mb-1"
+            >Дата открытия</label
+          >
+          <input
+            type="text"
+            id="edit-dep-start"
+            data-datepicker="true"
+            readonly
+            placeholder="Дата открытия"
+            required
+            class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white rounded-xl p-3 outline-none text-xs cursor-pointer"
+          />
+        </div>
+        <div>
+          <label class="block text-[10px] text-zinc-400 uppercase font-bold mb-1"
+            >Дата закрытия</label
+          >
+          <input
+            type="text"
+            id="edit-dep-end"
+            data-datepicker="true"
+            readonly
+            placeholder="Дата закрытия"
+            required
+            class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white rounded-xl p-3 outline-none text-xs cursor-pointer"
+          />
+        </div>
+      </div>
+
+      <!-- Кнопки действий: Отмена | Сохранить + ссылка Удалить -->
+      <div class="pt-2">
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            id="edit-dep-cancel-btn"
+            onclick="closeEditDepModal()"
+            class="flex-1 bg-white/[0.05] hover:bg-white/10 text-zinc-300 py-2.5 rounded-xl text-xs font-medium border border-white/[0.08] transition-colors cursor-pointer"
+          >
+            Отмена
+          </button>
+          <button
+            type="submit"
+            id="edit-dep-save-btn"
+            class="flex-1 bg-white hover:bg-zinc-100 active:scale-95 text-zinc-950 py-2.5 rounded-xl text-xs font-semibold shadow-sm transition-all cursor-pointer"
+          >
+            Сохранить
+          </button>
+        </div>
+        <button
+          type="button"
+          id="edit-dep-delete-btn"
+          onclick="deleteDepFromModal()"
+          class="w-full text-center py-2 text-xs font-medium text-rose-400 hover:text-rose-300 active:scale-95 flex items-center justify-center gap-1.5 transition-colors cursor-pointer mt-2"
+          title="Удалить вклад"
+        >
+          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+          <span>Удалить вклад</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

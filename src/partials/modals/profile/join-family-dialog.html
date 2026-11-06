@@ -1,0 +1,54 @@
+<!-- МОДАЛЬНОЕ ОКНО: ПОДКЛЮЧЕНИЕ К СЕМЬЕ ПО КОДУ -->
+<div
+  id="join-family-dialog"
+  class="fixed inset-0 bg-black/80 z-[160] hidden flex flex-col justify-center items-center p-4 backdrop-blur-sm animate-fade-in"
+  onclick="if (event.target === this) closeJoinFamilyModal();"
+>
+  <div
+    class="bg-[#181B24] border border-[rgba(255,255,255,0.08)] w-full max-w-sm rounded-3xl p-6 shadow-2xl"
+  >
+    <div
+      class="w-12 h-12 rounded-2xl bg-[#6C5DD3]/15 text-[#8C7DFF] flex items-center justify-center mx-auto mb-3"
+    >
+      <i data-lucide="key-round" class="w-6 h-6"></i>
+    </div>
+    <h3 class="text-lg font-bold text-white text-center mb-1">Присоединиться к семье</h3>
+    <p class="text-xs text-gray-400 text-center mb-5">
+      Введите код приглашения, полученный от члена семьи.
+    </p>
+
+    <div class="space-y-3.5">
+      <div>
+        <label class="block text-[11px] text-[#848D99] uppercase font-bold mb-1.5"
+          >Код приглашения (например 7K9X2M)</label
+        >
+        <input
+          type="text"
+          id="join-family-code"
+          placeholder="XXXXXX"
+          maxlength="12"
+          class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-white/30 text-white rounded-xl p-3 outline-none text-sm uppercase tracking-wider font-mono transition-colors"
+        />
+      </div>
+
+      <div class="flex gap-2.5 pt-2">
+        <button
+          type="button"
+          onclick="closeJoinFamilyModal()"
+          class="flex-1 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 py-3 rounded-xl text-xs font-semibold cursor-pointer transition-colors"
+        >
+          Отмена
+        </button>
+        <button
+          type="button"
+          id="join-family-submit-btn"
+          onclick="submitJoinFamily()"
+          class="flex-1 bg-[#6C5DD3] hover:bg-[#5E4FC9] text-white py-3 rounded-xl text-xs font-semibold shadow-md shadow-[#6C5DD3]/25 active:scale-95 cursor-pointer transition-all flex items-center justify-center gap-1.5"
+        >
+          <i data-lucide="link-2" class="w-4 h-4"></i>
+          <span>Присоединиться</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

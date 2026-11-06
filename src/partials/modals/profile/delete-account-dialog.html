@@ -1,0 +1,77 @@
+<!-- МОДАЛЬНОЕ ОКНО: ПОДТВЕРЖДЕНИЕ И БЕЗОПАСНОЕ УДАЛЕНИЕ АККАУНТА (БЕЗ РУЧНОГО ВЫХОДА) -->
+<div
+  id="delete-account-dialog"
+  class="fixed inset-0 bg-black/80 z-[160] hidden flex flex-col justify-center items-center p-4 backdrop-blur-sm animate-fade-in"
+  onclick="if (event.target === this) closeDeleteAccountModal();"
+>
+  <div
+    class="bg-[#181B24] border border-[rgba(255,255,255,0.08)] w-full max-w-sm rounded-3xl p-6 shadow-2xl"
+  >
+    <div
+      class="w-12 h-12 rounded-2xl bg-red-500/10 text-red-400 flex items-center justify-center mx-auto mb-3"
+    >
+      <i data-lucide="shield-alert" class="w-6 h-6"></i>
+    </div>
+    <h3 class="text-lg font-bold text-white text-center mb-1">Удаление аккаунта</h3>
+    <p class="text-xs text-gray-400 text-center mb-5">
+      Все транзакции, вклады, цели и настройки будут безвозвратно удалены.
+    </p>
+
+    <!-- Секция подтверждения паролем для Email / Nickname -->
+    <div id="delete-account-pass-section" class="space-y-3.5">
+      <div>
+        <label class="block text-[11px] text-[#848D99] uppercase font-bold mb-1.5"
+          >Введите текущий пароль для подтверждения</label
+        >
+        <input
+          type="password"
+          id="delete-account-password"
+          placeholder="Ваш пароль"
+          class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-red-500/50 text-white rounded-xl p-3 outline-none text-sm transition-colors"
+        />
+      </div>
+      <div class="flex gap-2 pt-2">
+        <button
+          type="button"
+          onclick="closeDeleteAccountModal()"
+          class="flex-1 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 py-3 rounded-xl text-xs font-semibold cursor-pointer transition-colors"
+        >
+          Отмена
+        </button>
+        <button
+          type="button"
+          id="delete-account-confirm-btn"
+          onclick="submitDeleteAccountWithPassword()"
+          class="flex-1 bg-red-600 hover:bg-red-500 text-white py-3 rounded-xl text-xs font-semibold shadow-md active:scale-95 cursor-pointer transition-all flex items-center justify-center gap-1.5"
+        >
+          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+          <span>Удалить всё</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Секция подтверждения через Google -->
+    <div id="delete-account-google-section" class="hidden space-y-4">
+      <p class="text-xs text-gray-300 text-center">
+        По соображениям безопасности подтвердите действие через Google аккаунт.
+      </p>
+      <div class="flex gap-2 pt-1">
+        <button
+          type="button"
+          onclick="closeDeleteAccountModal()"
+          class="flex-1 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 py-3 rounded-xl text-xs font-semibold cursor-pointer transition-colors"
+        >
+          Отмена
+        </button>
+        <button
+          type="button"
+          onclick="submitDeleteAccountWithGoogle()"
+          class="flex-1 bg-red-600 hover:bg-red-500 text-white py-3 rounded-xl text-xs font-semibold shadow-md active:scale-95 cursor-pointer transition-all flex items-center justify-center gap-1.5"
+        >
+          <i data-lucide="shield-alert" class="w-3.5 h-3.5"></i>
+          <span>Подтвердить</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

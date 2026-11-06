@@ -1,0 +1,74 @@
+<!-- МОДАЛЬНОЕ ОКНО ЗАКРЫТИЯ ВКЛАДА (Obsidian Minimalist) -->
+<div
+  id="deposit-close-dialog"
+  onclick="if (event.target === this) closeDepositCloseModal();"
+  class="fixed inset-0 bg-black/85 z-[150] hidden flex flex-col justify-center items-center p-3.5 sm:p-4 animate-fade-in backdrop-blur-sm"
+>
+  <div
+    class="bg-[#0E1016] border border-white/10 w-full max-w-sm rounded-3xl p-5 shadow-2xl relative"
+  >
+    <div class="flex items-center justify-between mb-3.5 pb-2.5 border-b border-white/[0.06]">
+      <div class="flex items-center gap-2.5">
+        <div
+          class="w-8 h-8 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center flex-shrink-0 border border-amber-500/25"
+        >
+          <i data-lucide="vault" class="w-4 h-4"></i>
+        </div>
+        <div>
+          <h3 class="font-bold text-white text-base leading-tight">Закрытие вклада</h3>
+          <p id="dep-close-name" class="text-xs text-zinc-400 mt-0.5 truncate max-w-[200px]">
+            Вклад
+          </p>
+        </div>
+      </div>
+      <button
+        type="button"
+        onclick="closeDepositCloseModal()"
+        class="w-8 h-8 rounded-xl bg-white/[0.05] hover:bg-white/10 text-zinc-400 hover:text-white border border-white/[0.08] flex items-center justify-center cursor-pointer transition-colors active:scale-95"
+      >
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+
+    <input type="hidden" id="dep-close-id" value="" />
+
+    <!-- Сводка по суммам вклада -->
+    <div class="p-3.5 rounded-2xl bg-[#12151C] border border-white/[0.06] space-y-2 mb-4">
+      <div class="flex justify-between items-center text-xs">
+        <span class="text-zinc-400">Сумма вклада:</span>
+        <span id="dep-close-amount" class="font-mono font-bold text-white tabular-nums">0 ₽</span>
+      </div>
+      <div class="flex justify-between items-center text-xs">
+        <span class="text-zinc-400">Начисленные проценты:</span>
+        <span id="dep-close-interest" class="font-mono font-bold text-emerald-400 tabular-nums"
+          >+0 ₽</span
+        >
+      </div>
+      <div class="pt-2 border-t border-white/[0.06] flex justify-between items-center text-xs">
+        <span class="text-zinc-200 font-semibold">Итого к получению:</span>
+        <span id="dep-close-total" class="font-mono font-extrabold text-white text-sm tabular-nums"
+          >0 ₽</span
+        >
+      </div>
+    </div>
+
+    <!-- Кнопки действий -->
+    <div class="flex items-center gap-2">
+      <button
+        type="button"
+        onclick="closeDepositCloseModal()"
+        class="flex-1 bg-white/[0.05] hover:bg-white/10 text-zinc-300 py-2.5 rounded-xl text-xs font-medium border border-white/[0.08] transition-colors cursor-pointer"
+      >
+        Отмена
+      </button>
+      <button
+        type="button"
+        id="dep-close-submit-btn"
+        onclick="submitCloseDepositModal()"
+        class="flex-1 bg-white hover:bg-zinc-100 active:scale-95 text-zinc-950 py-2.5 rounded-xl text-xs font-semibold shadow-sm transition-all cursor-pointer"
+      >
+        Закрыть вклад
+      </button>
+    </div>
+  </div>
+</div>

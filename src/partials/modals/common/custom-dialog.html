@@ -1,0 +1,14 @@
+<!-- КАСТОМНЫЕ ОКНА И ТОСТЫ -->
+<div
+  id="custom-dialog"
+  class="fixed inset-0 bg-black/70 z-[250] hidden flex flex-col justify-center items-center p-6 animate-fade-in"
+  onclick="if (event.target === this) this.classList.add('hidden');"
+>
+  <div
+    class="bg-[#181B24] p-6 rounded-3xl border border-[rgba(255,255,255,0.08)] w-full max-w-xs shadow-2xl"
+  >
+    <h3 id="dialog-title" class="text-lg font-bold text-white mb-2">Внимание</h3>
+    <p id="dialog-message" class="text-sm text-gray-300 mb-6">Текст сообщения</p>
+    <div id="dialog-buttons" class="flex gap-3"></div>
+  </div>
+</div>

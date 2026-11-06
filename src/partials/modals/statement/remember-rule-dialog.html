@@ -1,0 +1,143 @@
+<!-- МОДАЛЬНОЕ ОКНО: ЗАПОМНИТЬ В СЛОВАРЬ КАТЕГОРИЙ -->
+<div
+  id="remember-rule-dialog"
+  class="fixed inset-0 bg-black/85 z-[170] hidden flex flex-col justify-end sm:justify-center items-center p-0 sm:p-4 backdrop-blur-md animate-fade-in"
+  onclick="if (event.target === this) closeRememberRuleModal();"
+>
+  <div
+    class="bg-[#0E1016] border border-white/[0.08] w-full max-w-md rounded-t-[28px] sm:rounded-3xl p-5 sm:p-6 shadow-2xl flex flex-col relative max-h-[90vh] overflow-y-auto custom-scrollbar"
+  >
+    <!-- Шапка модального окна -->
+    <div
+      class="flex items-center justify-between pb-3.5 mb-3.5 border-b border-white/[0.06] flex-shrink-0"
+    >
+      <div class="flex items-center gap-3">
+        <div
+          class="w-10 h-10 rounded-2xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center text-white shadow-sm flex-shrink-0"
+        >
+          <i data-lucide="pin" class="w-5 h-5 rotate-45"></i>
+        </div>
+        <div>
+          <h3 class="font-bold text-white text-base leading-tight">Запомнить в словарь</h3>
+          <p class="text-[11px] text-zinc-400 mt-0.5">Автоматическое определение категории</p>
+        </div>
+      </div>
+      <button
+        type="button"
+        onclick="closeRememberRuleModal()"
+        class="w-8 h-8 rounded-xl bg-white/[0.05] hover:bg-white/10 border border-white/[0.08] text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors active:scale-95"
+        title="Закрыть"
+      >
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+
+    <div class="space-y-3.5">
+      <!-- Поле ключевого слова / фразы -->
+      <div>
+        <label class="block text-[10px] text-zinc-400 uppercase font-bold tracking-wider mb-1.5"
+          >Ключевое слово или фраза</label
+        >
+        <input
+          type="text"
+          id="rule-keyword-input"
+          class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/30 text-white rounded-xl p-3 outline-none text-xs transition-colors font-medium placeholder-zinc-500"
+          placeholder="Например: pyaterochka или ВкусВилл"
+        />
+      </div>
+
+      <!-- Выбор категории -->
+      <div>
+        <label class="block text-[10px] text-zinc-400 uppercase font-bold tracking-wider mb-1.5"
+          >Назначаемая категория</label
+        >
+        <div class="relative custom-dropdown-wrap" id="wrap-rule-cat">
+          <input type="hidden" id="rule-category-input" />
+          <button
+            type="button"
+            id="rule-category-btn"
+            onclick="toggleModalCatMenu('rule')"
+            class="w-full bg-[#12151C] border border-white/[0.08] hover:border-white/20 focus:border-white/30 text-white rounded-xl p-3 text-xs flex items-center justify-between outline-none cursor-pointer transition-colors"
+          >
+            <span id="rule-category-label" class="truncate flex items-center gap-2 text-white">
+              <i data-lucide="tag" class="w-4 h-4 text-zinc-400"></i>
+              <span class="truncate">Выберите категорию...</span>
+            </span>
+            <i data-lucide="chevron-down" class="w-4 h-4 text-zinc-400 flex-shrink-0 ml-1"></i>
+          </button>
+          <div
+            id="rule-category-menu"
+            class="custom-dropdown-menu hidden absolute left-0 top-full mt-1.5 w-full max-h-52 overflow-y-auto bg-[#12151C] border border-white/10 rounded-2xl shadow-2xl z-50 p-1.5 space-y-0.5 backdrop-blur-xl"
+          ></div>
+        </div>
+      </div>
+
+      <!-- Подсказка: какие слова лучше добавлять -->
+      <div class="bg-[#12151C] border border-white/[0.06] rounded-2xl p-3.5 space-y-2">
+        <div class="flex items-center gap-2 text-zinc-200 font-semibold text-xs">
+          <i data-lucide="lightbulb" class="w-4 h-4 flex-shrink-0 text-zinc-400"></i>
+          <span>Какие слова лучше добавлять?</span>
+        </div>
+        <ul class="text-[11px] text-zinc-300 space-y-1.5 leading-relaxed pl-1">
+          <li class="flex items-start gap-1.5">
+            <span class="text-zinc-500 font-bold">•</span>
+            <span
+              ><strong class="text-zinc-200">Уникальная основа названия:</strong> корень бренда
+              магазина (например:
+              <code
+                class="bg-white/[0.06] border border-white/[0.06] px-1.5 py-0.5 rounded-lg text-zinc-200 font-mono text-[10px]"
+                >pyaterochka</code
+              >,
+              <code
+                class="bg-white/[0.06] border border-white/[0.06] px-1.5 py-0.5 rounded-lg text-zinc-200 font-mono text-[10px]"
+                >вкусвилл</code
+              >,
+              <code
+                class="bg-white/[0.06] border border-white/[0.06] px-1.5 py-0.5 rounded-lg text-zinc-200 font-mono text-[10px]"
+                >ozon</code
+              >,
+              <code
+                class="bg-white/[0.06] border border-white/[0.06] px-1.5 py-0.5 rounded-lg text-zinc-200 font-mono text-[10px]"
+                >yandex go</code
+              >).</span
+            >
+          </li>
+          <li class="flex items-start gap-1.5">
+            <span class="text-zinc-500 font-bold">•</span>
+            <span
+              ><strong class="text-zinc-200">Избегайте общих слов:</strong>
+              <span class="text-zinc-400">«оплата»</span>,
+              <span class="text-zinc-400">«перевод»</span>,
+              <span class="text-zinc-400">«card»</span>, чтобы не перебивать другие категории.</span
+            >
+          </li>
+          <li class="flex items-start gap-1.5">
+            <span class="text-zinc-500 font-bold">•</span>
+            <span
+              ><strong class="text-zinc-200">Регистр не важен:</strong> поиск работает автоматически
+              без учета регистра букв.</span
+            >
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Кнопки действий -->
+    <div class="flex gap-2.5 mt-5 pt-3 border-t border-white/[0.06] flex-shrink-0">
+      <button
+        type="button"
+        onclick="closeRememberRuleModal()"
+        class="flex-1 bg-white/[0.05] hover:bg-white/10 border border-white/[0.08] active:scale-95 text-zinc-300 hover:text-white py-3 rounded-2xl font-semibold text-xs transition-all cursor-pointer"
+      >
+        Отмена
+      </button>
+      <button
+        type="button"
+        onclick="saveCategoryRuleFromModal()"
+        class="flex-1 bg-white text-zinc-950 hover:bg-zinc-200 active:scale-95 py-3 rounded-2xl font-semibold text-xs shadow-md transition-all cursor-pointer flex items-center justify-center"
+      >
+        Сохранить в словарь
+      </button>
+    </div>
+  </div>
+</div>

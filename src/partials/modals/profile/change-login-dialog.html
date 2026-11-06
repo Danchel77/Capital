@@ -1,0 +1,72 @@
+<!-- МОДАЛЬНОЕ ОКНО: СМЕНА ЛОГИНА -->
+<div
+  id="change-login-dialog"
+  class="fixed inset-0 bg-black/80 z-[160] hidden flex flex-col justify-center items-center p-4 backdrop-blur-sm animate-fade-in"
+  onclick="if (event.target === this) closeChangeLoginModal();"
+>
+  <div
+    class="bg-[#181B24] border border-[rgba(255,255,255,0.08)] w-full max-w-sm rounded-3xl p-6 shadow-2xl"
+  >
+    <div
+      class="flex items-center justify-between mb-4 pb-2 border-b border-[rgba(255,255,255,0.06)]"
+    >
+      <div>
+        <h3 class="text-lg font-bold text-white">Смена логина</h3>
+        <p class="text-xs text-gray-400 mt-0.5">
+          Текущий: <span id="change-login-current" class="text-[#8C7DFF] font-medium"></span>
+        </p>
+      </div>
+      <button
+        type="button"
+        onclick="closeChangeLoginModal()"
+        class="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-[#212430] cursor-pointer"
+      >
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+
+    <div class="space-y-3.5">
+      <div>
+        <label class="block text-[11px] text-[#848D99] uppercase font-bold mb-1.5"
+          >Новый логин</label
+        >
+        <input
+          type="text"
+          id="change-login-new"
+          placeholder="Введите новый логин"
+          class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-white/30 text-white rounded-xl p-3 outline-none text-sm transition-colors"
+        />
+      </div>
+      <div>
+        <label class="block text-[11px] text-[#848D99] uppercase font-bold mb-1.5"
+          >Текущий пароль для подтверждения</label
+        >
+        <input
+          type="password"
+          id="change-login-password"
+          placeholder="Ваш действующий пароль"
+          class="w-full bg-[#12151C] border border-[rgba(255,255,255,0.08)] focus:border-white/30 text-white rounded-xl p-3 outline-none text-sm transition-colors"
+        />
+      </div>
+
+      <div class="flex gap-2.5 pt-2">
+        <button
+          type="button"
+          onclick="closeChangeLoginModal()"
+          class="flex-1 bg-[#212430] hover:bg-[#2A2D3C] text-gray-300 py-3 rounded-xl text-xs font-semibold cursor-pointer transition-colors"
+        >
+          Отмена
+        </button>
+        <button
+          type="button"
+          id="change-login-submit-btn"
+          onclick="submitChangeLogin()"
+          class="flex-1 bg-[#6C5DD3] hover:bg-[#5E4FC9] text-white py-3 rounded-xl text-xs font-semibold shadow-md shadow-[#6C5DD3]/25 active:scale-95 cursor-pointer transition-all flex items-center justify-center gap-1.5"
+        >
+          <i data-lucide="check" class="w-3.5 h-3.5"></i>
+          <span>Обновить</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
