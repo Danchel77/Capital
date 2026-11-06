@@ -450,15 +450,12 @@ window.handleGoalSingleShareSlider = handleGoalSingleShareSlider;
 function openGoalModal() {
   document.getElementById('goal-edit-id').value = '';
   document.getElementById('goal-name-input').value = '';
-  document.getElementById('goal-target-input').value = '';
-  document.getElementById('goal-saved-input').value = '';
+  setFormattedVal('goal-target-input', '');
+  setFormattedVal('goal-saved-input', 0);
   document.getElementById('goal-delete-btn').classList.add('hidden');
   document.getElementById('budget-goal-dialog-title').innerText = 'Новая цель';
-
-  const createSavedContainer = document.getElementById('goal-saved-create-container');
-  const piggyEditSection = document.getElementById('goal-piggy-edit-section');
-  if (createSavedContainer) createSavedContainer.classList.remove('hidden');
-  if (piggyEditSection) piggyEditSection.classList.add('hidden');
+  const subtitle = document.getElementById('budget-goal-dialog-subtitle');
+  if (subtitle) subtitle.innerText = 'Создание цели накопления';
 
   const submitBtn = document.getElementById('goal-submit-btn');
   if (submitBtn) submitBtn.innerText = 'Создать цель';
@@ -477,7 +474,6 @@ function closeGoalModal() {
   const dlg = document.getElementById('budget-goal-dialog');
   if (dlg) dlg.classList.add('hidden');
   closeBudgetGoalIconPicker();
-  resetGoalPiggyAdjust();
   tempGoalShares = {};
   activeGoalEditingId = null;
   document
@@ -485,137 +481,6 @@ function closeGoalModal() {
     .forEach(el => el.classList.remove('context-active'));
 }
 window.closeGoalModal = closeGoalModal;
-
-let currentPiggyAction = null;
-
-function resetGoalPiggyAdjust() {
-  const panel = document.getElementById('goal-piggy-delta-panel');
-  const deltaInput = document.getElementById('goal-piggy-delta-input');
-  const preview = document.getElementById('goal-piggy-delta-preview');
-  const btnAdd = document.getElementById('goal-piggy-btn-add');
-  const btnSub = document.getElementById('goal-piggy-btn-sub');
-
-  if (panel) panel.classList.add('hidden');
-  if (deltaInput) deltaInput.value = '';
-  if (preview) preview.innerHTML = '';
-
-  currentPiggyAction = null;
-  if (btnAdd) {
-    btnAdd.className =
-      'flex-1 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/10 text-zinc-300 font-medium text-xs border border-white/[0.08] transition-all cursor-pointer text-center';
-  }
-  if (btnSub) {
-    btnSub.className =
-      'flex-1 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/10 text-zinc-300 font-medium text-xs border border-white/[0.08] transition-all cursor-pointer text-center';
-  }
-}
-window.resetGoalPiggyAdjust = resetGoalPiggyAdjust;
-
-function setGoalPiggyAction(action) {
-  const panel = document.getElementById('goal-piggy-delta-panel');
-  const deltaInput = document.getElementById('goal-piggy-delta-input');
-  const btnAdd = document.getElementById('goal-piggy-btn-add');
-  const btnSub = document.getElementById('goal-piggy-btn-sub');
-  if (!panel) return;
-
-  if (currentPiggyAction === action && !panel.classList.contains('hidden')) {
-    resetGoalPiggyAdjust();
-    return;
-  }
-
-  currentPiggyAction = action;
-  panel.classList.remove('hidden');
-
-  if (action === 'add') {
-    if (btnAdd) {
-      btnAdd.className =
-        'flex-1 py-1.5 rounded-xl bg-white/10 text-white font-semibold text-xs border border-white/20 transition-all cursor-pointer text-center';
-    }
-    if (btnSub) {
-      btnSub.className =
-        'flex-1 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/10 text-zinc-400 font-medium text-xs border border-white/[0.08] transition-all cursor-pointer text-center';
-    }
-    if (deltaInput) {
-      deltaInput.placeholder = 'Сумма пополнения';
-      deltaInput.focus();
-    }
-  } else {
-    if (btnSub) {
-      btnSub.className =
-        'flex-1 py-1.5 rounded-xl bg-white/10 text-white font-semibold text-xs border border-white/20 transition-all cursor-pointer text-center';
-    }
-    if (btnAdd) {
-      btnAdd.className =
-        'flex-1 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/10 text-zinc-400 font-medium text-xs border border-white/[0.08] transition-all cursor-pointer text-center';
-    }
-    if (deltaInput) {
-      deltaInput.placeholder = 'Сумма снятия';
-      deltaInput.focus();
-    }
-  }
-
-  handleGoalPiggyDeltaInput();
-}
-window.setGoalPiggyAction = setGoalPiggyAction;
-
-function handleGoalPiggyDeltaInput() {
-  const savedInput = document.getElementById('goal-saved-input');
-  const deltaInput = document.getElementById('goal-piggy-delta-input');
-  const preview = document.getElementById('goal-piggy-delta-preview');
-  const applyBtn = document.getElementById('goal-piggy-apply-btn');
-  if (!preview || !deltaInput || !savedInput) return;
-
-  const currentSaved = getUnformattedVal(savedInput) || 0;
-  const delta = getUnformattedVal(deltaInput) || 0;
-
-  if (delta <= 0) {
-    preview.innerHTML = '';
-    if (applyBtn) applyBtn.disabled = false;
-    return;
-  }
-
-  if (currentPiggyAction === 'add') {
-    const newTotal = currentSaved + delta;
-    preview.innerHTML = `Станет в копилке: <span class="text-emerald-400 font-semibold font-mono">${formatMoney(newTotal)}</span>`;
-    if (applyBtn) applyBtn.disabled = false;
-  } else {
-    if (delta > currentSaved) {
-      preview.innerHTML = `<span class="text-rose-400 font-medium">Нельзя снять больше ${formatMoney(currentSaved)}</span>`;
-      if (applyBtn) applyBtn.disabled = true;
-    } else {
-      const newTotal = currentSaved - delta;
-      preview.innerHTML = `Останется в копилке: <span class="text-zinc-300 font-semibold font-mono">${formatMoney(newTotal)}</span>`;
-      if (applyBtn) applyBtn.disabled = false;
-    }
-  }
-}
-window.handleGoalPiggyDeltaInput = handleGoalPiggyDeltaInput;
-
-function applyGoalPiggyDelta() {
-  const savedInput = document.getElementById('goal-saved-input');
-  const deltaInput = document.getElementById('goal-piggy-delta-input');
-  const piggyDisplay = document.getElementById('goal-piggy-current-display');
-  if (!savedInput || !deltaInput) return;
-
-  const currentSaved = getUnformattedVal(savedInput) || 0;
-  const delta = getUnformattedVal(deltaInput) || 0;
-  if (delta <= 0) return;
-
-  let newSaved = currentSaved;
-  if (currentPiggyAction === 'add') {
-    newSaved = currentSaved + delta;
-  } else {
-    if (delta > currentSaved) return;
-    newSaved = Math.max(0, currentSaved - delta);
-  }
-
-  setFormattedVal('goal-saved-input', newSaved);
-  if (piggyDisplay) {
-    piggyDisplay.innerText = formatMoney(newSaved);
-  }
-  resetGoalPiggyAdjust();
-}
-window.applyGoalPiggyDelta = applyGoalPiggyDelta;
 
 function openEditGoalModal(goalId) {
   if (typeof isSelectionMode === 'function' && isSelectionMode()) return;
@@ -634,18 +499,10 @@ function openEditGoalModal(goalId) {
   setFormattedVal('goal-target-input', goal.target);
   setFormattedVal('goal-saved-input', goal.saved || 0);
 
-  const createSavedContainer = document.getElementById('goal-saved-create-container');
-  const piggyEditSection = document.getElementById('goal-piggy-edit-section');
-  if (createSavedContainer) createSavedContainer.classList.add('hidden');
-  if (piggyEditSection) piggyEditSection.classList.remove('hidden');
-
-  const piggyDisplay = document.getElementById('goal-piggy-current-display');
-  if (piggyDisplay) piggyDisplay.innerText = formatMoney(goal.saved || 0);
-
-  resetGoalPiggyAdjust();
-
   document.getElementById('goal-delete-btn').classList.remove('hidden');
   document.getElementById('budget-goal-dialog-title').innerText = 'Редактировать цель';
+  const subtitle = document.getElementById('budget-goal-dialog-subtitle');
+  if (subtitle) subtitle.innerText = 'Параметры накопления';
 
   const submitBtn = document.getElementById('goal-submit-btn');
   if (submitBtn) submitBtn.innerText = 'Сохранить';

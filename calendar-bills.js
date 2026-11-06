@@ -189,7 +189,7 @@ function renderBudgetCalendar() {
             <i data-lucide="calendar" class="w-5 h-5 text-zinc-400"></i>
           </div>
           <div class="text-left min-w-0 flex-1">
-            <p class="text-sm font-semibold text-white leading-tight">Регулярные платежи не настроены</p>
+            <p class="text-sm font-medium text-zinc-400 leading-tight">Регулярные платежи не настроены</p>
           </div>
         </div>
       `;
@@ -197,11 +197,11 @@ function renderBudgetCalendar() {
       container.innerHTML = `
         <div class="card bg-[#0E1016] border border-white/[0.08] hover:border-white/20 rounded-2xl p-4 shadow-sm flex items-center gap-3 transition-all cursor-pointer select-none active:scale-[0.99]"
              onclick="openBudgetCalendarModal()">
-          <div class="w-10 h-10 rounded-xl bg-[#13251E] border border-[#1E3E32] text-[#34D399] flex items-center justify-center flex-shrink-0">
-            <i data-lucide="calendar-check-2" class="w-5 h-5 text-emerald-400"></i>
+          <div class="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.08] text-zinc-400 flex items-center justify-center flex-shrink-0">
+            <i data-lucide="calendar-check-2" class="w-5 h-5 text-zinc-400"></i>
           </div>
           <div class="text-left min-w-0 flex-1">
-            <p class="text-sm font-semibold text-white leading-tight">В ближайшие 14 дней платежей нет</p>
+            <p class="text-sm font-medium text-zinc-400 leading-tight">В ближайшие 14 дней платежей нет</p>
           </div>
         </div>
       `;
