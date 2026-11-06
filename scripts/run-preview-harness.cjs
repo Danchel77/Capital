@@ -249,9 +249,6 @@ const previewInjectionScript = `
           console.log('[Preview] Opening edit goal modal with inline piggy adjust...');
           if (typeof window.openEditGoalModal === 'function') {
             window.openEditGoalModal('goal-1');
-            if (typeof window.toggleGoalPiggyAdjust === 'function') {
-              window.toggleGoalPiggyAdjust();
-            }
           }
         }
       } else if ('${targetTab}' === 'transactions') {

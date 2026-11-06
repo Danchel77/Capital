@@ -188,9 +188,9 @@ function renderBudgetGoals(goals) {
 
   container.innerHTML = processedGoals
     .map(g => {
-      const statusText = g.isAchieved
-        ? '<span class="text-emerald-400 font-medium">Цель достигнута</span>'
-        : '<span class="text-zinc-500 font-medium text-xs">В процессе накопления</span>';
+      const dateSubtitle = g.targetDate
+        ? `<p class="text-xs text-zinc-500 mt-0.5">${escapeHtml(g.targetDate)}</p>`
+        : '';
 
       return `
       <div class="card bg-[#0E1016] border border-white/[0.08] hover:border-white/20 rounded-2xl p-4 shadow-sm cursor-pointer relative transition-all"
@@ -200,7 +200,7 @@ function renderBudgetGoals(goals) {
         
         <input type="checkbox" class="select-checkbox hidden" data-id="${g.id}">
 
-        <!-- Шапка: Иконка, название, статус -->
+        <!-- Шапка: Иконка, название -->
         <div class="flex items-center justify-between mb-3 gap-2">
           <div class="flex items-center gap-3 min-w-0 flex-1">
             <div class="w-10 h-10 rounded-xl bg-[#13251E] border border-[#1E3E32] text-[#34D399] flex items-center justify-center flex-shrink-0">
@@ -208,7 +208,7 @@ function renderBudgetGoals(goals) {
             </div>
             <div class="min-w-0 flex-1">
               <h4 class="text-sm font-semibold text-white truncate">${escapeHtml(g.name)}</h4>
-              <p class="text-xs text-zinc-400 mt-0.5">${statusText}</p>
+              ${dateSubtitle}
             </div>
           </div>
         </div>
@@ -232,7 +232,7 @@ function renderBudgetGoals(goals) {
         <div class="flex items-center justify-between text-[11px] text-zinc-400 pt-0.5">
           <span class="flex items-center gap-1.5">
             <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0"></span>
-            <span>Капитал ${g.share}%: <span class="text-zinc-200 font-mono font-medium">${formatMoney(g.capitalAlloc)}</span></span>
+            <span>Капитал: <span class="text-zinc-200 font-mono font-medium">${formatMoney(g.capitalAlloc)}</span></span>
           </span>
           <span class="flex items-center gap-1.5">
             <span class="w-1.5 h-1.5 rounded-full bg-sky-400 flex-shrink-0"></span>
@@ -447,7 +447,7 @@ function renderGoalSharesManagerList(currentEditingId = null) {
             <span class="text-[11px] font-mono text-zinc-400" id="goal-share-amount-${item.id}">
               ${formatMoney(capitalAmount)}
             </span>
-            <span class="font-mono font-bold text-xs text-white bg-white/10 px-2 py-0.5 rounded-lg border border-white/15" id="goal-share-val-${item.id}">
+            <span class="font-mono font-semibold text-xs text-emerald-400 tabular-nums min-w-[32px] text-right" id="goal-share-val-${item.id}">
               ${shareVal}%
             </span>
           </div>
@@ -603,13 +603,9 @@ window.closeGoalModal = closeGoalModal;
 let currentPiggyInlineMode = 'add';
 
 function resetGoalPiggyAdjust() {
-  const panel = document.getElementById('goal-piggy-adjust-panel');
-  const toggleBtn = document.getElementById('goal-piggy-toggle-btn');
   const deltaInput = document.getElementById('goal-piggy-delta-input');
   const preview = document.getElementById('goal-piggy-delta-preview');
 
-  if (panel) panel.classList.add('hidden');
-  if (toggleBtn) toggleBtn.innerText = 'Изменить';
   if (deltaInput) deltaInput.value = '';
   if (preview) preview.innerHTML = '';
   currentPiggyInlineMode = 'add';

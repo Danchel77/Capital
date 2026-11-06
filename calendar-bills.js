@@ -183,32 +183,33 @@ function renderBudgetCalendar() {
   if (upcomingBills.length === 0) {
     if (allBills.length === 0) {
       container.innerHTML = `
-        <div class="rounded-2xl p-4 text-center flex flex-col items-center justify-center gap-2.5 bg-[#0E1016] border border-white/10">
-          <div class="w-8 h-8 rounded-xl bg-white/[0.04] border border-white/[0.08] text-zinc-400 flex items-center justify-center">
-            <i data-lucide="calendar" class="w-4 h-4 text-zinc-400"></i>
-          </div>
-          <div>
-            <p class="text-xs font-medium text-zinc-200">Платежи ещё не назначены</p>
-            <p class="text-[11px] text-zinc-500 mt-0.5">Добавьте регулярные списания: ЖКУ, подписки, кредиты</p>
+        <div class="rounded-2xl p-3 flex items-center justify-between gap-3 bg-[#0E1016] border border-white/[0.08]">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-8 h-8 rounded-xl bg-white/[0.04] border border-white/[0.08] text-zinc-400 flex items-center justify-center flex-shrink-0">
+              <i data-lucide="calendar" class="w-4 h-4 text-zinc-400"></i>
+            </div>
+            <div class="text-left min-w-0">
+              <p class="text-xs font-medium text-zinc-200 leading-tight">Регулярные платежи не настроены</p>
+              <p class="text-[11px] text-zinc-500 leading-tight mt-0.5 truncate">ЖКУ, подписки, кредиты</p>
+            </div>
           </div>
           <button
             type="button"
             onclick="openCreateBillModal()"
-            class="mt-1 px-3 py-1.5 rounded-xl bg-white text-zinc-950 hover:bg-zinc-200 active:scale-95 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
+            class="px-2.5 py-1.5 rounded-xl bg-white text-zinc-950 hover:bg-zinc-200 active:scale-95 text-xs font-semibold flex-shrink-0 transition-all cursor-pointer shadow-sm"
           >
-            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-            <span>Добавить платёж</span>
+            Добавить
           </button>
         </div>
       `;
     } else {
       container.innerHTML = `
-        <div class="rounded-2xl p-3.5 text-center flex items-center justify-center gap-3 bg-[#0E1016] border border-white/10">
+        <div class="rounded-2xl p-3 flex items-center gap-3 bg-[#0E1016] border border-white/[0.08]">
           <div class="w-8 h-8 rounded-xl bg-white/[0.04] border border-white/[0.08] text-zinc-400 flex items-center justify-center flex-shrink-0">
             <i data-lucide="calendar-check-2" class="w-4 h-4 text-emerald-400"></i>
           </div>
           <div class="text-left min-w-0">
-            <p class="text-xs font-medium text-zinc-200 leading-tight">Нет списаний на 14 дней</p>
+            <p class="text-xs font-medium text-zinc-200 leading-tight">Ближайших списаний нет</p>
             <p class="text-[11px] text-zinc-500 leading-tight mt-0.5">Регулярные платежи наступят позже</p>
           </div>
         </div>

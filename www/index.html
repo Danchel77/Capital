@@ -2170,71 +2170,74 @@
               <label class="block text-[10px] text-zinc-400 uppercase font-bold mb-1"
                 >Сумма цели</label
               >
-              <input
-                type="text"
-                inputmode="decimal"
-                oninput="formatSumInput(this)"
-                id="goal-target-input"
-                placeholder="0 ₽"
-                required
-                class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white placeholder-zinc-500 font-mono font-bold rounded-xl p-2.5 outline-none text-xs"
-              />
+              <div class="relative">
+                <input
+                  type="text"
+                  inputmode="decimal"
+                  oninput="formatSumInput(this)"
+                  id="goal-target-input"
+                  placeholder="0"
+                  required
+                  class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white placeholder-zinc-500 font-mono font-bold rounded-xl p-2.5 pr-7 outline-none text-xs"
+                />
+                <span
+                  class="absolute right-3 top-2.5 text-zinc-500 font-mono text-xs pointer-events-none select-none"
+                  >₽</span
+                >
+              </div>
             </div>
             <div id="goal-saved-create-container">
               <label class="block text-[10px] text-zinc-400 uppercase font-bold mb-1"
                 >В копилке</label
               >
-              <input
-                type="text"
-                inputmode="decimal"
-                oninput="formatSumInput(this)"
-                id="goal-saved-input"
-                placeholder="0 ₽"
-                class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white placeholder-zinc-500 font-mono font-bold rounded-xl p-2.5 outline-none text-xs"
-              />
+              <div class="relative">
+                <input
+                  type="text"
+                  inputmode="decimal"
+                  oninput="formatSumInput(this)"
+                  id="goal-saved-input"
+                  placeholder="0"
+                  class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white placeholder-zinc-500 font-mono font-bold rounded-xl p-2.5 pr-7 outline-none text-xs"
+                />
+                <span
+                  class="absolute right-3 top-2.5 text-zinc-500 font-mono text-xs pointer-events-none select-none"
+                  >₽</span
+                >
+              </div>
             </div>
           </div>
 
           <!-- Интерактивный блок копилки (для режима редактирования цели) -->
           <div
             id="goal-piggy-edit-section"
-            class="hidden p-3 rounded-xl bg-[#12151C] border border-white/[0.06] space-y-2"
+            class="hidden pt-3 border-t border-white/[0.06] space-y-2.5"
           >
             <div class="flex items-center justify-between">
+              <span class="text-[10px] text-zinc-400 uppercase font-bold tracking-wider"
+                >Ручная копилка</span
+              >
               <div class="flex items-center gap-1.5">
-                <i data-lucide="wallet" class="w-3.5 h-3.5 text-sky-400"></i>
-                <span class="text-[10px] text-zinc-400 uppercase font-bold tracking-wider"
-                  >В копилке:</span
-                >
+                <span class="text-[11px] text-zinc-500">В копилке:</span>
                 <span
                   id="goal-piggy-current-display"
-                  class="font-mono font-bold text-white text-xs tabular-nums"
+                  class="font-mono font-bold text-sky-400 text-xs tabular-nums"
                   >0 ₽</span
                 >
               </div>
-              <button
-                type="button"
-                id="goal-piggy-toggle-btn"
-                onclick="toggleGoalPiggyAdjust()"
-                class="px-2 py-0.5 rounded-lg bg-white/[0.05] hover:bg-white/10 text-zinc-300 hover:text-white text-[11px] font-medium transition-all cursor-pointer border border-white/[0.06]"
-              >
-                Изменить
-              </button>
             </div>
 
-            <!-- Раскрывающаяся панель внесения/снятия -->
-            <div
-              id="goal-piggy-adjust-panel"
-              class="hidden pt-2 border-t border-white/[0.06] space-y-2"
-            >
-              <div class="flex items-center gap-1 bg-[#0E1016] p-0.5 rounded-lg border border-white/[0.06]">
+            <!-- Панель внесения/снятия -->
+            <div id="goal-piggy-adjust-panel" class="space-y-2">
+              <div
+                class="flex items-center gap-1 bg-[#12151C] p-0.5 rounded-lg border border-white/[0.06]"
+              >
                 <button
                   type="button"
                   id="goal-piggy-mode-add"
                   onclick="setGoalPiggyInlineMode('add')"
                   class="flex-1 py-1 rounded-md text-[11px] font-semibold bg-white/10 text-white transition-all cursor-pointer"
                 >
-                  + Внести
+                  Внести
                 </button>
                 <button
                   type="button"
@@ -2242,27 +2245,34 @@
                   onclick="setGoalPiggyInlineMode('sub')"
                   class="flex-1 py-1 rounded-md text-[11px] font-medium text-zinc-400 hover:text-white transition-all cursor-pointer"
                 >
-                  − Снять
+                  Снять
                 </button>
               </div>
 
-              <div class="flex items-center gap-1.5">
-                <input
-                  type="text"
-                  inputmode="decimal"
-                  id="goal-piggy-delta-input"
-                  placeholder="0 ₽"
-                  oninput="
-                    formatSumInput(this);
-                    if (typeof handleGoalPiggyDeltaInput === 'function') handleGoalPiggyDeltaInput();
-                  "
-                  class="flex-1 bg-[#0E1016] border border-white/[0.08] focus:border-white/20 text-white font-mono font-bold rounded-xl px-2.5 py-1.5 text-xs outline-none"
-                />
+              <div class="flex items-center gap-2">
+                <div class="relative flex-1">
+                  <input
+                    type="text"
+                    inputmode="decimal"
+                    id="goal-piggy-delta-input"
+                    placeholder="0"
+                    oninput="
+                      formatSumInput(this);
+                      if (typeof handleGoalPiggyDeltaInput === 'function')
+                        handleGoalPiggyDeltaInput();
+                    "
+                    class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white font-mono font-bold rounded-xl pl-3 pr-7 py-2 text-xs outline-none"
+                  />
+                  <span
+                    class="absolute right-3 top-2 text-zinc-500 font-mono text-xs pointer-events-none select-none"
+                    >₽</span
+                  >
+                </div>
                 <button
                   type="button"
                   id="goal-piggy-apply-btn"
                   onclick="applyGoalPiggyDelta()"
-                  class="px-3 py-1.5 rounded-xl bg-white text-zinc-950 font-semibold text-xs active:scale-95 transition-all cursor-pointer flex-shrink-0"
+                  class="px-3.5 py-2 rounded-xl bg-white/[0.08] hover:bg-white/[0.14] text-white border border-white/10 font-semibold text-xs active:scale-95 transition-all cursor-pointer flex-shrink-0"
                 >
                   Внести
                 </button>
