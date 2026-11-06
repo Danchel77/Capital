@@ -592,7 +592,8 @@ function renderMoexPortfolio() {
     `;
     cashAssets.forEach(asset => {
       const amount = Math.round(parseFloat(asset.quantity) || 0);
-      const sharePct = totalValue > 0 ? ((amount / totalValue) * 100).toFixed(1) : 0;
+      const rawPct = totalValue > 0 ? (amount / totalValue) * 100 : 0;
+      const sharePct = typeof formatRate === 'function' ? formatRate(rawPct) : rawPct.toFixed(1);
       html += `
         <div class="card bg-[#0E1016] hover:bg-[#12151C] border border-white/[0.06] hover:border-white/15 p-3.5 rounded-2xl flex items-center justify-between gap-3 transition-all cursor-pointer active:scale-[0.99]"
              onclick="openEditMoexAssetModal('${asset.id}')">
@@ -635,7 +636,8 @@ function renderMoexPortfolio() {
       const qty = parseFloat(asset.quantity) || 0;
       const price = parseFloat(asset.currentPrice) || parseFloat(asset.price) || 0;
       const posValue = Math.round(qty * price);
-      const sharePct = totalValue > 0 ? ((posValue / totalValue) * 100).toFixed(1) : 0;
+      const rawPct = totalValue > 0 ? (posValue / totalValue) * 100 : 0;
+      const sharePct = typeof formatRate === 'function' ? formatRate(rawPct) : rawPct.toFixed(1);
 
       // Честное определение фонда
       const tickerUpper = (asset.ticker || '').toUpperCase();

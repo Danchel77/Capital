@@ -1298,17 +1298,73 @@ function togglePrivacyMode() {
 
 const formatMoney = (sum, isInputOrDetails = false) => {
   if (window.isPrivacyModeEnabled && !isInputOrDetails) {
-    return '•••• ₽';
+    return '••••\u00A0₽';
   }
+  let num;
+  if (typeof sum === 'number') {
+    num = sum;
+  } else if (typeof sum === 'string') {
+    const clean = sum
+      .replace(/\s+/g, '')
+      .replace(/[^\d.,-]/g, '')
+      .replace(',', '.');
+    num = parseFloat(clean);
+  } else {
+    num = Number(sum);
+  }
+  if (isNaN(num)) num = 0;
+
   return new Intl.NumberFormat('ru-RU', {
     style: 'currency',
     currency: 'RUB',
-    minimumFractionDigits: isInputOrDetails ? 2 : 0, // Убираем копейки везде по умолчанию
+    minimumFractionDigits: isInputOrDetails ? 2 : 0,
     maximumFractionDigits: isInputOrDetails ? 2 : 0,
   })
-    .format(sum)
-    .replace(',', '.'); // Использует неразрывные пробелы встроенно
+    .format(num)
+    .replace(/[\u202F\s]/g, '\u00A0');
 };
+
+function formatRate(val) {
+  if (val === null || val === undefined) return '0,0';
+  let num;
+  if (typeof val === 'number') {
+    num = val;
+  } else {
+    const clean = String(val)
+      .replace(/\s+/g, '')
+      .replace(/[^\d.,-]/g, '')
+      .replace(',', '.');
+    num = parseFloat(clean);
+  }
+  if (isNaN(num)) return '0,0';
+  num = Math.round(num * 100) / 100;
+  if (Number.isInteger(num)) {
+    return `${num},0`;
+  }
+  return String(num).replace('.', ',');
+}
+
+function formatPercent(val) {
+  return `${formatRate(val)}%`;
+}
+
+function formatTermMonths(m) {
+  if (!m) return '';
+  if (m === 12) return '1 год';
+  if (m === 24) return '2 года';
+  if (m === 36) return '3 года';
+  return `${m} мес.`;
+}
+
+function formatPlural(n, one, few, many) {
+  const num = Math.abs(Math.round(n || 0));
+  const mod10 = num % 10;
+  const mod100 = num % 100;
+  if (mod100 >= 11 && mod100 <= 19) return `${n} ${many}`;
+  if (mod10 === 1) return `${n} ${one}`;
+  if (mod10 >= 2 && mod10 <= 4) return `${n} ${few}`;
+  return `${n} ${many}`;
+}
 
 // Плавная выразительная анимация числовых счетчиков (Rolling Counter / Odometer)
 function animateNumber(el, targetNum, duration = 1200, isCurrency = true) {
@@ -1427,10 +1483,27 @@ function animatePercentage(el, targetPct, color, duration = 3000, fromPct = null
   el._pctFrame = requestAnimationFrame(step);
 }
 
-const getUnformattedVal = el => parseFloat(el.value.replace(/\s/g, '')) || 0;
+const getUnformattedVal = el => {
+  if (el === null || el === undefined) return 0;
+  const raw =
+    typeof el === 'string' || typeof el === 'number'
+      ? el
+      : el.value !== undefined
+        ? el.value
+        : el.innerText || el.textContent || '';
+  if (typeof raw === 'number') return isNaN(raw) ? 0 : raw;
+  const clean = String(raw)
+    .replace(/\s+/g, '')
+    .replace(/[^\d.,-]/g, '')
+    .replace(',', '.');
+  const num = parseFloat(clean);
+  return isNaN(num) ? 0 : num;
+};
+
 const setFormattedVal = (id, val) => {
-  const el = document.getElementById(id);
-  el.value = val;
+  const el = typeof id === 'string' ? document.getElementById(id) : id;
+  if (!el) return;
+  el.value = val === undefined || val === null ? '' : val;
   formatSumInput(el);
 };
 
@@ -1976,6 +2049,10 @@ window.submitAction = submitAction;
 window.deleteRecord = deleteRecord;
 window.adjustGoalSaved = adjustGoalSaved;
 window.formatMoney = formatMoney;
+window.formatRate = formatRate;
+window.formatPercent = formatPercent;
+window.formatTermMonths = formatTermMonths;
+window.formatPlural = formatPlural;
 window.animateNumber = animateNumber;
 window.animatePercentage = animatePercentage;
 window.triggerBudgetExpenseAnimation = triggerBudgetExpenseAnimation;

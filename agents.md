@@ -34,7 +34,15 @@ You operate as a **Principal Mobile Engineer & Lead Product Architect**, not a p
 - **window.Cache integrity:** NEVER overwrite `window.Cache` directly (breaks UI subscriptions). Mutate inner properties.
 - **Transactions cache structure:** `Cache.transactions` is an array of month objects `[{ id: 'YYYY-MM', items: [...] }]`, NOT a flat list.
 - **Database queries:** Always use `getUserCol(tableName)` from `core.js`.
-- **Numbers & Money:** Strictly use `Math.round(val * 100) / 100`, `formatMoney(sum)` and CSS class `tabular-nums`.
+- **Numbers, Money & Rates:** Strictly use unified helpers from `core.js`:
+  - `formatMoney(sum)`: formats rubles with non-breaking spaces (`\u00A0`) and `₽`. Never append manual `₽`.
+  - `formatRate(rate)`: formats percentages with Russian decimal comma and trailing `,0` when integer (`14,0`, `15,1`).
+  - `formatPercent(rate)`: returns `${formatRate(rate)}%` (`14,0%`, `15,1%`).
+  - `formatTermMonths(months)`: returns `1 год`, `2 года`, `3 года` or `N мес.`.
+  - `formatPlural(n, one, few, many)`: Russian grammatical pluralization ("1 месяц", "2 месяца", "5 месяцев").
+  - `getUnformattedVal(el)`: robustly parses numerical values from inputs/text, handling spaces, commas, and currency signs.
+  - `setFormattedVal(id, val)`: safely sets and formats numeric input values.
+  - Use CSS class `tabular-nums` for all numeric displays.
 - **Dates:** Strict calendar format `'YYYY-MM-DD'`. Never rely on UTC parsing for local month shifts.
 
 ## 3. Mobile UI & Anti-Slop Guidelines

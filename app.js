@@ -1028,13 +1028,10 @@ async function checkAndSendReminders() {
         const formattedTotal =
           typeof formatMoney === 'function' ? formatMoney(totalSum) : totalSum + ' ₽';
         const count = dueBills.length;
-        const mod10 = count % 10;
-        const mod100 = count % 100;
-        let countText = `${count} платежей`;
-        if (mod100 < 11 || mod100 > 19) {
-          if (mod10 === 1) countText = `${count} платеж`;
-          else if (mod10 >= 2 && mod10 <= 4) countText = `${count} платежа`;
-        }
+        const countText =
+          typeof formatPlural === 'function'
+            ? formatPlural(count, 'платеж', 'платежа', 'платежей')
+            : `${count} платежей`;
         title = 'Счета на сегодня';
         body = `Сегодня по плану: ${countText} на сумму ${formattedTotal}`;
       }

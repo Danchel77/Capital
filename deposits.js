@@ -445,7 +445,7 @@ function renderDeposits() {
                 ${logoHtml}
                 <div class="min-w-0">
                   <h4 class="text-sm font-semibold text-white truncate leading-tight">${escapeHtml(dep.name)}</h4>
-                  <p class="text-[11px] text-amber-300/80 font-mono mt-0.5">Истёк ${dep.endDateStr} • ${dep.rate}%</p>
+                  <p class="text-[11px] text-amber-300/80 font-mono mt-0.5">Истёк ${dep.endDateStr} • ${typeof formatPercent === 'function' ? formatPercent(dep.rate) : dep.rate + '%'}</p>
                 </div>
               </div>
               <button type="button"
@@ -509,7 +509,7 @@ function renderDeposits() {
             <h4 class="text-sm font-semibold text-white truncate leading-tight">${escapeHtml(dep.name)}</h4>
           </div>
           <div class="text-right flex-shrink-0">
-            <span class="text-[11px] font-semibold text-zinc-300 font-mono bg-white/[0.05] border border-white/[0.06] px-2 py-0.5 rounded-md">${dep.rate}%</span>
+            <span class="text-[11px] font-semibold text-zinc-300 font-mono bg-white/[0.05] border border-white/[0.06] px-2 py-0.5 rounded-md">${typeof formatPercent === 'function' ? formatPercent(dep.rate) : dep.rate + '%'}</span>
           </div>
         </div>
 
@@ -851,13 +851,9 @@ function getDepositDurationStr(startDate, endDate) {
   const totalDays = Math.max(1, Math.round((endDate - startDate) / 86400000));
   let months = Math.round(totalDays / 30.4375);
   if (months < 1) months = 1;
-
-  const mod10 = months % 10;
-  const mod100 = months % 100;
-  if (mod100 >= 11 && mod100 <= 19) return `${months} месяцев`;
-  if (mod10 === 1) return `${months} месяц`;
-  if (mod10 >= 2 && mod10 <= 4) return `${months} месяца`;
-  return `${months} месяцев`;
+  return typeof formatPlural === 'function'
+    ? formatPlural(months, 'месяц', 'месяца', 'месяцев')
+    : `${months} мес.`;
 }
 
 // Безопасные заглушки для обратной совместимости

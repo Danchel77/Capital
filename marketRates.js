@@ -198,15 +198,6 @@ function isOfferAllowedByTags(itemTags, settings) {
   return true;
 }
 
-function formatRate(val) {
-  const num = typeof val === 'number' ? val : parseFloat(val);
-  if (isNaN(num)) return '0,0';
-  if (Number.isInteger(num)) {
-    return `${num},0`;
-  }
-  return String(num).replace('.', ',');
-}
-
 const TAG_DISPLAY_NAMES = {
   'С капитализацией': 'капитализация',
   'С пополнением': 'пополнение',
@@ -350,14 +341,6 @@ async function fetchLiveBankOffers(forceRefresh = false) {
 // ==========================================
 // 4. Selection of Best Offer
 // ==========================================
-function formatTermMonths(m) {
-  if (!m) return '';
-  if (m === 12) return '1 год';
-  if (m === 24) return '2 года';
-  if (m === 36) return '3 года';
-  return `${m} мес.`;
-}
-
 function getBestDepositOffer() {
   if (!marketRatesState.offers || marketRatesState.offers.length === 0) return null;
 
@@ -923,7 +906,6 @@ window.closeRateConditionsPopover = closeRateConditionsPopover;
 window.showRateConditionsTooltip = showRateConditionsPopover;
 window.closeRateConditionsTooltip = closeRateConditionsPopover;
 window.handleRateInfoClick = handleRateInfoClick;
-window.formatRate = formatRate;
 
 // ==========================================
 // 7. Separate Settings Modal
