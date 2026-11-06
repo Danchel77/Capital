@@ -183,34 +183,25 @@ function renderBudgetCalendar() {
   if (upcomingBills.length === 0) {
     if (allBills.length === 0) {
       container.innerHTML = `
-        <div class="rounded-2xl p-3 flex items-center justify-between gap-3 bg-[#0E1016] border border-white/[0.08]">
-          <div class="flex items-center gap-3 min-w-0">
-            <div class="w-8 h-8 rounded-xl bg-white/[0.04] border border-white/[0.08] text-zinc-400 flex items-center justify-center flex-shrink-0">
-              <i data-lucide="calendar" class="w-4 h-4 text-zinc-400"></i>
-            </div>
-            <div class="text-left min-w-0">
-              <p class="text-xs font-medium text-zinc-200 leading-tight">Регулярные платежи не настроены</p>
-              <p class="text-[11px] text-zinc-500 leading-tight mt-0.5 truncate">ЖКУ, подписки, кредиты</p>
-            </div>
+        <div class="card bg-[#0E1016] border border-white/[0.08] hover:border-white/20 rounded-2xl p-4 shadow-sm flex items-center gap-3 transition-all cursor-pointer select-none active:scale-[0.99]"
+             onclick="openBudgetCalendarModal()">
+          <div class="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.08] text-zinc-400 flex items-center justify-center flex-shrink-0">
+            <i data-lucide="calendar" class="w-5 h-5 text-zinc-400"></i>
           </div>
-          <button
-            type="button"
-            onclick="openCreateBillModal()"
-            class="px-2.5 py-1.5 rounded-xl bg-white text-zinc-950 hover:bg-zinc-200 active:scale-95 text-xs font-semibold flex-shrink-0 transition-all cursor-pointer shadow-sm"
-          >
-            Добавить
-          </button>
+          <div class="text-left min-w-0 flex-1">
+            <p class="text-sm font-semibold text-white leading-tight">Регулярные платежи не настроены</p>
+          </div>
         </div>
       `;
     } else {
       container.innerHTML = `
-        <div class="rounded-2xl p-3 flex items-center gap-3 bg-[#0E1016] border border-white/[0.08]">
-          <div class="w-8 h-8 rounded-xl bg-white/[0.04] border border-white/[0.08] text-zinc-400 flex items-center justify-center flex-shrink-0">
-            <i data-lucide="calendar-check-2" class="w-4 h-4 text-emerald-400"></i>
+        <div class="card bg-[#0E1016] border border-white/[0.08] hover:border-white/20 rounded-2xl p-4 shadow-sm flex items-center gap-3 transition-all cursor-pointer select-none active:scale-[0.99]"
+             onclick="openBudgetCalendarModal()">
+          <div class="w-10 h-10 rounded-xl bg-[#13251E] border border-[#1E3E32] text-[#34D399] flex items-center justify-center flex-shrink-0">
+            <i data-lucide="calendar-check-2" class="w-5 h-5 text-emerald-400"></i>
           </div>
-          <div class="text-left min-w-0">
-            <p class="text-xs font-medium text-zinc-200 leading-tight">Ближайших списаний нет</p>
-            <p class="text-[11px] text-zinc-500 leading-tight mt-0.5">Регулярные платежи наступят позже</p>
+          <div class="text-left min-w-0 flex-1">
+            <p class="text-sm font-semibold text-white leading-tight">В ближайшие 14 дней платежей нет</p>
           </div>
         </div>
       `;
@@ -354,55 +345,79 @@ window.openEditBillModal = openEditBillModal;
 async function submitCalendarBill(e) {
   e.preventDefault();
   const editId = document.getElementById('bill-edit-id')?.value;
-  const name = document.getElementById('bill-name')?.value.trim();
-  const amount = getUnformattedVal(document.getElementById('bill-amount'));
+  const nameInput = document.getElementById('bill-name');
+  const amountInput = document.getElementById('bill-amount');
+  const name = nameInput?.value.trim();
+  const amount = getUnformattedVal(amountInput);
   const dayInput = document.getElementById('bill-day');
   const day =
     parseInt(dayInput ? dayInput.value : currentWizSelectedDay, 10) || currentWizSelectedDay || 1;
 
-  if (!name || !amount) return;
-
-  try {
-    const col = getUserCol('CalendarBills');
-    const existingBill = editId ? (Cache?.calendarBills || []).find(b => b.id === editId) : null;
-
-    const billData = {
-      name,
-      amount: parseFloat(amount) || 0,
-      totalAmount: parseFloat(amount) || 0,
-      spreadMonths: 1,
-      day,
-      type: 'recurring',
-      startMonth: null,
-      month: null,
-      updatedAt: Date.now(),
-    };
-
-    if (!Cache.calendarBills) Cache.calendarBills = [];
-
-    if (editId) {
-      if (existingBill) Object.assign(existingBill, billData);
-      await col.doc(editId).update(billData);
-    } else {
-      const newBill = { ...billData, isPaid: false, createdAt: Date.now() };
-      const docRef = await col.add(newBill);
-      newBill.id = docRef.id;
-      Cache.calendarBills.push(newBill);
-    }
-
-    closeAddBillModal();
-    document.getElementById('calendar-bill-form')?.reset();
-    if (document.getElementById('bill-edit-id')) document.getElementById('bill-edit-id').value = '';
-
-    if (typeof renderCalendarGrid === 'function') renderCalendarGrid();
-    if (typeof renderBudgetCalendar === 'function') renderBudgetCalendar();
-    if (typeof renderBudgetTab === 'function') renderBudgetTab();
-    closeBudgetModalDayTooltip();
-
-    fetchAllData(true).catch(() => {});
-  } catch (err) {
-    showToast('Ошибка: ' + err.message, true);
+  if (!name) {
+    if (nameInput) nameInput.focus();
+    if (typeof showToast === 'function') showToast('Укажите название платежа', true);
+    return;
   }
+  if (!amount || parseFloat(amount) <= 0) {
+    if (amountInput) amountInput.focus();
+    if (typeof showToast === 'function') showToast('Укажите сумму платежа', true);
+    return;
+  }
+
+  const billData = {
+    name,
+    amount: parseFloat(amount) || 0,
+    totalAmount: parseFloat(amount) || 0,
+    spreadMonths: 1,
+    day,
+    type: 'recurring',
+    startMonth: null,
+    month: null,
+    updatedAt: Date.now(),
+  };
+
+  // 1. Мгновенно закрываем форму (0мс)
+  closeAddBillModal();
+  document.getElementById('calendar-bill-form')?.reset();
+  if (document.getElementById('bill-edit-id')) document.getElementById('bill-edit-id').value = '';
+
+  // 2. Оптимистично обновляем Cache
+  if (!Cache.calendarBills) Cache.calendarBills = [];
+  const tempId = editId || 'temp-' + Date.now();
+  const existingBill = editId ? Cache.calendarBills.find(b => b.id === editId) : null;
+  let targetBill = existingBill;
+
+  if (existingBill) {
+    Object.assign(existingBill, billData);
+  } else {
+    targetBill = { ...billData, id: tempId, isPaid: false, createdAt: Date.now() };
+    Cache.calendarBills.push(targetBill);
+  }
+
+  // 3. Мгновенно перерисовываем все связанные компоненты
+  if (typeof renderCalendarGrid === 'function') renderCalendarGrid();
+  if (typeof renderBudgetCalendar === 'function') renderBudgetCalendar();
+  if (typeof renderBudgetTab === 'function') renderBudgetTab();
+  closeBudgetModalDayTooltip();
+
+  // 4. Фоновая синхронизация с базой данных
+  (async () => {
+    try {
+      const col = getUserCol('CalendarBills');
+      if (editId) {
+        await col.doc(editId).update(billData);
+      } else {
+        const docRef = await col.add({ ...billData, isPaid: false, createdAt: Date.now() });
+        if (targetBill) targetBill.id = docRef.id;
+      }
+      fetchAllData(true).catch(() => {});
+    } catch (err) {
+      console.error('Ошибка сохранения платежа:', err);
+      if (typeof showToast === 'function') {
+        showToast('Ошибка сохранения: ' + err.message, true);
+      }
+    }
+  })();
 }
 window.submitCalendarBill = submitCalendarBill;
 

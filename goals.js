@@ -354,165 +354,68 @@ function handleGoalNameInput(name) {
 }
 window.handleGoalNameInput = handleGoalNameInput;
 
-/**
- * Render multi-goal capital shares manager inside creation/edit dialog.
- * Allows setting shares 0..100% per goal with total <= 100%.
- */
-function renderGoalSharesManagerList(currentEditingId = null) {
-  const container = document.getElementById('goal-shares-list');
-  const section = document.getElementById('goal-shares-manager-section');
-  if (!container || !section) return;
+/* ========================================================
+   SINGLE-GOAL CAPITAL SHARE SLIDER (SLEEK DYNAMIC FILL)
+   ======================================================== */
+let activeGoalEditingId = null;
 
+function setupGoalSingleShareSlider(goalId) {
+  activeGoalEditingId = goalId || '__new__';
   const existingGoals = (Cache?.goals || []).filter(g => g.status !== 'Архив');
-  const isCreatingNew = !currentEditingId;
-
-  section.classList.remove('hidden');
-
-  const list = [];
-  const currentNameInput = document.getElementById('goal-name-input')?.value?.trim();
-  const currentIconInput = document.getElementById('goal-icon-input')?.value || 'target';
-
-  if (isCreatingNew) {
-    list.push({
-      id: '__new__',
-      name: currentNameInput || 'Новая цель',
-      icon: currentIconInput,
-      isCurrent: true,
-    });
-  }
-
-  existingGoals.forEach(g => {
-    if (g.id === currentEditingId) {
-      list.push({
-        id: g.id,
-        name: currentNameInput || g.name || 'Цель',
-        icon: currentIconInput || g.icon || 'target',
-        isCurrent: true,
-      });
-    } else {
-      list.push({
-        id: g.id,
-        name: g.name || 'Цель',
-        icon: g.icon || 'target',
-        isCurrent: false,
-      });
-    }
-  });
-
-  const listIds = list.map(item => item.id);
-  const isFullyInit = listIds.every(id => typeof tempGoalShares[id] === 'number');
-
-  if (!isFullyInit) {
-    tempGoalShares = {};
-    if (isCreatingNew) {
-      const sumExisting = existingGoals.reduce((s, g) => s + (parseFloat(g.share) || 0), 0);
-      const freeRemaining = Math.max(0, 100 - sumExisting);
-      tempGoalShares['__new__'] = freeRemaining > 0 ? freeRemaining : Math.round(100 / list.length);
-
-      existingGoals.forEach(g => {
-        tempGoalShares[g.id] = parseFloat(g.share) || 0;
-      });
-
-      // If initial sum > 100, normalize
-      const totalInitial = Object.values(tempGoalShares).reduce((a, b) => a + b, 0);
-      if (totalInitial > 100) {
-        normalizeTempGoalShares('__new__');
-      }
-    } else {
-      existingGoals.forEach(g => {
-        tempGoalShares[g.id] = parseFloat(g.share) || 0;
-      });
-    }
-  }
-
   const totalCapital = getTotalCapitalValue();
 
-  container.innerHTML = list
-    .map(item => {
-      const shareVal = tempGoalShares[item.id] !== undefined ? tempGoalShares[item.id] : 0;
-      const capitalAmount = Math.round(totalCapital * (shareVal / 100));
+  tempGoalShares = {};
+  existingGoals.forEach(g => {
+    tempGoalShares[g.id] = parseFloat(g.share) || 0;
+  });
 
-      return `
-      <div class="py-2.5 border-b border-white/[0.06] last:border-b-0 space-y-2" data-share-goal-id="${item.id}">
-        <div class="flex items-center justify-between text-xs">
-          <div class="flex items-center gap-2 min-w-0 flex-1 mr-2">
-            <div class="w-6 h-6 rounded-lg bg-white/[0.05] text-zinc-300 flex items-center justify-center flex-shrink-0">
-              <i data-lucide="${item.icon}" class="w-3.5 h-3.5" id="goal-share-icon-${item.id}"></i>
-            </div>
-            <span class="font-medium text-xs text-white truncate" id="goal-share-title-${item.id}">
-              ${escapeHtml(item.name)}
-            </span>
-          </div>
-          <div class="flex items-center gap-2 flex-shrink-0">
-            <span class="text-[11px] font-mono text-zinc-400" id="goal-share-amount-${item.id}">
-              ${formatMoney(capitalAmount)}
-            </span>
-            <span class="font-mono font-medium text-xs text-zinc-400 tabular-nums min-w-[32px] text-right" id="goal-share-val-${item.id}">
-              ${shareVal}%
-            </span>
-          </div>
-        </div>
-        <div class="flex items-center pt-0.5">
-          <input type="range" 
-                 min="0" 
-                 max="100" 
-                 step="1" 
-                 value="${shareVal}" 
-                 id="goal-share-slider-${item.id}"
-                 oninput="handleGoalShareSliderChange('${item.id}', parseFloat(this.value))"
-                 class="goal-share-slider w-full cursor-pointer">
-        </div>
-      </div>
-    `;
-    })
-    .join('');
+  const otherGoalsSum = existingGoals
+    .filter(g => g.id !== goalId)
+    .reduce((sum, g) => sum + (tempGoalShares[g.id] || 0), 0);
 
-  updateGoalSharesUI();
-  if (typeof lucide !== 'undefined') lucide.createIcons();
-}
-window.renderGoalSharesManagerList = renderGoalSharesManagerList;
+  const availableShare = Math.max(0, 100 - otherGoalsSum);
 
-function normalizeTempGoalShares(targetLockedId = null) {
-  const ids = Object.keys(tempGoalShares);
-  const total = ids.reduce((s, id) => s + (tempGoalShares[id] || 0), 0);
-  if (total <= 100) return;
-
-  const overflow = total - 100;
-  const otherIds = targetLockedId ? ids.filter(id => id !== targetLockedId) : ids;
-  const currentOthersSum = otherIds.reduce((sum, id) => sum + (tempGoalShares[id] || 0), 0);
-
-  if (currentOthersSum > 0) {
-    let reduced = 0;
-    otherIds.forEach((id, idx) => {
-      if (idx === otherIds.length - 1) {
-        tempGoalShares[id] = Math.max(0, tempGoalShares[id] - (overflow - reduced));
-      } else {
-        const shareOfOverflow = Math.round((tempGoalShares[id] / currentOthersSum) * overflow);
-        tempGoalShares[id] = Math.max(0, tempGoalShares[id] - shareOfOverflow);
-        reduced += shareOfOverflow;
-      }
-    });
+  let currentShare = 0;
+  if (goalId && tempGoalShares[goalId] !== undefined) {
+    currentShare = tempGoalShares[goalId];
+  } else {
+    currentShare = Math.min(availableShare, availableShare > 0 ? availableShare : 0);
+    tempGoalShares['__new__'] = currentShare;
   }
-}
 
-function handleGoalShareSliderChange(targetId, newShareVal) {
-  const ids = Object.keys(tempGoalShares);
-  const clampedVal = Math.max(0, Math.min(100, Math.round(newShareVal)));
+  const slider = document.getElementById('goal-single-share-slider');
+  if (slider) {
+    slider.value = currentShare;
+  }
+
+  const capitalHint = document.getElementById('goal-total-capital-hint');
+  if (capitalHint) {
+    capitalHint.innerText = `Капитал: ${formatMoney(totalCapital)}`;
+  }
+
+  handleGoalSingleShareSlider(currentShare);
+}
+window.setupGoalSingleShareSlider = setupGoalSingleShareSlider;
+
+function handleGoalSingleShareSlider(val) {
+  const targetId = activeGoalEditingId || '__new__';
+  const clampedVal = Math.max(0, Math.min(100, Math.round(parseFloat(val) || 0)));
   tempGoalShares[targetId] = clampedVal;
 
-  const otherIds = ids.filter(id => id !== targetId);
-  const currentOthersSum = otherIds.reduce((sum, id) => sum + (tempGoalShares[id] || 0), 0);
-  const total = clampedVal + currentOthersSum;
+  const totalCapital = getTotalCapitalValue();
+  const existingGoals = (Cache?.goals || []).filter(g => g.status !== 'Архив');
+  const otherIds = existingGoals.map(g => g.id).filter(id => id !== targetId);
+  const otherSum = otherIds.reduce((sum, id) => sum + (tempGoalShares[id] || 0), 0);
 
-  if (total > 100) {
-    const overflow = total - 100;
-    if (currentOthersSum > 0) {
+  if (clampedVal + otherSum > 100) {
+    const overflow = clampedVal + otherSum - 100;
+    if (otherSum > 0) {
       let reduced = 0;
       otherIds.forEach((id, idx) => {
         if (idx === otherIds.length - 1) {
           tempGoalShares[id] = Math.max(0, tempGoalShares[id] - (overflow - reduced));
         } else {
-          const shareOfOverflow = Math.round((tempGoalShares[id] / currentOthersSum) * overflow);
+          const shareOfOverflow = Math.round((tempGoalShares[id] / otherSum) * overflow);
           tempGoalShares[id] = Math.max(0, tempGoalShares[id] - shareOfOverflow);
           reduced += shareOfOverflow;
         }
@@ -520,46 +423,29 @@ function handleGoalShareSliderChange(targetId, newShareVal) {
     }
   }
 
-  updateGoalSharesUI();
-}
-window.handleGoalShareSliderChange = handleGoalShareSliderChange;
+  const newOtherSum = otherIds.reduce((sum, id) => sum + (tempGoalShares[id] || 0), 0);
+  const freePct = Math.max(0, 100 - (clampedVal + newOtherSum));
 
-function updateGoalSharesUI() {
-  const totalCapital = getTotalCapitalValue();
-  const ids = Object.keys(tempGoalShares);
+  const slider = document.getElementById('goal-single-share-slider');
+  if (slider) {
+    slider.style.setProperty('--slider-fill', `${clampedVal}%`);
+  }
 
-  let totalAllocatedShare = 0;
-  ids.forEach(id => {
-    const val = tempGoalShares[id] || 0;
-    totalAllocatedShare += val;
+  const pctEl = document.getElementById('goal-single-share-pct');
+  if (pctEl) pctEl.innerText = `${clampedVal}%`;
 
-    const valEl = document.getElementById(`goal-share-val-${id}`);
-    if (valEl) valEl.innerText = `${val}%`;
+  const rublesEl = document.getElementById('goal-single-share-rubles');
+  if (rublesEl) {
+    const rublesAlloc = Math.round(totalCapital * (clampedVal / 100));
+    rublesEl.innerText = formatMoney(rublesAlloc);
+  }
 
-    const sliderEl = document.getElementById(`goal-share-slider-${id}`);
-    if (sliderEl && parseFloat(sliderEl.value) !== val) {
-      sliderEl.value = val;
-    }
-
-    const amountEl = document.getElementById(`goal-share-amount-${id}`);
-    if (amountEl) {
-      const amount = Math.round(totalCapital * (val / 100));
-      amountEl.innerText = formatMoney(amount);
-    }
-  });
-
-  const freeIndicator = document.getElementById('goal-shares-free-indicator');
-  if (freeIndicator) {
-    const freePct = Math.max(0, 100 - totalAllocatedShare);
-    const freeAmount = Math.round(totalCapital * (freePct / 100));
-    if (freePct > 0) {
-      freeIndicator.innerHTML = `Свободно: <span class="text-emerald-400 font-semibold">${freePct}%</span> (${formatMoney(freeAmount)})`;
-    } else {
-      freeIndicator.innerHTML = '';
-    }
+  const freeHint = document.getElementById('goal-single-share-free-hint');
+  if (freeHint) {
+    freeHint.innerText = `Свободно: ${freePct}%`;
   }
 }
-window.updateGoalSharesUI = updateGoalSharesUI;
+window.handleGoalSingleShareSlider = handleGoalSingleShareSlider;
 
 function openGoalModal() {
   document.getElementById('goal-edit-id').value = '';
@@ -580,8 +466,7 @@ function openGoalModal() {
   closeBudgetGoalIconPicker();
   selectGoalIcon('target');
 
-  tempGoalShares = {};
-  renderGoalSharesManagerList(null);
+  setupGoalSingleShareSlider(null);
 
   const dlg = document.getElementById('budget-goal-dialog');
   if (dlg) dlg.classList.remove('hidden');
@@ -594,70 +479,84 @@ function closeGoalModal() {
   closeBudgetGoalIconPicker();
   resetGoalPiggyAdjust();
   tempGoalShares = {};
+  activeGoalEditingId = null;
   document
     .querySelectorAll('.card[data-table="Goals"].context-active')
     .forEach(el => el.classList.remove('context-active'));
 }
 window.closeGoalModal = closeGoalModal;
 
-let currentPiggyInlineMode = 'add';
+let currentPiggyAction = null;
 
 function resetGoalPiggyAdjust() {
+  const panel = document.getElementById('goal-piggy-delta-panel');
   const deltaInput = document.getElementById('goal-piggy-delta-input');
   const preview = document.getElementById('goal-piggy-delta-preview');
+  const btnAdd = document.getElementById('goal-piggy-btn-add');
+  const btnSub = document.getElementById('goal-piggy-btn-sub');
 
+  if (panel) panel.classList.add('hidden');
   if (deltaInput) deltaInput.value = '';
   if (preview) preview.innerHTML = '';
-  currentPiggyInlineMode = 'add';
-  setGoalPiggyInlineMode('add');
+
+  currentPiggyAction = null;
+  if (btnAdd) {
+    btnAdd.className =
+      'flex-1 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/10 text-zinc-300 font-medium text-xs border border-white/[0.08] transition-all cursor-pointer text-center';
+  }
+  if (btnSub) {
+    btnSub.className =
+      'flex-1 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/10 text-zinc-300 font-medium text-xs border border-white/[0.08] transition-all cursor-pointer text-center';
+  }
 }
 window.resetGoalPiggyAdjust = resetGoalPiggyAdjust;
 
-function toggleGoalPiggyAdjust() {
-  const panel = document.getElementById('goal-piggy-adjust-panel');
-  const toggleBtn = document.getElementById('goal-piggy-toggle-btn');
+function setGoalPiggyAction(action) {
+  const panel = document.getElementById('goal-piggy-delta-panel');
+  const deltaInput = document.getElementById('goal-piggy-delta-input');
+  const btnAdd = document.getElementById('goal-piggy-btn-add');
+  const btnSub = document.getElementById('goal-piggy-btn-sub');
   if (!panel) return;
 
-  const isHidden = panel.classList.contains('hidden');
-  panel.classList.toggle('hidden', !isHidden);
-  if (toggleBtn) {
-    toggleBtn.innerText = isHidden ? 'Скрыть' : 'Изменить';
+  if (currentPiggyAction === action && !panel.classList.contains('hidden')) {
+    resetGoalPiggyAdjust();
+    return;
   }
-  if (isHidden) {
-    const deltaInput = document.getElementById('goal-piggy-delta-input');
+
+  currentPiggyAction = action;
+  panel.classList.remove('hidden');
+
+  if (action === 'add') {
+    if (btnAdd) {
+      btnAdd.className =
+        'flex-1 py-1.5 rounded-xl bg-white/10 text-white font-semibold text-xs border border-white/20 transition-all cursor-pointer text-center';
+    }
+    if (btnSub) {
+      btnSub.className =
+        'flex-1 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/10 text-zinc-400 font-medium text-xs border border-white/[0.08] transition-all cursor-pointer text-center';
+    }
     if (deltaInput) {
-      deltaInput.value = '';
+      deltaInput.placeholder = 'Сумма пополнения';
       deltaInput.focus();
     }
-    handleGoalPiggyDeltaInput();
-  }
-}
-window.toggleGoalPiggyAdjust = toggleGoalPiggyAdjust;
-
-function setGoalPiggyInlineMode(mode) {
-  currentPiggyInlineMode = mode;
-  const addBtn = document.getElementById('goal-piggy-mode-add');
-  const subBtn = document.getElementById('goal-piggy-mode-sub');
-  const applyBtn = document.getElementById('goal-piggy-apply-btn');
-
-  if (addBtn && subBtn) {
-    if (mode === 'add') {
-      addBtn.className =
-        'flex-1 py-1 rounded-md text-[11px] font-semibold bg-white/10 text-white transition-all cursor-pointer';
-      subBtn.className =
-        'flex-1 py-1 rounded-md text-[11px] font-medium text-zinc-400 hover:text-white transition-all cursor-pointer';
-      if (applyBtn) applyBtn.innerText = 'Применить';
-    } else {
-      subBtn.className =
-        'flex-1 py-1 rounded-md text-[11px] font-semibold bg-white/10 text-white transition-all cursor-pointer';
-      addBtn.className =
-        'flex-1 py-1 rounded-md text-[11px] font-medium text-zinc-400 hover:text-white transition-all cursor-pointer';
-      if (applyBtn) applyBtn.innerText = 'Применить';
+  } else {
+    if (btnSub) {
+      btnSub.className =
+        'flex-1 py-1.5 rounded-xl bg-white/10 text-white font-semibold text-xs border border-white/20 transition-all cursor-pointer text-center';
+    }
+    if (btnAdd) {
+      btnAdd.className =
+        'flex-1 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/10 text-zinc-400 font-medium text-xs border border-white/[0.08] transition-all cursor-pointer text-center';
+    }
+    if (deltaInput) {
+      deltaInput.placeholder = 'Сумма снятия';
+      deltaInput.focus();
     }
   }
+
   handleGoalPiggyDeltaInput();
 }
-window.setGoalPiggyInlineMode = setGoalPiggyInlineMode;
+window.setGoalPiggyAction = setGoalPiggyAction;
 
 function handleGoalPiggyDeltaInput() {
   const savedInput = document.getElementById('goal-saved-input');
@@ -675,13 +574,13 @@ function handleGoalPiggyDeltaInput() {
     return;
   }
 
-  if (currentPiggyInlineMode === 'add') {
+  if (currentPiggyAction === 'add') {
     const newTotal = currentSaved + delta;
     preview.innerHTML = `Станет в копилке: <span class="text-emerald-400 font-semibold font-mono">${formatMoney(newTotal)}</span>`;
     if (applyBtn) applyBtn.disabled = false;
   } else {
     if (delta > currentSaved) {
-      preview.innerHTML = `<span class="text-[#F43F5E] font-medium">Нельзя снять больше ${formatMoney(currentSaved)}</span>`;
+      preview.innerHTML = `<span class="text-rose-400 font-medium">Нельзя снять больше ${formatMoney(currentSaved)}</span>`;
       if (applyBtn) applyBtn.disabled = true;
     } else {
       const newTotal = currentSaved - delta;
@@ -696,7 +595,6 @@ function applyGoalPiggyDelta() {
   const savedInput = document.getElementById('goal-saved-input');
   const deltaInput = document.getElementById('goal-piggy-delta-input');
   const piggyDisplay = document.getElementById('goal-piggy-current-display');
-  const preview = document.getElementById('goal-piggy-delta-preview');
   if (!savedInput || !deltaInput) return;
 
   const currentSaved = getUnformattedVal(savedInput) || 0;
@@ -704,12 +602,10 @@ function applyGoalPiggyDelta() {
   if (delta <= 0) return;
 
   let newSaved = currentSaved;
-  if (currentPiggyInlineMode === 'add') {
+  if (currentPiggyAction === 'add') {
     newSaved = currentSaved + delta;
   } else {
-    if (delta > currentSaved) {
-      return;
-    }
+    if (delta > currentSaved) return;
     newSaved = Math.max(0, currentSaved - delta);
   }
 
@@ -717,8 +613,7 @@ function applyGoalPiggyDelta() {
   if (piggyDisplay) {
     piggyDisplay.innerText = formatMoney(newSaved);
   }
-  deltaInput.value = '';
-  if (preview) preview.innerHTML = '';
+  resetGoalPiggyAdjust();
 }
 window.applyGoalPiggyDelta = applyGoalPiggyDelta;
 
@@ -759,8 +654,7 @@ function openEditGoalModal(goalId) {
   const initialIcon = goal.icon || getGoalIcon(goal.name) || 'target';
   selectGoalIcon(initialIcon);
 
-  tempGoalShares = {};
-  renderGoalSharesManagerList(goalId);
+  setupGoalSingleShareSlider(goalId);
 
   const dlg = document.getElementById('budget-goal-dialog');
   if (dlg) dlg.classList.remove('hidden');
@@ -769,67 +663,108 @@ window.openEditGoalModal = openEditGoalModal;
 
 async function submitBudgetGoal(e) {
   e.preventDefault();
-  const editId = document.getElementById('goal-edit-id').value;
-  const name = document.getElementById('goal-name-input').value.trim();
-  const target = getUnformattedVal(document.getElementById('goal-target-input'));
-  const saved = getUnformattedVal(document.getElementById('goal-saved-input'));
+  const editId = document.getElementById('goal-edit-id')?.value;
+  const nameInput = document.getElementById('goal-name-input');
+  const targetInput = document.getElementById('goal-target-input');
+  const name = nameInput?.value.trim();
+  const target = getUnformattedVal(targetInput);
+  const saved = getUnformattedVal(document.getElementById('goal-saved-input')) || 0;
   const icon = document.getElementById('goal-icon-input')?.value || getGoalIcon(name) || 'target';
 
-  if (!name || !target) return;
+  if (!name) {
+    if (nameInput) nameInput.focus();
+    if (typeof showToast === 'function') showToast('Укажите название цели', true);
+    return;
+  }
+  if (!target || target <= 0) {
+    if (targetInput) targetInput.focus();
+    if (typeof showToast === 'function') showToast('Укажите целевую сумму', true);
+    return;
+  }
 
   const existingGoals = (Cache?.goals || []).filter(g => g.status !== 'Архив');
   const isCreatingNew = !editId;
 
-  const finalShare = isCreatingNew
-    ? tempGoalShares['__new__'] !== undefined
-      ? tempGoalShares['__new__']
-      : 100
-    : tempGoalShares[editId] !== undefined
-      ? tempGoalShares[editId]
-      : parseFloat(existingGoals.find(g => g.id === editId)?.share) || 100;
+  const targetKey = editId || '__new__';
+  const finalShare =
+    tempGoalShares[targetKey] !== undefined
+      ? tempGoalShares[targetKey]
+      : isCreatingNew
+        ? 0
+        : parseFloat(existingGoals.find(g => g.id === editId)?.share) || 0;
 
   const totalCapital = getTotalCapitalValue();
   const capitalAlloc = Math.round(totalCapital * (finalShare / 100));
   const isAchieved = saved + capitalAlloc >= target;
 
-  try {
-    const col = getUserCol('Goals');
-    const batch = db.batch();
+  const goalData = {
+    name,
+    target,
+    saved,
+    share: finalShare,
+    icon,
+    status: isAchieved ? 'Выполнена' : 'В процессе',
+    updatedAt: Date.now(),
+  };
 
-    const goalData = {
-      name,
-      target,
-      saved, // Strictly the piggy bank balance
-      share: finalShare,
-      icon,
-      status: isAchieved ? 'Выполнена' : 'В процессе',
-      updatedAt: Date.now(),
-    };
+  // 1. Мгновенно закрываем форму (0мс)
+  closeGoalModal();
 
-    if (editId) {
-      batch.update(col.doc(editId), goalData);
-    } else {
-      const newDocRef = col.doc();
-      batch.set(newDocRef, { ...goalData, createdAt: Date.now() });
-    }
+  // 2. Оптимистично обновляем Cache.goals
+  if (!Cache.goals) Cache.goals = [];
+  const tempId = editId || 'temp-' + Date.now();
+  let targetGoal = editId ? Cache.goals.find(g => g.id === editId) : null;
 
-    // Save other goals' adjusted shares
-    existingGoals.forEach(g => {
-      if (g.id !== editId && tempGoalShares[g.id] !== undefined) {
-        batch.update(col.doc(g.id), {
-          share: tempGoalShares[g.id],
-          updatedAt: Date.now(),
-        });
-      }
-    });
-
-    await batch.commit();
-    closeGoalModal();
-    await fetchAllData();
-  } catch (err) {
-    console.error('Ошибка сохранения цели:', err);
-    showToast('Ошибка: ' + err.message, true);
+  if (targetGoal) {
+    Object.assign(targetGoal, goalData);
+  } else {
+    targetGoal = { ...goalData, id: tempId, createdAt: Date.now() };
+    Cache.goals.push(targetGoal);
   }
+
+  // Обновляем доли других целей в памяти Cache
+  existingGoals.forEach(g => {
+    if (g.id !== editId && tempGoalShares[g.id] !== undefined) {
+      g.share = tempGoalShares[g.id];
+    }
+  });
+
+  // Мгновенный перерендер целей
+  if (typeof processGoals === 'function') processGoals();
+  if (typeof renderBudgetGoals === 'function') renderBudgetGoals();
+
+  // 3. Фоновая синхронизация с Firestore
+  (async () => {
+    try {
+      const col = getUserCol('Goals');
+      const batch = db.batch();
+
+      if (editId) {
+        batch.update(col.doc(editId), goalData);
+      } else {
+        const newDocRef = col.doc();
+        batch.set(newDocRef, { ...goalData, createdAt: Date.now() });
+        targetGoal.id = newDocRef.id;
+      }
+
+      existingGoals.forEach(g => {
+        if (g.id !== editId && tempGoalShares[g.id] !== undefined) {
+          batch.update(col.doc(g.id), {
+            share: tempGoalShares[g.id],
+            updatedAt: Date.now(),
+          });
+        }
+      });
+
+      await batch.commit();
+      fetchAllData(true).catch(() => {});
+    } catch (err) {
+      console.error('Ошибка сохранения цели:', err);
+      if (typeof showToast === 'function') {
+        showToast('Ошибка сохранения: ' + err.message, true);
+      }
+    }
+  })();
 }
 window.submitBudgetGoal = submitBudgetGoal;
 

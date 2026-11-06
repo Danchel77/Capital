@@ -1848,23 +1848,29 @@ body.keyboard-visible #bottom-nav-bar {
 .goal-share-slider {
   -webkit-appearance: none;
   appearance: none;
-  background: rgba(255, 255, 255, 0.08);
+  width: 100%;
+  background: linear-gradient(
+    to right,
+    #10b981 0%,
+    #10b981 var(--slider-fill, 0%),
+    rgba(255, 255, 255, 0.12) var(--slider-fill, 0%),
+    rgba(255, 255, 255, 0.12) 100%
+  ) !important;
   border-radius: 9999px;
-  height: 4px;
+  height: 3px;
   outline: none;
-  transition: all 0.2s ease;
 }
 
 .goal-share-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 14px;
-  height: 14px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
   background: #ffffff;
   cursor: pointer;
-  box-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
-  border: 2px solid #000000;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  border: 1.5px solid #0e1016;
   transition:
     transform 0.15s ease,
     background-color 0.15s ease;
@@ -1876,14 +1882,27 @@ body.keyboard-visible #bottom-nav-bar {
   background: #f0f0f0;
 }
 
+.goal-share-slider::-moz-range-track {
+  background: rgba(255, 255, 255, 0.08);
+  height: 3px;
+  border-radius: 9999px;
+  border: none;
+}
+
+.goal-share-slider::-moz-range-progress {
+  background: #10b981;
+  height: 3px;
+  border-radius: 9999px;
+}
+
 .goal-share-slider::-moz-range-thumb {
-  width: 14px;
-  height: 14px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
   background: #ffffff;
   cursor: pointer;
-  box-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
-  border: 2px solid #000000;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  border: 1.5px solid #0e1016;
   transition:
     transform 0.15s ease,
     background-color 0.15s ease;

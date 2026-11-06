@@ -297,6 +297,21 @@
       ) {
         window.openBudgetCalendarModal();
       }
+      if (urlParams.get('emptyBills') === 'none') {
+        window.Cache.calendarBills = [];
+        if (typeof window.renderBudgetCalendar === 'function') window.renderBudgetCalendar();
+      } else if (urlParams.get('emptyBills') === 'future') {
+        window.Cache.calendarBills = [
+          { id: 'b-later', name: 'Налог на имущество', amount: 12000, day: 28, isRegular: true },
+        ];
+        if (typeof window.renderBudgetCalendar === 'function') window.renderBudgetCalendar();
+      }
+      if (
+        urlParams.get('openGoalModal') === '1' &&
+        typeof window.openEditGoalModal === 'function'
+      ) {
+        window.openEditGoalModal('goal-1');
+      }
     } else if (targetTab === 'transactions') {
       if (typeof window.renderTransactionsTab === 'function') window.renderTransactionsTab();
     }

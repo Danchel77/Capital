@@ -19,6 +19,8 @@ const tab = getArg('tab', 'capital');
 const mode = getArg('mode', 'numbers');
 const openDepositForm = getArg('openDepositForm', false) ? '1' : '0';
 const openCalendar = getArg('openCalendar', false) ? '1' : '0';
+const openGoalModal = getArg('openGoalModal', false) ? '1' : '0';
+const emptyBills = getArg('emptyBills', '') || '';
 const outPath = path.resolve(process.cwd(), getArg('out', `scripts/preview-${tab}.png`));
 
 // Простой статический сервер на свободном порту
@@ -49,7 +51,7 @@ const server = http.createServer((req, res) => {
 
 server.listen(0, '127.0.0.1', () => {
   const port = server.address().port;
-  const targetUrl = `http://127.0.0.1:${port}/?mock=1&tab=${tab}&mode=${mode}&openDepositForm=${openDepositForm}&openCalendar=${openCalendar}`;
+  const targetUrl = `http://127.0.0.1:${port}/?mock=1&tab=${tab}&mode=${mode}&openDepositForm=${openDepositForm}&openCalendar=${openCalendar}&openGoalModal=${openGoalModal}&emptyBills=${emptyBills}`;
 
   console.log(`[Screenshot] Loading native mock URL: ${targetUrl}`);
 

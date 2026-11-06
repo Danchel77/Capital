@@ -2083,6 +2083,7 @@
       <div
         class="bg-[#0E1016] border border-white/10 w-full max-w-sm rounded-2xl p-5 shadow-2xl max-h-[90vh] flex flex-col"
       >
+        <!-- Заголовок и крестик -->
         <div
           class="flex items-center justify-between pb-3 mb-3 border-b border-white/[0.06] flex-shrink-0"
         >
@@ -2101,18 +2102,19 @@
         <form
           id="budget-goal-form"
           onsubmit="submitBudgetGoal(event)"
-          class="space-y-3 flex-1 overflow-y-auto pr-1"
+          class="space-y-4 flex-1 overflow-y-auto pr-0.5"
         >
           <input type="hidden" id="goal-edit-id" />
+          <input type="hidden" id="goal-icon-input" value="target" />
 
-          <!-- Выбор иконки и название -->
-          <div class="flex items-end gap-2.5 relative">
+          <!-- Название цели и выбор иконки -->
+          <div class="flex items-center gap-3">
             <div class="relative flex-shrink-0" id="goal-modal-icon-container">
               <button
                 type="button"
                 onclick="toggleBudgetGoalIconPicker(event)"
                 id="goal-modal-icon-btn"
-                class="w-12 h-12 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/20 flex items-center justify-center transition-all cursor-pointer shadow-inner active:scale-95 group"
+                class="w-11 h-11 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/20 flex items-center justify-center transition-all cursor-pointer shadow-inner active:scale-95 group"
                 title="Выбрать иконку"
               >
                 <span
@@ -2149,110 +2151,148 @@
             </div>
 
             <div class="flex-1 min-w-0">
-              <label class="block text-[10px] text-zinc-400 uppercase font-bold tracking-wider mb-1"
-                >Название</label
-              >
               <input
                 type="text"
                 id="goal-name-input"
-                placeholder="Резервный фонд, отпуск, авто..."
+                placeholder="Название цели"
                 required
                 oninput="handleGoalNameInput(this.value)"
-                class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white placeholder-zinc-500 text-xs font-semibold rounded-xl px-3 py-2.5 outline-none transition-colors"
+                class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white placeholder-zinc-500 text-sm font-semibold rounded-xl px-3 py-2.5 outline-none transition-colors"
               />
             </div>
           </div>
 
-          <input type="hidden" id="goal-icon-input" value="target" />
-
-          <div class="grid grid-cols-2 gap-2">
-            <div>
-              <label class="block text-[10px] text-zinc-400 uppercase font-bold mb-1"
-                >Сумма</label
+          <!-- ЦЕЛЕВАЯ СУММА -->
+          <div>
+            <label class="block text-[10px] text-zinc-400 uppercase font-bold tracking-wider mb-1.5">
+              Целевая сумма
+            </label>
+            <div
+              class="relative flex items-center bg-[#12151C] border border-white/[0.08] focus-within:border-white/20 rounded-xl px-3 py-2.5 transition-colors"
+            >
+              <input
+                type="text"
+                inputmode="decimal"
+                oninput="formatSumInput(this)"
+                id="goal-target-input"
+                placeholder="0"
+                required
+                class="w-full bg-transparent text-white placeholder-zinc-600 font-mono font-bold text-xl outline-none"
+              />
+              <span
+                class="text-zinc-500 font-mono text-base font-bold ml-1.5 select-none pointer-events-none"
+                >₽</span
               >
-              <div class="relative">
-                <input
-                  type="text"
-                  inputmode="decimal"
-                  oninput="formatSumInput(this)"
-                  id="goal-target-input"
-                  placeholder="0"
-                  required
-                  class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white placeholder-zinc-500 font-mono font-bold rounded-xl p-2.5 pr-7 outline-none text-xs"
-                />
-                <span
-                  class="absolute right-3 top-2.5 text-zinc-500 font-mono text-xs pointer-events-none select-none"
-                  >₽</span
-                >
-              </div>
-            </div>
-            <div id="goal-saved-create-container">
-              <label class="block text-[10px] text-zinc-400 uppercase font-bold mb-1"
-                >В копилке</label
-              >
-              <div class="relative">
-                <input
-                  type="text"
-                  inputmode="decimal"
-                  oninput="formatSumInput(this)"
-                  id="goal-saved-input"
-                  placeholder="0"
-                  class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white placeholder-zinc-500 font-mono font-bold rounded-xl p-2.5 pr-7 outline-none text-xs"
-                />
-                <span
-                  class="absolute right-3 top-2.5 text-zinc-500 font-mono text-xs pointer-events-none select-none"
-                  >₽</span
-                >
-              </div>
             </div>
           </div>
 
-          <!-- Интерактивный блок копилки (для режима редактирования цели) -->
+          <!-- Начальная сумма в копилке (только при создании новой цели) -->
+          <div id="goal-saved-create-container">
+            <label class="block text-[10px] text-zinc-400 uppercase font-bold tracking-wider mb-1.5">
+              В копилке
+              <span class="text-zinc-500 font-normal lowercase">(необязательно)</span>
+            </label>
+            <div
+              class="relative flex items-center bg-[#12151C] border border-white/[0.08] focus-within:border-white/20 rounded-xl px-3 py-2 transition-colors"
+            >
+              <input
+                type="text"
+                inputmode="decimal"
+                oninput="formatSumInput(this)"
+                id="goal-saved-input"
+                placeholder="0"
+                class="w-full bg-transparent text-white placeholder-zinc-600 font-mono font-bold text-sm outline-none"
+              />
+              <span
+                class="text-zinc-500 font-mono text-xs font-semibold ml-1.5 select-none pointer-events-none"
+                >₽</span
+              >
+            </div>
+          </div>
+
+          <!-- Блок распределения доли капитала (только этой цели) -->
+          <div id="goal-single-share-section" class="pt-3 border-t border-white/[0.06] space-y-2">
+            <div class="flex items-center justify-between">
+              <label class="text-[10px] text-zinc-400 uppercase font-bold tracking-wider">
+                Доля в капитале
+              </label>
+              <div class="flex items-center gap-2">
+                <span
+                  id="goal-single-share-rubles"
+                  class="text-xs font-mono font-medium text-emerald-400 tabular-nums"
+                  >0 ₽</span
+                >
+                <span
+                  id="goal-single-share-pct"
+                  class="text-xs font-mono font-bold text-white tabular-nums bg-white/[0.06] px-1.5 py-0.5 rounded-md"
+                  >0%</span
+                >
+              </div>
+            </div>
+            <div class="py-1">
+              <input
+                type="range"
+                id="goal-single-share-slider"
+                min="0"
+                max="100"
+                step="1"
+                value="0"
+                oninput="handleGoalSingleShareSlider(this.value)"
+                class="goal-share-slider w-full cursor-pointer"
+              />
+            </div>
+            <div class="flex items-center justify-between text-[11px] text-zinc-500 font-mono">
+              <span id="goal-single-share-free-hint">Свободно: 100%</span>
+              <span id="goal-total-capital-hint" class="text-zinc-600">Капитал: 0 ₽</span>
+            </div>
+          </div>
+
+          <!-- Интерактивный блок ручной копилки (для режима редактирования цели) -->
           <div
             id="goal-piggy-edit-section"
             class="hidden pt-3 border-t border-white/[0.06] space-y-2.5"
           >
             <div class="flex items-center justify-between">
-              <span class="text-[10px] text-zinc-400 uppercase font-bold tracking-wider"
-                >Ручная копилка</span
-              >
+              <span class="text-[10px] text-zinc-400 uppercase font-bold tracking-wider">
+                Ручная копилка
+              </span>
               <span
                 id="goal-piggy-current-display"
-                class="font-mono font-bold text-sky-400 text-xs tabular-nums"
-                >0 ₽</span
+                class="font-mono font-bold text-sky-400 text-sm tabular-nums"
               >
+                0 ₽
+              </span>
             </div>
 
-            <!-- Панель внесения/снятия -->
-            <div id="goal-piggy-adjust-panel" class="space-y-2">
-              <div
-                class="flex items-center gap-1 bg-[#12151C] p-0.5 rounded-lg border border-white/[0.06]"
+            <!-- Кнопки действий: Пополнить / Снять -->
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                id="goal-piggy-btn-add"
+                onclick="setGoalPiggyAction('add')"
+                class="flex-1 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/10 text-zinc-300 font-medium text-xs border border-white/[0.08] transition-all cursor-pointer text-center"
               >
-                <button
-                  type="button"
-                  id="goal-piggy-mode-add"
-                  onclick="setGoalPiggyInlineMode('add')"
-                  class="flex-1 py-1 rounded-md text-[11px] font-semibold bg-white/10 text-white transition-all cursor-pointer"
-                >
-                  Внести
-                </button>
-                <button
-                  type="button"
-                  id="goal-piggy-mode-sub"
-                  onclick="setGoalPiggyInlineMode('sub')"
-                  class="flex-1 py-1 rounded-md text-[11px] font-medium text-zinc-400 hover:text-white transition-all cursor-pointer"
-                >
-                  Снять
-                </button>
-              </div>
+                Пополнить
+              </button>
+              <button
+                type="button"
+                id="goal-piggy-btn-sub"
+                onclick="setGoalPiggyAction('sub')"
+                class="flex-1 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/10 text-zinc-300 font-medium text-xs border border-white/[0.08] transition-all cursor-pointer text-center"
+              >
+                Снять
+              </button>
+            </div>
 
+            <!-- Панель ввода суммы изменения -->
+            <div id="goal-piggy-delta-panel" class="hidden space-y-2 pt-1">
               <div class="flex items-center gap-2">
                 <div class="relative flex-1">
                   <input
                     type="text"
                     inputmode="decimal"
                     id="goal-piggy-delta-input"
-                    placeholder="0"
+                    placeholder="Сумма"
                     oninput="
                       formatSumInput(this);
                       if (typeof handleGoalPiggyDeltaInput === 'function')
@@ -2269,34 +2309,19 @@
                   type="button"
                   id="goal-piggy-apply-btn"
                   onclick="applyGoalPiggyDelta()"
-                  class="px-3.5 py-2 rounded-xl bg-white/[0.08] hover:bg-white/[0.14] text-white border border-white/10 font-semibold text-xs active:scale-95 transition-all cursor-pointer flex-shrink-0"
+                  class="px-3.5 py-2 rounded-xl bg-white text-zinc-950 hover:bg-zinc-200 font-bold text-xs active:scale-95 transition-all cursor-pointer flex-shrink-0"
                 >
                   Применить
                 </button>
               </div>
               <div
                 id="goal-piggy-delta-preview"
-                class="text-[10px] text-zinc-400 font-mono min-h-[14px]"
+                class="text-[11px] text-zinc-400 font-mono min-h-[14px]"
               ></div>
             </div>
           </div>
 
-          <!-- Блок распределения долей капитала -->
-          <div id="goal-shares-manager-section" class="space-y-2 pt-2 border-t border-white/[0.06]">
-            <div class="flex items-center justify-between">
-              <label class="text-[10px] text-zinc-400 uppercase font-bold tracking-wider"
-                >Доля капитала</label
-              >
-              <span
-                id="goal-shares-free-indicator"
-                class="text-[11px] font-mono text-zinc-400"
-              ></span>
-            </div>
-            <div id="goal-shares-list" class="space-y-2 pb-1">
-              <!-- Динамический список всех целей с ползунками -->
-            </div>
-          </div>
-
+          <!-- Кнопки в футере -->
           <div
             class="flex items-center gap-2 pt-3 border-t border-white/[0.06] flex-shrink-0 sticky bottom-0 bg-[#0E1016]"
           >
@@ -2304,24 +2329,17 @@
               type="button"
               id="goal-delete-btn"
               onclick="deleteCurrentEditingGoal()"
-              class="hidden w-10 h-10 bg-[#F43F5E]/15 hover:bg-[#F43F5E]/25 text-[#F43F5E] border border-[#F43F5E]/20 rounded-xl transition-all cursor-pointer flex items-center justify-center active:scale-95 flex-shrink-0"
+              class="hidden w-11 h-11 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-xl transition-all cursor-pointer flex items-center justify-center active:scale-95 flex-shrink-0"
               title="Удалить цель"
             >
               <i data-lucide="trash-2" class="w-4 h-4"></i>
             </button>
             <button
-              type="button"
-              onclick="closeGoalModal()"
-              class="flex-1 py-2.5 rounded-xl bg-white/[0.05] hover:bg-white/10 text-zinc-300 border border-white/[0.08] text-xs font-semibold cursor-pointer transition-colors flex items-center justify-center active:scale-95"
-            >
-              Отмена
-            </button>
-            <button
               type="submit"
               id="goal-submit-btn"
-              class="flex-1 py-2.5 rounded-xl bg-white hover:bg-zinc-100 text-zinc-950 text-xs font-semibold shadow-sm active:scale-95 cursor-pointer transition-all flex items-center justify-center"
+              class="flex-1 py-3 rounded-xl bg-white hover:bg-zinc-200 text-zinc-950 text-xs font-bold transition-all cursor-pointer flex items-center justify-center active:scale-95 shadow-lg"
             >
-              Создать цель
+              Сохранить
             </button>
           </div>
         </form>
