@@ -311,6 +311,8 @@ function renderBudgetTab() {
 }
 
 function applyMonthSummaryViewMode(mode) {
+  const numbersHeader = document.getElementById('month-summary-numbers-header');
+  const chartHeader = document.getElementById('month-summary-chart-header');
   const numbersView = document.getElementById('month-summary-numbers-view');
   const chartView = document.getElementById('month-summary-chart-view');
   const emptyStateEl = document.getElementById('budget-month-empty-state');
@@ -318,19 +320,23 @@ function applyMonthSummaryViewMode(mode) {
   const isChart = mode === 'chart';
 
   if (emptyStateEl && !emptyStateEl.classList.contains('hidden')) {
+    if (numbersHeader) numbersHeader.classList.remove('hidden');
+    if (chartHeader) chartHeader.classList.add('hidden');
     if (numbersView) numbersView.classList.add('hidden');
     if (chartView) chartView.classList.add('hidden');
     return;
   }
 
+  if (numbersHeader) numbersHeader.classList.toggle('hidden', isChart);
+  if (chartHeader) chartHeader.classList.toggle('hidden', !isChart);
   if (numbersView) numbersView.classList.toggle('hidden', isChart);
   if (chartView) chartView.classList.toggle('hidden', !isChart);
 
   if (toggleIcon) {
     toggleIcon.setAttribute('data-lucide', isChart ? 'layout-list' : 'pie-chart');
-    if (typeof lucide !== 'undefined' && lucide.createIcons) {
-      lucide.createIcons();
-    }
+  }
+  if (typeof lucide !== 'undefined' && lucide.createIcons) {
+    lucide.createIcons();
   }
 
   if (isChart) {

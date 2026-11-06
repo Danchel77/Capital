@@ -477,9 +477,9 @@ function renderDeposits() {
           type="button"
           id="dep-open-top-btn"
           onclick="toggleForm('deposit-form-container', 'dep-submit-btn', 'Сохранить', 'deposit-form')"
-          class="bg-white/[0.06] hover:bg-white/10 active:scale-95 text-white text-xs font-medium px-3 py-1.5 rounded-xl border border-white/[0.08] flex items-center gap-1.5 cursor-pointer transition-all"
+          class="bg-white/[0.05] hover:bg-white/10 active:scale-95 text-zinc-400 hover:text-white px-2.5 py-1 rounded-xl border border-white/[0.08] flex items-center gap-1.5 text-xs font-medium cursor-pointer transition-all"
         >
-          <i data-lucide="plus" class="w-3.5 h-3.5 text-zinc-400"></i>
+          <i data-lucide="plus" class="w-3.5 h-3.5"></i>
           <span>Вклад</span>
         </button>
       </div>

@@ -22,7 +22,8 @@ const openBankDropdown = getArg('openBankDropdown', false);
 const openCalendarModal = getArg('openCalendarModal', false);
 const openBillDialog = getArg('openBillDialog', false);
 const openGoalModal = getArg('openGoalModal', false);
-const openGoalTopupModal = getArg('openGoalTopupModal', false);
+const openEditGoalModal = getArg('openEditGoalModal', false);
+const emptyBillsMode = getArg('emptyBillsMode', 'none-empty'); // 'none' | 'future' | 'none-empty'
 const emptyData = getArg('emptyData', false);
 const outPath = path.resolve(process.cwd(), getArg('out', 'scripts/preview-harness.png'));
 
@@ -165,6 +166,11 @@ const previewInjectionScript = `
       if (typeof window.switchTab === 'function') {
         window.switchTab('${targetTab}', { initial: true });
       }
+      const navBadge = document.getElementById('nav-capital-badge');
+      if (navBadge) {
+        navBadge.innerText = '1';
+        navBadge.classList.remove('hidden');
+      }
       if ('${targetTab}' === 'capital') {
         if (typeof window.renderDeposits === 'function') {
           window.renderDeposits();
@@ -216,22 +222,36 @@ const previewInjectionScript = `
             if (dlg) dlg.classList.remove('hidden');
           }
         }
+        if ('${emptyBillsMode}' === 'none') {
+          Cache.calendarBills = [];
+          if (typeof window.renderBudgetCalendar === 'function') {
+            window.renderBudgetCalendar();
+          }
+          console.log('[Preview] emptyBillsMode=none, list HTML:', document.getElementById('budget-calendar-list')?.innerHTML);
+        } else if ('${emptyBillsMode}' === 'future') {
+          Cache.calendarBills = [{ id: 'b-later', name: 'Налог на имущество', amount: 12000, day: 28, isRegular: true }];
+          if (typeof window.renderBudgetCalendar === 'function') {
+            window.renderBudgetCalendar();
+          }
+          console.log('[Preview] emptyBillsMode=future, list HTML:', document.getElementById('budget-calendar-list')?.innerHTML);
+        }
+
         if ('${openGoalModal}' === 'true') {
           console.log('[Preview] Opening goal modal...');
           if (typeof window.openGoalModal === 'function') {
             window.openGoalModal();
-            console.log('[Preview] openGoalModal executed, dialog hidden:', document.getElementById('budget-goal-dialog')?.classList.contains('hidden'));
           } else {
             const dlg = document.getElementById('budget-goal-dialog');
             if (dlg) dlg.classList.remove('hidden');
           }
         }
-        if ('${openGoalTopupModal}' === 'true') {
-          if (typeof window.openGoalTopupModal === 'function') {
-            window.openGoalTopupModal('goal-1', 'Резервный фонд');
-          } else {
-            const dlg = document.getElementById('goal-topup-dialog');
-            if (dlg) dlg.classList.remove('hidden');
+        if ('${openEditGoalModal}' === 'true') {
+          console.log('[Preview] Opening edit goal modal with inline piggy adjust...');
+          if (typeof window.openEditGoalModal === 'function') {
+            window.openEditGoalModal('goal-1');
+            if (typeof window.toggleGoalPiggyAdjust === 'function') {
+              window.toggleGoalPiggyAdjust();
+            }
           }
         }
       } else if ('${targetTab}' === 'transactions') {

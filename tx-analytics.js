@@ -386,7 +386,6 @@ function resetCategoryDonutCenter() {
   const totalEl = document.getElementById('category-total');
   const percentEl = document.getElementById('donut-center-percent');
   const defaultLabel = currentStructureType === 'Расход' ? 'Расходы' : 'Доходы';
-  const prefix = currentStructureType === 'Расход' ? '-' : '+';
 
   if (centerLabelEl) {
     centerLabelEl.textContent = defaultLabel;
@@ -394,7 +393,7 @@ function resetCategoryDonutCenter() {
     centerLabelEl.removeAttribute('title');
   }
   if (totalEl) {
-    totalEl.textContent = `${prefix}${formatMoney(currentDonutTotal)}`;
+    totalEl.textContent = formatMoney(currentDonutTotal);
   }
   if (percentEl) {
     percentEl.textContent = '';
@@ -437,8 +436,7 @@ function selectCategorySlice(idx) {
     centerLabelEl.title = catLabel;
   }
   if (totalEl) {
-    const prefix = currentStructureType === 'Расход' ? '-' : '+';
-    totalEl.textContent = `${prefix}${formatMoney(catVal)}`;
+    totalEl.textContent = formatMoney(catVal);
   }
   if (percentEl) {
     percentEl.textContent = `${pct}%`;
@@ -541,7 +539,6 @@ window.showCategoryOthersPopover = showCategoryOthersPopover;
 function updateAnalyticsForMonth(monthId) {
   const allMonths = Cache.transactions || [];
   let txItems = [];
-  let titlePeriod = '';
 
   const activeId =
     monthId ||
@@ -550,44 +547,19 @@ function updateAnalyticsForMonth(monthId) {
 
   if (activeId && activeId.startsWith('year-')) {
     const y = activeId.replace('year-', '');
-    titlePeriod = `за ${y} год`;
     const yearMonths = allMonths.filter(m => m.id && m.id.startsWith(y));
     yearMonths.forEach(m => {
       txItems.push(...(m.items || []));
     });
   } else if (activeId === 'all') {
-    titlePeriod = 'за все время';
     allMonths.forEach(m => {
       txItems.push(...(m.items || []));
     });
   } else if (activeId) {
     const month = allMonths.find(m => m.id === activeId);
     if (month) {
-      titlePeriod = month.label ? `• ${month.label}` : '';
       txItems = month.items || [];
     } else {
-      const parts = activeId.split('-');
-      if (parts.length === 2) {
-        const y = parts[0];
-        const m = parseInt(parts[1], 10) - 1;
-        const monthNames = [
-          'Январь',
-          'Февраль',
-          'Март',
-          'Апрель',
-          'Май',
-          'Июнь',
-          'Июль',
-          'Август',
-          'Сентябрь',
-          'Октябрь',
-          'Ноябрь',
-          'Декабрь',
-        ];
-        titlePeriod = monthNames[m] ? `• ${monthNames[m]} ${y}` : `• ${activeId}`;
-      } else {
-        titlePeriod = `• ${activeId}`;
-      }
       txItems = [];
     }
   } else {
@@ -596,9 +568,7 @@ function updateAnalyticsForMonth(monthId) {
 
   const titleEl = document.getElementById('structure-title');
   if (titleEl) {
-    const baseTitle =
-      currentStructureType === 'Расход' ? 'Структура расходов' : 'Структура доходов';
-    titleEl.textContent = titlePeriod ? `${baseTitle} ${titlePeriod}` : baseTitle;
+    titleEl.textContent = 'Структура';
   }
 
   const catMap = {};
@@ -665,8 +635,7 @@ function updateAnalyticsForMonth(monthId) {
   const legendEl = document.getElementById('category-legend');
 
   const defaultLabel = currentStructureType === 'Расход' ? 'Расходы' : 'Доходы';
-  const prefix = currentStructureType === 'Расход' ? '-' : '+';
-  if (totalEl) totalEl.textContent = `${prefix}${formatMoney(total)}`;
+  if (totalEl) totalEl.textContent = formatMoney(total);
   if (centerLabelEl) {
     centerLabelEl.textContent = defaultLabel;
     centerLabelEl.style.color = '';

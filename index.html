@@ -894,8 +894,8 @@
             id="budget-month-summary-card"
             class="bg-[#0E1016] border border-white/10 rounded-2xl p-4 sm:p-5 shadow-sm relative overflow-hidden"
           >
-            <!-- Верхняя строка карточки: Заголовок слева, кнопка переключения справа -->
-            <div class="flex items-center justify-between mb-1">
+            <!-- Шапка для режима Числа -->
+            <div id="month-summary-numbers-header" class="flex items-center justify-between mb-1">
               <span
                 id="budget-month-delta-label"
                 class="text-[11px] text-zinc-400 uppercase tracking-wider font-semibold"
@@ -911,6 +911,46 @@
                   title="Переключить вид: диаграмма / числа"
                 >
                   <i id="month-summary-toggle-icon" data-lucide="pie-chart" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Шапка для режима Диаграмма: единая строка без дублирования даты -->
+            <div
+              id="month-summary-chart-header"
+              class="hidden flex items-center justify-between pb-2 mb-2 border-b border-white/[0.06]"
+            >
+              <span
+                id="structure-title"
+                class="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider"
+                >Структура</span
+              >
+              <div class="flex items-center gap-2">
+                <div class="flex bg-[#12151C] p-0.5 rounded-lg border border-white/[0.06]">
+                  <button
+                    type="button"
+                    id="struct-type-expense"
+                    onclick="switchStructureType('Расход')"
+                    class="px-2 py-0.5 text-[11px] font-semibold rounded-md bg-white/10 text-white transition-all cursor-pointer"
+                  >
+                    Расход
+                  </button>
+                  <button
+                    type="button"
+                    id="struct-type-income"
+                    onclick="switchStructureType('Доход')"
+                    class="px-2 py-0.5 text-[11px] font-medium rounded-md text-zinc-400 hover:text-white transition-all cursor-pointer"
+                  >
+                    Доход
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onclick="toggleMonthSummaryView()"
+                  class="w-7 h-7 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-zinc-300 hover:text-white flex items-center justify-center transition-all cursor-pointer active:scale-95"
+                  title="Переключить вид: диаграмма / числа"
+                >
+                  <i data-lucide="layout-list" class="w-3.5 h-3.5"></i>
                 </button>
               </div>
             </div>
@@ -989,33 +1029,6 @@
 
             <!-- Режим 2: Компактная диаграмма структуры (Donut + Топ-4 категории) -->
             <div id="month-summary-chart-view" class="hidden pt-1">
-              <!-- Подпереключатель Расход / Доход -->
-              <div class="flex items-center justify-between pb-2 mb-2 border-b border-white/[0.06]">
-                <span
-                  id="structure-title"
-                  class="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider"
-                  >Структура расходов</span
-                >
-                <div class="flex bg-[#12151C] p-0.5 rounded-lg border border-white/[0.06]">
-                  <button
-                    type="button"
-                    id="struct-type-expense"
-                    onclick="switchStructureType('Расход')"
-                    class="px-2 py-0.5 text-[11px] font-semibold rounded-md bg-white/10 text-white transition-all cursor-pointer"
-                  >
-                    Расход
-                  </button>
-                  <button
-                    type="button"
-                    id="struct-type-income"
-                    onclick="switchStructureType('Доход')"
-                    class="px-2 py-0.5 text-[11px] font-semibold rounded-md text-zinc-400 hover:text-white transition-all cursor-pointer"
-                  >
-                    Доход
-                  </button>
-                </div>
-              </div>
-
               <!-- Горизонтальная сетка: Donut слева, Топ-4 справа -->
               <div class="flex items-center gap-3">
                 <div class="chart-canvas--donut-mini">
@@ -1052,10 +1065,10 @@
               <button
                 type="button"
                 onclick="openBudgetCalendarModal()"
-                class="btn-secondary px-2.5 py-1 rounded-xl flex items-center gap-1.5 text-xs font-medium cursor-pointer shadow-sm active:scale-95"
+                class="bg-white/[0.05] hover:bg-white/10 active:scale-95 text-zinc-400 hover:text-white px-2.5 py-1 rounded-xl border border-white/[0.08] flex items-center gap-1.5 text-xs font-medium cursor-pointer transition-all"
                 title="Открыть календарь счетов"
               >
-                <i data-lucide="calendar" class="w-3.5 h-3.5 text-zinc-400"></i>
+                <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
                 <span>Календарь</span>
               </button>
             </div>
@@ -1076,10 +1089,11 @@
               <button
                 type="button"
                 onclick="openGoalModal()"
-                class="btn-secondary w-7 h-7 rounded-xl flex items-center justify-center cursor-pointer shadow-sm active:scale-95"
+                class="bg-white/[0.05] hover:bg-white/10 active:scale-95 text-zinc-400 hover:text-white px-2.5 py-1 rounded-xl border border-white/[0.08] flex items-center gap-1.5 text-xs font-medium cursor-pointer transition-all"
                 title="Новая цель"
               >
-                <i data-lucide="plus" class="w-3.5 h-3.5 text-zinc-400"></i>
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                <span>Цель</span>
               </button>
             </div>
 
@@ -1698,7 +1712,7 @@
           ></i>
           <span
             id="nav-capital-badge"
-            class="hidden absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-amber-400 ring-2 ring-[#0E1016]"
+            class="hidden absolute -top-1 -right-1 min-w-[15px] h-[15px] px-1 rounded-full bg-amber-500 text-zinc-950 font-bold text-[9px] font-mono leading-none flex items-center justify-center ring-2 ring-[#0E1016]"
           ></span>
         </div>
         <span
@@ -2166,7 +2180,7 @@
                 class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white placeholder-zinc-500 font-mono font-bold rounded-xl p-2.5 outline-none text-xs"
               />
             </div>
-            <div>
+            <div id="goal-saved-create-container">
               <label class="block text-[10px] text-zinc-400 uppercase font-bold mb-1"
                 >В копилке</label
               >
@@ -2178,6 +2192,88 @@
                 placeholder="0 ₽"
                 class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white placeholder-zinc-500 font-mono font-bold rounded-xl p-2.5 outline-none text-xs"
               />
+            </div>
+          </div>
+
+          <!-- Интерактивный блок копилки (для режима редактирования цели) -->
+          <div
+            id="goal-piggy-edit-section"
+            class="hidden p-3 rounded-xl bg-[#12151C] border border-white/[0.06] space-y-2"
+          >
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-1.5">
+                <i data-lucide="wallet" class="w-3.5 h-3.5 text-sky-400"></i>
+                <span class="text-[10px] text-zinc-400 uppercase font-bold tracking-wider"
+                  >В копилке:</span
+                >
+                <span
+                  id="goal-piggy-current-display"
+                  class="font-mono font-bold text-white text-xs tabular-nums"
+                  >0 ₽</span
+                >
+              </div>
+              <button
+                type="button"
+                id="goal-piggy-toggle-btn"
+                onclick="toggleGoalPiggyAdjust()"
+                class="px-2 py-0.5 rounded-lg bg-white/[0.05] hover:bg-white/10 text-zinc-300 hover:text-white text-[11px] font-medium transition-all cursor-pointer border border-white/[0.06]"
+              >
+                Изменить
+              </button>
+            </div>
+
+            <!-- Раскрывающаяся панель внесения/снятия -->
+            <div
+              id="goal-piggy-adjust-panel"
+              class="hidden pt-2 border-t border-white/[0.06] space-y-2"
+            >
+              <div
+                class="flex items-center gap-1 bg-[#0E1016] p-0.5 rounded-lg border border-white/[0.06]"
+              >
+                <button
+                  type="button"
+                  id="goal-piggy-mode-add"
+                  onclick="setGoalPiggyInlineMode('add')"
+                  class="flex-1 py-1 rounded-md text-[11px] font-semibold bg-white/10 text-white transition-all cursor-pointer"
+                >
+                  + Внести
+                </button>
+                <button
+                  type="button"
+                  id="goal-piggy-mode-sub"
+                  onclick="setGoalPiggyInlineMode('sub')"
+                  class="flex-1 py-1 rounded-md text-[11px] font-medium text-zinc-400 hover:text-white transition-all cursor-pointer"
+                >
+                  − Снять
+                </button>
+              </div>
+
+              <div class="flex items-center gap-1.5">
+                <input
+                  type="text"
+                  inputmode="decimal"
+                  id="goal-piggy-delta-input"
+                  placeholder="0 ₽"
+                  oninput="
+                    formatSumInput(this);
+                    if (typeof handleGoalPiggyDeltaInput === 'function')
+                      handleGoalPiggyDeltaInput();
+                  "
+                  class="flex-1 bg-[#0E1016] border border-white/[0.08] focus:border-white/20 text-white font-mono font-bold rounded-xl px-2.5 py-1.5 text-xs outline-none"
+                />
+                <button
+                  type="button"
+                  id="goal-piggy-apply-btn"
+                  onclick="applyGoalPiggyDelta()"
+                  class="px-3 py-1.5 rounded-xl bg-white text-zinc-950 font-semibold text-xs active:scale-95 transition-all cursor-pointer flex-shrink-0"
+                >
+                  Внести
+                </button>
+              </div>
+              <div
+                id="goal-piggy-delta-preview"
+                class="text-[10px] text-zinc-400 font-mono min-h-[14px]"
+              ></div>
             </div>
           </div>
 
@@ -2526,97 +2622,6 @@
         <div class="flex items-center justify-between px-1 text-xs text-zinc-400">
           <span>Сумма счетов в месяц:</span>
           <b id="budget-modal-bills-total" class="text-white font-mono font-bold text-sm">0 ₽</b>
-        </div>
-      </div>
-    </div>
-
-    <!-- МОДАЛЬНОЕ ОКНО: ПОПОЛНЕНИЕ / СПИСАНИЕ ИЗ КОПИЛКИ ЦЕЛИ (Obsidian Minimalist) -->
-    <div
-      id="goal-topup-dialog"
-      class="fixed inset-0 bg-black/80 z-[150] hidden flex flex-col justify-center items-center p-4 backdrop-blur-sm animate-fade-in"
-      onclick="if (event.target === this) closeGoalTopupModal();"
-    >
-      <div class="bg-[#0E1016] border border-white/10 w-full max-w-xs rounded-2xl p-5 shadow-2xl">
-        <div class="flex items-center justify-between pb-3 mb-3 border-b border-white/[0.06]">
-          <h4 id="goal-topup-title" class="text-sm font-bold text-white tracking-tight">
-            Копилка цели
-          </h4>
-          <button
-            type="button"
-            onclick="closeGoalTopupModal()"
-            class="w-7 h-7 rounded-lg bg-white/[0.05] hover:bg-white/10 text-zinc-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
-          >
-            <i data-lucide="x" class="w-4 h-4"></i>
-          </button>
-        </div>
-
-        <!-- Текущий баланс копилки -->
-        <div
-          class="p-3 rounded-xl bg-[#12151C] border border-white/[0.06] mb-3 flex items-center justify-between"
-        >
-          <span class="text-xs text-zinc-400">В копилке:</span>
-          <span
-            id="goal-topup-current-balance"
-            class="text-sm font-bold font-mono text-white tabular-nums"
-            >0 ₽</span
-          >
-        </div>
-
-        <div
-          class="grid grid-cols-2 p-1 rounded-xl bg-[#12151C] border border-white/[0.06] mb-3 gap-1"
-        >
-          <button
-            type="button"
-            id="tab-topup-add"
-            onclick="setTopupMode('add')"
-            class="py-1.5 rounded-lg text-xs font-semibold bg-white text-zinc-950 transition-all cursor-pointer"
-          >
-            Пополнить
-          </button>
-          <button
-            type="button"
-            id="tab-topup-sub"
-            onclick="setTopupMode('sub')"
-            class="py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-white transition-all cursor-pointer"
-          >
-            Снять
-          </button>
-        </div>
-
-        <input
-          type="text"
-          inputmode="decimal"
-          oninput="
-            formatSumInput(this);
-            if (typeof handleGoalTopupAmountInput === 'function') handleGoalTopupAmountInput();
-          "
-          id="goal-topup-amount"
-          placeholder="0 ₽"
-          required
-          class="w-full bg-[#12151C] border border-white/[0.08] focus:border-white/20 text-white font-mono font-bold rounded-xl p-3 outline-none text-base mb-1.5"
-        />
-
-        <div
-          id="goal-topup-preview-note"
-          class="text-[11px] text-zinc-400 font-mono mb-3 min-h-[16px]"
-        ></div>
-
-        <div class="flex gap-2">
-          <button
-            type="button"
-            onclick="closeGoalTopupModal()"
-            class="flex-1 bg-white/[0.05] hover:bg-white/10 text-zinc-300 border border-white/[0.08] py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition-colors active:scale-95"
-          >
-            Отмена
-          </button>
-          <button
-            type="button"
-            id="goal-topup-submit-btn"
-            onclick="submitGoalTopup()"
-            class="flex-1 bg-white hover:bg-zinc-100 text-zinc-950 py-2.5 rounded-xl text-xs font-semibold shadow-sm active:scale-95 transition-all cursor-pointer"
-          >
-            Применить
-          </button>
         </div>
       </div>
     </div>
