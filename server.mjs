@@ -8,7 +8,7 @@ const __dirname = path.dirname(__filename);
 
 const PORT = 3000;
 
-const MIME_TYPES: Record<string, string> = {
+const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
   '.js': 'application/javascript; charset=utf-8',

@@ -3,7 +3,10 @@ const path = require('path');
 const http = require('http');
 const { spawn } = require('child_process');
 
-const CHROME_PATH = path.resolve(__dirname, '../chrome-headless-shell/linux-156.0.8078.80/chrome-headless-shell-linux64/chrome-headless-shell');
+const CHROME_PATH = path.resolve(
+  __dirname,
+  '../chrome-headless-shell/linux-156.0.8078.80/chrome-headless-shell-linux64/chrome-headless-shell'
+);
 
 // Аргументы командной строки
 const args = process.argv.slice(2);
@@ -31,7 +34,7 @@ const MIME_TYPES = {
   '.json': 'application/json; charset=utf-8',
   '.svg': 'image/svg+xml',
   '.png': 'image/png',
-  '.woff2': 'font/woff2'
+  '.woff2': 'font/woff2',
 };
 
 const server = http.createServer((req, res) => {
@@ -62,7 +65,7 @@ server.listen(0, '127.0.0.1', () => {
     '--virtual-time-budget=2000',
     '--window-size=390,844',
     `--screenshot=${outPath}`,
-    targetUrl
+    targetUrl,
   ]);
 
   chromeProc.stderr.on('data', d => {

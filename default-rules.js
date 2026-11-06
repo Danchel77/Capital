@@ -6,303 +6,314 @@
 
 const DEFAULT_CATEGORY_RULES = [
   // 1. ПРОДУКТЫ И СУПЕРМАРКЕТЫ
-  { pattern: "супермаркет", category: "Продукты" },
-  { pattern: "супермаркеты", category: "Продукты" },
-  { pattern: "гипермаркет", category: "Продукты" },
-  { pattern: "гастроном", category: "Продукты" },
-  { pattern: "бакалея", category: "Продукты" },
-  { pattern: "перекресток", category: "Продукты" },
-  { pattern: "perek", category: "Продукты" },
-  { pattern: "пятерочка", category: "Продукты" },
-  { pattern: "пятерочк", category: "Продукты" },
-  { pattern: "pyaterochka", category: "Продукты" },
-  { pattern: "pyaterochk", category: "Продукты" },
-  { pattern: "5ka", category: "Продукты" },
-  { pattern: "доставка из пятерочки", category: "Продукты" },
-  { pattern: "доставка пятерочка", category: "Продукты" },
-  { pattern: "доставка из пятерочк", category: "Продукты" },
-  { pattern: "dostavka iz pyaterochk", category: "Продукты" },
-  { pattern: "окей", category: "Продукты" },
-  { pattern: "лента", category: "Продукты" },
-  { pattern: "магнит", category: "Продукты" },
-  { pattern: "красное и белое", category: "Продукты" },
-  { pattern: "фикс прайс", category: "Продукты" },
-  { pattern: "фикспрайс", category: "Продукты" },
-  { pattern: "fix price", category: "Продукты" },
-  { pattern: "fixprice", category: "Продукты" },
-  { pattern: "дикси", category: "Продукты" },
-  { pattern: "вкусвилл", category: "Продукты" },
-  { pattern: "избенка", category: "Продукты" },
-  { pattern: "самокат", category: "Продукты" },
-  { pattern: "умный ритейл", category: "Продукты" },
-  { pattern: "яндекс лавка", category: "Продукты" },
-  { pattern: "купер", category: "Продукты" },
-  { pattern: "сбермаркет", category: "Продукты" },
-  { pattern: "ашан", category: "Продукты" },
-  { pattern: "атак", category: "Продукты" },
-  { pattern: "метро", category: "Продукты" },
-  { pattern: "чижик", category: "Продукты" },
-  { pattern: "спар", category: "Продукты" },
-  { pattern: "азбука вкуса", category: "Продукты" },
-  { pattern: "верный", category: "Продукты" },
-  { pattern: "пекарня", category: "Продукты" },
+  { pattern: 'супермаркет', category: 'Продукты' },
+  { pattern: 'супермаркеты', category: 'Продукты' },
+  { pattern: 'гипермаркет', category: 'Продукты' },
+  { pattern: 'гастроном', category: 'Продукты' },
+  { pattern: 'бакалея', category: 'Продукты' },
+  { pattern: 'перекресток', category: 'Продукты' },
+  { pattern: 'perek', category: 'Продукты' },
+  { pattern: 'пятерочка', category: 'Продукты' },
+  { pattern: 'пятерочк', category: 'Продукты' },
+  { pattern: 'pyaterochka', category: 'Продукты' },
+  { pattern: 'pyaterochk', category: 'Продукты' },
+  { pattern: '5ka', category: 'Продукты' },
+  { pattern: 'доставка из пятерочки', category: 'Продукты' },
+  { pattern: 'доставка пятерочка', category: 'Продукты' },
+  { pattern: 'доставка из пятерочк', category: 'Продукты' },
+  { pattern: 'dostavka iz pyaterochk', category: 'Продукты' },
+  { pattern: 'окей', category: 'Продукты' },
+  { pattern: 'лента', category: 'Продукты' },
+  { pattern: 'магнит', category: 'Продукты' },
+  { pattern: 'красное и белое', category: 'Продукты' },
+  { pattern: 'фикс прайс', category: 'Продукты' },
+  { pattern: 'фикспрайс', category: 'Продукты' },
+  { pattern: 'fix price', category: 'Продукты' },
+  { pattern: 'fixprice', category: 'Продукты' },
+  { pattern: 'дикси', category: 'Продукты' },
+  { pattern: 'вкусвилл', category: 'Продукты' },
+  { pattern: 'избенка', category: 'Продукты' },
+  { pattern: 'самокат', category: 'Продукты' },
+  { pattern: 'умный ритейл', category: 'Продукты' },
+  { pattern: 'яндекс лавка', category: 'Продукты' },
+  { pattern: 'купер', category: 'Продукты' },
+  { pattern: 'сбермаркет', category: 'Продукты' },
+  { pattern: 'ашан', category: 'Продукты' },
+  { pattern: 'атак', category: 'Продукты' },
+  { pattern: 'метро', category: 'Продукты' },
+  { pattern: 'чижик', category: 'Продукты' },
+  { pattern: 'спар', category: 'Продукты' },
+  { pattern: 'азбука вкуса', category: 'Продукты' },
+  { pattern: 'верный', category: 'Продукты' },
+  { pattern: 'пекарня', category: 'Продукты' },
 
   // 2. КАФЕ И РЕСТОРАНЫ
-  { pattern: "кафе и рестораны", category: "Кафе и рестораны" },
-  { pattern: "рестораны и кафе", category: "Кафе и рестораны" },
-  { pattern: "фастфуд", category: "Кафе и рестораны" },
-  { pattern: "eggselent", category: "Кафе и рестораны" },
-  { pattern: "shawafel", category: "Кафе и рестораны" },
-  { pattern: "шавафель", category: "Кафе и рестораны" },
-  { pattern: "aziya", category: "Кафе и рестораны" },
-  { pattern: "vlavashe", category: "Кафе и рестораны" },
-  { pattern: "ростикс", category: "Кафе и рестораны" },
-  { pattern: "kfc", category: "Кафе и рестораны" },
-  { pattern: "kimchi to go", category: "Кафе и рестораны" },
-  { pattern: "му му", category: "Кафе и рестораны" },
-  { pattern: "bros burritos", category: "Кафе и рестораны" },
-  { pattern: "достаевский", category: "Кафе и рестораны" },
-  { pattern: "нессельбек", category: "Кафе и рестораны" },
-  { pattern: "dom lunda", category: "Кафе и рестораны" },
-  { pattern: "крем", category: "Кафе и рестораны" },
-  { pattern: "кожура", category: "Кафе и рестораны" },
-  { pattern: "булочная", category: "Кафе и рестораны" },
-  { pattern: "ресторан", category: "Кафе и рестораны" },
-  { pattern: "варочная", category: "Кафе и рестораны" },
-  { pattern: "пицца", category: "Кафе и рестораны" },
-  { pattern: "бургер", category: "Кафе и рестораны" },
-  { pattern: "токио сити", category: "Кафе и рестораны" },
-  { pattern: "1st food factory", category: "Кафе и рестораны" },
-  { pattern: "вкусно и точка", category: "Кафе и рестораны" },
-  { pattern: "додо", category: "Кафе и рестораны" },
-  { pattern: "бургер кинг", category: "Кафе и рестораны" },
-  { pattern: "burger king", category: "Кафе и рестораны" },
-  { pattern: "burgerrus", category: "Кафе и рестораны" },
-  { pattern: "burgerking", category: "Кафе и рестораны" },
-  { pattern: "бургер рус", category: "Кафе и рестораны" },
-  { pattern: "теремок", category: "Кафе и рестораны" },
-  { pattern: "шоколадница", category: "Кафе и рестораны" },
-  { pattern: "старбакс", category: "Кафе и рестораны" },
-  { pattern: "stars coffee", category: "Кафе и рестораны" },
-  { pattern: "кофикс", category: "Кафе и рестораны" },
-  { pattern: "one price", category: "Кафе и рестораны" },
-  { pattern: "дринкит", category: "Кафе и рестораны" },
-  { pattern: "яндекс еда", category: "Кафе и рестораны" },
-  { pattern: "деливери", category: "Кафе и рестораны" },
-  { pattern: "кулинария", category: "Кафе и рестораны" },
-  { pattern: "столовая", category: "Кафе и рестораны" },
-  { pattern: "суши", category: "Кафе и рестораны" },
-  { pattern: "шаурма", category: "Кафе и рестораны" },
-  { pattern: "шаверма", category: "Кафе и рестораны" },
-  { pattern: "кофейня", category: "Кафе и рестораны" },
-  { pattern: "кофе", category: "Кафе и рестораны" },
-  { pattern: "бар", category: "Кафе и рестораны" },
-  { pattern: "паб", category: "Кафе и рестораны" },
+  { pattern: 'кафе и рестораны', category: 'Кафе и рестораны' },
+  { pattern: 'рестораны и кафе', category: 'Кафе и рестораны' },
+  { pattern: 'фастфуд', category: 'Кафе и рестораны' },
+  { pattern: 'eggselent', category: 'Кафе и рестораны' },
+  { pattern: 'shawafel', category: 'Кафе и рестораны' },
+  { pattern: 'шавафель', category: 'Кафе и рестораны' },
+  { pattern: 'aziya', category: 'Кафе и рестораны' },
+  { pattern: 'vlavashe', category: 'Кафе и рестораны' },
+  { pattern: 'ростикс', category: 'Кафе и рестораны' },
+  { pattern: 'kfc', category: 'Кафе и рестораны' },
+  { pattern: 'kimchi to go', category: 'Кафе и рестораны' },
+  { pattern: 'му му', category: 'Кафе и рестораны' },
+  { pattern: 'bros burritos', category: 'Кафе и рестораны' },
+  { pattern: 'достаевский', category: 'Кафе и рестораны' },
+  { pattern: 'нессельбек', category: 'Кафе и рестораны' },
+  { pattern: 'dom lunda', category: 'Кафе и рестораны' },
+  { pattern: 'крем', category: 'Кафе и рестораны' },
+  { pattern: 'кожура', category: 'Кафе и рестораны' },
+  { pattern: 'булочная', category: 'Кафе и рестораны' },
+  { pattern: 'ресторан', category: 'Кафе и рестораны' },
+  { pattern: 'варочная', category: 'Кафе и рестораны' },
+  { pattern: 'пицца', category: 'Кафе и рестораны' },
+  { pattern: 'бургер', category: 'Кафе и рестораны' },
+  { pattern: 'токио сити', category: 'Кафе и рестораны' },
+  { pattern: '1st food factory', category: 'Кафе и рестораны' },
+  { pattern: 'вкусно и точка', category: 'Кафе и рестораны' },
+  { pattern: 'додо', category: 'Кафе и рестораны' },
+  { pattern: 'бургер кинг', category: 'Кафе и рестораны' },
+  { pattern: 'burger king', category: 'Кафе и рестораны' },
+  { pattern: 'burgerrus', category: 'Кафе и рестораны' },
+  { pattern: 'burgerking', category: 'Кафе и рестораны' },
+  { pattern: 'бургер рус', category: 'Кафе и рестораны' },
+  { pattern: 'теремок', category: 'Кафе и рестораны' },
+  { pattern: 'шоколадница', category: 'Кафе и рестораны' },
+  { pattern: 'старбакс', category: 'Кафе и рестораны' },
+  { pattern: 'stars coffee', category: 'Кафе и рестораны' },
+  { pattern: 'кофикс', category: 'Кафе и рестораны' },
+  { pattern: 'one price', category: 'Кафе и рестораны' },
+  { pattern: 'дринкит', category: 'Кафе и рестораны' },
+  { pattern: 'яндекс еда', category: 'Кафе и рестораны' },
+  { pattern: 'деливери', category: 'Кафе и рестораны' },
+  { pattern: 'кулинария', category: 'Кафе и рестораны' },
+  { pattern: 'столовая', category: 'Кафе и рестораны' },
+  { pattern: 'суши', category: 'Кафе и рестораны' },
+  { pattern: 'шаурма', category: 'Кафе и рестораны' },
+  { pattern: 'шаверма', category: 'Кафе и рестораны' },
+  { pattern: 'кофейня', category: 'Кафе и рестораны' },
+  { pattern: 'кофе', category: 'Кафе и рестораны' },
+  { pattern: 'бар', category: 'Кафе и рестораны' },
+  { pattern: 'паб', category: 'Кафе и рестораны' },
 
   // 3. МАРКЕТПЛЕЙСЫ
-  { pattern: "электроника", category: "Маркетплейсы" },
-  { pattern: "бытовая техника", category: "Маркетплейсы" },
-  { pattern: "wb", category: "Маркетплейсы" },
-  { pattern: "вайлдберриз", category: "Маркетплейсы" },
-  { pattern: "озон", category: "Маркетплейсы" },
-  { pattern: "яндекс маркет", category: "Маркетплейсы" },
-  { pattern: "мегамаркет", category: "Маркетплейсы" },
-  { pattern: "сбермегамаркет", category: "Маркетплейсы" },
-  { pattern: "алиэкспресс", category: "Маркетплейсы" },
-  { pattern: "авито", category: "Маркетплейсы" },
-  { pattern: "казаньэкспресс", category: "Маркетплейсы" },
-  { pattern: "магнит маркет", category: "Маркетплейсы" },
+  { pattern: 'электроника', category: 'Маркетплейсы' },
+  { pattern: 'бытовая техника', category: 'Маркетплейсы' },
+  { pattern: 'wb', category: 'Маркетплейсы' },
+  { pattern: 'вайлдберриз', category: 'Маркетплейсы' },
+  { pattern: 'озон', category: 'Маркетплейсы' },
+  { pattern: 'яндекс маркет', category: 'Маркетплейсы' },
+  { pattern: 'мегамаркет', category: 'Маркетплейсы' },
+  { pattern: 'сбермегамаркет', category: 'Маркетплейсы' },
+  { pattern: 'алиэкспресс', category: 'Маркетплейсы' },
+  { pattern: 'авито', category: 'Маркетплейсы' },
+  { pattern: 'казаньэкспресс', category: 'Маркетплейсы' },
+  { pattern: 'магнит маркет', category: 'Маркетплейсы' },
 
   // 4. ТРАНСПОРТ, АЗС И ПОЕЗДКИ
-  { pattern: "автоуслуги", category: "Транспорт" },
-  { pattern: "автомобиль", category: "Транспорт" },
-  { pattern: "ржд", category: "Транспорт" },
-  { pattern: "сзппк", category: "Транспорт" },
-  { pattern: "транском", category: "Транспорт" },
-  { pattern: "такси", category: "Транспорт" },
-  { pattern: "яндекс го", category: "Транспорт" },
-  { pattern: "ситидрайв", category: "Транспорт" },
-  { pattern: "делимобиль", category: "Транспорт" },
-  { pattern: "каршеринг", category: "Транспорт" },
-  { pattern: "яндекс драйв", category: "Транспорт" },
-  { pattern: "лукойл", category: "Транспорт" },
-  { pattern: "газпромнефть", category: "Транспорт" },
-  { pattern: "роснефть", category: "Транспорт" },
-  { pattern: "татнефть", category: "Транспорт" },
-  { pattern: "тебойл", category: "Транспорт" },
-  { pattern: "азс", category: "Транспорт" },
-  { pattern: "бензин", category: "Транспорт" },
-  { pattern: "заправка", category: "Транспорт" },
-  { pattern: "метрополитен", category: "Транспорт" },
-  { pattern: "мосметро", category: "Транспорт" },
-  { pattern: "метро спб", category: "Транспорт" },
-  { pattern: "тройка", category: "Транспорт" },
-  { pattern: "подорожник", category: "Транспорт" },
-  { pattern: "парковка", category: "Транспорт" },
-  { pattern: "паркинг", category: "Транспорт" },
-  { pattern: "моспаркинг", category: "Транспорт" },
-  { pattern: "аэрофлот", category: "Транспорт" },
-  { pattern: "победа", category: "Транспорт" },
-  { pattern: "s7", category: "Транспорт" },
-  { pattern: "авиабилеты", category: "Транспорт" },
-  { pattern: "международная", category: "Транспорт" },
-  { pattern: "балтийская", category: "Транспорт" },
-  { pattern: "пионерская", category: "Транспорт" },
-  { pattern: "технологический", category: "Транспорт" },
-  { pattern: "площадь ленина", category: "Транспорт" },
+  { pattern: 'автоуслуги', category: 'Транспорт' },
+  { pattern: 'автомобиль', category: 'Транспорт' },
+  { pattern: 'ржд', category: 'Транспорт' },
+  { pattern: 'сзппк', category: 'Транспорт' },
+  { pattern: 'транском', category: 'Транспорт' },
+  { pattern: 'такси', category: 'Транспорт' },
+  { pattern: 'яндекс го', category: 'Транспорт' },
+  { pattern: 'ситидрайв', category: 'Транспорт' },
+  { pattern: 'делимобиль', category: 'Транспорт' },
+  { pattern: 'каршеринг', category: 'Транспорт' },
+  { pattern: 'яндекс драйв', category: 'Транспорт' },
+  { pattern: 'лукойл', category: 'Транспорт' },
+  { pattern: 'газпромнефть', category: 'Транспорт' },
+  { pattern: 'роснефть', category: 'Транспорт' },
+  { pattern: 'татнефть', category: 'Транспорт' },
+  { pattern: 'тебойл', category: 'Транспорт' },
+  { pattern: 'азс', category: 'Транспорт' },
+  { pattern: 'бензин', category: 'Транспорт' },
+  { pattern: 'заправка', category: 'Транспорт' },
+  { pattern: 'метрополитен', category: 'Транспорт' },
+  { pattern: 'мосметро', category: 'Транспорт' },
+  { pattern: 'метро спб', category: 'Транспорт' },
+  { pattern: 'тройка', category: 'Транспорт' },
+  { pattern: 'подорожник', category: 'Транспорт' },
+  { pattern: 'парковка', category: 'Транспорт' },
+  { pattern: 'паркинг', category: 'Транспорт' },
+  { pattern: 'моспаркинг', category: 'Транспорт' },
+  { pattern: 'аэрофлот', category: 'Транспорт' },
+  { pattern: 'победа', category: 'Транспорт' },
+  { pattern: 's7', category: 'Транспорт' },
+  { pattern: 'авиабилеты', category: 'Транспорт' },
+  { pattern: 'международная', category: 'Транспорт' },
+  { pattern: 'балтийская', category: 'Транспорт' },
+  { pattern: 'пионерская', category: 'Транспорт' },
+  { pattern: 'технологический', category: 'Транспорт' },
+  { pattern: 'площадь ленина', category: 'Транспорт' },
 
   // 5. ЖИЛЬЕ, СВЯЗЬ И РЕМОНТ
-  { pattern: "коммунальные платежи", category: "Жилье" },
-  { pattern: "дом и ремонт", category: "Жилье" },
-  { pattern: "товары для дома", category: "Жилье" },
-  { pattern: "все для дома", category: "Жилье" },
-  { pattern: "жкх", category: "Жилье" },
-  { pattern: "квартплата", category: "Жилье" },
-  { pattern: "еирц", category: "Жилье" },
-  { pattern: "мособлеирц", category: "Жилье" },
-  { pattern: "жкт", category: "Жилье" },
-  { pattern: "коммунал", category: "Жилье" },
-  { pattern: "мосэнергосбыт", category: "Жилье" },
-  { pattern: "петроэлектросбыт", category: "Жилье" },
-  { pattern: "энергосбыт", category: "Жилье" },
-  { pattern: "водоканал", category: "Жилье" },
-  { pattern: "ростелеком", category: "Жилье" },
-  { pattern: "дом ру", category: "Жилье" },
-  { pattern: "мтс", category: "Жилье" },
-  { pattern: "билайн", category: "Жилье" },
-  { pattern: "мегафон", category: "Жилье" },
-  { pattern: "tele2", category: "Жилье" },
-  { pattern: "t2", category: "Жилье" },
-  { pattern: "йота", category: "Жилье" },
-  { pattern: "леруа", category: "Жилье" },
-  { pattern: "лемана", category: "Жилье" },
-  { pattern: "петрович", category: "Жилье" },
-  { pattern: "максидом", category: "Жилье" },
-  { pattern: "всеинструменты", category: "Жилье" },
+  { pattern: 'коммунальные платежи', category: 'Жилье' },
+  { pattern: 'дом и ремонт', category: 'Жилье' },
+  { pattern: 'товары для дома', category: 'Жилье' },
+  { pattern: 'все для дома', category: 'Жилье' },
+  { pattern: 'жкх', category: 'Жилье' },
+  { pattern: 'квартплата', category: 'Жилье' },
+  { pattern: 'еирц', category: 'Жилье' },
+  { pattern: 'мособлеирц', category: 'Жилье' },
+  { pattern: 'жкт', category: 'Жилье' },
+  { pattern: 'коммунал', category: 'Жилье' },
+  { pattern: 'мосэнергосбыт', category: 'Жилье' },
+  { pattern: 'петроэлектросбыт', category: 'Жилье' },
+  { pattern: 'энергосбыт', category: 'Жилье' },
+  { pattern: 'водоканал', category: 'Жилье' },
+  { pattern: 'ростелеком', category: 'Жилье' },
+  { pattern: 'дом ру', category: 'Жилье' },
+  { pattern: 'мтс', category: 'Жилье' },
+  { pattern: 'билайн', category: 'Жилье' },
+  { pattern: 'мегафон', category: 'Жилье' },
+  { pattern: 'tele2', category: 'Жилье' },
+  { pattern: 't2', category: 'Жилье' },
+  { pattern: 'йота', category: 'Жилье' },
+  { pattern: 'леруа', category: 'Жилье' },
+  { pattern: 'лемана', category: 'Жилье' },
+  { pattern: 'петрович', category: 'Жилье' },
+  { pattern: 'максидом', category: 'Жилье' },
+  { pattern: 'всеинструменты', category: 'Жилье' },
 
   // 6. ОДЕЖДА И ОБУВЬ
-  { pattern: "одежда и обувь", category: "Одежда" },
-  { pattern: "обувь и одежда", category: "Одежда" },
-  { pattern: "zara", category: "Одежда" },
-  { pattern: "befree", category: "Одежда" },
-  { pattern: "лайм", category: "Одежда" },
-  { pattern: "зарина", category: "Одежда" },
-  { pattern: "глория", category: "Одежда" },
-  { pattern: "остин", category: "Одежда" },
-  { pattern: "рандеву", category: "Одежда" },
-  { pattern: "спортмастер", category: "Одежда" },
-  { pattern: "экко", category: "Одежда" },
-  { pattern: "кари", category: "Одежда" },
-  { pattern: "ламода", category: "Одежда" },
-  { pattern: "колинс", category: "Одежда" },
-  { pattern: "кальцедония", category: "Одежда" },
-  { pattern: "интимиссими", category: "Одежда" },
-  { pattern: "love republic", category: "Одежда" },
-  { pattern: "sinsay", category: "Одежда" },
-  { pattern: "reserved", category: "Одежда" },
-  { pattern: "фамилия", category: "Одежда" },
-  { pattern: "фандей", category: "Одежда" },
-  { pattern: "хендерсон", category: "Одежда" },
-  { pattern: "снежная королева", category: "Одежда" },
-  { pattern: "tezenis", category: "Одежда" },
-  { pattern: "incanto", category: "Одежда" },
-  { pattern: "фин флэр", category: "Одежда" },
-  { pattern: "джеокс", category: "Одежда" },
-  { pattern: "стрит бит", category: "Одежда" },
-  { pattern: "шоурум", category: "Одежда" },
-  { pattern: "ателье", category: "Одежда" },
-  { pattern: "трикотаж", category: "Одежда" },
-  { pattern: "одежда", category: "Одежда" },
-  { pattern: "обувь", category: "Одежда" },
+  { pattern: 'одежда и обувь', category: 'Одежда' },
+  { pattern: 'обувь и одежда', category: 'Одежда' },
+  { pattern: 'zara', category: 'Одежда' },
+  { pattern: 'befree', category: 'Одежда' },
+  { pattern: 'лайм', category: 'Одежда' },
+  { pattern: 'зарина', category: 'Одежда' },
+  { pattern: 'глория', category: 'Одежда' },
+  { pattern: 'остин', category: 'Одежда' },
+  { pattern: 'рандеву', category: 'Одежда' },
+  { pattern: 'спортмастер', category: 'Одежда' },
+  { pattern: 'экко', category: 'Одежда' },
+  { pattern: 'кари', category: 'Одежда' },
+  { pattern: 'ламода', category: 'Одежда' },
+  { pattern: 'колинс', category: 'Одежда' },
+  { pattern: 'кальцедония', category: 'Одежда' },
+  { pattern: 'интимиссими', category: 'Одежда' },
+  { pattern: 'love republic', category: 'Одежда' },
+  { pattern: 'sinsay', category: 'Одежда' },
+  { pattern: 'reserved', category: 'Одежда' },
+  { pattern: 'фамилия', category: 'Одежда' },
+  { pattern: 'фандей', category: 'Одежда' },
+  { pattern: 'хендерсон', category: 'Одежда' },
+  { pattern: 'снежная королева', category: 'Одежда' },
+  { pattern: 'tezenis', category: 'Одежда' },
+  { pattern: 'incanto', category: 'Одежда' },
+  { pattern: 'фин флэр', category: 'Одежда' },
+  { pattern: 'джеокс', category: 'Одежда' },
+  { pattern: 'стрит бит', category: 'Одежда' },
+  { pattern: 'шоурум', category: 'Одежда' },
+  { pattern: 'ателье', category: 'Одежда' },
+  { pattern: 'трикотаж', category: 'Одежда' },
+  { pattern: 'одежда', category: 'Одежда' },
+  { pattern: 'обувь', category: 'Одежда' },
 
   // 7. ЗДОРОВЬЕ И МЕДИЦИНА
-  { pattern: "здоровье и красота", category: "Здоровье" },
-  { pattern: "красота и здоровье", category: "Здоровье" },
-  { pattern: "аптеки", category: "Здоровье" },
-  { pattern: "косметика", category: "Здоровье" },
-  { pattern: "аптека", category: "Здоровье" },
-  { pattern: "ригла", category: "Здоровье" },
-  { pattern: "еаптека", category: "Здоровье" },
-  { pattern: "горздрав", category: "Здоровье" },
-  { pattern: "вита", category: "Здоровье" },
-  { pattern: "планета здоровья", category: "Здоровье" },
-  { pattern: "столички", category: "Здоровье" },
-  { pattern: "озерки", category: "Здоровье" },
-  { pattern: "невис", category: "Здоровье" },
-  { pattern: "хеликс", category: "Здоровье" },
-  { pattern: "инвитро", category: "Здоровье" },
-  { pattern: "гемотест", category: "Здоровье" },
-  { pattern: "клиника", category: "Здоровье" },
-  { pattern: "стоматолог", category: "Здоровье" },
-  { pattern: "стоматология", category: "Здоровье" },
-  { pattern: "медси", category: "Здоровье" },
-  { pattern: "скандинавия", category: "Здоровье" },
-  { pattern: "евромед", category: "Здоровье" },
-  { pattern: "сберздоровье", category: "Здоровье" },
-  { pattern: "айкрафт", category: "Здоровье" },
-  { pattern: "линзмастер", category: "Здоровье" },
-  { pattern: "линзы", category: "Здоровье" },
-  { pattern: "оптика", category: "Здоровье" },
-  { pattern: "анализы", category: "Здоровье" },
-  { pattern: "лаборатория", category: "Здоровье" },
-  { pattern: "мрт", category: "Здоровье" },
-  { pattern: "рентген", category: "Здоровье" },
-  { pattern: "медицин", category: "Здоровье" },
-  { pattern: "фитнес", category: "Здоровье" },
-  { pattern: "world class", category: "Здоровье" },
-  { pattern: "ddx", category: "Здоровье" },
-  { pattern: "бассейн", category: "Здоровье" },
+  { pattern: 'здоровье и красота', category: 'Здоровье' },
+  { pattern: 'красота и здоровье', category: 'Здоровье' },
+  { pattern: 'аптеки', category: 'Здоровье' },
+  { pattern: 'косметика', category: 'Здоровье' },
+  { pattern: 'аптека', category: 'Здоровье' },
+  { pattern: 'ригла', category: 'Здоровье' },
+  { pattern: 'еаптека', category: 'Здоровье' },
+  { pattern: 'горздрав', category: 'Здоровье' },
+  { pattern: 'вита', category: 'Здоровье' },
+  { pattern: 'планета здоровья', category: 'Здоровье' },
+  { pattern: 'столички', category: 'Здоровье' },
+  { pattern: 'озерки', category: 'Здоровье' },
+  { pattern: 'невис', category: 'Здоровье' },
+  { pattern: 'хеликс', category: 'Здоровье' },
+  { pattern: 'инвитро', category: 'Здоровье' },
+  { pattern: 'гемотест', category: 'Здоровье' },
+  { pattern: 'клиника', category: 'Здоровье' },
+  { pattern: 'стоматолог', category: 'Здоровье' },
+  { pattern: 'стоматология', category: 'Здоровье' },
+  { pattern: 'медси', category: 'Здоровье' },
+  { pattern: 'скандинавия', category: 'Здоровье' },
+  { pattern: 'евромед', category: 'Здоровье' },
+  { pattern: 'сберздоровье', category: 'Здоровье' },
+  { pattern: 'айкрафт', category: 'Здоровье' },
+  { pattern: 'линзмастер', category: 'Здоровье' },
+  { pattern: 'линзы', category: 'Здоровье' },
+  { pattern: 'оптика', category: 'Здоровье' },
+  { pattern: 'анализы', category: 'Здоровье' },
+  { pattern: 'лаборатория', category: 'Здоровье' },
+  { pattern: 'мрт', category: 'Здоровье' },
+  { pattern: 'рентген', category: 'Здоровье' },
+  { pattern: 'медицин', category: 'Здоровье' },
+  { pattern: 'фитнес', category: 'Здоровье' },
+  { pattern: 'world class', category: 'Здоровье' },
+  { pattern: 'ddx', category: 'Здоровье' },
+  { pattern: 'бассейн', category: 'Здоровье' },
 
   // 8. РАЗВЛЕЧЕНИЯ И ПОДПИСКИ
-  { pattern: "отдых и развлечения", category: "Развлечения" },
-  { pattern: "развлечения и отдых", category: "Развлечения" },
-  { pattern: "культура и искусство", category: "Развлечения" },
-  { pattern: "музей", category: "Развлечения" },
-  { pattern: "хомлины", category: "Развлечения" },
-  { pattern: "афиша", category: "Развлечения" },
-  { pattern: "театр", category: "Развлечения" },
-  { pattern: "кино", category: "Развлечения" },
-  { pattern: "кинотеатр", category: "Развлечения" },
-  { pattern: "синема парк", category: "Развлечения" },
-  { pattern: "формула кино", category: "Развлечения" },
-  { pattern: "киномакс", category: "Развлечения" },
-  { pattern: "мираж", category: "Развлечения" },
-  { pattern: "яндекс плюс", category: "Развлечения" },
-  { pattern: "кинопоиск", category: "Развлечения" },
-  { pattern: "иви", category: "Развлечения" },
-  { pattern: "окко", category: "Развлечения" },
-  { pattern: "премьер", category: "Развлечения" },
-  { pattern: "кион", category: "Развлечения" },
-  { pattern: "кассир", category: "Развлечения" },
-  { pattern: "тикетлэнд", category: "Развлечения" },
-  { pattern: "steam", category: "Развлечения" },
-  { pattern: "playstation", category: "Развлечения" },
-  { pattern: "vk play", category: "Развлечения" },
+  { pattern: 'отдых и развлечения', category: 'Развлечения' },
+  { pattern: 'развлечения и отдых', category: 'Развлечения' },
+  { pattern: 'культура и искусство', category: 'Развлечения' },
+  { pattern: 'музей', category: 'Развлечения' },
+  { pattern: 'хомлины', category: 'Развлечения' },
+  { pattern: 'афиша', category: 'Развлечения' },
+  { pattern: 'театр', category: 'Развлечения' },
+  { pattern: 'кино', category: 'Развлечения' },
+  { pattern: 'кинотеатр', category: 'Развлечения' },
+  { pattern: 'синема парк', category: 'Развлечения' },
+  { pattern: 'формула кино', category: 'Развлечения' },
+  { pattern: 'киномакс', category: 'Развлечения' },
+  { pattern: 'мираж', category: 'Развлечения' },
+  { pattern: 'яндекс плюс', category: 'Развлечения' },
+  { pattern: 'кинопоиск', category: 'Развлечения' },
+  { pattern: 'иви', category: 'Развлечения' },
+  { pattern: 'окко', category: 'Развлечения' },
+  { pattern: 'премьер', category: 'Развлечения' },
+  { pattern: 'кион', category: 'Развлечения' },
+  { pattern: 'кассир', category: 'Развлечения' },
+  { pattern: 'тикетлэнд', category: 'Развлечения' },
+  { pattern: 'steam', category: 'Развлечения' },
+  { pattern: 'playstation', category: 'Развлечения' },
+  { pattern: 'vk play', category: 'Развлечения' },
 
   // 9. ДОХОДЫ
-  { pattern: "заработная плата", category: "Зарплата" },
-  { pattern: "зарплата", category: "Зарплата" },
-  { pattern: "аванс", category: "Зарплата" },
-  { pattern: "отпускные", category: "Зарплата" },
-  { pattern: "премия", category: "Зарплата" },
-  { pattern: "материальная помощь", category: "Зарплата" },
-  { pattern: "расчет при увольнении", category: "Зарплата" },
-  { pattern: "компенсация", category: "Зарплата" },
-  { pattern: "дивиденды", category: "Зарплата" },
-  { pattern: "кешбек", category: "Кэшбек" },
-  { pattern: "баллами плюса", category: "Кэшбек" },
-  { pattern: "возврат", category: "Возврат" },
+  { pattern: 'заработная плата', category: 'Зарплата' },
+  { pattern: 'зарплата', category: 'Зарплата' },
+  { pattern: 'аванс', category: 'Зарплата' },
+  { pattern: 'отпускные', category: 'Зарплата' },
+  { pattern: 'премия', category: 'Зарплата' },
+  { pattern: 'материальная помощь', category: 'Зарплата' },
+  { pattern: 'расчет при увольнении', category: 'Зарплата' },
+  { pattern: 'компенсация', category: 'Зарплата' },
+  { pattern: 'дивиденды', category: 'Зарплата' },
+  { pattern: 'кешбек', category: 'Кэшбек' },
+  { pattern: 'баллами плюса', category: 'Кэшбек' },
+  { pattern: 'возврат', category: 'Возврат' },
 
   // 10. ПЕРЕВОДЫ
-  { pattern: "перевод", category: "Переводы" },
-  { pattern: "переводы", category: "Переводы" },
-  { pattern: "сбп", category: "Переводы" },
-  { pattern: "быстрых платежей", category: "Переводы" }
+  { pattern: 'перевод', category: 'Переводы' },
+  { pattern: 'переводы', category: 'Переводы' },
+  { pattern: 'сбп', category: 'Переводы' },
+  { pattern: 'быстрых платежей', category: 'Переводы' },
 ];
 
 const DEFAULT_SYSTEM_CATEGORIES = [
-  'Продукты', 'Кафе и рестораны', 'Маркетплейсы', 'Транспорт', 'Жилье',
-  'Одежда', 'Здоровье', 'Развлечения', 'Переводы', 'Другое', 'Зарплата', 'Возврат', 'Кэшбек'
+  'Продукты',
+  'Кафе и рестораны',
+  'Маркетплейсы',
+  'Транспорт',
+  'Жилье',
+  'Одежда',
+  'Здоровье',
+  'Развлечения',
+  'Переводы',
+  'Другое',
+  'Зарплата',
+  'Возврат',
+  'Кэшбек',
 ];
 
 if (typeof window !== 'undefined') {
@@ -323,21 +334,80 @@ if (typeof window !== 'undefined') {
 class StatementCategorizer {
   // Банковские MCC-коды
   static MCC_MAP = {
-    '5411': 'Продукты', '5422': 'Продукты', '5441': 'Продукты', '5451': 'Продукты', '5462': 'Продукты', '5499': 'Продукты',
-    '5811': 'Кафе и рестораны', '5812': 'Кафе и рестораны', '5813': 'Кафе и рестораны', '5814': 'Кафе и рестораны',
-    '5300': 'Маркетплейсы', '5311': 'Маркетплейсы', '5331': 'Маркетплейсы', '5399': 'Маркетплейсы', '5999': 'Маркетплейсы',
-    '4111': 'Транспорт', '4121': 'Транспорт', '4131': 'Транспорт', '4511': 'Транспорт', '4789': 'Транспорт', '5541': 'Транспорт', '5542': 'Транспорт',
-    '4812': 'Жилье', '4814': 'Жилье', '4900': 'Жилье', '5200': 'Жилье', '5211': 'Жилье', '5712': 'Жилье',
-    '5611': 'Одежда', '5621': 'Одежда', '5651': 'Одежда', '5661': 'Одежда', '5691': 'Одежда',
-    '5912': 'Здоровье', '8011': 'Здоровье', '8021': 'Здоровье', '8049': 'Здоровье', '8062': 'Здоровье', '8071': 'Здоровье', '8099': 'Здоровье', '7997': 'Здоровье',
-    '7832': 'Развлечения', '7922': 'Развлечения', '7991': 'Развлечения', '7996': 'Развлечения', '5815': 'Развлечения', '5816': 'Развлечения'
+    5411: 'Продукты',
+    5422: 'Продукты',
+    5441: 'Продукты',
+    5451: 'Продукты',
+    5462: 'Продукты',
+    5499: 'Продукты',
+    5811: 'Кафе и рестораны',
+    5812: 'Кафе и рестораны',
+    5813: 'Кафе и рестораны',
+    5814: 'Кафе и рестораны',
+    5300: 'Маркетплейсы',
+    5311: 'Маркетплейсы',
+    5331: 'Маркетплейсы',
+    5399: 'Маркетплейсы',
+    5999: 'Маркетплейсы',
+    4111: 'Транспорт',
+    4121: 'Транспорт',
+    4131: 'Транспорт',
+    4511: 'Транспорт',
+    4789: 'Транспорт',
+    5541: 'Транспорт',
+    5542: 'Транспорт',
+    4812: 'Жилье',
+    4814: 'Жилье',
+    4900: 'Жилье',
+    5200: 'Жилье',
+    5211: 'Жилье',
+    5712: 'Жилье',
+    5611: 'Одежда',
+    5621: 'Одежда',
+    5651: 'Одежда',
+    5661: 'Одежда',
+    5691: 'Одежда',
+    5912: 'Здоровье',
+    8011: 'Здоровье',
+    8021: 'Здоровье',
+    8049: 'Здоровье',
+    8062: 'Здоровье',
+    8071: 'Здоровье',
+    8099: 'Здоровье',
+    7997: 'Здоровье',
+    7832: 'Развлечения',
+    7922: 'Развлечения',
+    7991: 'Развлечения',
+    7996: 'Развлечения',
+    5815: 'Развлечения',
+    5816: 'Развлечения',
   };
 
   // Стоп-слова: общие слова, которые не должны перевешивать специфические бренды
   static STOP_WORDS = new Set([
-    'magazin', 'oplata', 'pokupka', 'ip', 'ooo', 'market', 'kafe', 'servis',
-    'tsentr', 'klub', 'onlayn', 'gorod', 'dostavka', 'retail', 'store', 'shop',
-    'platezh', 'terminal', 'card', 'karta', 'schet', 'sber', 'bank'
+    'magazin',
+    'oplata',
+    'pokupka',
+    'ip',
+    'ooo',
+    'market',
+    'kafe',
+    'servis',
+    'tsentr',
+    'klub',
+    'onlayn',
+    'gorod',
+    'dostavka',
+    'retail',
+    'store',
+    'shop',
+    'platezh',
+    'terminal',
+    'card',
+    'karta',
+    'schet',
+    'sber',
+    'bank',
   ]);
 
   /**
@@ -349,31 +419,57 @@ class StatementCategorizer {
     let s = String(str).toLowerCase().replace(/ё/g, 'е');
 
     const ruToEn = {
-      'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'е': 'e',
-      'ж': 'zh', 'з': 'z', 'и': 'i', 'й': 'y', 'к': 'k', 'л': 'l',
-      'м': 'm', 'н': 'n', 'о': 'o', 'п': 'p', 'р': 'r', 'с': 's',
-      'т': 't', 'у': 'u', 'ф': 'f', 'х': 'kh', 'ц': 'ts', 'ч': 'ch',
-      'ш': 'sh', 'щ': 'shch', 'ъ': '', 'ы': 'y', 'ь': '', 'э': 'e',
-      'ю': 'yu', 'я': 'ya'
+      а: 'a',
+      б: 'b',
+      в: 'v',
+      г: 'g',
+      д: 'd',
+      е: 'e',
+      ж: 'zh',
+      з: 'z',
+      и: 'i',
+      й: 'y',
+      к: 'k',
+      л: 'l',
+      м: 'm',
+      н: 'n',
+      о: 'o',
+      п: 'p',
+      р: 'r',
+      с: 's',
+      т: 't',
+      у: 'u',
+      ф: 'f',
+      х: 'kh',
+      ц: 'ts',
+      ч: 'ch',
+      ш: 'sh',
+      щ: 'shch',
+      ъ: '',
+      ы: 'y',
+      ь: '',
+      э: 'e',
+      ю: 'yu',
+      я: 'ya',
     };
 
-    s = s.replace(/[а-я]/g, char => ruToEn[char] !== undefined ? ruToEn[char] : char);
+    s = s.replace(/[а-я]/g, char => (ruToEn[char] !== undefined ? ruToEn[char] : char));
 
     s = s
       .replace(/ck/g, 'k')
-      .replace(/c([eiy])/g, 's$1')     // cinema -> sinema, city -> siti
-      .replace(/c/g, 'k')              // rostics -> rostiks, cafe -> kafe, cofix -> kofiks
+      .replace(/c([eiy])/g, 's$1') // cinema -> sinema, city -> siti
+      .replace(/c/g, 'k') // rostics -> rostiks, cafe -> kafe, cofix -> kofiks
       .replace(/q/g, 'k')
-      .replace(/x/g, 'ks')             // taxi -> taksi, yandex -> yandeks
-      .replace(/w/g, 'v')             // wildberries -> vildberries
-      .replace(/ph/g, 'f')            // pharmacy -> farmacy
-      .replace(/ia/g, 'ya')           // piaterochka -> pyaterochka
+      .replace(/x/g, 'ks') // taxi -> taksi, yandex -> yandeks
+      .replace(/w/g, 'v') // wildberries -> vildberries
+      .replace(/ph/g, 'f') // pharmacy -> farmacy
+      .replace(/ia/g, 'ya') // piaterochka -> pyaterochka
       .replace(/iu/g, 'yu')
       .replace(/shch/g, 'sh')
       .replace(/sch/g, 'sh')
       .replace(/tc/g, 'ts')
       .replace(/tz/g, 'ts')
-      .replace(/ee/g, 'i')            // befree -> befri
+      .replace(/ee/g, 'i') // befree -> befri
       .replace(/oo/g, 'u')
       .replace(/y(?![aeiou])/g, 'i'); // dixy -> diksi, city -> siti
 
@@ -381,7 +477,10 @@ class StatementCategorizer {
     s = s.replace(/([b-df-hj-np-tv-z])\1+/g, '$1');
 
     // Очистка спецсимволов и пробелов
-    s = s.replace(/[^a-z0-9]/g, ' ').replace(/\s+/g, ' ').trim();
+    s = s
+      .replace(/[^a-z0-9]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
 
     return s;
   }
@@ -394,7 +493,10 @@ class StatementCategorizer {
     let t = token;
     // Отсекаем суффиксы и окончания
     t = t.replace(/(?:ochka|echka|ochki|echki|ochke|echke|ochku|echku)$/, 'ochk');
-    t = t.replace(/(?:ami|yami|akh|yakh|om|em|oy|ey|uyu|yuyu|aya|yaya|oye|eye|yie|ie|iy|yy|ov|ev|am|yam|ka|ki|ku|ke|akh|yah)$/, '');
+    t = t.replace(
+      /(?:ami|yami|akh|yakh|om|em|oy|ey|uyu|yuyu|aya|yaya|oye|eye|yie|ie|iy|yy|ov|ev|am|yam|ka|ki|ku|ke|akh|yah)$/,
+      ''
+    );
     t = t.replace(/(?:a|e|i|o|u|y)$/, '');
     return t.length >= 3 ? t : token;
   }
@@ -420,10 +522,10 @@ class StatementCategorizer {
       const ca = a.charCodeAt(i - 1);
 
       for (let j = 1; j <= lb; j++) {
-        const cost = (ca === b.charCodeAt(j - 1)) ? 0 : 1;
+        const cost = ca === b.charCodeAt(j - 1) ? 0 : 1;
         curr[j] = Math.min(
-          prev[j] + 1,      // deletion
-          curr[j - 1] + 1,  // insertion
+          prev[j] + 1, // deletion
+          curr[j - 1] + 1, // insertion
           prev[j - 1] + cost // substitution
         );
         if (curr[j] < minInRow) minInRow = curr[j];
@@ -448,7 +550,10 @@ class StatementCategorizer {
     }
 
     // Очищаем стандартизированные банковские технические фразы-префиксы
-    rawText = rawText.replace(/(?:оплата\s+(?:товаров\s+и\s+услуг|товаров\/услуг|товаров|услуг)|оплата\s+по\s+карте|покупка\s+товаров)/gi, ' ');
+    rawText = rawText.replace(
+      /(?:оплата\s+(?:товаров\s+и\s+услуг|товаров\/услуг|товаров|услуг)|оплата\s+по\s+карте|покупка\s+товаров)/gi,
+      ' '
+    );
 
     // Получаем разрешенные категории для текущего типа (Расход или Доход)
     let allowedCategories = [];
@@ -456,11 +561,11 @@ class StatementCategorizer {
       allowedCategories = getActiveCategories(type);
     } else {
       const cats = window.Cache?.categories;
-      const list = type === 'Доход' ? (cats?.income || []) : (cats?.expense || []);
+      const list = type === 'Доход' ? cats?.income || [] : cats?.expense || [];
       allowedCategories = list.map(c => (typeof c === 'string' ? c : c?.name)).filter(Boolean);
     }
     if (!allowedCategories.length) {
-      allowedCategories = (type === 'Доход') ? ['Зарплата', 'Другое'] : ['Продукты', 'Другое'];
+      allowedCategories = type === 'Доход' ? ['Зарплата', 'Другое'] : ['Продукты', 'Другое'];
     }
 
     const normText = this.normalize(rawText);
@@ -483,9 +588,9 @@ class StatementCategorizer {
     }
 
     // 2. Загрузка правил (пользовательские + системные)
-    const rules = (window.Cache?.categoryRules?.length)
+    const rules = window.Cache?.categoryRules?.length
       ? window.Cache.categoryRules
-      : (window.DEFAULT_CATEGORY_RULES || []);
+      : window.DEFAULT_CATEGORY_RULES || [];
 
     // 3. Скоринг каждого правила
     for (const rule of rules) {
@@ -508,12 +613,12 @@ class StatementCategorizer {
       // 3.1. Точное совпадение многословной фразы (например "яндекс лавка", "додо пицца")
       if (patTokens.length > 1) {
         if (normText.includes(normPat)) {
-          addScore(rule.category, 70 + (patLength * 4) + userBonus + stopWordPenalty);
+          addScore(rule.category, 70 + patLength * 4 + userBonus + stopWordPenalty);
           continue;
         }
         const normPatNoSpaces = normPat.replace(/\s+/g, '');
         if (normPatNoSpaces.length >= 6 && normTextNoSpaces.includes(normPatNoSpaces)) {
-          addScore(rule.category, 60 + (patLength * 3) + userBonus + stopWordPenalty);
+          addScore(rule.category, 60 + patLength * 3 + userBonus + stopWordPenalty);
           continue;
         }
       }
@@ -522,7 +627,7 @@ class StatementCategorizer {
       let matchedToken = false;
       for (const t of textTokens) {
         if (t === normPat) {
-          addScore(rule.category, 50 + (patLength * 2) + userBonus + stopWordPenalty);
+          addScore(rule.category, 50 + patLength * 2 + userBonus + stopWordPenalty);
           matchedToken = true;
           break;
         }
@@ -537,7 +642,7 @@ class StatementCategorizer {
         if (mainPatStem && mainPatStem.length >= 3) {
           for (const st of textStems) {
             if (st === mainPatStem) {
-              addScore(rule.category, 35 + (mainPatStem.length * 2) + userBonus + stopWordPenalty);
+              addScore(rule.category, 35 + mainPatStem.length * 2 + userBonus + stopWordPenalty);
               matchedStem = true;
               break;
             }
@@ -578,7 +683,7 @@ class StatementCategorizer {
     }
 
     // Fallback по умолчанию
-    return allowedCategories.includes('Другое') ? 'Другое' : (allowedCategories[0] || 'Другое');
+    return allowedCategories.includes('Другое') ? 'Другое' : allowedCategories[0] || 'Другое';
   }
 }
 

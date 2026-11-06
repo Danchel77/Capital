@@ -1,7 +1,6 @@
 import js from '@eslint/js';
 import globals from 'globals';
 import prettier from 'eslint-config-prettier';
-import tsParser from '@typescript-eslint/parser';
 
 const emojiRegex = /\p{Extended_Pictographic}/u;
 
@@ -100,11 +99,6 @@ export default [
       'dist/**',
       'build/**',
       '.husky/**',
-      'app/**',
-      'hooks/**',
-      'lib/**',
-      'next.config.ts',
-      'next-env.d.ts',
     ],
   },
 
@@ -157,27 +151,6 @@ export default [
     rules: {
       ...sharedRules,
       'no-restricted-syntax': 'off', // CLI scripts can use console.log
-    },
-  },
-
-  // TypeScript files (server.ts)
-  {
-    files: ['**/*.ts', '**/*.tsx'],
-    plugins: {
-      custom: customEmojiPlugin,
-    },
-    languageOptions: {
-      parser: tsParser,
-      sourceType: 'module',
-      ecmaVersion: 'latest',
-      globals: {
-        ...globals.node,
-        ...globals.browser,
-      },
-    },
-    rules: {
-      ...sharedRules,
-      'no-restricted-syntax': 'off', // Dev server can use console.log
     },
   },
 

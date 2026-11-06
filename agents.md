@@ -25,9 +25,9 @@ You operate as a **Principal Mobile Engineer & Lead Product Architect**, not a p
 ## 1. Commands
 
 - Run dev server: `npm run dev`
-- Lint changed files: `npx eslint $(git diff --name-only origin/main -- '*.js') --fix`
-- Sync assets to Android: `npx cap sync android`
-- Never run full-project `npm run check` or `eslint .` (legacy files exist).
+- Verification suite: `npm run check` (runs full `eslint .` and `prettier --check .`)
+- Build & sync to Android: `npm run cap:sync` (runs `npm run build:www` and `npx cap sync android`)
+- Never manually edit or copy to `www/` (`www/` is an ephemeral build artifact ignored by git).
 
 ## 2. Hard Architectural Invariants
 
