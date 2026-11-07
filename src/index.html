@@ -699,17 +699,13 @@
         </span>
       </div>
 
-      <div class="flex items-center gap-2 sm:gap-3 text-xs">
-        <span class="text-gray-400 hidden sm:inline"
-          >Обновлено: <span id="last-sync">...</span></span
-        >
-
+      <div class="flex items-center gap-1 sm:gap-2 text-xs">
         <!-- Кнопка скрытия сумм (Режим приватности) -->
         <button
           type="button"
           id="privacy-toggle-btn"
           onclick="togglePrivacyMode()"
-          class="w-8 h-8 rounded-full text-zinc-400 hover:text-white hover:bg-white/[0.06] active:scale-95 flex items-center justify-center transition-all cursor-pointer"
+          class="w-8 h-8 rounded-full bg-white/[0.04] border border-white/[0.06] text-zinc-400 active:scale-95 flex items-center justify-center transition-all cursor-pointer"
           title="Скрыть / показать суммы"
         >
           <span
@@ -734,23 +730,23 @@
           </span>
         </button>
 
+        <span class="text-gray-400 hidden sm:inline ml-2"
+          >Обновлено: <span id="last-sync">...</span></span
+        >
+
         <!-- Кнопка Личного кабинета -->
         <button
           type="button"
           onclick="openProfileModal()"
-          class="flex items-center gap-2 py-1 px-1.5 rounded-full hover:bg-white/[0.06] active:scale-95 transition-all text-xs font-medium text-zinc-200 hover:text-white cursor-pointer"
+          class="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/[0.06] active:scale-95 transition-all cursor-pointer"
+          title="Профиль"
         >
           <span
             id="header-user-avatar"
             class="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 select-none overflow-hidden"
           >
-            <i data-lucide="user" class="w-3.5 h-3.5"></i>
+            <i data-lucide="user" class="w-3.5 h-3.5 text-zinc-400"></i>
           </span>
-          <span
-            id="header-user-name"
-            class="truncate max-w-[90px] sm:max-w-[130px] font-medium text-zinc-200"
-            >Профиль</span
-          >
         </button>
       </div>
     </header>

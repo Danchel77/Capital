@@ -370,7 +370,6 @@ window.handleGoalNameInput = handleGoalNameInput;
    SINGLE-GOAL CAPITAL SHARE SLIDER (SLEEK DYNAMIC FILL)
    ======================================================== */
 let activeGoalEditingId = null;
-let maxAllowedForActiveGoal = 100;
 
 function setupGoalSingleShareSlider(goalId) {
   activeGoalEditingId = goalId || '__new__';
@@ -382,35 +381,22 @@ function setupGoalSingleShareSlider(goalId) {
     tempGoalShares[g.id] = parseFloat(g.share) || 0;
   });
 
-  const otherGoalsSum = existingGoals
-    .filter(g => g.id !== goalId)
-    .reduce((sum, g) => sum + (parseFloat(g.share) || 0), 0);
-
-  const availableShare = Math.max(0, 100 - otherGoalsSum);
-
   let currentShare = 0;
   if (goalId && tempGoalShares[goalId] !== undefined) {
     currentShare = tempGoalShares[goalId];
-    maxAllowedForActiveGoal = Math.min(100, currentShare + availableShare);
   } else {
     currentShare = 0;
-    maxAllowedForActiveGoal = availableShare;
     tempGoalShares['__new__'] = currentShare;
   }
 
+  // Слайдер всегда доступен от 0 до 100%
   const slider = document.getElementById('goal-single-share-slider');
   if (slider) {
-    slider.max = maxAllowedForActiveGoal;
+    slider.max = 100;
     slider.value = currentShare;
-    if (maxAllowedForActiveGoal <= 0) {
-      slider.disabled = true;
-      slider.classList.add('opacity-40', 'cursor-not-allowed');
-      slider.classList.remove('cursor-pointer');
-    } else {
-      slider.disabled = false;
-      slider.classList.remove('opacity-40', 'cursor-not-allowed');
-      slider.classList.add('cursor-pointer');
-    }
+    slider.disabled = false;
+    slider.classList.remove('opacity-40', 'cursor-not-allowed');
+    slider.classList.add('cursor-pointer');
   }
 
   const capitalHint = document.getElementById('goal-total-capital-hint');
@@ -424,43 +410,58 @@ window.setupGoalSingleShareSlider = setupGoalSingleShareSlider;
 
 function handleGoalSingleShareSlider(val) {
   const targetId = activeGoalEditingId || '__new__';
-  const clampedVal = Math.max(
-    0,
-    Math.min(maxAllowedForActiveGoal, Math.round(parseFloat(val) || 0))
-  );
-  tempGoalShares[targetId] = clampedVal;
+  const valInt = Math.round(parseFloat(val) || 0);
+
+  // Механика перераспределения:
+  // Мы принимаем любое значение от 0 до 100 для целевой цели.
+  // Остальные цели уменьшаются пропорционально.
 
   const totalCapital = getTotalCapitalValue();
-  const existingGoals = (Cache?.goals || []).filter(g => g.status !== 'Архив');
-  const otherGoalsSum = existingGoals
-    .filter(g => g.id !== (activeGoalEditingId === '__new__' ? null : activeGoalEditingId))
-    .reduce((sum, g) => sum + (parseFloat(g.share) || 0), 0);
+  const allGoals = (Cache?.goals || []).filter(g => g.status !== 'Архив');
 
-  const freePct = Math.max(0, 100 - (otherGoalsSum + clampedVal));
+  // Если распределяем: обновим tempGoalShares для всех целей
+  const otherGoals = allGoals.filter(
+    g => g.id !== (activeGoalEditingId === '__new__' ? null : activeGoalEditingId)
+  );
+  const otherSum = otherGoals.reduce((sum, g) => sum + (parseFloat(g.share) || 0), 0);
 
+  // Коэффициент уменьшения остальных: (100 - valInt) / sum
+  // Если сумма была 0, просто даем остальное новой цели
+  const remaining = 100 - valInt;
+
+  if (otherSum > 0) {
+    const k = remaining / otherSum;
+    otherGoals.forEach(g => {
+      tempGoalShares[g.id] = Math.round((parseFloat(g.share) || 0) * k);
+    });
+  } else {
+    // Если других нет, просто ставим цели то, что осталось
+    if (otherGoals.length > 0) otherGoals[0].share = remaining;
+  }
+
+  tempGoalShares[targetId] = valInt;
+
+  // Обновляем UI слайдера
   const slider = document.getElementById('goal-single-share-slider');
   if (slider) {
-    slider.value = clampedVal;
-    // Градиент прогресса слайдера считается от 0 до 100% шкалы для визуальной консистентности
-    slider.style.setProperty('--slider-fill', `${clampedVal}%`);
+    slider.value = valInt;
+    slider.style.setProperty('--slider-fill', `${valInt}%`);
   }
 
   const pctEl = document.getElementById('goal-single-share-pct');
-  if (pctEl) pctEl.innerText = `${clampedVal}%`;
+  if (pctEl) pctEl.innerText = `${valInt}%`;
 
   const rublesEl = document.getElementById('goal-single-share-rubles');
   if (rublesEl) {
-    const rublesAlloc = Math.round(totalCapital * (clampedVal / 100));
-    rublesEl.innerText = formatMoney(rublesAlloc);
+    rublesEl.innerText = formatMoney(Math.round(totalCapital * (valInt / 100)));
   }
 
   const freeHint = document.getElementById('goal-single-share-free-hint');
   if (freeHint) {
-    if (maxAllowedForActiveGoal <= 0) {
-      freeHint.innerText = 'Свободно: 0% (распределено 100%)';
-    } else {
-      freeHint.innerText = `Свободно: ${freePct}%`;
-    }
+    const totalSet = valInt + otherGoals.reduce((sum, g) => sum + (tempGoalShares[g.id] || 0), 0);
+    freeHint.innerText =
+      totalSet === 100 ? 'Распределено 100%' : `Свободно: ${Math.max(0, 100 - totalSet)}%`;
+    freeHint.classList.toggle('text-amber-500', totalSet > 100);
   }
 }
 window.handleGoalSingleShareSlider = handleGoalSingleShareSlider;

@@ -1209,8 +1209,8 @@ window.isPrivacyModeEnabled = (function () {
   }
 })();
 
-const EYE_SVG_OPEN = `<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0z"/><circle cx="12" cy="12" r="3"/></svg>`;
-const EYE_SVG_CLOSED = `<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-[#727cff]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><line x1="2" y1="2" x2="22" y2="22"/></svg>`;
+const EYE_SVG_OPEN = `<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0z"/><circle cx="12" cy="12" r="3"/></svg>`;
+const EYE_SVG_CLOSED = `<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><line x1="2" y1="2" x2="22" y2="22"/></svg>`;
 
 function updatePrivacyModeUI() {
   const isPrivate = !!window.isPrivacyModeEnabled;
@@ -1227,12 +1227,12 @@ function updatePrivacyModeUI() {
 
   if (toggleBtn) {
     if (isPrivate) {
-      toggleBtn.classList.add('bg-[#6C5DD3]/20', 'border-[#6C5DD3]/50', 'text-[#727cff]');
-      toggleBtn.classList.remove('text-gray-300');
+      toggleBtn.classList.add('bg-white/10', 'border-white/20', 'text-white', 'shadow-sm');
+      toggleBtn.classList.remove('bg-white/[0.04]', 'border-white/[0.06]', 'text-zinc-400');
       toggleBtn.title = 'Показать суммы';
     } else {
-      toggleBtn.classList.remove('bg-[#6C5DD3]/20', 'border-[#6C5DD3]/50', 'text-[#727cff]');
-      toggleBtn.classList.add('text-gray-300');
+      toggleBtn.classList.remove('bg-white/10', 'border-white/20', 'text-white', 'shadow-sm');
+      toggleBtn.classList.add('bg-white/[0.04]', 'border-white/[0.06]', 'text-zinc-400');
       toggleBtn.title = 'Скрыть суммы';
     }
   }
@@ -1256,8 +1256,7 @@ function togglePrivacyMode() {
     }
   }
 
-  showToast(window.isPrivacyModeEnabled ? 'Режим приватности включен' : 'Суммы снова отображаются');
-
+  // Мгновенное визуальное переключение без назойливого тоста
   if (typeof markTabsDirty === 'function') markTabsDirty();
 
   // 1. Мгновенно обновляем все строки в форме добавления операций (бейджи крупных трат и превью распределения)
@@ -1791,7 +1790,10 @@ function dismissToast(direction = 0) {
   }
 }
 
-function showToast(text, isError = false, keep = false) {
+function showToast(text, isError = false, keep = false, priority = 'normal') {
+  // Фильтрация тривиальных уведомлений: всплывают только ошибки, процессы (keep) и важные действия
+  if (priority === 'low' && !isError && !keep) return;
+
   const container = document.getElementById('toast-container');
   const content = document.getElementById('toast-content');
   const textEl = document.getElementById('toast-text');
