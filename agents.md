@@ -75,5 +75,6 @@ You operate as a **Principal Mobile Engineer & Lead Product Architect**, not a p
   - Exactly ONE critic pass per task.
   - Apply the critic's simplifications to code.
   - Mandatory presentation: ALWAYS present the final screenshot to the user using `vision_present`. Never run a second critic pass on the same task.
-- **Delivery:**
+- **Delivery & User Presentation:**
+  - **Visual Change Screenshots:** Whenever any visual/UI change is made (HTML layout, CSS styling, colors, icons, modals, typography), you MUST capture a screenshot (`scripts/screenshot.cjs` or `scripts/capture-all-modals.cjs`) and present it directly to the user in chat via `vision_present`. Skip this ONLY for pure code/data refactoring, calculations, or logic changes where the UI is visually untouched.
   - Automatically commit and push clean commits to `origin/main` when verified and no open questions remain.
